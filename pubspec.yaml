@@ -1,0 +1,65 @@
+name: idetect
+description: OCR-based ID verification system for Senior Citizen and PWD IDs
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: "^3.5.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI Components
+  cupertino_icons: ^1.0.6
+
+  # Camera & Images
+  camera: ^0.10.5+9
+  image_picker: ^1.0.7
+  image: ^4.1.7
+
+  # OCR - Google ML Kit (better than Tesseract for mobile)
+  google_mlkit_text_recognition: ^0.11.0
+
+  # State Management
+  provider: ^6.1.1
+
+  # Database - Local
+  sqflite: ^2.3.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.2
+
+  # Database - Remote (Supabase - will add later)
+  # supabase_flutter: ^2.3.0
+
+  # Utilities
+  intl: ^0.19.0 # Date formatting
+  permission_handler: ^11.3.0 # Camera permissions
+  uuid: ^4.3.3 # Generate unique IDs
+
+  # UI Enhancement
+  lottie: ^3.0.0 # Animations
+  flutter_svg: ^2.0.10 # SVG support
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+
+  # Assets
+  assets:
+    - assets/images/
+    - assets/icons/
+    # - assets/fonts/
+
+  # Fonts (uncomment if you add custom fonts)
+  # fonts:
+  #   - family: Roboto
+  #     fonts:
+  #       - asset: assets/fonts/Roboto-Regular.ttf
+  #       - asset: assets/fonts/Roboto-Bold.ttf
+  #         weight: 700
