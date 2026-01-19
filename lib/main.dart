@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'data/datasources/local/local_database.dart';
 import 'presentation/screens/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize local database
   await LocalDatabase.init();
-  
+
   runApp(const MyApp());
 }
 

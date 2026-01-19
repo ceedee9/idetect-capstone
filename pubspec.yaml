@@ -14,12 +14,17 @@ dependencies:
   cupertino_icons: ^1.0.6
 
   # Camera & Images
-  camera: ^0.10.5+9
+  camera: ^0.11.3
   image_picker: ^1.0.7
   image: ^4.1.7
 
-  # OCR - Google ML Kit (better than Tesseract for mobile)
-  google_mlkit_text_recognition: ^0.11.0
+  # OCR - Multiple engines for best accuracy
+  google_mlkit_text_recognition: ^0.11.0 # Fast, on-device
+  flutter_tesseract_ocr: ^0.4.25 # Better for documents, highly accurate
+  fuzzywuzzy: ^1.1.6 # Fuzzy string matching for name extraction
+
+  # Advanced Image Processing
+  opencv_dart: ^1.0.4 # Perspective correction, deskewing, morphological ops
 
   # State Management
   provider: ^6.1.1

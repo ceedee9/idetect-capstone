@@ -27,9 +27,9 @@ Secondary Blue (Interactive):   #5170FF
 ### Status Colors
 
 ```
-✅ Valid (Green):      #13BB11
-❌ Invalid (Red):      #FF0000
-🚩 Flagged (Orange):   #FF6B6B
+Valid (Green):      #13BB11
+Invalid (Red):      #FF0000
+Flagged (Orange):   #FF6B6B
 ```
 
 ### Background Colors
@@ -63,7 +63,7 @@ Icon Light:     #757575
 
 ---
 
-## 📝 Typography
+## Typography
 
 **Font Family:** Roboto (System Default)
 
@@ -91,7 +91,7 @@ Icon Light:     #757575
 
 ---
 
-## 📏 Spacing System
+## Spacing System
 
 **Base Unit:** 8px
 
@@ -117,7 +117,7 @@ Icon Light:     #757575
 
 ---
 
-## 🔲 Border Radius
+## Border Radius
 
 - XS: 4px (small elements)
 - SM: 8px (buttons)
@@ -135,7 +135,7 @@ Icon Light:     #757575
 
 ---
 
-## 🎭 Shadows
+## Shadows
 
 **Small (Cards):**
 
@@ -157,7 +157,7 @@ box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.16);
 
 ---
 
-## 📱 Screen Specifications
+## Screen Specifications
 
 ### 1. Login Page
 
@@ -303,7 +303,7 @@ box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.16);
 
 ---
 
-## 🔧 Component Library
+## Component Library
 
 ### Primary Button
 
@@ -389,7 +389,7 @@ Container(
 
 ---
 
-## 📦 Assets Needed
+## Assets Needed
 
 ### Icons (Export from Figma)
 
@@ -420,7 +420,7 @@ Container(
 
 ---
 
-## 🎯 Implementation Checklist
+## Implementation Checklist
 
 ### Setup Phase
 
@@ -506,7 +506,7 @@ Container(
 
 ---
 
-## 🎨 Design Update Process
+## Design Update Process
 
 When designs change in Figma:
 
@@ -519,7 +519,7 @@ When designs change in Figma:
 
 ---
 
-## ✅ Screen Implementation Checklist
+## Screen Implementation Checklist
 
 Before marking a screen as "complete":
 
@@ -536,7 +536,7 @@ Before marking a screen as "complete":
 
 ---
 
-## 🔗 Quick Reference
+## Quick Reference
 
 **Design System File:** `lib/core/constants/app_design_system.dart`  
 **Figma Link:** https://www.figma.com/design/MmFOx2QWDFwQLYZqaN905d/Untitled  
