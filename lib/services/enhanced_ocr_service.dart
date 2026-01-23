@@ -184,6 +184,118 @@ class EnhancedOCRService {
   }
 
   // ===========================================================================
+  // FIELD-SPECIFIC OCR (QUICK WIN #2: CHARACTER WHITELIST)
+  // ===========================================================================
+
+  /// Extract text from image with field-specific character whitelist
+  /// This dramatically improves accuracy by limiting possible characters
+  static Future<String> extractFieldWithWhitelist(
+    String imagePath,
+    String fieldType, {
+    int? psm,
+  }) async {
+    final whitelist = _getWhitelistForField(fieldType);
+    final psmMode = psm ?? _getPsmForField(fieldType);
+
+    debugPrint('🎯 Extracting $fieldType with whitelist PSM $psmMode');
+    debugPrint(
+        '   Allowed chars: ${whitelist.substring(0, whitelist.length > 50 ? 50 : whitelist.length)}...');
+
+    try {
+      final text = await FlutterTesseractOcr.extractText(
+        imagePath,
+        language: 'eng',
+        args: {
+          "psm": psmMode.toString(),
+          "tessedit_char_whitelist": whitelist,
+          "preserve_interword_spaces": "1",
+        },
+      );
+
+      debugPrint('   ✅ Extracted: "${text.trim()}"');
+      return text.trim();
+    } catch (e) {
+      debugPrint('   ❌ Whitelist extraction failed: $e');
+      return '';
+    }
+  }
+
+  /// Get character whitelist for specific field type
+  static String _getWhitelistForField(String fieldType) {
+    switch (fieldType.toLowerCase()) {
+      case 'name':
+      case 'fullname':
+      case 'full_name':
+        // Letters, spaces, hyphen, Filipino ñ, period for abbreviations
+        return 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz -ñÑ.';
+
+      case 'date':
+      case 'dob':
+      case 'date_of_birth':
+      case 'dateofbirth':
+      case 'date_issued':
+      case 'dateissued':
+        // Numbers and date separators only
+        return '0123456789/-';
+
+      case 'sex':
+      case 'gender':
+        // Only M and F (no other letters!)
+        return 'MFmf';
+
+      case 'controlno':
+      case 'control_no':
+      case 'control_number':
+      case 'controlnumber':
+        // Alphanumeric + hyphen
+        return '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-';
+
+      case 'address':
+        // Full alphanumeric with common punctuation
+        return 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -.,#ñÑ';
+
+      case 'number':
+      case 'numeric':
+        // Numbers only
+        return '0123456789';
+
+      default:
+        // Full alphabet + numbers + common punctuation
+        return 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -/.,#ñÑ';
+    }
+  }
+
+  /// Get optimal PSM mode for specific field type (QUICK WIN #3)
+  static int _getPsmForField(String fieldType) {
+    switch (fieldType.toLowerCase()) {
+      case 'name':
+      case 'fullname':
+      case 'full_name':
+      case 'address':
+        return 6; // Uniform block (multiple words)
+
+      case 'date':
+      case 'dob':
+      case 'date_of_birth':
+      case 'dateofbirth':
+      case 'date_issued':
+      case 'dateissued':
+      case 'controlno':
+      case 'control_no':
+      case 'control_number':
+      case 'controlnumber':
+        return 7; // Single text line
+
+      case 'sex':
+      case 'gender':
+        return 10; // Single character
+
+      default:
+        return 6; // Uniform block (default)
+    }
+  }
+
+  // ===========================================================================
   // CONFIDENCE ESTIMATION
   // ===========================================================================
 

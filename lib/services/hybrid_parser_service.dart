@@ -70,6 +70,7 @@ class HybridParserService {
         recognizedText: recognizedText,
         imageWidth: imageWidth,
         imageHeight: imageHeight,
+        imagePath: imageFile.path, // Pass image path for zone-optimized OCR
       );
 
       final templateMatched = layoutResult['templateMatched'] as bool;
@@ -202,18 +203,43 @@ class HybridParserService {
       'dateIssued',
       'controlNumber'
     ]) {
-      final layoutConfidence =
+      double layoutConfidence =
           layoutResult['fieldConfidences'][field] as double;
-      final fuzzyConfidence = fuzzyResult['fieldConfidences'][field] as double;
+      double fuzzyConfidence = fuzzyResult['fieldConfidences'][field] as double;
+
+      // CAP confidence at 1.0 (100%) - fuzzy sometimes reports > 100%
+      layoutConfidence = layoutConfidence.clamp(0.0, 1.0);
+      fuzzyConfidence = fuzzyConfidence.clamp(0.0, 1.0);
 
       final layoutValue = layoutResult[field] as String;
       final fuzzyValue = fuzzyResult[field] as String;
+
+      // SPECIAL HANDLING FOR NAME: Prefer layout if it found a valid name
+      // This prevents fuzzy from overriding with address text
+      if (field == 'fullName') {
+        final layoutHasValidName = layoutValue.isNotEmpty &&
+            layoutValue.split(' ').length >= 2 &&
+            !layoutValue.toUpperCase().contains('ADDRESS') &&
+            !layoutValue.toUpperCase().contains('STREET') &&
+            !layoutValue.toUpperCase().contains('ST.') &&
+            !layoutValue.toUpperCase().contains('KARUHATAN') &&
+            !layoutValue.toUpperCase().contains('VALENZUELA') &&
+            !RegExp(r'\d').hasMatch(layoutValue);
+
+        if (layoutHasValidName && layoutConfidence >= 0.70) {
+          merged[field] = layoutValue;
+          fieldConfidences[field] = layoutConfidence;
+          debugPrint(
+              '   $field: Layout PREFERRED (valid name) "${layoutValue}" (${(layoutConfidence * 100).toInt()}%)');
+          continue;
+        }
+      }
 
       if (layoutConfidence >= fuzzyConfidence) {
         merged[field] = layoutValue;
         fieldConfidences[field] = layoutConfidence;
         debugPrint(
-            '   $field: Layout (${(layoutConfidence * 100).toInt()}%) > Fuzzy (${(fuzzyConfidence * 100).toInt()}%)');
+            '   $field: Layout (${(layoutConfidence * 100).toInt()}%) >= Fuzzy (${(fuzzyConfidence * 100).toInt()}%)');
       } else {
         merged[field] = fuzzyValue;
         fieldConfidences[field] = fuzzyConfidence;
@@ -317,16 +343,19 @@ class HybridParserService {
     return '01/01/$birthYear'; // Approximate
   }
 
-  /// Extract age from date of birth
+  /// Extract age from date of birth (exact calculation considering month and day)
   int? _extractAge(String? dateOfBirth) {
     if (dateOfBirth == null || dateOfBirth.isEmpty) return null;
 
     try {
-      // Parse date
+      // Parse date - expected format: MM/DD/YY or MM-DD-YY or MM/DD/YYYY
       final parts = dateOfBirth.split(RegExp(r'[/-]'));
       if (parts.length != 3) return null;
 
+      final month = int.parse(parts[0]);
+      final day = int.parse(parts[1]);
       int year;
+
       if (parts[2].length == 4) {
         year = int.parse(parts[2]);
       } else {
@@ -336,9 +365,21 @@ class HybridParserService {
             twoDigit >= 0 && twoDigit <= 30 ? 2000 + twoDigit : 1900 + twoDigit;
       }
 
-      final currentYear = DateTime.now().year;
-      return currentYear - year;
+      // Calculate exact age considering month and day
+      final now = DateTime.now();
+      final birthDate = DateTime(year, month, day);
+
+      int age = now.year - birthDate.year;
+
+      // If birthday hasn't occurred yet this year, subtract 1
+      if (now.month < birthDate.month ||
+          (now.month == birthDate.month && now.day < birthDate.day)) {
+        age--;
+      }
+
+      return age;
     } catch (e) {
+      debugPrint('⚠️ Error calculating age: $e');
       return null;
     }
   }

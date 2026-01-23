@@ -7,6 +7,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
+import 'zone_optimized_ocr.dart';
 
 /// Layout-Based Field Extractor (Zonal OCR)
 ///
@@ -30,15 +31,15 @@ class LayoutBasedFieldExtractor {
   static const double HEADER_TOP = 0.00;
   static const double HEADER_BOTTOM = 0.15;
 
-  /// Name zone
-  static const double NAME_TOP = 0.38;
-  static const double NAME_BOTTOM = 0.46;
-  static const double NAME_LEFT = 0.00;
+  /// Name zone - name text appears ABOVE the "Name:" label on these IDs
+  static const double NAME_TOP = 0.24;
+  static const double NAME_BOTTOM = 0.38;
+  static const double NAME_LEFT = 0.08;
   static const double NAME_RIGHT = 0.65;
 
-  /// Address zone (we'll skip extraction but can validate)
-  static const double ADDRESS_TOP = 0.46;
-  static const double ADDRESS_BOTTOM = 0.58;
+  /// Address zone - starts at Address: label (around 38%)
+  static const double ADDRESS_TOP = 0.38;
+  static const double ADDRESS_BOTTOM = 0.56;
   static const double ADDRESS_LEFT = 0.00;
   static const double ADDRESS_RIGHT = 0.68;
 
@@ -90,57 +91,97 @@ class LayoutBasedFieldExtractor {
   // COMMON FILIPINO NAMES (for validation)
   // ===========================================================================
 
+  // Expanded database: 200+ Filipino names for better validation
   static final Set<String> _commonLastNames = {
-    'DELA CRUZ',
-    'DELOS REYES',
-    'DELOS SANTOS',
-    'DE LA CRUZ',
-    'SANTOS',
-    'REYES',
-    'GARCIA',
-    'MENDOZA',
-    'RAMOS',
-    'FLORES',
-    'GONZALES',
-    'BAUTISTA',
-    'VILLANUEVA',
-    'CRUZ',
-    'MARTINEZ',
-    'LOPEZ',
-    'RODRIGUEZ',
-    'FERNANDEZ',
-    'MERCADO',
-    'DIAZ',
-    'CASTRO',
-    'TORRES',
-    'PADILLA',
-    'RIVERA',
-    'HERNANDEZ',
-    'SANTIAGO',
-    'TAN',
-    'LIM',
-    'ONG',
-    'GO',
-    'SY',
-    'CHUA',
-    'NGO',
-    'YU',
+    // Multi-word surnames (compound)
+    'DELA CRUZ', 'DE LA CRUZ', 'DELOS REYES', 'DE LOS REYES',
+    'DELOS SANTOS', 'DE LOS SANTOS', 'DEL ROSARIO', 'DE LEON',
+    'DE GUZMAN', 'DE JESUS', 'SAN JOSE', 'SAN JUAN', 'SANTA CRUZ',
+    'SANTA MARIA', 'SAN PEDRO', 'SAN MIGUEL', 'DELA ROSA', 'DE VERA',
+    'DEL CASTILLO', 'DE OCAMPO', 'SAN ANDRES', 'SANTA ANA',
+
+    // Common Spanish-origin surnames
+    'SANTOS', 'REYES', 'GARCIA', 'MENDOZA', 'RAMOS', 'FLORES',
+    'GONZALES', 'GONZALEZ', 'BAUTISTA', 'VILLANUEVA', 'CRUZ',
+    'MARTINEZ', 'LOPEZ', 'RODRIGUEZ', 'FERNANDEZ', 'MERCADO',
+    'DIAZ', 'CASTRO', 'TORRES', 'PADILLA', 'RIVERA', 'HERNANDEZ',
+    'SANTIAGO', 'ALVAREZ', 'AGUILAR', 'VALDEZ', 'MIRANDA',
+    'MORALES', 'NAVARRO', 'SALAZAR', 'GUTIERREZ', 'MEDINA',
+    'VELASCO', 'TORRES', 'MARQUEZ', 'CASTILLO', 'JIMENEZ',
+    'SANTIAGO', 'PASCUAL', 'DOMINGO', 'SORIANO', 'AQUINO',
+    'ESPINOSA', 'ROMERO', 'ALBERTO', 'TOLENTINO', 'FRANCISCO',
+    'BERNARDO', 'MANALO', 'ANGELES', 'VILLA', 'BLANCO',
+    'GUERRERO', 'LUNA', 'ESTRELLA', 'OLIVARES', 'SALCEDO',
+    'MORENO', 'LOZANO', 'SERRANO', 'ROSALES', 'MOLINA',
+    'FUENTES', 'VILLAR', 'CARPIO', 'OCAMPO', 'PERALTA',
+
+    // Names with Ñ
+    'MUÑOZ', 'MUÑIZ', 'PEÑA', 'PEÑALOSA', 'IBAÑEZ', 'NUÑEZ',
+    'NUÑEZ', 'ORDOÑEZ', 'ESPAÑA', 'MONTAÑO', 'CORUÑA',
+
+    // Chinese-Filipino surnames
+    'TAN', 'LIM', 'ONG', 'GO', 'SY', 'CHUA', 'NGO', 'YU',
+    'LEE', 'WONG', 'CHAN', 'CO', 'UY', 'YAP', 'TIU', 'ANG',
+    'CHU', 'LAO', 'TEE', 'DY', 'SO', 'KO', 'LI', 'LU',
+
+    // Other common surnames
+    'BAUTISTA', 'SANTOS', 'ROXAS', 'LEGASPI', 'RAMOS',
+    'SILVA', 'SANCHEZ', 'VARGAS', 'ORTEGA', 'DAVID',
+    'RAMIREZ', 'SUAREZ', 'CABRERA', 'GALVEZ', 'CORTEZ',
   };
 
   static final Set<String> _commonFirstNames = {
-    'MARIA',
-    'JOSE',
-    'JUAN',
-    'PEDRO',
-    'ANTONIO',
-    'ANA',
-    'ROSA',
-    'CARMEN',
-    'TERESA',
-    'FRANCISCO',
-    'MANUEL',
-    'CARLOS',
-    'MIGUEL',
+    // Female names
+    'MARIA', 'ANA', 'ROSA', 'CARMEN', 'TERESA', 'JOSEFA',
+    'LUZ', 'LOURDES', 'ESPERANZA', 'GLORIA', 'CORAZON',
+    'CONCEPCION', 'REMEDIOS', 'PILAR', 'ROSARIO', 'MILAGROS',
+    'VICTORIA', 'ANGELINA', 'DOLORES', 'FELICIDAD', 'TRINIDAD',
+    'LEONORA', 'CRISTINA', 'LETICIA', 'ESTRELLA', 'PATRICIA',
+    'MARGARITA', 'LEONILA', 'PERLA', 'ERLINDA', 'NATIVIDAD',
+    'ELENA', 'FLORENCIA', 'MERCEDES', 'BEATRIZ', 'LUISA',
+    'CLARA', 'JULIA', 'ISABEL', 'LEONOR', 'EMILIA',
+    'JUANA', 'SOLEDAD', 'ASUNCION', 'CATALINA', 'FRANCISCA',
+    'FELIPA', 'AGUSTINA', 'PURIFICACION', 'ENCARNACION',
+    'ROCIO', 'VIRGINIA', 'NORMA', 'DELIA', 'LYDIA',
+    'RAMONA', 'AURELIA', 'JOSEFINA', 'OFELIA', 'ADELAIDA',
+    'TERESITA', 'ROSALINDA', 'IMELDA', 'CARMELITA', 'RUFINA',
+
+    // Male names
+    'JUAN', 'JOSE', 'PEDRO', 'ANTONIO', 'FRANCISCO',
+    'MANUEL', 'CARLOS', 'MIGUEL', 'RICARDO', 'ROBERTO',
+    'EDUARDO', 'FERNANDO', 'RAMON', 'ALFREDO', 'LEONARDO',
+    'HERNANDO', 'RODRIGO', 'VICENTE', 'DOMINGO', 'SALVADOR',
+    'ANGEL', 'MARIANO', 'ARTURO', 'ERNESTO', 'ROMEO',
+    'BENJAMIN', 'RENATO', 'REYNALDO', 'SERGIO', 'VIRGILIO',
+    'ALBERTO', 'ENRIQUE', 'FEDERICO', 'LUIS', 'MARTIN',
+    'RAFAEL', 'SANTIAGO', 'TOMAS', 'ANDRES', 'ESTEBAN',
+    'EMILIO', 'DANIEL', 'PABLO', 'LORENZO', 'VICTOR',
+    'FELIPE', 'ARMANDO', 'ROLANDO', 'GERARDO', 'EUGENIO',
+    'LEANDRO', 'DIONISIO', 'ROGELIO', 'GREGORIO', 'MARCELINO',
+  };
+
+  // Name suffixes and titles
+  static final Set<String> _nameSuffixes = {
+    'JR',
+    'SR',
+    'II',
+    'III',
+    'IV',
+    'V',
+    'JR.',
+    'SR.',
+    'JUNIOR',
+    'SENIOR',
+  };
+
+  // Compound surname prefixes
+  static final Set<String> _compoundPrefixes = {
+    'DE',
+    'DEL',
+    'DELA',
+    'DELOS',
+    'SAN',
+    'SANTA',
   };
 
   // ===========================================================================
@@ -152,9 +193,27 @@ class LayoutBasedFieldExtractor {
     required RecognizedText recognizedText,
     required int imageWidth,
     required int imageHeight,
+    String? imagePath, // Optional: for zone-optimized OCR
   }) async {
     debugPrint('🗺️  Starting LAYOUT-BASED extraction...');
     debugPrint('📐 Image dimensions: ${imageWidth}x$imageHeight');
+
+    // Step 0: Try zone-optimized OCR if image path is provided (QUICK WIN #3)
+    Map<String, String>? zoneResults;
+    if (imagePath != null) {
+      try {
+        debugPrint('🎯 Attempting zone-optimized OCR...');
+        zoneResults = await ZoneOptimizedOCR.extractAllZones(
+          imagePath: imagePath,
+          imageWidth: imageWidth,
+          imageHeight: imageHeight,
+        );
+        debugPrint('✅ Zone-optimized OCR completed');
+      } catch (e) {
+        debugPrint('⚠️  Zone-optimized OCR failed: $e');
+        debugPrint('   Falling back to ML Kit extraction...');
+      }
+    }
 
     // Step 1: Validate template
     final templateResult = _validateTemplate(
@@ -171,95 +230,173 @@ class LayoutBasedFieldExtractor {
     debugPrint('   Keywords found: $keywordsFound/${HEADER_KEYWORDS.length}');
 
     // Step 2: Extract fields from zones
-    final fullName = _extractFromZone(
-      recognizedText,
-      imageWidth,
-      imageHeight,
-      NAME_TOP,
-      NAME_BOTTOM,
-      NAME_LEFT,
-      NAME_RIGHT,
-      'NAME',
-    );
+    final fullName = zoneResults != null && zoneResults['name']!.isNotEmpty
+        ? {'text': zoneResults['name']!, 'confidence': 0.95}
+        : _extractFromZone(
+            recognizedText,
+            imageWidth,
+            imageHeight,
+            NAME_TOP,
+            NAME_BOTTOM,
+            NAME_LEFT,
+            NAME_RIGHT,
+            'NAME',
+          );
 
-    final dateOfBirth = _extractFromZone(
-      recognizedText,
-      imageWidth,
-      imageHeight,
-      THREE_COL_TOP,
-      THREE_COL_BOTTOM,
-      COL_LEFT_START,
-      COL_LEFT_END,
-      'DOB',
-    );
+    final dateOfBirth = zoneResults != null && zoneResults['dob']!.isNotEmpty
+        ? {'text': zoneResults['dob']!, 'confidence': 0.95}
+        : _extractFromZone(
+            recognizedText,
+            imageWidth,
+            imageHeight,
+            THREE_COL_TOP,
+            THREE_COL_BOTTOM,
+            COL_LEFT_START,
+            COL_LEFT_END,
+            'DOB',
+          );
 
-    final sex = _extractFromZone(
-      recognizedText,
-      imageWidth,
-      imageHeight,
-      THREE_COL_TOP,
-      THREE_COL_BOTTOM,
-      COL_MID_START,
-      COL_MID_END,
-      'SEX',
-    );
+    final sex = zoneResults != null && zoneResults['sex']!.isNotEmpty
+        ? {'text': zoneResults['sex']!, 'confidence': 0.98}
+        : _extractFromZone(
+            recognizedText,
+            imageWidth,
+            imageHeight,
+            THREE_COL_TOP,
+            THREE_COL_BOTTOM,
+            COL_MID_START,
+            COL_MID_END,
+            'SEX',
+          );
 
-    final dateIssued = _extractFromZone(
-      recognizedText,
-      imageWidth,
-      imageHeight,
-      THREE_COL_TOP,
-      THREE_COL_BOTTOM,
-      COL_RIGHT_START,
-      COL_RIGHT_END,
-      'DATE_ISSUED',
-    );
+    final dateIssued =
+        zoneResults != null && zoneResults['dateIssued']!.isNotEmpty
+            ? {'text': zoneResults['dateIssued']!, 'confidence': 0.95}
+            : _extractFromZone(
+                recognizedText,
+                imageWidth,
+                imageHeight,
+                THREE_COL_TOP,
+                THREE_COL_BOTTOM,
+                COL_RIGHT_START,
+                COL_RIGHT_END,
+                'DATE_ISSUED',
+              );
 
-    final controlNo = _extractFromZone(
-      recognizedText,
-      imageWidth,
-      imageHeight,
-      CTRL_TOP,
-      CTRL_BOTTOM,
-      CTRL_LEFT,
-      CTRL_RIGHT,
-      'CONTROL_NO',
-    );
+    final controlNo =
+        zoneResults != null && zoneResults['controlNo']!.isNotEmpty
+            ? {'text': zoneResults['controlNo']!, 'confidence': 0.96}
+            : _extractFromZone(
+                recognizedText,
+                imageWidth,
+                imageHeight,
+                CTRL_TOP,
+                CTRL_BOTTOM,
+                CTRL_LEFT,
+                CTRL_RIGHT,
+                'CONTROL_NO',
+              );
 
-    // Step 3: Parse and validate each field
-    final parsedName = _parseName(fullName['text']);
+    // Step 3: Parse other fields (NOT name yet)
     final parsedDOB = _parseDateOfBirth(dateOfBirth['text']);
     final parsedSex = _parseSex(sex['text']);
     final parsedDateIssued = _parseDateIssued(dateIssued['text']);
     final parsedControlNo = _parseControlNumber(controlNo['text']);
 
-    // Step 3.5: KEYWORD-BASED FALLBACK for low confidence fields
-    // If layout extraction has low confidence, try keyword-based extraction from full text
+    // Step 3.5: NAME EXTRACTION - KEYWORD FIRST, ZONE AS FALLBACK
+    // This is the most critical field, so we prioritize keyword extraction
     String fullText = recognizedText.text;
 
-    Map<String, dynamic> finalName = parsedName;
+    // ALWAYS try keyword-based name extraction FIRST
+    debugPrint('🔍 NAME EXTRACTION: Trying keyword-based first...');
+    final keywordName = _extractNameByKeyword(fullText);
+
+    // Parse zone-based name as fallback
+    final parsedZoneName = _parseName(fullName['text']);
+
+    Map<String, dynamic> finalName;
     Map<String, dynamic> finalSex = parsedSex;
 
-    // If name confidence is low or contains numbers, try keyword extraction
-    if (parsedName['confidence'] < 0.80 ||
-        (parsedName['value'] as String).contains(RegExp(r'\\d'))) {
-      debugPrint('⚠️  Name confidence low, trying keyword-based extraction...');
-      final keywordName = _extractNameByKeyword(fullText);
-      if (keywordName['confidence'] > parsedName['confidence']) {
-        debugPrint(
-            '   ✅ Using keyword-based name (${(keywordName['confidence'] * 100).toInt()}% > ${(parsedName['confidence'] * 100).toInt()}%)');
-        finalName = keywordName;
-      }
+    // Decide which name to use - PREFER KEYWORD over zone
+    final keywordNameValue = keywordName['value'] as String;
+    final keywordNameConfidence = keywordName['confidence'] as double;
+    final zoneNameValue = parsedZoneName['value'] as String;
+    final zoneNameConfidence = parsedZoneName['confidence'] as double;
+
+    debugPrint(
+        '   Keyword: "${keywordNameValue}" (${(keywordNameConfidence * 100).toInt()}%)');
+    debugPrint(
+        '   Zone: "${zoneNameValue}" (${(zoneNameConfidence * 100).toInt()}%)');
+
+    // PREFER KEYWORD if it found anything valid
+    if (keywordNameValue.isNotEmpty && keywordNameConfidence > 0.70) {
+      finalName = keywordName;
+      debugPrint(
+          '   ✅ Using KEYWORD name: "$keywordNameValue" (${(keywordNameConfidence * 100).toInt()}%)');
+    }
+    // Use zone ONLY if keyword failed AND zone looks valid
+    else if (zoneNameValue.isNotEmpty &&
+        !zoneNameValue.contains(RegExp(r'\d')) &&
+        zoneNameValue.split(' ').length >= 2 &&
+        !_isInvalidName(zoneNameValue)) {
+      finalName = parsedZoneName;
+      debugPrint(
+          '   ⚠️  Keyword failed, using ZONE name: "$zoneNameValue" (${(zoneNameConfidence * 100).toInt()}%)');
+    }
+    // Last resort: take whichever has better confidence
+    else if (keywordNameValue.isNotEmpty || zoneNameValue.isNotEmpty) {
+      finalName = keywordNameConfidence > zoneNameConfidence
+          ? keywordName
+          : parsedZoneName;
+      debugPrint(
+          '   ⚠️  Using best available: "${finalName['value']}" (${((finalName['confidence'] as double) * 100).toInt()}%)');
+    }
+    // Absolute failure
+    else {
+      finalName = {'value': '', 'confidence': 0.0};
+      debugPrint('   ❌ NAME EXTRACTION FAILED - no valid name found');
     }
 
-    // If sex confidence is low, try keyword extraction
-    if (parsedSex['confidence'] < 0.80) {
-      debugPrint('⚠️  Sex confidence low, trying keyword-based extraction...');
+    // Sex extraction - FLEXIBLE approach
+    // Priority: 1) OCR result  2) Keyword extraction  3) Name-based hint (last resort)
+    final extractedName = (finalName['value'] as String).toUpperCase();
+    final sexConfidence = parsedSex['confidence'] as double;
+    final sexValue = parsedSex['value'] as String;
+
+    debugPrint(
+        '🔍 Sex extraction: OCR="${sexValue}" (${(sexConfidence * 100).toInt()}%)');
+
+    // If OCR got a valid result (M or F), USE IT - don't override
+    if (sexValue == 'M' || sexValue == 'F') {
+      debugPrint('   ✅ Using OCR sex: $sexValue');
+      finalSex = parsedSex;
+    }
+    // If OCR failed, try keyword extraction from full text
+    else {
+      debugPrint('   ⚠️ OCR sex empty, trying keyword extraction...');
       final keywordSex = _extractSexByKeyword(fullText);
-      if (keywordSex['confidence'] > parsedSex['confidence']) {
-        debugPrint(
-            '   ✅ Using keyword-based sex (${(keywordSex['confidence'] * 100).toInt()}% > ${(parsedSex['confidence'] * 100).toInt()}%)');
+
+      if ((keywordSex['value'] as String) == 'M' ||
+          (keywordSex['value'] as String) == 'F') {
+        debugPrint('   ✅ Using keyword-based sex: ${keywordSex['value']}');
         finalSex = keywordSex;
+      }
+      // Last resort: use name-based inference as a HINT only
+      else {
+        debugPrint(
+            '   ⚠️ Keyword extraction failed, trying name-based hint...');
+        final nameBasedGender = _inferGenderFromName(extractedName);
+
+        if ((nameBasedGender['value'] as String) == 'M' ||
+            (nameBasedGender['value'] as String) == 'F') {
+          debugPrint(
+              '   ✅ Using name-based hint: ${nameBasedGender['value']} (${((nameBasedGender['confidence'] as double) * 100).toInt()}%)');
+          finalSex = nameBasedGender;
+        } else {
+          // Couldn't determine - leave empty, don't guess
+          debugPrint('   ❌ Could not determine sex');
+          finalSex = {'value': '', 'confidence': 0.0};
+        }
       }
     }
 
@@ -296,6 +433,12 @@ class LayoutBasedFieldExtractor {
     if (templateMatched) {
       overallConfidence = (overallConfidence + 0.05).clamp(0.0, 1.0);
       debugPrint('✨ Confidence boost +5% for template match');
+    }
+
+    // Additional boost if using zone-optimized OCR
+    if (zoneResults != null) {
+      overallConfidence = (overallConfidence + 0.03).clamp(0.0, 1.0);
+      debugPrint('✨ Confidence boost +3% for zone-optimized OCR');
     }
 
     debugPrint('📊 Overall confidence: ${(overallConfidence * 100).toInt()}%');
@@ -416,75 +559,157 @@ class LayoutBasedFieldExtractor {
   // FIELD PARSING & VALIDATION
   // ===========================================================================
 
-  /// Parse and validate full name
+  /// Parse and validate full name with enhanced accuracy
   static Map<String, dynamic> _parseName(String rawText) {
     if (rawText.isEmpty) {
       return {'value': '', 'confidence': 0.0};
     }
 
-    // Remove common labels
-    String cleaned = rawText
-        .toUpperCase()
-        .replaceAll(RegExp(r'\bNAME\s*:?\s*'), '')
-        .replaceAll(RegExp(r'\bNAMBRE\s*:?\s*'), '')
+    debugPrint('🔍 Parsing name from: "$rawText"');
+
+    // Step 1: OCR error correction for common name mistakes
+    String cleaned = rawText;
+    cleaned = _correctNameOCRErrors(cleaned);
+
+    // Step 2: Convert to uppercase but preserve Ñ
+    cleaned = cleaned.toUpperCase();
+
+    // Step 3: Remove common labels
+    cleaned = cleaned
+        .replaceAll(
+            RegExp(r'\b(NAME|NOMBRE|PANGALAN)\s*:?\s*', caseSensitive: false),
+            '')
         .trim();
 
-    // AGGRESSIVE ADDRESS REMOVAL
+    // Step 4: AGGRESSIVE ADDRESS REMOVAL
     // Remove everything after address keywords
-    cleaned = cleaned.split(RegExp(r'\b(?:ADDRES|DIREC|ADDRESS)')).first.trim();
+    cleaned = cleaned
+        .split(RegExp(r'\b(?:ADDRES|DIREC|ADDRESS|TIRAHAN)'))
+        .first
+        .trim();
 
-    // Remove any line with numbers (likely address like "3776 DE REGIA")
+    // Step 5: Remove lines with house numbers (likely address like "3776 DE REGIA")
     final lines = cleaned.split(RegExp(r'[\n\r]+'));
     final nameLines = lines.where((line) {
       // Keep lines that are mostly letters (names)
-      final letterCount = line.replaceAll(RegExp(r'[^A-Z]'), '').length;
+      final letterCount = line.replaceAll(RegExp(r'[^A-ZÑÁÉÍÓÚ]'), '').length;
       final digitCount = line.replaceAll(RegExp(r'[^0-9]'), '').length;
+
+      // Reject if starts with number (house number)
+      if (RegExp(r'^\d').hasMatch(line.trim())) return false;
+
       return digitCount == 0 || letterCount > digitCount * 3;
     }).toList();
     cleaned = nameLines.join(' ').trim();
 
-    // Remove any numbers at all from name
-    cleaned = cleaned.replaceAll(RegExp(r'\d+'), '').trim();
+    // Step 6: Remove standalone numbers but keep compound surnames
+    cleaned = cleaned.replaceAll(RegExp(r'\b\d+\b'), '').trim();
 
-    // Remove common address words
+    // Step 7: Remove address-related words
     cleaned = cleaned
         .replaceAll(
             RegExp(
-                r'\b(ST|STREET|AVE|AVENUE|ROAD|RD|COMP|COMPD|COMPOUND|BRGY|BARANGAY)\b'),
+                r'\b(ST|STREET|AVE|AVENUE|ROAD|RD|COMP|COMPD|COMPOUND|BRGY|BARANGAY|BLOCK|LOT|PHASE|PH)\b'),
             '')
         .trim();
 
-    // Clean up multiple spaces
-    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+    // Step 8: Remove common noise patterns
+    cleaned = cleaned.replaceAll(
+        RegExp(r'\s+[-:]+\s+'), ' '); // Remove random dashes/colons
+    cleaned =
+        cleaned.replaceAll(RegExp(r'[_|]'), ' '); // Replace underscores/pipes
+    cleaned =
+        cleaned.replaceAll(RegExp(r'\s+'), ' ').trim(); // Normalize spaces
 
     if (cleaned.isEmpty) {
+      debugPrint('   ❌ Name empty after cleaning');
       return {'value': '', 'confidence': 0.0};
     }
 
-    // Validate: should have at least 2 words (first + last name)
+    // Step 9: Handle compound surnames (DELA CRUZ, DELOS SANTOS, etc.)
+    cleaned = _normalizeCompoundSurnames(cleaned);
+
+    // Step 10: Validate name structure
     final words = cleaned.split(RegExp(r'\s+'));
-    if (words.length < 2) {
+
+    // Remove suffixes for validation
+    final wordsWithoutSuffix =
+        words.where((w) => !_nameSuffixes.contains(w)).toList();
+
+    if (wordsWithoutSuffix.length < 2) {
+      debugPrint(
+          '   ⚠️  Only ${wordsWithoutSuffix.length} name part(s), low confidence');
       return {'value': cleaned, 'confidence': 0.5};
     }
 
-    // Fuzzy match against common names for confidence boost
-    double confidence = 0.85; // Base confidence for zone-based extraction
+    debugPrint('   Name parts: ${wordsWithoutSuffix.join(" ")}');
 
-    // Check if contains common Filipino name
-    for (final name in words) {
-      if (_commonLastNames.contains(name) || _commonFirstNames.contains(name)) {
-        confidence = 0.95;
+    // Step 11: Multi-layer confidence scoring
+    double confidence = 0.80; // Base confidence
+    int validationPoints = 0;
+
+    // Validation 1: Check against common Filipino names (exact match)
+    bool hasCommonName = false;
+    for (final word in wordsWithoutSuffix) {
+      if (_commonLastNames.contains(word) || _commonFirstNames.contains(word)) {
+        hasCommonName = true;
+        validationPoints += 2;
+        debugPrint('   ✓ Common name found: $word (+2 points)');
         break;
       }
+    }
 
-      // Check fuzzy match
-      for (final commonName in _commonLastNames) {
-        if (ratio(name, commonName) > 85) {
-          confidence = 0.92;
-          break;
+    // Validation 2: Fuzzy match against common names
+    if (!hasCommonName) {
+      for (final word in wordsWithoutSuffix) {
+        for (final commonName in _commonLastNames) {
+          if (ratio(word, commonName) > 85) {
+            validationPoints += 1;
+            debugPrint('   ✓ Fuzzy match: $word ≈ $commonName (+1 point)');
+            break;
+          }
         }
       }
     }
+
+    // Validation 3: Name length reasonable (2-4 words is typical)
+    if (wordsWithoutSuffix.length >= 2 && wordsWithoutSuffix.length <= 4) {
+      validationPoints += 1;
+      debugPrint(
+          '   ✓ Name length OK (${wordsWithoutSuffix.length} parts) (+1 point)');
+    }
+
+    // Validation 4: Each part has reasonable length (2-15 chars)
+    bool allWordsValid = true;
+    for (final word in wordsWithoutSuffix) {
+      if (word.length < 2 || word.length > 15) {
+        allWordsValid = false;
+        break;
+      }
+    }
+    if (allWordsValid) {
+      validationPoints += 1;
+      debugPrint('   ✓ All parts valid length (+1 point)');
+    }
+
+    // Validation 5: Contains proper name pattern (capitals and letters)
+    if (RegExp(r'^[A-ZÑÁÉÍÓÚ][A-ZÑÁÉÍÓÚ\s.]+$').hasMatch(cleaned)) {
+      validationPoints += 1;
+      debugPrint('   ✓ Proper name format (+1 point)');
+    }
+
+    // Validation 6: No suspicious patterns
+    if (!cleaned.contains(RegExp(r'[0-9@#$%^&*()+=\[\]{}\\|<>?]'))) {
+      validationPoints += 1;
+      debugPrint('   ✓ No suspicious characters (+1 point)');
+    }
+
+    // Calculate final confidence based on validation points
+    // Max points: 7, distribute across confidence range 0.80-0.98
+    confidence = (0.80 + (validationPoints * 0.03)).clamp(0.0, 0.98);
+
+    debugPrint(
+        '   📊 Validation: $validationPoints/7 points → ${(confidence * 100).toInt()}% confidence');
 
     return {
       'value': cleaned,
@@ -566,7 +791,7 @@ class LayoutBasedFieldExtractor {
     };
   }
 
-  /// Parse and validate sex
+  /// Parse and validate sex with robust OCR error handling
   static Map<String, dynamic> _parseSex(String rawText) {
     if (rawText.isEmpty) {
       return {'value': '', 'confidence': 0.0};
@@ -574,77 +799,83 @@ class LayoutBasedFieldExtractor {
 
     debugPrint('🔍 Parsing sex from raw text: "$rawText"');
 
-    // Remove labels
+    // Remove labels and clean
     String cleaned = rawText
         .toUpperCase()
         .replaceAll(RegExp(r'\bSEX\s*:?\s*'), '')
         .replaceAll(RegExp(r'\bGENDER\s*:?\s*'), '')
         .replaceAll(RegExp(r'\bKASARIAN\s*:?\s*'), '')
+        .replaceAll(RegExp(r'[^A-Z]'), '') // Remove non-letters
         .trim();
 
     debugPrint('   After cleaning: "$cleaned"');
 
-    // Extract first character
+    // If empty after cleaning, return empty
     if (cleaned.isEmpty) {
       return {'value': '', 'confidence': 0.0};
     }
 
-    // Check full string first for clear matches
-    if (cleaned == 'F' || cleaned.startsWith('F ')) {
+    // Strategy 1: Exact match (highest confidence)
+    if (cleaned == 'F') {
       debugPrint('   ✅ Detected: F (exact match)');
       return {'value': 'F', 'confidence': 0.98};
-    } else if (cleaned.contains('FEMALE') || cleaned.contains('BABAE')) {
+    }
+    if (cleaned == 'M') {
+      debugPrint('   ✅ Detected: M (exact match)');
+      return {'value': 'M', 'confidence': 0.98};
+    }
+
+    // Strategy 2: Word match
+    if (cleaned.contains('FEMALE') || cleaned.contains('BABAE')) {
       debugPrint('   ✅ Detected: F (word match)');
       return {'value': 'F', 'confidence': 0.95};
     }
+    if (cleaned.contains('MALE') || cleaned.contains('LALAKI')) {
+      // Make sure it's not "FEMALE"
+      if (!cleaned.contains('FEMALE')) {
+        debugPrint('   ✅ Detected: M (word match)');
+        return {'value': 'M', 'confidence': 0.95};
+      }
+    }
 
+    // Strategy 3: First character with OCR error correction
     final firstChar = cleaned[0];
     debugPrint('   First character: "$firstChar"');
 
-    // Map to M/F
-    if (firstChar == 'F') {
-      debugPrint('   ✅ Detected: F');
-      return {'value': 'F', 'confidence': 0.98};
-    } else if (firstChar == 'M' || firstChar == 'N' || firstChar == 'W') {
-      // N often OCR'd from M, W can be misread M
-      debugPrint('   ✅ Detected: M (from $firstChar)');
-      return {'value': 'M', 'confidence': 0.98};
-    } else if (cleaned.contains('MALE') || cleaned.contains('LALAKI')) {
-      debugPrint('   ✅ Detected: M (word match)');
-      return {'value': 'M', 'confidence': 0.95};
+    // Common OCR errors for F: E, P, R, 7
+    // Common OCR errors for M: N, W, H, 11, rn
+    if (firstChar == 'F' ||
+        firstChar == 'E' ||
+        firstChar == 'P' ||
+        firstChar == 'R') {
+      final conf = firstChar == 'F' ? 0.95 : 0.85;
+      debugPrint(
+          '   ✅ Detected: F (from "$firstChar", confidence: ${(conf * 100).toInt()}%)');
+      return {'value': 'F', 'confidence': conf};
+    }
+    if (firstChar == 'M' ||
+        firstChar == 'N' ||
+        firstChar == 'W' ||
+        firstChar == 'H') {
+      final conf = firstChar == 'M' ? 0.95 : 0.85;
+      debugPrint(
+          '   ✅ Detected: M (from "$firstChar", confidence: ${(conf * 100).toInt()}%)');
+      return {'value': 'M', 'confidence': conf};
     }
 
-    // If unclear, check for common OCR errors for F
-    if (firstChar == 'E' || firstChar == 'P') {
-      debugPrint('   ⚠️  Detected: F (OCR error correction from $firstChar)');
-      return {'value': 'F', 'confidence': 0.85};
+    // Strategy 4: Check if string contains M or F anywhere
+    if (cleaned.contains('F') && !cleaned.contains('M')) {
+      debugPrint('   ⚠️ Detected: F (found in string)');
+      return {'value': 'F', 'confidence': 0.80};
+    }
+    if (cleaned.contains('M') && !cleaned.contains('F')) {
+      debugPrint('   ⚠️ Detected: M (found in string)');
+      return {'value': 'M', 'confidence': 0.80};
     }
 
-    // FALLBACK: Check the entire raw text for gender clues
-    final fullTextUpper = rawText.toUpperCase();
-
-    // Check if name appears in the text (names can indicate gender)
-    if (fullTextUpper.contains('MARIA') ||
-        fullTextUpper.contains('ROSA') ||
-        fullTextUpper.contains('ANA') ||
-        fullTextUpper.contains('ELENA')) {
-      debugPrint('   ⚠️  Detected: F (from female name in text)');
-      return {'value': 'F', 'confidence': 0.75};
-    }
-
-    if (fullTextUpper.contains('JUAN') ||
-        fullTextUpper.contains('JOSE') ||
-        fullTextUpper.contains('PEDRO') ||
-        fullTextUpper.contains('CARLOS')) {
-      debugPrint('   ⚠️  Detected: M (from male name in text)');
-      return {'value': 'M', 'confidence': 0.75};
-    }
-
-    // FORCE TO M OR F ONLY - Never return random characters!
-    // Default to M if completely unclear (slightly more common)
-    debugPrint(
-        '   ⚠️  Unknown character "$firstChar" - defaulting to M with low confidence');
-    return {'value': 'M', 'confidence': 0.50};
+    // If we got here, return empty - let name-based inference handle it
+    debugPrint('   ⚠️ Could not determine sex from "$cleaned"');
+    return {'value': '', 'confidence': 0.0};
   }
 
   /// Parse and validate date issued
@@ -785,56 +1016,491 @@ class LayoutBasedFieldExtractor {
   }
 
   // ===========================================================================
+  // NAME-SPECIFIC HELPERS
+  // ===========================================================================
+
+  /// Correct common OCR errors in names
+  static String _correctNameOCRErrors(String text) {
+    String corrected = text;
+
+    // Common OCR confusions in names:
+    // - 0 (zero) → O (letter)
+    // - 1 (one) → I (letter) or L
+    // - 8 → B
+    // - 5 → S
+    // - Ñ might be read as N~, N- or just N
+
+    // Fix Ñ representations
+    corrected = corrected.replaceAll(RegExp(r'N~'), 'Ñ');
+    corrected = corrected.replaceAll(RegExp(r'N-'), 'Ñ');
+    corrected = corrected.replaceAll(RegExp(r'N`'), 'Ñ');
+
+    // Fix common letter confusions in known name contexts
+    // Example: MUN0Z → MUÑOZ, PENA → PEÑA
+    final namePatterns = [
+      [RegExp(r'MUN[0O]Z', caseSensitive: false), 'MUÑOZ'],
+      [RegExp(r'PE[NÑ][AO]', caseSensitive: false), 'PEÑA'],
+      [RegExp(r'IBANEZ', caseSensitive: false), 'IBAÑEZ'],
+      [RegExp(r'NUNEZ', caseSensitive: false), 'NUÑEZ'],
+      [RegExp(r'0RD0NEZ', caseSensitive: false), 'ORDOÑEZ'],
+      [RegExp(r'DEL[A4]', caseSensitive: false), 'DELA'],
+      [RegExp(r'DEL[0O]S', caseSensitive: false), 'DELOS'],
+    ];
+
+    for (final pattern in namePatterns) {
+      corrected = corrected.replaceAllMapped(
+          pattern[0] as RegExp, (match) => pattern[1] as String);
+    }
+
+    return corrected;
+  }
+
+  /// Normalize compound surnames (ensure proper spacing)
+  static String _normalizeCompoundSurnames(String name) {
+    String normalized = name;
+
+    // Common compounds: DELA CRUZ, DELOS REYES, SAN JOSE, etc.
+    final compounds = [
+      ['DELA', 'CRUZ'],
+      ['DELOS', 'REYES'],
+      ['DELOS', 'SANTOS'],
+      ['DE', 'LA', 'CRUZ'],
+      ['DE', 'LOS', 'REYES'],
+      ['DE', 'LOS', 'SANTOS'],
+      ['DEL', 'ROSARIO'],
+      ['DE', 'LEON'],
+      ['DE', 'GUZMAN'],
+      ['DE', 'JESUS'],
+      ['SAN', 'JOSE'],
+      ['SAN', 'JUAN'],
+      ['SANTA', 'CRUZ'],
+      ['SANTA', 'MARIA'],
+    ];
+
+    // Check if name contains compound parts and ensure they're together
+    final words = normalized.split(RegExp(r'\s+'));
+    for (final compound in compounds) {
+      bool hasAllParts = compound.every((part) => words.contains(part));
+      if (hasAllParts) {
+        // Reconstruct with compound kept together
+        final compoundStr = compound.join(' ');
+        for (final part in compound) {
+          normalized = normalized.replaceAll(RegExp(r'\b' + part + r'\b'), '');
+        }
+        normalized = '$compoundStr $normalized'.trim();
+        normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
+        break;
+      }
+    }
+
+    return normalized;
+  }
+
+  // ===========================================================================
+  // GENDER INFERENCE FROM NAME (FLEXIBLE - Just a hint, not restrictive)
+  // ===========================================================================
+
+  /// Infer gender from name - FLEXIBLE approach
+  /// This only provides a HINT when OCR fails, does NOT override or restrict
+  static Map<String, dynamic> _inferGenderFromName(String name) {
+    if (name.isEmpty) {
+      return {'value': '', 'confidence': 0.0};
+    }
+
+    final nameUpper = name.toUpperCase();
+    final words = nameUpper.split(RegExp(r'\s+'));
+
+    // Get the FIRST NAME (skip middle initials and surname prefixes)
+    String firstName = '';
+    for (final word in words) {
+      if (word.length <= 2) continue;
+      if (['DELA', 'DELOS', 'DEL', 'SAN', 'SANTA', 'DE', 'LOS', 'LA']
+          .contains(word)) continue;
+      firstName = word;
+      break;
+    }
+
+    if (firstName.isEmpty) {
+      return {'value': '', 'confidence': 0.0};
+    }
+
+    debugPrint('   Analyzing first name: "$firstName"');
+
+    // Simple hint based on first name ending
+    // Filipino convention: names ending in 'A' are typically female, 'O' typically male
+    // This is just a HINT - not definitive
+
+    final lastChar =
+        firstName.isNotEmpty ? firstName[firstName.length - 1] : '';
+
+    if (lastChar == 'A' && firstName.length >= 3) {
+      debugPrint('   💡 Name hint: ends in "A" → suggests Female');
+      return {'value': 'F', 'confidence': 0.80};
+    }
+
+    if (lastChar == 'O' && firstName.length >= 3) {
+      debugPrint('   💡 Name hint: ends in "O" → suggests Male');
+      return {'value': 'M', 'confidence': 0.80};
+    }
+
+    // Can't determine - return empty (don't guess)
+    debugPrint('   💡 Name hint: inconclusive');
+    return {'value': '', 'confidence': 0.0};
+  }
+
+  // ===========================================================================
   // KEYWORD-BASED EXTRACTION (Fallback Layer)
   // ===========================================================================
 
   /// Extract name by finding "Name:" keyword and getting text after it
   static Map<String, dynamic> _extractNameByKeyword(String fullText) {
+    debugPrint('🔍 Keyword name extraction...');
     final lines = fullText.split(RegExp(r'[\n\r]+'));
 
-    for (final line in lines) {
+    // Strategy 1: Look for explicit "Name:" or "Pangalan:" label
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
       final upper = line.toUpperCase();
 
-      // Look for "NAME:" or "NOMBRE:"
-      if (upper.contains(RegExp(r'\bNAME\s*:'))) {
-        // Extract everything after "Name:"
-        final match =
-            RegExp(r'NAME\s*:\s*(.+)', caseSensitive: false).firstMatch(line);
+      // Look for "NAME:" or "PANGALAN:" or "NOMBRE:"
+      if (upper.contains(RegExp(r'\b(NAME|PANGALAN|NOMBRE)\s*:'))) {
+        debugPrint('   Found name label in line: "$line"');
+
+        // Try PREVIOUS line first (for floated text above the label)
+        if (i > 0) {
+          String prevLine = lines[i - 1].trim();
+          debugPrint('   Checking previous line: "$prevLine"');
+
+          if (!_isInvalidName(prevLine) &&
+              prevLine.length >= 5 &&
+              prevLine.split(' ').length >= 2 &&
+              !RegExp(r'\d').hasMatch(prevLine)) {
+            // Clean it
+            prevLine = prevLine.replaceAll(RegExp(r'\s+'), ' ').trim();
+            debugPrint('   ✅ Extracted from PREVIOUS line: "$prevLine"');
+            return {'value': prevLine.toUpperCase(), 'confidence': 0.95};
+          }
+        }
+
+        // Extract everything after the label on same line
+        final match = RegExp(
+          r'(?:NAME|PANGALAN|NOMBRE)\s*:\s*(.+)',
+          caseSensitive: false,
+        ).firstMatch(line);
+
         if (match != null) {
           String name = match.group(1)!.trim();
+
+          // REJECT if it's clearly not a name
+          if (_isInvalidName(name)) {
+            debugPrint('   ⚠️  Rejected invalid text: "$name"');
+            // Try next line instead
+            if (i + 1 < lines.length) {
+              name = lines[i + 1].trim();
+            } else {
+              continue;
+            }
+          }
 
           // Clean it using same logic as _parseName
           name = name.split(RegExp(r'\b(?:ADDRES|DIREC|ADDRESS)')).first.trim();
           name = name.replaceAll(RegExp(r'\d+'), '').trim();
           name = name.replaceAll(RegExp(r'\s+'), ' ').trim();
+          name = name
+              .replaceAll(
+                RegExp(
+                    r'\b(ST|STREET|AVE|AVENUE|ROAD|RD|COMP|COMPD|COMPOUND|BRGY|BARANGAY)\b'),
+                '',
+              )
+              .trim();
 
-          if (name.length >= 5 && name.split(' ').length >= 2) {
-            return {'value': name.toUpperCase(), 'confidence': 0.90};
+          // Validate the cleaned name
+          if (!_isInvalidName(name) &&
+              name.length >= 5 &&
+              name.split(' ').length >= 2) {
+            debugPrint('   ✅ Extracted: "$name"');
+            return {'value': name.toUpperCase(), 'confidence': 0.93};
+          }
+        }
+
+        // If same line doesn't have valid name, try next line
+        if (i + 1 < lines.length) {
+          String nextLine = lines[i + 1].trim();
+
+          // Check if next line is valid before cleaning
+          if (_isInvalidName(nextLine)) {
+            debugPrint('   ⚠️  Next line also invalid: "$nextLine"');
+            continue;
+          }
+
+          nextLine = nextLine.replaceAll(RegExp(r'\d+'), '').trim();
+          nextLine = nextLine.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+          if (nextLine.length >= 5 && nextLine.split(' ').length >= 2) {
+            debugPrint('   ✅ Extracted from next line: "$nextLine"');
+            return {'value': nextLine.toUpperCase(), 'confidence': 0.90};
           }
         }
       }
     }
 
+    // Strategy 2: Find FIRST field after header (before any address markers)
+    // This is the most reliable for IDs where name is always first
+    debugPrint('   Strategy 2: Looking for FIRST field after header...');
+
+    bool passedHeader = false;
+    bool foundAddressMarker = false;
+    List<String> candidateLines = [];
+
+    for (final line in lines) {
+      final upper = line.toUpperCase();
+      final trimmed = line.trim();
+
+      // Detect header
+      if (upper.contains('OSCA') ||
+          upper.contains('SENIOR') ||
+          upper.contains('CITIZEN') ||
+          upper.contains('VALENZUELA') ||
+          upper.contains('REPUBLIC')) {
+        passedHeader = true;
+        continue;
+      }
+
+      // STOP IMMEDIATELY at any address-related text
+      if (upper.contains('ADDRESS') ||
+          upper.contains('ADDRES') ||
+          upper.contains('TIRAHAN') ||
+          upper.contains('DIREC') ||
+          RegExp(r'^\d+\s+').hasMatch(trimmed)) {
+        // House number
+        foundAddressMarker = true;
+        debugPrint('   ⚠️  Hit address marker, stopping search');
+        break;
+      }
+
+      // Skip the "Name:" label line itself
+      if (upper.contains(RegExp(r'\b(NAME|PANGALAN|NOMBRE)\s*:\s*$'))) {
+        continue;
+      }
+
+      // After header, before address: collect candidate lines
+      if (passedHeader && !foundAddressMarker) {
+        // Basic validation
+        if (trimmed.isEmpty) continue;
+        if (trimmed.length < 5) continue;
+        if (_isInvalidName(trimmed)) continue;
+
+        // Must be mostly letters
+        final letterCount =
+            trimmed.replaceAll(RegExp(r'[^a-zA-ZñÑ\s]'), '').length;
+        if (letterCount < trimmed.length * 0.7) continue;
+
+        // No numbers allowed in names
+        if (RegExp(r'\d').hasMatch(trimmed)) continue;
+
+        candidateLines.add(trimmed);
+
+        // Take FIRST valid line only
+        if (candidateLines.length == 1) {
+          debugPrint('   Found first field: "$trimmed"');
+          break;
+        }
+      }
+    }
+
+    // Process first candidate
+    if (candidateLines.isNotEmpty) {
+      String candidate = candidateLines.first;
+      final words = candidate.split(RegExp(r'\s+'));
+
+      // Must have at least 2 words and pass basic structure check
+      if (words.length >= 2 && !_isInvalidName(candidate)) {
+        // FLEXIBLE: Accept ANY text that looks structurally like a name
+        // Database is ONLY for confidence boosting, NOT gatekeeping
+        double confidence = 0.85; // Base confidence for valid structure
+
+        // Check against known names for CONFIDENCE BOOST only
+        bool foundInDatabase = false;
+        for (final word in words) {
+          final wordUpper = word.toUpperCase();
+          if (_commonLastNames.contains(wordUpper) ||
+              _commonFirstNames.contains(wordUpper)) {
+            foundInDatabase = true;
+            confidence = 0.92; // Boost if found in database
+            break;
+          }
+        }
+
+        if (foundInDatabase) {
+          debugPrint(
+              '   ✅ Name found (database match): "$candidate" (${(confidence * 100).toInt()}%)');
+        } else {
+          debugPrint(
+              '   ✅ Name accepted (valid structure): "$candidate" (${(confidence * 100).toInt()}%)');
+        }
+
+        return {'value': candidate.toUpperCase(), 'confidence': confidence};
+      }
+    }
+
+    debugPrint('   ❌ No name found via keywords');
     return {'value': '', 'confidence': 0.0};
   }
 
-  /// Extract sex by finding "Sex:" keyword and getting character after it
+  /// Check if text is clearly not a valid name
+  static bool _isInvalidName(String text) {
+    if (text.isEmpty) return true;
+
+    final upper = text.toUpperCase();
+
+    // Reject common non-name phrases
+    final invalidPhrases = [
+      'NO THIS CARD',
+      'THIS CARD IS',
+      'THIS CARD',
+      'VALID',
+      'INVALID',
+      'EXPIRED',
+      'ADDRESS',
+      'ADDRES',
+      'TIRAHAN',
+      'SEX',
+      'AGE',
+      'DATE',
+      'ISSUED',
+      'CONTROL',
+      'NUMBER',
+      'CARD',
+      'ID',
+      'OSCA',
+      'PWD',
+      'PDAO',
+      'GOVERNMENT',
+      'REPUBLIC',
+      'PHILIPPINES',
+      'CITY',
+      'MUNICIPALITY',
+      'OFFICE',
+      'AFFAIRS',
+      'DEPARTMENT',
+      'VALENZUELA',
+      // Common address words that might appear
+      'COMPOUND',
+      'STREET',
+      'AVENUE',
+      'ROAD',
+      'BLOCK',
+      'LOT',
+      'PHASE',
+      'SUBDIVISION',
+      'VILLAGE',
+      'PUROK',
+      'SITIO',
+      'ZONE',
+    ];
+
+    for (final phrase in invalidPhrases) {
+      if (upper.contains(phrase)) {
+        return true;
+      }
+    }
+
+    // Reject if starts with common address markers
+    if (RegExp(r'^\d+\s+').hasMatch(text)) return true; // House number
+    if (upper.startsWith('BLK')) return true;
+    if (upper.startsWith('LOT')) return true;
+    if (upper.startsWith('PHASE')) return true;
+    if (upper.startsWith('PH')) return true;
+
+    // Reject if too many special characters
+    final specialCount = text.replaceAll(RegExp(r'[a-zA-ZñÑ\s]'), '').length;
+    if (specialCount > text.length * 0.3) return true;
+
+    // Reject if it's a single short word (likely a label)
+    final words = text.trim().split(RegExp(r'\s+'));
+    if (words.length == 1 && words[0].length < 4) return true;
+
+    return false;
+  }
+
+  /// Check if all words look like name parts (proper case, reasonable length)
+  static bool _allWordsLookLikeNames(List<String> words) {
+    for (final word in words) {
+      // Skip suffixes
+      if (_nameSuffixes.contains(word.toUpperCase())) continue;
+
+      // Allow middle initials (single letter with optional period)
+      if (RegExp(r'^[A-ZÑ]\.?$').hasMatch(word)) continue;
+
+      // Each word should be 2-15 chars
+      if (word.length < 2 || word.length > 15) return false;
+
+      // Should start with capital (or all caps)
+      if (!RegExp(r'^[A-ZÑ]').hasMatch(word)) return false;
+
+      // Should be mostly letters (allow periods for initials)
+      final letterCount = word.replaceAll(RegExp(r'[^a-zA-ZñÑ\.]'), '').length;
+      if (letterCount < word.length * 0.8) return false;
+    }
+
+    return true;
+  }
+
+  /// Extract sex by finding "Sex:" keyword and getting character nearby
   static Map<String, dynamic> _extractSexByKeyword(String fullText) {
     final upper = fullText.toUpperCase();
+    final lines = fullText.split(RegExp(r'[\n\r]+'));
 
-    // Look for "SEX:" followed by M or F
+    // Strategy 1: Look for "SEX:" followed by M or F on same line
     final sexMatch =
-        RegExp(r'SEX\s*:\s*([MF])', caseSensitive: false).firstMatch(upper);
+        RegExp(r'SEX\s*:?\s*([MF])', caseSensitive: false).firstMatch(upper);
     if (sexMatch != null) {
       final sex = sexMatch.group(1)!.toUpperCase();
+      debugPrint('   Found sex via keyword pattern: $sex');
       return {'value': sex, 'confidence': 0.95};
     }
 
-    // Look for gender keywords
+    // Strategy 2: Find line containing "Sex" and look for M/F on same or adjacent lines
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i].toUpperCase();
+      if (line.contains('SEX')) {
+        // Check this line for standalone M or F
+        final mfMatch = RegExp(r'\b([MF])\b').firstMatch(line);
+        if (mfMatch != null) {
+          final sex = mfMatch.group(1)!;
+          debugPrint('   Found sex on Sex label line: $sex');
+          return {'value': sex, 'confidence': 0.90};
+        }
+
+        // Check previous line (character might be above label)
+        if (i > 0) {
+          final prevLine = lines[i - 1].toUpperCase().trim();
+          if (prevLine == 'M' || prevLine == 'F') {
+            debugPrint('   Found sex on line above Sex label: $prevLine');
+            return {'value': prevLine, 'confidence': 0.88};
+          }
+          // Check if previous line contains standalone M or F
+          final prevMfMatch = RegExp(r'\b([MF])\b').firstMatch(prevLine);
+          if (prevMfMatch != null && prevLine.length < 10) {
+            final sex = prevMfMatch.group(1)!;
+            debugPrint('   Found sex in line above Sex label: $sex');
+            return {'value': sex, 'confidence': 0.85};
+          }
+        }
+      }
+    }
+
+    // Strategy 3: Look for gender keywords anywhere
     if (upper.contains(RegExp(r'\b(FEMALE|BABAE)\b'))) {
+      debugPrint('   Found FEMALE/BABAE keyword');
       return {'value': 'F', 'confidence': 0.85};
     }
-    if (upper.contains(RegExp(r'\b(MALE|LALAKI)\b'))) {
+    if (upper.contains(RegExp(r'\bMALE\b')) && !upper.contains('FEMALE')) {
+      debugPrint('   Found MALE keyword');
+      return {'value': 'M', 'confidence': 0.85};
+    }
+    if (upper.contains(RegExp(r'\bLALAKI\b'))) {
+      debugPrint('   Found LALAKI keyword');
       return {'value': 'M', 'confidence': 0.85};
     }
 

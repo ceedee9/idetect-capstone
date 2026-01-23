@@ -25,11 +25,11 @@ Successfully integrated a production-grade **field-specific extraction system** 
 4. **Per-Field Confidence Scoring**
    - Each extracted field gets its own confidence score (0-100%)
    - Overall confidence is weighted average:
-     * Name: 25% weight (most critical)
-     * DOB: 20% weight
-     * Date Issued: 20% weight
-     * Control Number: 20% weight
-     * Sex: 15% weight
+     - Name: 25% weight (most critical)
+     - DOB: 20% weight
+     - Date Issued: 20% weight
+     - Control Number: 20% weight
+     - Sex: 15% weight
 
 5. **Context-Aware Validation**
    - **DOB**: Validates age is 60-120 years (senior citizen range)
@@ -40,7 +40,7 @@ Successfully integrated a production-grade **field-specific extraction system** 
 
 6. **Visual Confidence Indicators**
    - **Green badge** (90-100%): High confidence - "Excellent/Very Good"
-   - **Orange badge** (70-89%): Medium confidence - "Good"  
+   - **Orange badge** (70-89%): Medium confidence - "Good"
    - **Red badge** (<70%): Low confidence - "Needs Review"
    - Per-field badges show on result screen next to each field
 
@@ -49,6 +49,7 @@ Successfully integrated a production-grade **field-specific extraction system** 
 ## 📁 Files Created/Modified
 
 ### New Files:
+
 1. **lib/services/senior_citizen_field_extractor.dart** (700 lines)
    - Core field extraction logic
    - Filipino name databases
@@ -57,6 +58,7 @@ Successfully integrated a production-grade **field-specific extraction system** 
    - Confidence scoring system
 
 ### Modified Files:
+
 1. **pubspec.yaml**
    - Added `fuzzywuzzy: ^1.1.6` for fuzzy string matching
 
@@ -67,12 +69,12 @@ Successfully integrated a production-grade **field-specific extraction system** 
 
 3. **lib/data/models/id_data.dart** (ParsedIDData class)
    - Added 6 new fields:
-     * `nameConfidence` (double)
-     * `idNumberConfidence` (double)
-     * `ageConfidence` (double)
-     * `sexConfidence` (double)
-     * `dateIssuedConfidence` (double)
-     * `controlNumberConfidence` (double)
+     - `nameConfidence` (double)
+     - `idNumberConfidence` (double)
+     - `ageConfidence` (double)
+     - `sexConfidence` (double)
+     - `dateIssuedConfidence` (double)
+     - `controlNumberConfidence` (double)
 
 4. **lib/presentation/screens/scan/result_screen.dart**
    - Added `_buildFieldConfidenceBadge()` method
@@ -141,6 +143,7 @@ Successfully integrated a production-grade **field-specific extraction system** 
 ### Result Screen Now Shows:
 
 **Before:**
+
 ```
 Full Name: Juan Dela Cruz
 ID Number: 2024-0001
@@ -149,6 +152,7 @@ Sex: M
 ```
 
 **After:**
+
 ```
 Full Name: Juan Dela Cruz                    [92% (High) ✅]
 ID Number: 2024-0001                          [80% (Medium) ⚠️]
@@ -166,21 +170,23 @@ Sex: M                                        [95% (High) ✅]
 
 ### Accuracy Rates by ID Condition:
 
-| Field | Perfect ID | Good ID | Fair ID | Poor ID |
-|-------|-----------|---------|---------|---------|
-| **Full Name** | 95-98% | 90-95% | 75-85% | 50-70% |
-| **Date of Birth** | 95-100% | 90-95% | 80-90% | 60-75% |
-| **Sex** | 98-100% | 95-100% | 90-95% | 70-85% |
-| **Date Issued** | 95-100% | 90-95% | 80-90% | 60-75% |
-| **Control No** | 90-95% | 85-90% | 70-80% | 50-65% |
+| Field             | Perfect ID | Good ID | Fair ID | Poor ID |
+| ----------------- | ---------- | ------- | ------- | ------- |
+| **Full Name**     | 95-98%     | 90-95%  | 75-85%  | 50-70%  |
+| **Date of Birth** | 95-100%    | 90-95%  | 80-90%  | 60-75%  |
+| **Sex**           | 98-100%    | 95-100% | 90-95%  | 70-85%  |
+| **Date Issued**   | 95-100%    | 90-95%  | 80-90%  | 60-75%  |
+| **Control No**    | 90-95%     | 85-90%  | 70-80%  | 50-65%  |
 
 **ID Conditions:**
+
 - **Perfect**: New ID, bright lighting, flat surface
 - **Good**: Normal wear, good lighting
 - **Fair**: Some wear, dim lighting
 - **Poor**: Heavy wear, dark, blurry
 
 ### Processing Time:
+
 - Field extraction: **<1 second** (extremely fast!)
 - Total OCR pipeline: 4-6 seconds (3-5 seconds OCR + <1 second extraction)
 
@@ -201,6 +207,7 @@ OCR Output          → Fuzzy Match       → Extracted
 ### Name Database Coverage:
 
 **Top 20 Most Common Filipino Surnames:**
+
 1. dela Cruz
 2. Santos
 3. Reyes
@@ -229,6 +236,7 @@ OCR Output          → Fuzzy Match       → Extracted
 ## 🎯 Key Advantages Over Previous System
 
 ### Before (Generic Parser):
+
 - ❌ Sequential line-by-line parsing (fragile)
 - ❌ No name validation against Filipino names
 - ❌ Single strategy per field (no fallback)
@@ -237,6 +245,7 @@ OCR Output          → Fuzzy Match       → Extracted
 - ❌ Generic regex patterns (not ID-specific)
 
 ### After (Field Extractor):
+
 - ✅ **Multi-strategy extraction** with automatic fallback
 - ✅ **Filipino-optimized** with 800+ names database
 - ✅ **Fuzzy matching** handles OCR errors gracefully
@@ -252,6 +261,7 @@ OCR Output          → Fuzzy Match       → Extracted
 ### Easy Customizations:
 
 1. **Add More Names**
+
    ```dart
    // In senior_citizen_field_extractor.dart
    static final Set<String> _commonLastNames = {
@@ -261,6 +271,7 @@ OCR Output          → Fuzzy Match       → Extracted
    ```
 
 2. **Adjust Confidence Thresholds**
+
    ```dart
    // Change what's considered "high confidence"
    if (confidence >= 0.85) {  // Was 0.9
@@ -315,18 +326,22 @@ OCR Output          → Fuzzy Match       → Extracted
 ## 🐛 Troubleshooting
 
 ### Issue: Low name confidence
+
 **Cause:** Name not in database or unusual formatting
 **Solution:** Add name to `_commonLastNames` or `_commonFirstNames`
 
 ### Issue: Wrong field extracted
+
 **Cause:** Keywords not found on ID
 **Solution:** Add more keyword variations to extraction methods
 
 ### Issue: Date extracted incorrectly
+
 **Cause:** Multiple dates in OCR text
 **Solution:** Ensure keywords ("DATE OF BIRTH", "DATE ISSUED") are on ID
 
 ### Issue: All confidence scores 0%
+
 **Cause:** Field extractor not being called
 **Solution:** Verify ID type detected as `seniorCitizen` (check console logs)
 
@@ -337,6 +352,7 @@ OCR Output          → Fuzzy Match       → Extracted
 **Status:** ✅ **COMPLETE AND PRODUCTION-READY**
 
 **What's Working:**
+
 - ✅ Field extraction with fuzzy matching
 - ✅ Per-field confidence scoring
 - ✅ Visual confidence indicators in UI
@@ -347,6 +363,7 @@ OCR Output          → Fuzzy Match       → Extracted
 - ✅ No breaking changes to existing code
 
 **Test Results:**
+
 - Zero compilation errors
 - Only style warnings (safe to ignore)
 - All dependencies resolved
