@@ -212,7 +212,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
   /// Retake photo
   void _retake() {
-    Navigator.pop(context);
+    // Pop processing screen to go back to camera
+    Navigator.of(context).pop();
   }
 
   /// Process without quality check when user wants to force it
@@ -293,6 +294,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         builder: (context) => ResultScreen(
           parsedData: updatedData,
           imagePath: widget.imagePath,
+          idType: widget.idType,
         ),
       ),
     );
@@ -868,22 +870,48 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _retake,
-            style: AppDesignSystem.secondaryButton,
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Retake'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: const BorderSide(color: Color(0xFF002E6B), width: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(Icons.camera_alt, color: Color(0xFF002E6B)),
+            label: const Text(
+              'Retake',
+              style: TextStyle(
+                color: Color(0xFF002E6B),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
 
-        SizedBox(width: AppDesignSystem.spaceSM),
+        const SizedBox(width: 16),
 
         // Confirm button
         Expanded(
           flex: 2,
           child: ElevatedButton.icon(
             onPressed: _confirm,
-            style: AppDesignSystem.primaryButton,
-            icon: const Icon(Icons.check_circle),
-            label: const Text('Confirm'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF002E6B),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            label: const Text(
+              'Confirm',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ],

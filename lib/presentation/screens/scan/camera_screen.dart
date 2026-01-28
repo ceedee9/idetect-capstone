@@ -1,18 +1,18 @@
 // =============================================================================
 // FILE: lib/presentation/screens/scan/camera_screen.dart
-// PURPOSE: Native camera capture with quality guidance for ID scanning
-// FEATURES: Native camera, quality preview, auto-crop, real-time feedback
+// PURPOSE: Camera screen with ID card auto-framing and capture
+// FEATURES: Clear UI with visible capture button, ID framing guides
 // =============================================================================
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_design_system.dart';
 import 'processing_screen.dart';
 
-/// Simplified camera screen using native camera app
-/// This provides better performance and quality than custom camera view
+/// Camera screen with clear capture button and ID framing
 class CameraScreen extends StatefulWidget {
   final String idType; // 'senior' or 'pwd'
 
@@ -23,552 +23,480 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  final ImagePicker _imagePicker = ImagePicker();
-  File? _capturedImage;
-  bool _isProcessing = false;
-
-  // Quality assessment results
-  String? _qualityMessage;
-  Color _qualityColor = Colors.grey;
-  double _qualityScore = 0.0;
-  bool _isQualityGood = false;
+  CameraController? _cameraController;
+  List<CameraDescription>? _cameras;
+  bool _isInitialized = false;
+  bool _isCapturing = false;
+  bool _flashEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    // Show guidance immediately, then open camera
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showGuidanceDialog();
-    });
+    _initializeCamera();
   }
 
   @override
   void dispose() {
+    _cameraController?.dispose();
     super.dispose();
   }
 
-  // =============================================================================
-  // GUIDANCE DIALOG
-  // =============================================================================
+  Future<void> _initializeCamera() async {
+    try {
+      _cameras = await availableCameras();
+      if (_cameras == null || _cameras!.isEmpty) {
+        _showError('No cameras available');
+        return;
+      }
 
-  void _showGuidanceDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
+      // Find back camera
+      CameraDescription? backCamera;
+      for (var camera in _cameras!) {
+        if (camera.lensDirection == CameraLensDirection.back) {
+          backCamera = camera;
+          break;
+        }
+      }
+
+      final selectedCamera = backCamera ?? _cameras!.first;
+
+      _cameraController = CameraController(
+        selectedCamera,
+        ResolutionPreset.high,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+
+      await _cameraController!.initialize();
+      await _cameraController!.setFocusMode(FocusMode.auto);
+      await _cameraController!.setExposureMode(ExposureMode.auto);
+
+      if (mounted) {
+        setState(() => _isInitialized = true);
+      }
+    } catch (e) {
+      _showError('Camera initialization failed: $e');
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _toggleFlash() async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return;
+    }
+
+    try {
+      if (_flashEnabled) {
+        await _cameraController!.setFlashMode(FlashMode.off);
+      } else {
+        await _cameraController!.setFlashMode(FlashMode.torch);
+      }
+      setState(() => _flashEnabled = !_flashEnabled);
+    } catch (e) {
+      _showError('Flash toggle failed');
+    }
+  }
+
+  Future<void> _capturePhoto() async {
+    if (_cameraController == null ||
+        !_cameraController!.value.isInitialized ||
+        _isCapturing) {
+      return;
+    }
+
+    try {
+      setState(() => _isCapturing = true);
+
+      if (_flashEnabled) {
+        await _cameraController!.setFlashMode(FlashMode.auto);
+      }
+
+      final XFile photo = await _cameraController!.takePicture();
+      await _processImage(File(photo.path));
+    } catch (e) {
+      _showError('Capture failed: $e');
+      setState(() => _isCapturing = false);
+    }
+  }
+
+  Future<void> _processImage(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      img.Image? image = img.decodeImage(bytes);
+
+      if (image == null) {
+        throw Exception('Failed to process image');
+      }
+
+      // Auto-crop to ID ratio
+      final croppedImage = _autoCropID(image);
+
+      // Save processed image
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final processedPath = '${tempDir.path}/id_${timestamp}_processed.jpg';
+      final processedFile = File(processedPath);
+      await processedFile.writeAsBytes(
+        img.encodeJpg(croppedImage, quality: 95),
+      );
+
+      if (mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProcessingScreen(
+              imagePath: processedPath,
+              idType: widget.idType,
+            ),
+          ),
+        );
+        // Reset capturing state when returning from processing
+        if (mounted) {
+          setState(() => _isCapturing = false);
+        }
+      }
+    } catch (e) {
+      _showError('Processing failed: $e');
+      setState(() => _isCapturing = false);
+    }
+  }
+
+  img.Image _autoCropID(img.Image image) {
+    const targetRatio = 1.586;
+    final imageRatio = image.width / image.height;
+
+    if ((imageRatio - targetRatio).abs() < 0.1) {
+      return image;
+    }
+
+    int cropWidth = image.width;
+    int cropHeight = image.height;
+
+    if (imageRatio > targetRatio) {
+      cropWidth = (image.height * targetRatio).toInt();
+    } else {
+      cropHeight = (image.width / targetRatio).toInt();
+    }
+
+    final x = (image.width - cropWidth) ~/ 2;
+    final y = (image.height - cropHeight) ~/ 2;
+
+    return img.copyCrop(image,
+        x: x, y: y, width: cropWidth, height: cropHeight);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Camera Preview
+          if (_isInitialized && _cameraController != null)
+            Center(
+              child: CameraPreview(_cameraController!),
+            )
+          else
+            _buildLoadingState(),
+
+          // ID Frame Overlay
+          _buildFrameOverlay(),
+
+          // Top Bar
+          _buildTopBar(),
+
+          // Bottom Controls
+          _buildBottomControls(),
+
+          // Capture Progress
+          if (_isCapturing) _buildCaptureProgress(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: AppDesignSystem.primaryBlue),
+          SizedBox(height: AppDesignSystem.spaceMD),
+          Text(
+            'Initializing camera...',
+            style: AppDesignSystem.bodyMedium.copyWith(color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFrameOverlay() {
+    return CustomPaint(
+      painter: _IDFramePainter(),
+      child: Container(),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.all(AppDesignSystem.spaceMD),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.camera_alt, color: AppDesignSystem.primaryBlue),
-            SizedBox(width: AppDesignSystem.spaceXS),
-            const Text('Photography Tips'),
+            // Close button
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close),
+              color: Colors.white,
+              iconSize: 32,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black.withOpacity(0.5),
+              ),
+            ),
+            // Instructions
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppDesignSystem.spaceSM,
+                vertical: AppDesignSystem.spaceXS,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                widget.idType == 'senior' ? 'Senior Citizen ID' : 'PWD ID',
+                style: AppDesignSystem.bodyMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            // Flash toggle
+            if (_isInitialized)
+              IconButton(
+                onPressed: _toggleFlash,
+                icon: Icon(_flashEnabled ? Icons.flash_on : Icons.flash_off),
+                color: _flashEnabled ? Colors.yellow : Colors.white,
+                iconSize: 32,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                ),
+              ),
           ],
         ),
-        content: SingleChildScrollView(
+      ),
+    );
+  }
+
+  Widget _buildBottomControls() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Container(
+          padding: EdgeInsets.all(AppDesignSystem.spaceLG),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTip(
-                  Icons.wb_sunny, 'Use BRIGHT LIGHTING or natural daylight'),
-              _buildTip(Icons.flash_on, 'Enable flash if indoors'),
-              _buildTip(Icons.filter_none, 'Place ID on DARK, FLAT surface'),
-              _buildTip(Icons.center_focus_strong, 'Fill entire frame with ID'),
-              _buildTip(Icons.pause, 'Hold phone STEADY for 2 seconds'),
-              _buildTip(Icons.straighten, 'Keep ID flat and straight'),
-              SizedBox(height: AppDesignSystem.spaceMD),
+              // Tips
               Container(
-                padding: EdgeInsets.all(AppDesignSystem.spaceSM),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: AppDesignSystem.cardRadius,
-                  border: Border.all(color: Colors.amber),
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppDesignSystem.spaceSM,
+                  vertical: AppDesignSystem.spaceXS,
                 ),
-                child: Row(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
                   children: [
-                    Icon(Icons.warning_amber, color: Colors.amber.shade900),
-                    SizedBox(width: AppDesignSystem.spaceXS),
-                    Expanded(
-                      child: Text(
-                        'Quality is critical for accurate data extraction!',
-                        style: AppDesignSystem.bodySmall.copyWith(
-                          color: Colors.amber.shade900,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      'Position ID card within the frame',
+                      style: AppDesignSystem.bodySmall.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Ensure text is clear and readable',
+                      style: AppDesignSystem.bodySmall.copyWith(
+                        color: Colors.white70,
+                        fontSize: 11,
                       ),
                     ),
                   ],
+                ),
+              ),
+              SizedBox(height: AppDesignSystem.spaceLG),
+
+              // CAPTURE BUTTON (Large and Obvious)
+              GestureDetector(
+                onTap: _isInitialized && !_isCapturing ? _capturePhoto : null,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF002E6B), // Blue color
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 4,
+                    ),
+                  ),
+                  child: _isCapturing
+                      ? const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.camera_alt,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                ),
+              ),
+              SizedBox(height: AppDesignSystem.spaceSM),
+
+              // Capture label
+              Text(
+                _isCapturing ? 'Processing...' : 'TAP TO CAPTURE',
+                style: AppDesignSystem.bodyMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
                 ),
               ),
             ],
           ),
         ),
-        actions: [
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              _openNativeCamera();
-            },
-            style: AppDesignSystem.primaryButton,
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Open Camera'),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildTip(IconData icon, String text) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: AppDesignSystem.spaceSM),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: AppDesignSystem.primaryBlue),
-          SizedBox(width: AppDesignSystem.spaceXS),
-          Expanded(
-            child: Text(
-              text,
-              style: AppDesignSystem.bodyMedium,
+  Widget _buildCaptureProgress() {
+    return Container(
+      color: Colors.black.withOpacity(0.8),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Color(0xFF002E6B)),
+            SizedBox(height: AppDesignSystem.spaceMD),
+            Text(
+              'Processing image...',
+              style: AppDesignSystem.bodyMedium.copyWith(color: Colors.white),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =============================================================================
-  // NATIVE CAMERA CAPTURE (Better Performance)
-  // =============================================================================
-
-  Future<void> _openNativeCamera() async {
-    try {
-      setState(() {
-        _isProcessing = true;
-      });
-
-      // Use native camera with HIGH quality
-      final XFile? photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 2000,
-        maxHeight: 2000,
-        imageQuality: 95, // High quality for better OCR
-        preferredCameraDevice: CameraDevice.rear,
-      );
-
-      if (photo != null) {
-        final imageFile = File(photo.path);
-
-        // Assess quality immediately
-        await _assessImageQuality(imageFile);
-
-        setState(() {
-          _capturedImage = imageFile;
-        });
-      } else {
-        // User cancelled
-        if (mounted) {
-          Navigator.pop(context);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error capturing image: $e');
-      _showErrorSnackBar('Failed to capture image: $e');
-    } finally {
-      setState(() {
-        _isProcessing = false;
-      });
-    }
-  }
-
-  // =============================================================================
-  // IMAGE QUALITY ASSESSMENT
-  // =============================================================================
-
-  Future<void> _assessImageQuality(File imageFile) async {
-    try {
-      debugPrint('📊 Assessing image quality...');
-
-      final bytes = await imageFile.readAsBytes();
-      final image = img.decodeImage(bytes);
-
-      if (image == null) {
-        _qualityMessage = 'Failed to read image';
-        _qualityColor = Colors.red;
-        _qualityScore = 0.0;
-        _isQualityGood = false;
-        return;
-      }
-
-      // Quality checks
-      double score = 100.0;
-      List<String> issues = [];
-      List<String> good = [];
-
-      // 1. Resolution check
-      final resolution = image.width * image.height;
-      if (resolution < 500000) {
-        issues.add('Resolution too low');
-        score -= 30;
-      } else if (resolution > 2000000) {
-        good.add('Excellent resolution');
-      } else {
-        good.add('Good resolution');
-      }
-
-      // 2. Brightness check
-      final brightness = _calculateBrightness(image);
-      if (brightness < 40) {
-        issues.add('Too dark - use flash');
-        score -= 25;
-      } else if (brightness > 220) {
-        issues.add('Too bright - reduce glare');
-        score -= 20;
-      } else if (brightness >= 80 && brightness <= 180) {
-        good.add('Good lighting');
-      }
-
-      // 3. Sharpness check
-      final sharpness = _calculateSharpness(image);
-      if (sharpness < 30) {
-        issues.add('Blurry - hold steady');
-        score -= 30;
-      } else if (sharpness > 80) {
-        good.add('Sharp and clear');
-      } else {
-        good.add('Acceptable sharpness');
-      }
-
-      // 4. Contrast check
-      final contrast = _calculateContrast(image);
-      if (contrast < 20) {
-        issues.add('Low contrast - use dark background');
-        score -= 15;
-      } else if (contrast > 50) {
-        good.add('Good contrast');
-      }
-
-      _qualityScore = score.clamp(0, 100);
-      _isQualityGood = score >= 70;
-
-      if (_isQualityGood) {
-        _qualityMessage = good.join(' • ');
-        _qualityColor = AppDesignSystem.statusValid;
-      } else {
-        _qualityMessage = issues.join(' • ');
-        _qualityColor = AppDesignSystem.statusInvalid;
-      }
-
-      debugPrint('✅ Quality Score: $_qualityScore%');
-      debugPrint('📋 Message: $_qualityMessage');
-    } catch (e) {
-      debugPrint('⚠️ Quality assessment failed: $e');
-      _qualityMessage = 'Could not assess quality';
-      _qualityColor = Colors.orange;
-      _qualityScore = 50.0;
-      _isQualityGood = false;
-    }
-  }
-
-  double _calculateBrightness(img.Image image) {
-    int total = 0;
-    int count = 0;
-
-    for (int y = 0; y < image.height; y += 10) {
-      for (int x = 0; x < image.width; x += 10) {
-        final pixel = image.getPixel(x, y);
-        final brightness =
-            (0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b);
-        total += brightness.toInt();
-        count++;
-      }
-    }
-
-    return count > 0 ? total / count : 0;
-  }
-
-  double _calculateSharpness(img.Image image) {
-    final grayscale = img.grayscale(image);
-    double variance = 0;
-    int count = 0;
-
-    for (int y = 1; y < grayscale.height - 1; y += 5) {
-      for (int x = 1; x < grayscale.width - 1; x += 5) {
-        final curr = grayscale.getPixel(x, y).r.toInt();
-        final right = grayscale.getPixel(x + 1, y).r.toInt();
-        final bottom = grayscale.getPixel(x, y + 1).r.toInt();
-
-        final laplacian = (4 * curr - right - bottom).abs();
-        variance += laplacian * laplacian;
-        count++;
-      }
-    }
-
-    return count > 0 ? variance / count : 0;
-  }
-
-  double _calculateContrast(img.Image image) {
-    int minBrightness = 255;
-    int maxBrightness = 0;
-
-    for (int y = 0; y < image.height; y += 10) {
-      for (int x = 0; x < image.width; x += 10) {
-        final pixel = image.getPixel(x, y);
-        final brightness =
-            ((0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b).toInt());
-        minBrightness = brightness < minBrightness ? brightness : minBrightness;
-        maxBrightness = brightness > maxBrightness ? brightness : maxBrightness;
-      }
-    }
-
-    return (maxBrightness - minBrightness).toDouble();
-  }
-
-  /// Crop the captured image to only the ID area (removes background)
-  Future<File> _cropImageToIDArea(File originalImage) async {
-    try {
-      debugPrint('🔲 Cropping image to ID area...');
-
-      final bytes = await originalImage.readAsBytes();
-      final image = img.decodeImage(bytes);
-
-      if (image == null) {
-        debugPrint('⚠️ Failed to decode image, returning original');
-        return originalImage;
-      }
-
-      // Center crop with ID card ratio (1.586:1)
-      final imageWidth = image.width;
-      final imageHeight = image.height;
-      final targetRatio = 0.63;
-      final targetWidth = imageWidth * 0.85;
-      final targetHeight = targetWidth * targetRatio;
-
-      final cropX = ((imageWidth - targetWidth) / 2).toInt();
-      final cropY = ((imageHeight - targetHeight) / 2).toInt();
-
-      final croppedImage = img.copyCrop(
-        image,
-        x: cropX,
-        y: cropY,
-        width: targetWidth.toInt(),
-        height: targetHeight.toInt(),
-      );
-
-      final croppedPath = originalImage.path.replaceAll('.jpg', '_cropped.jpg');
-      final croppedFile = File(croppedPath);
-      await croppedFile.writeAsBytes(img.encodeJpg(croppedImage, quality: 95));
-
-      debugPrint('✅ Image cropped successfully');
-      return croppedFile;
-    } catch (e) {
-      debugPrint('⚠️ Crop failed: $e, using original');
-      return originalImage;
-    }
-  }
-
-  // =============================================================================
-  // PROCESS IMAGE
-  // =============================================================================
-
-  void _processImage() async {
-    if (_capturedImage == null) return;
-
-    // Crop image before processing
-    final croppedImage = await _cropImageToIDArea(_capturedImage!);
-
-    if (!mounted) return;
-
-    // Navigate to processing screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProcessingScreen(
-          imagePath: croppedImage.path,
-          idType: widget.idType,
+          ],
         ),
       ),
     );
   }
+}
 
-  // =============================================================================
-  // BUILD UI
-  // =============================================================================
+// Custom painter for ID frame overlay
+class _IDFramePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Calculate frame position (centered)
+    const frameWidth = 340.0;
+    const frameHeight = 214.0;
+    final left = (size.width - frameWidth) / 2;
+    final top = (size.height - frameHeight) / 2;
+    final frameRect = Rect.fromLTWH(left, top, frameWidth, frameHeight);
+
+    // Draw dark overlay except frame area
+    final overlayPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addRRect(RRect.fromRectAndRadius(frameRect, const Radius.circular(12)))
+      ..fillType = PathFillType.evenOdd;
+
+    canvas.drawPath(
+      overlayPath,
+      Paint()..color = Colors.black.withOpacity(0.6),
+    );
+
+    // Draw green frame border
+    final framePaint = Paint()
+      ..color = const Color(0xFF4CAF50) // Softer green
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(frameRect, const Radius.circular(12)),
+      framePaint,
+    );
+
+    // Draw corner guides
+    final cornerLength = 30.0;
+    final cornerPaint = Paint()
+      ..color = const Color(0xFF4CAF50) // Softer green
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5.0
+      ..strokeCap = StrokeCap.round;
+
+    // Top-left corner
+    canvas.drawLine(
+      Offset(left, top + cornerLength),
+      Offset(left, top),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      Offset(left, top),
+      Offset(left + cornerLength, top),
+      cornerPaint,
+    );
+
+    // Top-right corner
+    canvas.drawLine(
+      Offset(left + frameWidth - cornerLength, top),
+      Offset(left + frameWidth, top),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      Offset(left + frameWidth, top),
+      Offset(left + frameWidth, top + cornerLength),
+      cornerPaint,
+    );
+
+    // Bottom-left corner
+    canvas.drawLine(
+      Offset(left, top + frameHeight - cornerLength),
+      Offset(left, top + frameHeight),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      Offset(left, top + frameHeight),
+      Offset(left + cornerLength, top + frameHeight),
+      cornerPaint,
+    );
+
+    // Bottom-right corner
+    canvas.drawLine(
+      Offset(left + frameWidth - cornerLength, top + frameHeight),
+      Offset(left + frameWidth, top + frameHeight),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      Offset(left + frameWidth, top + frameHeight - cornerLength),
+      Offset(left + frameWidth, top + frameHeight),
+      cornerPaint,
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppDesignSystem.backgroundLight,
-      appBar: AppBar(
-        title: Text(
-            'Scan ${widget.idType == 'senior' ? 'Senior Citizen' : 'PWD'} ID'),
-        backgroundColor: AppDesignSystem.primaryBlue,
-        foregroundColor: AppDesignSystem.textOnPrimary,
-      ),
-      body:
-          _capturedImage == null ? _buildWaitingView() : _buildQualityPreview(),
-    );
-  }
-
-  Widget _buildWaitingView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.camera_alt,
-            size: 80,
-            color: AppDesignSystem.primaryBlue.withOpacity(0.5),
-          ),
-          SizedBox(height: AppDesignSystem.spaceMD),
-          if (_isProcessing)
-            const CircularProgressIndicator()
-          else
-            Text(
-              'Opening camera...',
-              style: AppDesignSystem.bodyLarge.copyWith(
-                color: AppDesignSystem.textSecondary,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQualityPreview() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(AppDesignSystem.spaceMD),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Quality Score Card
-          Container(
-            padding: EdgeInsets.all(AppDesignSystem.spaceMD),
-            decoration: BoxDecoration(
-              color: _qualityColor.withOpacity(0.1),
-              borderRadius: AppDesignSystem.cardRadius,
-              border: Border.all(color: _qualityColor, width: 2),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _qualityColor.withOpacity(0.2),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${_qualityScore.toInt()}%',
-                          style: AppDesignSystem.heading3.copyWith(
-                            color: _qualityColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: AppDesignSystem.spaceMD),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isQualityGood ? 'Good Quality!' : 'Quality Issue',
-                            style: AppDesignSystem.heading4.copyWith(
-                              color: _qualityColor,
-                            ),
-                          ),
-                          SizedBox(height: AppDesignSystem.spaceXXS),
-                          Text(
-                            _qualityMessage ?? 'Analyzing...',
-                            style: AppDesignSystem.bodySmall.copyWith(
-                              color: _qualityColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      _isQualityGood ? Icons.check_circle : Icons.warning,
-                      color: _qualityColor,
-                      size: 32,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: AppDesignSystem.spaceMD),
-
-          // Image Preview
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: AppDesignSystem.cardRadius,
-              boxShadow: AppDesignSystem.shadowMD,
-            ),
-            child: ClipRRect(
-              borderRadius: AppDesignSystem.cardRadius,
-              child: Image.file(
-                _capturedImage!,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-
-          SizedBox(height: AppDesignSystem.spaceLG),
-
-          // Action Buttons
-          if (_isQualityGood)
-            ElevatedButton.icon(
-              onPressed: _processImage,
-              style: AppDesignSystem.primaryButton,
-              icon: const Icon(Icons.check_circle),
-              label: const Text('Process This Image'),
-            )
-          else
-            Column(
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _processImage,
-                  style: AppDesignSystem.secondaryButton,
-                  icon: const Icon(Icons.science),
-                  label: const Text('Try Processing Anyway'),
-                ),
-                SizedBox(height: AppDesignSystem.spaceSM),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _capturedImage = null;
-                    });
-                    _openNativeCamera();
-                  },
-                  style: AppDesignSystem.primaryButton,
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Retake with Better Quality'),
-                ),
-              ],
-            ),
-
-          SizedBox(height: AppDesignSystem.spaceSM),
-
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =============================================================================
-  // UI HELPER METHODS
-  // =============================================================================
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
