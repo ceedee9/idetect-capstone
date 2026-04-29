@@ -1,25 +1,17 @@
 // =============================================================================
 // FILE: lib/presentation/screens/scan/processing_screen.dart
 // PURPOSE: Process captured ID image with OCR and display results
-// FEATURES: Step-by-step progress, OCR processing, data extraction, editing
+// FLOW: OCR -> show extracted fields -> user edits -> Confirm -> VerifyingScreen
 // =============================================================================
 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_design_system.dart';
-import '../../../services/enhanced_ocr_service.dart'; // Enhanced OCR with Tesseract + ML Kit
-import '../../../services/hybrid_parser_service.dart'; // NEW: Hybrid parser with layout-based extraction
+import '../../../services/enhanced_ocr_service.dart';
+import '../../../services/hybrid_parser_service.dart';
 import '../../../services/parser_service.dart';
-import 'result_screen.dart';
+import 'verifying_screen.dart';
 
-/// Processing screen that handles OCR and ID data extraction
-///
-/// Steps:
-/// 1. Analyze image quality
-/// 2. Extract text with OCR
-/// 3. Parse ID data
-/// 4. Display results with confidence scores
-/// 5. Allow editing and confirmation
 class ProcessingScreen extends StatefulWidget {
   final String imagePath;
   final String idType; // 'senior' or 'pwd'
@@ -37,10 +29,9 @@ class ProcessingScreen extends StatefulWidget {
 class _ProcessingScreenState extends State<ProcessingScreen>
     with SingleTickerProviderStateMixin {
   // Services
-  final EnhancedOCRService _ocrService = EnhancedOCRService(); // Enhanced OCR
-  final HybridParserService _hybridParser =
-      HybridParserService(); // NEW: Hybrid parser
-  final ParserService _parserService = ParserService(); // Fallback
+  final EnhancedOCRService _ocrService = EnhancedOCRService();
+  final HybridParserService _hybridParser = HybridParserService();
+  final ParserService _parserService = ParserService();
 
   // Processing state
   ProcessingStep _currentStep = ProcessingStep.analyzing;
@@ -51,12 +42,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   EnhancedOCRResult? _ocrResult;
   ParsedIDData? _parsedData;
   String? _errorMessage;
-  String? _ocrEngine; // Track which engine was used
+  String? _ocrEngine;
 
-  // Animation controller for progress indicator
   late AnimationController _animationController;
-
-  // Text editing controllers for manual correction
   final Map<String, TextEditingController> _controllers = {};
 
   @override
@@ -66,8 +54,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       vsync: this,
       duration: AppDesignSystem.animationNormal,
     )..repeat();
-
-    // Start processing
     _startProcessing();
   }
 
@@ -75,8 +61,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   void dispose() {
     _animationController.dispose();
     _ocrService.dispose();
-    _hybridParser.dispose(); // NEW: Dispose hybrid parser
-    // Dispose all text controllers
+    _hybridParser.dispose();
     for (var controller in _controllers.values) {
       controller.dispose();
     }
@@ -84,41 +69,34 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   }
 
   // ===========================================================================
-  // PROCESSING PIPELINE
+  // STEP 1 — OCR only. No API call here.
   // ===========================================================================
 
-  /// Start the OCR and parsing pipeline
   Future<void> _startProcessing() async {
     try {
       debugPrint('=== PROCESSING START ===');
-      debugPrint('Image path: ${widget.imagePath}');
-      debugPrint('ID type: ${widget.idType}');
 
-      // Verify image file exists
       final imageFile = File(widget.imagePath);
       if (!await imageFile.exists()) {
         _handleError('Image file not found: ${widget.imagePath}');
         return;
       }
-      debugPrint('✅ Image file exists (${await imageFile.length()} bytes)');
 
-      // Step 1: Analyzing image quality
+      // Step 1: Analyzing
       setState(() {
         _currentStep = ProcessingStep.analyzing;
         _progress = 0.25;
       });
       await Future.delayed(const Duration(milliseconds: 800));
 
-      // Step 2 & 3: HYBRID EXTRACTION (Layout-based + Fuzzy fallback)
+      // Step 2: OCR + Hybrid parsing
       setState(() {
         _currentStep = ProcessingStep.extracting;
-        _progress = 0.50;
+        _progress = 0.65;
       });
 
       debugPrint('🔄 Starting HYBRID OCR + Parsing...');
-      debugPrint('💡 Using layout-based extraction with fuzzy fallback');
 
-      // NEW: Use hybrid parser (combines OCR + layout extraction + fuzzy)
       try {
         _parsedData = await _hybridParser.parseIDWithHybridApproach(
           imageFile: imageFile,
@@ -136,28 +114,15 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       }
 
       if (!_parsedData!.success) {
-        debugPrint('❌ Hybrid parsing failed: ${_parsedData!.errorMessage}');
         _handleError(_parsedData!.errorMessage ?? 'Hybrid parsing failed');
         return;
       }
 
-      debugPrint('✅ Hybrid parsing success');
-      debugPrint('📊 Extraction method: ${_parsedData!.extractionMethod}');
-      debugPrint('🎯 Template matched: ${_parsedData!.templateMatched}');
       debugPrint(
-          '📈 Overall confidence: ${(_parsedData!.confidence * 100).toInt()}%');
-
-      // Set OCR engine info for display
+          '✅ OCR complete — confidence: ${(_parsedData!.confidence * 100).toInt()}%');
       _ocrEngine = 'ML Kit (with ${_parsedData!.extractionMethod})';
 
-      // Step 4: Finalizing
-      setState(() {
-        _currentStep = ProcessingStep.parsing;
-        _progress = 0.90;
-      });
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // Step 4: Done!
+      // Done — show fields for user review
       setState(() {
         _currentStep = ProcessingStep.done;
         _progress = 1.0;
@@ -165,58 +130,19 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       });
 
       _animationController.stop();
-
-      // Initialize text controllers with extracted data
       _initializeControllers();
 
-      debugPrint('=== PROCESSING COMPLETE ===');
+      debugPrint('=== OCR COMPLETE — awaiting user confirmation ===');
     } catch (e, stackTrace) {
-      debugPrint('❌ FATAL ERROR: $e');
-      debugPrint('Stack trace: $stackTrace');
+      debugPrint('❌ FATAL ERROR: $e\n$stackTrace');
       _handleError('Processing error: $e');
     }
   }
 
-  /// Initialize text editing controllers with extracted data
-  void _initializeControllers() {
-    _controllers['fullName'] = TextEditingController(
-      text: _parsedData?.fullName ?? '',
-    );
-    _controllers['age'] = TextEditingController(
-      text: _parsedData?.age?.toString() ?? '',
-    );
-    _controllers['sex'] = TextEditingController(
-      text: _parsedData?.sex ?? '',
-    );
-    _controllers['dateIssued'] = TextEditingController(
-      text: _parsedData?.dateIssued ?? '',
-    );
-    _controllers['controlNumber'] = TextEditingController(
-      text: _parsedData?.controlNumber ?? '',
-    );
-  }
-
-  /// Handle processing errors
-  void _handleError(String message) {
-    setState(() {
-      _errorMessage = message;
-      _isProcessing = false;
-      _currentStep = ProcessingStep.error;
-    });
-    _animationController.stop();
-  }
-
   // ===========================================================================
-  // UI ACTIONS
+  // STEP 1b — Fallback path ("Try Anyway"). Also no API call here.
   // ===========================================================================
 
-  /// Retake photo
-  void _retake() {
-    // Pop processing screen to go back to camera
-    Navigator.of(context).pop();
-  }
-
-  /// Process without quality check when user wants to force it
   Future<void> _processWithoutQualityCheck() async {
     try {
       setState(() {
@@ -228,8 +154,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
       final imageFile = File(widget.imagePath);
 
-      // Force process - Enhanced OCR doesn't have quality check bypass
-      // So we just call the standard method
       _ocrResult = await _ocrService.processIDImage(
         imageFile: imageFile,
         idType: widget.idType,
@@ -243,7 +167,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
       _ocrEngine = _ocrResult!.engine;
 
-      // Parse the data
       setState(() {
         _currentStep = ProcessingStep.parsing;
         _progress = 0.75;
@@ -257,7 +180,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         return;
       }
 
-      // Done!
       setState(() {
         _currentStep = ProcessingStep.done;
         _progress = 1.0;
@@ -271,27 +193,59 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     }
   }
 
-  /// Confirm and proceed to result screen
-  void _confirm() {
-    // Create updated parsed data with edited values
+  void _initializeControllers() {
+    _controllers['fullName'] =
+        TextEditingController(text: _parsedData?.fullName ?? '');
+    _controllers['disabilityType'] =
+        TextEditingController(text: _parsedData?.disabilityType ?? '');
+    _controllers['age'] =
+        TextEditingController(text: _parsedData?.age?.toString() ?? '');
+    _controllers['sex'] = TextEditingController(text: _parsedData?.sex ?? '');
+    _controllers['dateIssued'] =
+        TextEditingController(text: _parsedData?.dateIssued ?? '');
+    _controllers['controlNumber'] = TextEditingController(
+        text: _parsedData?.controlNumber ?? _parsedData?.idNumber ?? '');
+  }
+
+  void _handleError(String message) {
+    setState(() {
+      _errorMessage = message;
+      _isProcessing = false;
+      _currentStep = ProcessingStep.error;
+    });
+    _animationController.stop();
+  }
+
+  // ===========================================================================
+  // STEP 2 — User taps "Confirm" -> navigate to VerifyingScreen
+  // ===========================================================================
+
+  Future<void> _confirm() async {
+    // Collect the user-reviewed (possibly corrected) values from the form
+    final confirmedControl = _controllers['controlNumber']?.text.trim();
+    final isPWD = widget.idType == 'pwd';
     final updatedData = ParsedIDData(
       success: true,
       idType: _parsedData?.idType,
-      idNumber: _controllers['controlNumber']?.text, // Use control number as ID
+      idNumber: (confirmedControl != null && confirmedControl.isNotEmpty)
+          ? confirmedControl
+          : (_parsedData?.idNumber ?? ''),
       fullName: _controllers['fullName']?.text,
-      age: int.tryParse(_controllers['age']?.text ?? ''),
-      sex: _controllers['sex']?.text,
-      dateIssued: _controllers['dateIssued']?.text,
+      disabilityType: isPWD
+          ? _controllers['disabilityType']?.text
+          : _parsedData?.disabilityType,
+      age: isPWD ? null : int.tryParse(_controllers['age']?.text ?? ''),
+      sex: isPWD ? null : _controllers['sex']?.text,
+      dateIssued: isPWD ? null : _controllers['dateIssued']?.text,
       controlNumber: _controllers['controlNumber']?.text,
       confidence: _parsedData?.confidence ?? 0.0,
-      rawText: _ocrResult?.rawText ?? '',
+      rawText: _ocrResult?.rawText ?? _parsedData?.rawText ?? '',
     );
 
-    // Navigate to result screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ResultScreen(
+        builder: (context) => VerifyingScreen(
           parsedData: updatedData,
           imagePath: widget.imagePath,
           idType: widget.idType,
@@ -300,8 +254,10 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     );
   }
 
+  void _retake() => Navigator.of(context).pop();
+
   // ===========================================================================
-  // BUILD UI
+  // BUILD
   // ===========================================================================
 
   @override
@@ -320,12 +276,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Captured image preview
               _buildImagePreview(),
-
               SizedBox(height: AppDesignSystem.spaceMD),
-
-              // Processing status or results
               if (_isProcessing)
                 _buildProcessingStatus()
               else if (_errorMessage != null)
@@ -339,7 +291,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     );
   }
 
-  /// Build captured image preview
   Widget _buildImagePreview() {
     return Container(
       height: 200,
@@ -349,15 +300,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       ),
       child: ClipRRect(
         borderRadius: AppDesignSystem.cardRadius,
-        child: Image.file(
-          File(widget.imagePath),
-          fit: BoxFit.cover,
-        ),
+        child: Image.file(File(widget.imagePath), fit: BoxFit.cover),
       ),
     );
   }
 
-  /// Build processing status indicator
   Widget _buildProcessingStatus() {
     return Container(
       padding: EdgeInsets.all(AppDesignSystem.spaceLG),
@@ -368,7 +315,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       ),
       child: Column(
         children: [
-          // Animated progress indicator
           SizedBox(
             width: 80,
             height: 80,
@@ -376,67 +322,49 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               value: _progress,
               strokeWidth: 6,
               backgroundColor: AppDesignSystem.backgroundLight,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppDesignSystem.primaryBlue,
-              ),
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(AppDesignSystem.primaryBlue),
             ),
           ),
-
           SizedBox(height: AppDesignSystem.spaceMD),
-
-          // Progress percentage
           Text(
             '${(_progress * 100).toInt()}%',
-            style: AppDesignSystem.heading3.copyWith(
-              color: AppDesignSystem.primaryBlue,
-            ),
+            style: AppDesignSystem.heading3
+                .copyWith(color: AppDesignSystem.primaryBlue),
           ),
-
           SizedBox(height: AppDesignSystem.spaceSM),
-
-          // Current step description
           Text(
             _getStepMessage(_currentStep),
-            style: AppDesignSystem.bodyLarge.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style:
+                AppDesignSystem.bodyLarge.copyWith(fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
-
           SizedBox(height: AppDesignSystem.spaceXS),
-
           Text(
             _getStepDescription(_currentStep),
-            style: AppDesignSystem.bodyMedium.copyWith(
-              color: AppDesignSystem.textSecondary,
-            ),
+            style: AppDesignSystem.bodyMedium
+                .copyWith(color: AppDesignSystem.textSecondary),
             textAlign: TextAlign.center,
           ),
-
           SizedBox(height: AppDesignSystem.spaceLG),
-
-          // Step indicators
           _buildStepIndicators(),
         ],
       ),
     );
   }
 
-  /// Build step indicators
   Widget _buildStepIndicators() {
+    // Only 3 visual steps now: Analyze → Extract → Done
     final steps = [
       ProcessingStep.analyzing,
       ProcessingStep.extracting,
-      ProcessingStep.parsing,
       ProcessingStep.done,
     ];
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: steps.map((step) {
         final isCompleted = step.index <= _currentStep.index;
         final isCurrent = step == _currentStep;
-
         return Row(
           children: [
             Container(
@@ -455,11 +383,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                 ),
               ),
               child: isCompleted
-                  ? Icon(
-                      Icons.check,
+                  ? Icon(Icons.check,
                       size: AppDesignSystem.iconSM,
-                      color: AppDesignSystem.textOnPrimary,
-                    )
+                      color: AppDesignSystem.textOnPrimary)
                   : Center(
                       child: Text(
                         '${step.index + 1}',
@@ -484,7 +410,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     );
   }
 
-  /// Build error view
   Widget _buildErrorView() {
     return Container(
       padding: EdgeInsets.all(AppDesignSystem.spaceLG),
@@ -495,24 +420,17 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: AppDesignSystem.statusInvalid,
-          ),
+          Icon(Icons.error_outline,
+              size: 64, color: AppDesignSystem.statusInvalid),
           SizedBox(height: AppDesignSystem.spaceMD),
-          Text(
-            'Processing Failed',
-            style: AppDesignSystem.heading3.copyWith(
-              color: AppDesignSystem.statusInvalid,
-            ),
-          ),
+          Text('Processing Failed',
+              style: AppDesignSystem.heading3
+                  .copyWith(color: AppDesignSystem.statusInvalid)),
           SizedBox(height: AppDesignSystem.spaceSM),
           Text(
             _errorMessage ?? 'An unknown error occurred',
-            style: AppDesignSystem.bodyMedium.copyWith(
-              color: AppDesignSystem.textSecondary,
-            ),
+            style: AppDesignSystem.bodyMedium
+                .copyWith(color: AppDesignSystem.textSecondary),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppDesignSystem.spaceLG),
@@ -540,163 +458,44 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     );
   }
 
-  /// Build results view with extracted data
   Widget _buildResultsView() {
-    final confidence = _parsedData?.confidence ?? 0.0;
-    final isLowConfidence = confidence < 0.7;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Confidence indicator
-        _buildConfidenceCard(confidence),
-
+        _buildReviewBanner(),
         SizedBox(height: AppDesignSystem.spaceMD),
-
-        // Low confidence warning
-        if (isLowConfidence) _buildLowConfidenceWarning(),
-
-        if (isLowConfidence) SizedBox(height: AppDesignSystem.spaceMD),
-
-        // Extracted data fields (editable)
         _buildDataFields(),
-
         SizedBox(height: AppDesignSystem.spaceMD),
-
-        // Action buttons
         _buildActionButtons(),
       ],
     );
   }
 
-  /// Build confidence score card
-  Widget _buildConfidenceCard(double confidence) {
-    final percentage = (confidence * 100).toInt();
-    Color confidenceColor;
-
-    if (confidence >= 0.9) {
-      confidenceColor = AppDesignSystem.statusValid;
-    } else if (confidence >= 0.7) {
-      confidenceColor = Colors.orange;
-    } else {
-      confidenceColor = AppDesignSystem.statusInvalid;
-    }
-
+  Widget _buildReviewBanner() {
     return Container(
       padding: EdgeInsets.all(AppDesignSystem.spaceMD),
       decoration: BoxDecoration(
-        color: AppDesignSystem.backgroundWhite,
+        color: AppDesignSystem.primaryBlue.withOpacity(0.05),
         borderRadius: AppDesignSystem.cardRadius,
-        boxShadow: AppDesignSystem.shadowMD,
+        border: Border.all(color: AppDesignSystem.primaryBlue.withOpacity(0.2)),
       ),
       child: Row(
         children: [
-          // Confidence circle
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: confidenceColor.withOpacity(0.1),
-              border: Border.all(
-                color: confidenceColor,
-                width: 3,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                '$percentage%',
-                style: AppDesignSystem.bodyLarge.copyWith(
-                  color: confidenceColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-
-          SizedBox(width: AppDesignSystem.spaceMD),
-
-          // Confidence description
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Confidence Score',
-                  style: AppDesignSystem.bodyMedium.copyWith(
-                    color: AppDesignSystem.textSecondary,
-                  ),
-                ),
-                SizedBox(height: AppDesignSystem.spaceXXS),
-                Text(
-                  _getConfidenceLabel(confidence),
-                  style: AppDesignSystem.bodyLarge.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: confidenceColor,
-                  ),
-                ),
-                // Show OCR engine used
-                if (_ocrEngine != null)
-                  Text(
-                    'Engine: $_ocrEngine',
-                    style: AppDesignSystem.bodySmall.copyWith(
-                      color: AppDesignSystem.textSecondary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Status icon
-          Icon(
-            _getConfidenceIcon(confidence),
-            color: confidenceColor,
-            size: AppDesignSystem.iconLG,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build low confidence warning
-  Widget _buildLowConfidenceWarning() {
-    return Container(
-      padding: EdgeInsets.all(AppDesignSystem.spaceMD),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: AppDesignSystem.cardRadius,
-        border: Border.all(
-          color: Colors.orange,
-          width: 2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            color: Colors.orange,
-            size: AppDesignSystem.iconLG,
-          ),
+          Icon(Icons.rate_review_outlined,
+              color: AppDesignSystem.primaryBlue, size: AppDesignSystem.iconLG),
           SizedBox(width: AppDesignSystem.spaceSM),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Low Confidence',
-                  style: AppDesignSystem.bodyLarge.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange.shade900,
-                  ),
-                ),
+                Text('Review Extracted Data',
+                    style: AppDesignSystem.bodyLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppDesignSystem.primaryBlue)),
                 SizedBox(height: AppDesignSystem.spaceXXS),
-                Text(
-                  'Please verify the data below carefully. Consider retaking the photo for better accuracy.',
-                  style: AppDesignSystem.bodyMedium.copyWith(
-                    color: Colors.orange.shade800,
-                  ),
-                ),
+                Text('Please review and correct any errors before confirming.',
+                    style: AppDesignSystem.bodyMedium
+                        .copyWith(color: AppDesignSystem.textSecondary)),
               ],
             ),
           ),
@@ -705,8 +504,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     );
   }
 
-  /// Build editable data fields
   Widget _buildDataFields() {
+    final isPWD = widget.idType == 'pwd';
+
     return Container(
       padding: EdgeInsets.all(AppDesignSystem.spaceMD),
       decoration: BoxDecoration(
@@ -717,156 +517,107 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
-              Icon(
-                Icons.edit,
-                size: AppDesignSystem.iconMD,
-                color: AppDesignSystem.primaryBlue,
-              ),
+              Icon(Icons.edit,
+                  size: AppDesignSystem.iconMD,
+                  color: AppDesignSystem.primaryBlue),
               SizedBox(width: AppDesignSystem.spaceXS),
-              Text(
-                'Extracted Data',
-                style: AppDesignSystem.heading4.copyWith(
-                  color: AppDesignSystem.primaryBlue,
-                ),
-              ),
+              Text('Extracted Data',
+                  style: AppDesignSystem.heading4
+                      .copyWith(color: AppDesignSystem.primaryBlue)),
             ],
           ),
-
           SizedBox(height: AppDesignSystem.spaceSM),
-
-          Text(
-            'Review and edit if needed:',
-            style: AppDesignSystem.bodyMedium.copyWith(
-              color: AppDesignSystem.textSecondary,
-            ),
-          ),
-
+          Text('Review and correct if needed before confirming:',
+              style: AppDesignSystem.bodyMedium
+                  .copyWith(color: AppDesignSystem.textSecondary)),
           SizedBox(height: AppDesignSystem.spaceMD),
-
-          // ID Type
           _buildInfoRow(
-            'ID Type',
-            _parsedData?.idType?.name.toUpperCase() ?? 'Unknown',
-            isEditable: false,
-          ),
-
+              'ID Type', _parsedData?.idType?.name.toUpperCase() ?? 'Unknown'),
           SizedBox(height: AppDesignSystem.spaceSM),
-
-          // Full Name (editable)
-          _buildEditableField(
-            'Full Name',
-            'fullName',
-            Icons.person,
-          ),
-
+          _buildEditableField('Full Name', 'fullName', Icons.person),
           SizedBox(height: AppDesignSystem.spaceSM),
-
-          // Age and Sex in a row
-          Row(
-            children: [
-              Expanded(
-                child: _buildEditableField(
-                  'Age',
-                  'age',
-                  Icons.cake,
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              SizedBox(width: AppDesignSystem.spaceSM),
-              Expanded(
-                child: _buildEditableField(
-                  'Sex',
-                  'sex',
-                  Icons.wc,
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: AppDesignSystem.spaceSM),
-
-          // Date Issued (editable)
-          _buildEditableField(
-            'Date Issued',
-            'dateIssued',
-            Icons.calendar_today,
-          ),
-
-          SizedBox(height: AppDesignSystem.spaceSM),
-
-          // Control Number (editable)
-          _buildEditableField(
-            'Control Number',
-            'controlNumber',
-            Icons.confirmation_number,
-          ),
+          if (isPWD) ...[
+            _buildEditableField('Type of Disability', 'disabilityType',
+                Icons.accessible_forward),
+            SizedBox(height: AppDesignSystem.spaceSM),
+            _buildEditableField(
+                'ID No.', 'controlNumber', Icons.confirmation_number),
+            SizedBox(height: AppDesignSystem.spaceXS),
+            Text(
+              '* PWD ID No. is sent to the database for verification.',
+              style: AppDesignSystem.bodySmall
+                  .copyWith(color: AppDesignSystem.textSecondary),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                    child: _buildEditableField('Age', 'age', Icons.cake,
+                        keyboardType: TextInputType.number)),
+                SizedBox(width: AppDesignSystem.spaceSM),
+                Expanded(child: _buildEditableField('Sex', 'sex', Icons.wc)),
+              ],
+            ),
+            SizedBox(height: AppDesignSystem.spaceSM),
+            _buildEditableField(
+                'Date Issued', 'dateIssued', Icons.calendar_today),
+            SizedBox(height: AppDesignSystem.spaceSM),
+            _buildEditableField(
+                'Control Number', 'controlNumber', Icons.confirmation_number),
+            SizedBox(height: AppDesignSystem.spaceXS),
+            Text(
+              '* Control Number is sent to the database for verification.',
+              style: AppDesignSystem.bodySmall
+                  .copyWith(color: AppDesignSystem.textSecondary),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  /// Build non-editable info row
-  Widget _buildInfoRow(String label, String value, {bool isEditable = false}) {
+  Widget _buildInfoRow(String label, String value) {
     return Row(
       children: [
         SizedBox(
           width: 120,
-          child: Text(
-            label,
-            style: AppDesignSystem.bodyMedium.copyWith(
-              color: AppDesignSystem.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: Text(label,
+              style: AppDesignSystem.bodyMedium.copyWith(
+                  color: AppDesignSystem.textSecondary,
+                  fontWeight: FontWeight.w600)),
         ),
         Expanded(
-          child: Text(
-            value,
-            style: AppDesignSystem.bodyMedium.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: Text(value,
+              style: AppDesignSystem.bodyMedium
+                  .copyWith(fontWeight: FontWeight.w600)),
         ),
       ],
     );
   }
 
-  /// Build editable text field
-  Widget _buildEditableField(
-    String label,
-    String controllerKey,
-    IconData icon, {
-    TextInputType keyboardType = TextInputType.text,
-  }) {
+  Widget _buildEditableField(String label, String controllerKey, IconData icon,
+      {TextInputType keyboardType = TextInputType.text}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppDesignSystem.label,
-        ),
+        Text(label, style: AppDesignSystem.label),
         SizedBox(height: AppDesignSystem.spaceXXS),
         TextField(
           controller: _controllers[controllerKey],
           keyboardType: keyboardType,
           style: AppDesignSystem.bodyMedium,
           decoration: AppDesignSystem.inputDecoration(
-            hintText: 'Enter $label',
-            prefixIcon: icon,
-          ),
+              hintText: 'Enter $label', prefixIcon: icon),
         ),
       ],
     );
   }
 
-  /// Build action buttons
   Widget _buildActionButtons() {
     return Row(
       children: [
-        // Retake button
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _retake,
@@ -874,24 +625,17 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               padding: const EdgeInsets.symmetric(vertical: 16),
               side: const BorderSide(color: Color(0xFF002E6B), width: 2),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+                  borderRadius: BorderRadius.circular(8)),
             ),
             icon: const Icon(Icons.camera_alt, color: Color(0xFF002E6B)),
-            label: const Text(
-              'Retake',
-              style: TextStyle(
-                color: Color(0xFF002E6B),
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            label: const Text('Retake',
+                style: TextStyle(
+                    color: Color(0xFF002E6B),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
           ),
         ),
-
         const SizedBox(width: 16),
-
-        // Confirm button
         Expanded(
           flex: 2,
           child: ElevatedButton.icon(
@@ -900,17 +644,15 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               backgroundColor: const Color(0xFF002E6B),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+                  borderRadius: BorderRadius.circular(8)),
             ),
             icon: const Icon(Icons.check_circle, color: Colors.white),
             label: const Text(
               'Confirm',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -919,7 +661,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   }
 
   // ===========================================================================
-  // HELPER METHODS
+  // HELPERS
   // ===========================================================================
 
   String _getStepMessage(ProcessingStep step) {
@@ -927,11 +669,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       case ProcessingStep.analyzing:
         return 'Analyzing image quality...';
       case ProcessingStep.extracting:
-        return 'Extracting text...';
+        return 'Extracting text with OCR...';
       case ProcessingStep.parsing:
-        return 'Parsing ID data...';
+        return 'Parsing fields...';
       case ProcessingStep.done:
-        return 'Done!';
+        return 'Done! Review the details below.';
       case ProcessingStep.error:
         return 'Error';
     }
@@ -944,38 +686,13 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       case ProcessingStep.extracting:
         return 'Using AI to read text from the image';
       case ProcessingStep.parsing:
-        return 'Identifying name, ID number, and other details';
+        return 'Identifying name, ID number, and other fields';
       case ProcessingStep.done:
-        return 'ID information extracted successfully!';
+        return 'Correct any errors then tap Confirm';
       case ProcessingStep.error:
         return '';
     }
   }
-
-  String _getConfidenceLabel(double confidence) {
-    if (confidence >= 0.9) return 'Excellent';
-    if (confidence >= 0.8) return 'Very Good';
-    if (confidence >= 0.7) return 'Good';
-    if (confidence >= 0.6) return 'Fair';
-    return 'Poor';
-  }
-
-  IconData _getConfidenceIcon(double confidence) {
-    if (confidence >= 0.9) return Icons.check_circle;
-    if (confidence >= 0.7) return Icons.check_circle_outline;
-    return Icons.warning_amber_rounded;
-  }
 }
 
-// =============================================================================
-// ENUMS
-// =============================================================================
-
-/// Processing steps
-enum ProcessingStep {
-  analyzing,
-  extracting,
-  parsing,
-  done,
-  error,
-}
+enum ProcessingStep { analyzing, extracting, parsing, done, error }

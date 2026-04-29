@@ -5,6 +5,7 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import '../../widgets/account_profile_drawer.dart';
 import 'osca_records_screen.dart';
 import 'pdao_records_screen.dart';
 
@@ -16,6 +17,7 @@ class DepartmentSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      endDrawer: const AccountProfileDrawer(),
       body: SafeArea(
         child: Column(
           children: [
@@ -75,18 +77,22 @@ class DepartmentSelectionScreen extends StatelessWidget {
           // Logo
           Image.asset(
             'assets/images/idetect_logo.png',
-            height: 80,
+            height: 60,
             fit: BoxFit.contain,
           ),
-          // Profile icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade300, width: 2),
+          // Profile icon button
+          InkWell(
+            onTap: () => Scaffold.of(context).openEndDrawer(),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade300, width: 2),
+              ),
+              child: const Icon(Icons.person_outline, color: Colors.grey),
             ),
-            child: const Icon(Icons.person_outline, color: Colors.grey),
           ),
         ],
       ),

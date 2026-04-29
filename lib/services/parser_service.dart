@@ -38,6 +38,7 @@ class ParserService {
 
   // ID Number Patterns (various formats)
   static final idNumberPatterns = [
+    RegExp(r'\b\d{2}-\d{4}-\d{3}-\d{4,8}\b'), // Format: 13-7504-000-0004941
     RegExp(r'\b\d{2}-\d{4}\b'), // Format: 00-0001
     RegExp(r'\b\d{4}-\d{4}\b'), // Format: 2024-0001
     RegExp(r'\bSC-\d{4}-\d{4}\b', caseSensitive: false), // Format: SC-2024-0001
@@ -55,8 +56,40 @@ class ParserService {
 
   // Name Patterns
   static final namePattern = RegExp(
-    r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b',
+    r'\b([A-Z][A-Za-z\.-]+(?:\s+[A-Z][A-Za-z\.-]+)+)\b',
   );
+
+  static final uppercaseNamePattern = RegExp(
+    r'\b([A-Z][A-Z\s\.-]{4,80})\b',
+  );
+
+  // Canonical PWD categories plus common OCR aliases.
+  static final Map<String, String> disabilityTypeAliases = {
+    'DEAF OR HARD OF HEARING': 'Deaf or Hard of Hearing',
+    'DEAF': 'Deaf or Hard of Hearing',
+    'HARD OF HEARING': 'Deaf or Hard of Hearing',
+    'HEARING': 'Deaf or Hard of Hearing',
+    'INTELLECTUAL DISABILITY': 'Intellectual Disability',
+    'INTELLECTUAL': 'Intellectual Disability',
+    'LEARNING DISABILITY': 'Learning Disability',
+    'LEARNING': 'Learning Disability',
+    'MENTAL DISABILITY': 'Mental Disability',
+    'MENTAL': 'Mental Disability',
+    'PSYCHOSOCIAL DISABILITY': 'Psychosocial Disability',
+    'PSYCHOSOCIAL': 'Psychosocial Disability',
+    'PHYSICAL DISABILITY': 'Physical Disability',
+    'PHYSICAL': 'Physical Disability',
+    'ORTHOPEDIC': 'Physical Disability',
+    'MOBILITY': 'Physical Disability',
+    'SPEECH AND LANGUAGE IMPAIRMENT': 'Speech and Language Impairment',
+    'SPEECH': 'Speech and Language Impairment',
+    'LANGUAGE': 'Speech and Language Impairment',
+    'VISUAL DISABILITY': 'Visual Disability',
+    'VISUAL': 'Visual Disability',
+    'BLIND': 'Visual Disability',
+    'CANCER': 'Cancer',
+    'RARE DISEASE': 'Rare Disease',
+  };
 
   // ===========================================================================
   // MAIN PARSING FUNCTION
@@ -75,6 +108,10 @@ class ParserService {
       // Use specialized parser for Senior Citizen ID if detected
       if (idType == IDType.seniorCitizen) {
         return await _parseSeniorCitizenID(rawText);
+      }
+
+      if (idType == IDType.pwd) {
+        return _parsePWDID(rawText);
       }
 
       // Step 2: Extract ID number
@@ -134,6 +171,44 @@ class ParserService {
         rawText: rawText,
       );
     }
+  }
+
+  /// Parse PWD ID with the three required fields: Name, Disability Type, ID No.
+  ParsedIDData _parsePWDID(String rawText) {
+    debugPrint('♿ Using PWD-focused parser (Name, Disability Type, ID No)');
+
+    final idNumber = _extractIDNumber(rawText);
+    var fullName = _extractPWDName(rawText) ?? _extractName(rawText);
+    final disabilityType = _extractDisabilityType(rawText);
+
+    // Fix: OCR may concatenate name and disability type into one line
+    // (e.g. "MA. INES L. DELOS REYES MENTAL"). Strip trailing disability.
+    if (fullName != null && fullName.isNotEmpty) {
+      fullName = _stripTrailingDisabilityFromName(fullName);
+    }
+
+    final confidence = _calculateParsingConfidence(
+      idType: IDType.pwd,
+      idNumber: idNumber,
+      fullName: fullName,
+      age: null,
+      sex: null,
+      disabilityType: disabilityType,
+    );
+
+    return ParsedIDData(
+      success: true,
+      idType: IDType.pwd,
+      idNumber: idNumber,
+      fullName: fullName,
+      disabilityType: disabilityType,
+      confidence: confidence,
+      rawText: rawText,
+      nameConfidence: fullName != null && fullName.isNotEmpty ? 0.90 : 0.0,
+      idNumberConfidence: idNumber != null && idNumber.isNotEmpty ? 0.90 : 0.0,
+      disabilityTypeConfidence:
+          disabilityType != null && disabilityType.isNotEmpty ? 0.90 : 0.0,
+    );
   }
 
   // ===========================================================================
@@ -351,7 +426,7 @@ class ParserService {
   String? _extractName(String text) {
     // Look for "NAME" or "PANGALAN" keyword
     final nameWithLabel = RegExp(
-      r'(?:name|pangalan|fullname)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',
+      r'(?:name|pangalan|fullname)\s*:?\s*([A-Z][A-Za-z\.-]+(?:\s+[A-Z][A-Za-z\.-]+)+)',
       caseSensitive: false,
     );
     final labelMatch = nameWithLabel.firstMatch(text);
@@ -372,20 +447,178 @@ class ParserService {
       }
     }
 
+    // Additional fallback for OCR outputs that are fully uppercased.
+    final upperMatches = uppercaseNamePattern.allMatches(text);
+    for (final match in upperMatches) {
+      final name = match.group(0) ?? '';
+      if (name.length > maxLength && _isValidName(name)) {
+        longestName = name;
+        maxLength = name.length;
+      }
+    }
+
     return longestName != null ? _cleanName(longestName) : null;
+  }
+
+  /// Extract PWD name where OCR commonly puts the value above the NAME label.
+  String? _extractPWDName(String text) {
+    final multiline = text.replaceAll('\r', '');
+    final lines = multiline
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    // Preferred strategy: find "NAME" line, then use the nearest valid line above it.
+    for (int i = 0; i < lines.length; i++) {
+      final lineUpper = lines[i].toUpperCase();
+      if (lineUpper == 'NAME' || lineUpper.startsWith('NAME ')) {
+        for (int prev = i - 1; prev >= 0; prev--) {
+          final candidateLine = lines[prev];
+          final cleanedCandidate = _cleanName(candidateLine);
+          if (_isValidName(cleanedCandidate)) {
+            return cleanedCandidate;
+          }
+        }
+      }
+    }
+
+    // Example:
+    // MA. INES L. DELOS REYES
+    // NAME
+    final valueAboveLabel = RegExp(
+      r"([A-Z][A-Z .,'-]{4,80})\s*\n\s*NAME\b",
+      caseSensitive: false,
+      multiLine: true,
+    );
+    final aboveMatch = valueAboveLabel.firstMatch(multiline);
+    if (aboveMatch != null) {
+      final candidate = _cleanName(aboveMatch.group(1) ?? '');
+      if (_isValidName(candidate)) return candidate;
+    }
+
+    // Fallback when name label is followed by value in the same line.
+    final inlineName = RegExp(
+      r"(?:name|pangalan|fullname)\s*:?\s*([A-Z][A-Z .,'-]{4,80})",
+      caseSensitive: false,
+    );
+    final inlineMatch = inlineName.firstMatch(text);
+    if (inlineMatch != null) {
+      final candidate = _cleanName(inlineMatch.group(1) ?? '');
+      if (_isValidName(candidate)) return candidate;
+    }
+
+    return null;
+  }
+
+  /// Extract disability type from PWD ID text.
+  String? _extractDisabilityType(String text) {
+    final multiline = text.replaceAll('\r', '');
+
+    // Value usually appears above the label:
+    // MENTAL
+    // TYPE OF DISABILITY
+    final valueAboveLabel = RegExp(
+      r'([A-Z][A-Z\s/-]{2,60})\s*\n\s*(?:TYPE\s+OF\s+DISABILITY|DISABILITY\s+TYPE)\b',
+      caseSensitive: false,
+      multiLine: true,
+    );
+    final aboveMatch = valueAboveLabel.firstMatch(multiline);
+    if (aboveMatch != null) {
+      final cleaned = _normalizeDisabilityType(aboveMatch.group(1) ?? '');
+      if (cleaned.isNotEmpty) return cleaned;
+    }
+
+    // Also support label:value format.
+    final inline = RegExp(
+      r'(?:TYPE\s+OF\s+DISABILITY|DISABILITY\s+TYPE)\s*:?\s*([A-Z][A-Z\s/-]{2,60})',
+      caseSensitive: false,
+    );
+    final inlineMatch = inline.firstMatch(text);
+    if (inlineMatch != null) {
+      final cleaned = _normalizeDisabilityType(inlineMatch.group(1) ?? '');
+      if (cleaned.isNotEmpty) return cleaned;
+    }
+
+    // Last fallback: token search in full text.
+    final upper = text.toUpperCase();
+    for (final token in disabilityTypeAliases.keys) {
+      if (upper.contains(token)) {
+        return _normalizeDisabilityType(token);
+      }
+    }
+
+    return null;
+  }
+
+  String _normalizeDisabilityType(String value) {
+    var cleaned = value
+        .replaceAll(RegExp(r'[^A-Za-z\s/-]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    if (cleaned.isEmpty) return '';
+
+    final upper = cleaned.toUpperCase();
+    if (disabilityTypeAliases.containsKey(upper)) {
+      return disabilityTypeAliases[upper]!;
+    }
+
+    for (final token in disabilityTypeAliases.keys) {
+      if (upper.contains(token)) {
+        return disabilityTypeAliases[token]!;
+      }
+    }
+
+    return '';
+  }
+
+  /// Strip trailing disability type keywords from a name string.
+  /// Handles the common case where OCR concatenates name + disability type.
+  String _stripTrailingDisabilityFromName(String name) {
+    if (name.isEmpty) return name;
+    final nameUpper = name.toUpperCase();
+    // Try longest aliases first so "HARD OF HEARING" matches before "HEARING"
+    final sortedAliases = disabilityTypeAliases.keys.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+    for (final alias in sortedAliases) {
+      if (nameUpper.endsWith(alias)) {
+        final stripped = name.substring(0, name.length - alias.length).trim();
+        // Only accept if the remaining text still looks like a name
+        if (stripped.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length >=
+            2) {
+          return stripped;
+        }
+      }
+    }
+    return name;
   }
 
   /// Clean and validate name
   String _cleanName(String name) {
     // Remove common OCR errors
-    name = name.replaceAll(RegExp(r'[^a-zA-Z\s]'), '');
+    name = name.replaceAll(RegExp(r'[^a-zA-Z\s\.-]'), ' ');
     name = name.replaceAll(RegExp(r'\s+'), ' ');
     name = name.trim();
 
-    // Title case
+    // Keep initials/abbreviations uppercase; title-case normal words.
     return name.split(' ').map((word) {
       if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+      final normalized = word.replaceAll('.', '');
+      if (normalized.isEmpty) return '';
+
+      final isAbbrev =
+          normalized.length <= 3 && normalized == normalized.toUpperCase();
+      if (isAbbrev) {
+        return normalized.toUpperCase();
+      }
+
+      if (normalized.toLowerCase() == 'delos') {
+        return 'Delos';
+      }
+
+      return normalized[0].toUpperCase() +
+          normalized.substring(1).toLowerCase();
     }).join(' ');
   }
 
@@ -395,10 +628,18 @@ class ParserService {
 
     // Should have at least 2 words (first and last name)
     if (words.length < 2) return false;
+    if (words.length > 8) return false;
 
     // Each word should be reasonable length
     for (final word in words) {
-      if (word.length < 2 || word.length > 20) return false;
+      final cleanedWord = word.replaceAll(RegExp(r'[^A-Za-z]'), '');
+      if (cleanedWord.isEmpty) return false;
+      if (cleanedWord.length > 25) return false;
+
+      // Allow one-letter initials like "L" in names.
+      if (cleanedWord.length == 1) continue;
+
+      if (cleanedWord.length < 2) return false;
     }
 
     // Should not contain common non-name words
@@ -409,6 +650,12 @@ class ParserService {
       'city',
       'office',
       'government',
+      'pwd',
+      'disability',
+      'type',
+      'id',
+      'number',
+      'control',
     ];
     for (final nonName in nonNameWords) {
       if (name.toLowerCase().contains(nonName)) return false;
@@ -574,8 +821,20 @@ class ParserService {
     required String? fullName,
     required int? age,
     required String? sex,
+    String? disabilityType,
   }) {
     double confidence = 0.0;
+
+    if (idType == IDType.pwd) {
+      // PWD flow uses three core fields: Name, Type of Disability, ID No.
+      if (idType != IDType.unknown) confidence += 0.20;
+      if (idNumber != null && idNumber.isNotEmpty) confidence += 0.35;
+      if (fullName != null && fullName.split(' ').length >= 2)
+        confidence += 0.30;
+      if (disabilityType != null && disabilityType.isNotEmpty)
+        confidence += 0.15;
+      return confidence.clamp(0.0, 1.0);
+    }
 
     // ID Type detected: +20%
     if (idType != null && idType != IDType.unknown) {
@@ -623,6 +882,7 @@ class ParsedIDData {
   final IDType? idType;
   final String? idNumber;
   final String? fullName;
+  final String? disabilityType;
   final int? age;
   final String? sex;
   final String? dateIssued;
@@ -634,6 +894,7 @@ class ParsedIDData {
   // Per-field confidence scores
   final double nameConfidence;
   final double idNumberConfidence;
+  final double disabilityTypeConfidence;
   final double ageConfidence;
   final double sexConfidence;
   final double dateIssuedConfidence;
@@ -648,6 +909,7 @@ class ParsedIDData {
     this.idType,
     this.idNumber,
     this.fullName,
+    this.disabilityType,
     this.age,
     this.sex,
     this.dateIssued,
@@ -657,6 +919,7 @@ class ParsedIDData {
     this.rawText = '',
     this.nameConfidence = 0.0,
     this.idNumberConfidence = 0.0,
+    this.disabilityTypeConfidence = 0.0,
     this.ageConfidence = 0.0,
     this.sexConfidence = 0.0,
     this.dateIssuedConfidence = 0.0,
@@ -684,6 +947,7 @@ ParsedIDData:
   Type: ${idType?.name ?? 'Unknown'}
   ID Number: ${idNumber ?? 'N/A'}
   Name: ${fullName ?? 'N/A'}
+  Disability Type: ${disabilityType ?? 'N/A'}
   Age: ${age ?? 'N/A'}
   Sex: ${sex ?? 'N/A'}
   Date Issued: ${dateIssued ?? 'N/A'}

@@ -8,7 +8,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'enhanced_ocr_service.dart';
 import 'layout_based_field_extractor.dart';
+import 'opencv_image_processor.dart';
 import 'parser_service.dart';
+import 'pwd_layout_field_extractor.dart';
 
 /// Hybrid Parser Service - Best of Both Worlds
 ///
@@ -36,8 +38,48 @@ class HybridParserService {
     debugPrint('🔀 ============================================');
 
     try {
+      // PWD flow: use layout-aware extractor with fuzzy fallback for robustness.
+      if (idType.toLowerCase() == 'pwd') {
+        return await _parsePWDWithLayoutAndFallback(
+          imageFile: imageFile,
+          rawOcrText: rawOcrText,
+        );
+      }
+
+      // Step 0: OpenCV preprocessing (fast native, ~200-400ms)
+      debugPrint('🔬 Step 0/6: OpenCV preprocessing...');
+      File ocrImage = imageFile; // fallback to original
+
+      try {
+        // Quality gate — reject clearly unusable images early
+        final quality = await OpenCVImageProcessor.assessQuality(imageFile);
+        debugPrint(
+            '   Blur: ${quality.blurScore.toStringAsFixed(1)}, Brightness: ${quality.brightnessScore.toStringAsFixed(1)}');
+        if (!quality.acceptable) {
+          debugPrint('⚠️  Quality gate: ${quality.rejectionReason}');
+          // Don't hard-fail — let OCR attempt anyway, but log the warning
+        }
+
+        final processed = await OpenCVImageProcessor.preprocess(
+          imageFile,
+          idType: idType,
+        );
+        if (processed.success && processed.processedPath != null) {
+          ocrImage = File(processed.processedPath!);
+          debugPrint('✅ OpenCV preprocessing done');
+        } else {
+          debugPrint(
+              '⚠️  OpenCV preprocessing failed: ${processed.errorMessage}, using original');
+        }
+      } catch (e) {
+        debugPrint('⚠️  OpenCV preprocessing exception: $e, using original');
+      }
+
       // Step 1: Get positional OCR data (ML Kit with bounding boxes)
-      debugPrint('📍 Step 1/5: Extracting text with positions...');
+      // IMPORTANT: Use the ORIGINAL image for ML Kit layout extraction.
+      // OpenCV preprocessing (grayscale, CLAHE, etc.) can merge/shift text
+      // regions and break bounding-box-based layout detection.
+      debugPrint('📍 Step 1/6: Extracting text with positions...');
 
       final recognizedText =
           await _ocrService.extractTextWithPositions(imageFile);
@@ -47,8 +89,8 @@ class HybridParserService {
         return await _fallbackToFuzzyOnly(imageFile, idType, rawOcrText);
       }
 
-      // Step 2: Get image dimensions
-      debugPrint('📐 Step 2/5: Getting image dimensions...');
+      // Step 2: Get image dimensions (from original image)
+      debugPrint('📐 Step 2/6: Getting image dimensions...');
 
       final dimensions = await _ocrService.getImageDimensions(imageFile);
       if (dimensions == null) {
@@ -63,14 +105,15 @@ class HybridParserService {
       debugPrint('✅ Image: ${imageWidth}x$imageHeight px');
 
       // Step 3: Try layout-based extraction
-      debugPrint('🗺️  Step 3/5: Layout-based extraction...');
+      debugPrint('🗺️  Step 3/6: Layout-based extraction...');
 
       final layoutResult =
           await LayoutBasedFieldExtractor.extractFieldsWithLayout(
         recognizedText: recognizedText,
         imageWidth: imageWidth,
         imageHeight: imageHeight,
-        imagePath: imageFile.path, // Pass image path for zone-optimized OCR
+        imagePath: ocrImage
+            .path, // Pass preprocessed image for zone-optimized Tesseract OCR
       );
 
       final templateMatched = layoutResult['templateMatched'] as bool;
@@ -97,7 +140,7 @@ class HybridParserService {
 
       if (needsFuzzyFallback) {
         // Step 5: Fuzzy fallback
-        debugPrint('🔍 Step 4/5: Fuzzy matching fallback...');
+        debugPrint('🔍 Step 5/6: Fuzzy matching fallback...');
 
         // Get plain text for fuzzy matching
         String plainText = rawOcrText ?? recognizedText.text;
@@ -107,14 +150,20 @@ class HybridParserService {
         if (parsedData.success) {
           fuzzyResult = {
             'fullName': parsedData.fullName ?? '',
-            'dateOfBirth': _formatDate(parsedData.age),
+            // ── PRIORITY 4 FIX ──────────────────────────────────────────────
+            // Previously called _formatDate(parsedData.age) which fabricated a
+            // birth date like "01/01/1954" from an estimated age integer.
+            // We now return an empty string — a missing DOB is better than a
+            // wrong one that would mislead the operator.
+            'dateOfBirth': '',
+            // ────────────────────────────────────────────────────────────────
             'sex': parsedData.sex ?? '',
             'dateIssued': parsedData.dateIssued ?? '',
             'controlNumber': parsedData.controlNumber ?? '',
             'confidence': parsedData.confidence,
             'fieldConfidences': {
               'fullName': parsedData.nameConfidence,
-              'dateOfBirth': parsedData.ageConfidence,
+              'dateOfBirth': 0.0, // no real DOB → zero confidence
               'sex': parsedData.sexConfidence,
               'dateIssued': parsedData.dateIssuedConfidence,
               'controlNumber': parsedData.controlNumberConfidence,
@@ -129,7 +178,7 @@ class HybridParserService {
       }
 
       // Step 6: Merge results
-      debugPrint('🔀 Step 5/5: Merging results...');
+      debugPrint('🔀 Step 6/6: Merging results...');
 
       final merged = _mergeResults(
         layoutResult: layoutResult,
@@ -169,6 +218,86 @@ class HybridParserService {
       // Last resort: try fuzzy-only
       debugPrint('🔄 Attempting fuzzy-only as last resort...');
       return await _fallbackToFuzzyOnly(imageFile, idType, rawOcrText);
+    }
+  }
+
+  Future<ParsedIDData> _parsePWDWithLayoutAndFallback({
+    required File imageFile,
+    String? rawOcrText,
+  }) async {
+    debugPrint('♿ ============================================');
+    debugPrint('♿ PWD HYBRID PARSER - Layout + Fuzzy Fallback');
+    debugPrint('♿ ============================================');
+
+    try {
+      // IMPORTANT: Use the ORIGINAL image for ML Kit layout extraction.
+      // OpenCV preprocessing (grayscale, CLAHE, sharpening) can merge/shift
+      // bounding boxes and break anchor-based field detection for PWD IDs.
+      final recognizedText =
+          await _ocrService.extractTextWithPositions(imageFile);
+      final dimensions = await _ocrService.getImageDimensions(imageFile);
+
+      if (recognizedText == null || dimensions == null) {
+        debugPrint(
+            '⚠️ PWD layout prerequisites missing. Using fuzzy-only fallback.');
+        return await _fallbackToFuzzyOnly(imageFile, 'pwd', rawOcrText);
+      }
+
+      final layout = await PWDLayoutFieldExtractor.extractFieldsWithLayout(
+        recognizedText: recognizedText,
+        imageWidth: dimensions['width']!,
+        imageHeight: dimensions['height']!,
+      );
+
+      final fuzzy =
+          await _fuzzyParser.parseIDText(rawOcrText ?? recognizedText.text);
+
+      final layoutName = (layout['fullName'] as String?) ?? '';
+      final layoutDisability = (layout['disabilityType'] as String?) ?? '';
+      final layoutId = (layout['idNumber'] as String?) ?? '';
+
+      final fuzzyName = fuzzy.fullName ?? '';
+      final fuzzyDisability = fuzzy.disabilityType ?? '';
+      final fuzzyId = (fuzzy.idNumber ?? fuzzy.controlNumber ?? '');
+
+      final mergedName = layoutName.isNotEmpty ? layoutName : fuzzyName;
+      final mergedDisability =
+          layoutDisability.isNotEmpty ? layoutDisability : fuzzyDisability;
+      final mergedId = layoutId.isNotEmpty ? layoutId : fuzzyId;
+
+      final layoutConfidence = (layout['confidence'] as double?) ?? 0.0;
+      final fuzzyConfidence = fuzzy.confidence;
+
+      // Weight layout higher for PWD because anchors are strong for this card.
+      final overallConfidence =
+          ((layoutConfidence * 0.7) + (fuzzyConfidence * 0.3)).clamp(0.0, 1.0);
+
+      final fieldConfidences =
+          (layout['fieldConfidences'] as Map<String, dynamic>?) ?? {};
+
+      return ParsedIDData(
+        success: true,
+        idType: IDType.pwd,
+        idNumber: mergedId.isNotEmpty ? mergedId : null,
+        fullName: mergedName.isNotEmpty ? mergedName : null,
+        disabilityType: mergedDisability.isNotEmpty ? mergedDisability : null,
+        controlNumber: mergedId.isNotEmpty ? mergedId : null,
+        confidence: overallConfidence,
+        rawText: recognizedText.text,
+        nameConfidence:
+            (fieldConfidences['fullName'] as double?) ?? fuzzy.nameConfidence,
+        idNumberConfidence: (fieldConfidences['idNumber'] as double?) ??
+            fuzzy.idNumberConfidence,
+        disabilityTypeConfidence:
+            (fieldConfidences['disabilityType'] as double?) ??
+                fuzzy.disabilityTypeConfidence,
+        extractionMethod: 'pwd-hybrid (layout + fuzzy)',
+        templateMatched: true,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ PWD hybrid parser error: $e');
+      debugPrint('Stack trace: $stackTrace');
+      return await _fallbackToFuzzyOnly(imageFile, 'pwd', rawOcrText);
     }
   }
 
@@ -335,15 +464,8 @@ class HybridParserService {
   // HELPER METHODS
   // ===========================================================================
 
-  /// Format date from age (estimate birth year)
-  String _formatDate(int? age) {
-    if (age == null) return '';
-    final currentYear = DateTime.now().year;
-    final birthYear = currentYear - age;
-    return '01/01/$birthYear'; // Approximate
-  }
-
-  /// Extract age from date of birth (exact calculation considering month and day)
+  /// Extract age from date of birth (exact calculation considering month and day).
+  /// Returns null if dateOfBirth is empty or cannot be parsed — never fabricates.
   int? _extractAge(String? dateOfBirth) {
     if (dateOfBirth == null || dateOfBirth.isEmpty) return null;
 

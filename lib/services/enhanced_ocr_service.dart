@@ -417,9 +417,26 @@ class EnhancedOCRService {
       (match) => '${match.group(1)}1${match.group(2)}',
     );
 
-    // Fix common character confusions
-    text = text.replaceAll('|', 'I'); // Vertical bar -> I
-    text = text.replaceAll('!', '1'); // Exclamation -> 1 in numeric context
+    // Fix | → I only when adjacent to letters (not in dates/numbers)
+    text = text.replaceAllMapped(
+      RegExp(r'([a-zA-Z])\|([a-zA-Z])'),
+      (match) => '${match.group(1)}I${match.group(2)}',
+    );
+    // Fix leading | before a word
+    text = text.replaceAllMapped(
+      RegExp(r'\|([a-zA-Z])'),
+      (match) => 'I${match.group(1)}',
+    );
+
+    // Fix ! → 1 only when adjacent to digits (numeric context)
+    text = text.replaceAllMapped(
+      RegExp(r'(\d)!(\d)'),
+      (match) => '${match.group(1)}1${match.group(2)}',
+    );
+    text = text.replaceAllMapped(
+      RegExp(r'!(\d)'),
+      (match) => '1${match.group(1)}',
+    );
 
     return text;
   }

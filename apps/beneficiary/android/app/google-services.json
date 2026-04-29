@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "373998215679",
+    "project_id": "idetect-bc100",
+    "storage_bucket": "idetect-bc100.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373998215679:android:a83128f4cf3dffd28987ca",
+        "android_client_info": {
+          "package_name": "com.idetect.idetect_beneficiary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7doD0I_Yp33eH-krHSykwU5Ui3rpVheM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,347 @@
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  ArrowLeft,
+  Store,
+  Save,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Hash,
+  MapPin,
+  Phone,
+  Mail,
+  User,
+  Lock,
+  Building2,
+  Calendar,
+} from "lucide-react";
+import { establishmentsAPI } from "../services/api";
+
+const INITIAL = {
+  business_name: "",
+  business_permit_no: "",
+  business_permit_expiry: "",
+  owner_name: "",
+  address: "",
+  contact_number: "",
+  email: "",
+  password: "",
+  confirm_password: "",
+};
+
+function FormField({ icon: Icon, label, required, children }) {
+  return (
+    <div>
+      <label className="label flex items-center gap-1.5">
+        <Icon className="w-3.5 h-3.5 text-slate-400" />
+        {label}
+        {required && <span className="text-danger-500">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+export default function CreateEstablishmentPage() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState(INITIAL);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(null);
+
+  function set(field) {
+    return (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  }
+
+  function validate() {
+    if (!form.business_name.trim()) return "Business name is required.";
+    if (!form.business_permit_no.trim())
+      return "Business permit number is required.";
+    if (!form.owner_name.trim()) return "Owner name is required.";
+    if (!form.address.trim()) return "Address is required.";
+    if (!form.contact_number.trim()) return "Contact number is required.";
+    if (!form.email.trim()) return "Staff email is required.";
+    if (!/\S+@\S+\.\S+/.test(form.email))
+      return "Please enter a valid email address.";
+    if (!form.password) return "Password is required.";
+    if (form.password.length < 8)
+      return "Password must be at least 8 characters.";
+    if (form.password !== form.confirm_password)
+      return "Passwords do not match.";
+    return null;
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await establishmentsAPI.create({
+        business_name: form.business_name.trim(),
+        business_permit_no: form.business_permit_no.trim(),
+        owner_name: form.owner_name.trim(),
+        address: form.address.trim(),
+        contact_number: form.contact_number.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        business_permit_expiry: form.business_permit_expiry || undefined,
+      });
+      setSuccess(data);
+      setForm(INITIAL);
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.errors?.[0]?.msg ||
+        "Failed to create establishment. Please try again.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="px-6 lg:px-8 py-8 max-w-3xl mx-auto space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <Link
+          to="/establishments"
+          className="hover:text-gov-600 flex items-center gap-1 font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" /> Establishments
+        </Link>
+        <span>/</span>
+        <span className="text-gray-900 font-medium">Create New</span>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 bg-gov-50 rounded-2xl flex items-center justify-center">
+          <Store className="w-6 h-6 text-gov-600" />
+        </div>
+        <div>
+          <h1 className="font-heading font-bold text-2xl text-gray-900">
+            Create Establishment Account
+          </h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            Register a food service establishment and grant them immediate
+            access to iDetect.
+          </p>
+        </div>
+      </div>
+
+      {/* Success message */}
+      {success && (
+        <div className="p-5 bg-success-50 border border-success-200 rounded-xl space-y-3">
+          <div className="flex items-center gap-2 text-success-800">
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+            <p className="font-semibold text-sm">{success.message}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-success-100 p-4 text-sm space-y-2">
+            <p className="text-gray-600">
+              <span className="font-medium text-gray-900">Business: </span>
+              {success.establishment?.business_name}
+            </p>
+            <p className="text-gray-600">
+              <span className="font-medium text-gray-900">Permit No: </span>
+              {success.establishment?.business_permit_no}
+            </p>
+            <p className="text-gray-600">
+              <span className="font-medium text-gray-900">Login Email: </span>
+              {success.establishment?.email}
+            </p>
+            <p className="text-gray-600">
+              <span className="font-medium text-gray-900">Status: </span>
+              <span className="text-success-700 font-medium">
+                Approved — Active
+              </span>
+            </p>
+          </div>
+          <p className="text-xs text-success-700">
+            The establishment can now log in to the Client Portal and begin
+            scanning IDs immediately.
+          </p>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => setSuccess(null)}
+              className="btn-secondary text-sm"
+            >
+              Create Another
+            </button>
+            <Link to="/establishments" className="btn-primary text-sm">
+              Back to Establishments
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Form */}
+      {!success && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Business Details */}
+          <div className="card space-y-5">
+            <div>
+              <h2 className="font-heading font-semibold text-gray-900">
+                Business Information
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Enter the establishment's Valenzuela City business permit
+                details
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <FormField icon={Hash} label="Business Permit Number" required>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="e.g. BP-2026-00123"
+                  value={form.business_permit_no}
+                  onChange={set("business_permit_no")}
+                  disabled={loading}
+                />
+              </FormField>
+
+              <FormField icon={Building2} label="Business Name" required>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="e.g. Jollibee Karuhatan Branch"
+                  value={form.business_name}
+                  onChange={set("business_name")}
+                  disabled={loading}
+                />
+              </FormField>
+            </div>
+
+            <FormField icon={User} label="Owner Name" required>
+              <input
+                type="text"
+                className="input"
+                placeholder="Full name of the business owner"
+                value={form.owner_name}
+                onChange={set("owner_name")}
+                disabled={loading}
+              />
+            </FormField>
+
+            <FormField icon={MapPin} label="Business Address" required>
+              <input
+                type="text"
+                className="input"
+                placeholder="Complete address in Valenzuela City"
+                value={form.address}
+                onChange={set("address")}
+                disabled={loading}
+              />
+            </FormField>
+
+            <FormField icon={Phone} label="Contact Number" required>
+              <input
+                type="text"
+                className="input"
+                placeholder="e.g. 09171234567"
+                value={form.contact_number}
+                onChange={set("contact_number")}
+                disabled={loading}
+              />
+            </FormField>
+
+            <FormField icon={Calendar} label="Business Permit Expiry Date">
+              <input
+                type="date"
+                className="input"
+                value={form.business_permit_expiry}
+                onChange={set("business_permit_expiry")}
+                disabled={loading}
+              />
+            </FormField>
+          </div>
+
+          {/* Staff Credentials */}
+          <div className="card space-y-5">
+            <div>
+              <h2 className="font-heading font-semibold text-gray-900">
+                Staff Login Credentials
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                These credentials will be used by establishment staff to log in
+                to the Client Portal mobile app
+              </p>
+            </div>
+
+            <FormField icon={Mail} label="Staff Email" required>
+              <input
+                type="email"
+                className="input"
+                placeholder="e.g. staff@restaurant.com"
+                value={form.email}
+                onChange={set("email")}
+                disabled={loading}
+              />
+            </FormField>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <FormField icon={Lock} label="Password" required>
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="Minimum 8 characters"
+                  value={form.password}
+                  onChange={set("password")}
+                  disabled={loading}
+                />
+              </FormField>
+
+              <FormField icon={Lock} label="Confirm Password" required>
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="Re-enter password"
+                  value={form.confirm_password}
+                  onChange={set("confirm_password")}
+                  disabled={loading}
+                />
+              </FormField>
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2.5 px-4 py-3 bg-danger-50 border border-danger-100 rounded-lg text-danger-700 text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          {/* Submit */}
+          <div className="flex items-center justify-between pt-2">
+            <Link to="/establishments" className="btn-ghost text-sm">
+              Cancel
+            </Link>
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating…
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Create &amp; Approve Establishment
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}

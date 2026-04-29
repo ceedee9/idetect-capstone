@@ -9,6 +9,7 @@ This session focused on **UI polish and refinement** for the iDetect application
 ### 1. ✅ Camera Screen Color & Design Updates
 
 **Changes:**
+
 - Changed frame color from bright `Colors.greenAccent` to softer green (`Color(0xFF4CAF50)`)
 - Updated capture button from white with green border to blue (`Color(0xFF002E6B)`) with white border
 - Removed glowing shadow effects from capture button for cleaner appearance
@@ -17,6 +18,7 @@ This session focused on **UI polish and refinement** for the iDetect application
 - Changed all progress indicators to blue color scheme
 
 **Improved Instructions:**
+
 - Changed from simple "Align ID within green frame"
 - To multi-line instructions:
   - "Position ID card within the frame"
@@ -25,12 +27,14 @@ This session focused on **UI polish and refinement** for the iDetect application
 ### 2. ✅ Result Screen Layout Improvements
 
 **Initial Changes:**
+
 - Increased extracted details card padding from 20px to 24px
 - Increased spacing between rows from 12px to 16px
 - Increased font sizes from 14px to 15px
 - Larger title font from 16px to 18px
 
 **Reverted & Adjusted:**
+
 - User feedback indicated card became too large
 - Reverted all size increases back to original dimensions
 - Instead adjusted card position to appear higher on screen
@@ -38,6 +42,7 @@ This session focused on **UI polish and refinement** for the iDetect application
 - Reduced vertical margin from 16px to 8px for better positioning
 
 **Final Layout:**
+
 ```dart
 Column(
   children: [
@@ -55,6 +60,7 @@ Column(
 ### 3. ✅ Logo Integration Across All Screens
 
 **Logo Implementation:**
+
 - Added iDetect logo image: `assets/images/idetect_logo.png`
 - Replaced text-based "IDETECT" logo with image across 5 screens:
   1. Home Screen - 70px height
@@ -64,6 +70,7 @@ Column(
   5. Camera Screen (if applicable)
 
 **Department Logos:**
+
 - Added PDAO logo: `assets/images/pdao_logo.png` (PWD logo with colorful hands)
 - Added OSCA logo: `assets/images/osca_logo.png` (Senior Citizens Affairs logo)
 - Updated department cards to use circular image containers instead of icons
@@ -72,6 +79,7 @@ Column(
 ### 4. ✅ Home Screen Image Updates
 
 **New Images Added:**
+
 - Main banner: `assets/images/valid_banner.jpg` - VAL ID Validation Portal banner
 - Info cards updated with validation portal images:
   - `poster_senior_pwd.jpg` - New Senior Citizen & PWD ID Design
@@ -80,12 +88,14 @@ Column(
   - `poster_person2.jpg` - Establishments Display Validation Info
 
 **Updated Titles:**
+
 - Changed from generic "Lorem Ipsum" content
 - To relevant VAL ID validation system information
 
 ### 5. ✅ Department Selection Screen Fixes
 
 **Overflow Issue Fixed:**
+
 - Reduced spacing between cards from 30px to 20px
 - Reduced logo container size from 140px to 120px
 - Reduced card padding from 30px to 24px
@@ -95,6 +105,7 @@ Column(
 ### 6. ✅ File Organization
 
 **Assets Added:**
+
 ```
 assets/images/
 ├── idetect_logo.png
@@ -112,11 +123,13 @@ assets/images/
 ### Color Scheme Updates
 
 **Before:**
+
 - Frame: `Colors.greenAccent` (bright neon green)
 - Button: White background with green border + glow effect
 - Progress: `Colors.greenAccent`
 
 **After:**
+
 - Frame: `Color(0xFF4CAF50)` (softer green)
 - Button: `Color(0xFF002E6B)` (brand blue) with white border, no glow
 - Progress: `Color(0xFF002E6B)` (brand blue)
@@ -124,6 +137,7 @@ assets/images/
 ### Layout Adjustments
 
 **Result Screen Before:**
+
 ```dart
 Expanded(
   child: Center(
@@ -135,6 +149,7 @@ _buildBottomControls(),
 ```
 
 **Result Screen After:**
+
 ```dart
 _buildTopBar(),
 const SizedBox(height: 20),
@@ -148,35 +163,34 @@ _buildBottomControls(),
 ## Files Modified
 
 ### Dart Files
+
 1. `lib/presentation/screens/scan/camera_screen.dart`
    - Updated colors, button styling, instructions
-   
 2. `lib/presentation/screens/scan/result_screen.dart`
    - Adjusted layout positioning and spacing
-   
 3. `lib/presentation/screens/home/home_screen.dart`
    - Added logo image, updated banner and info card images
-   
 4. `lib/presentation/screens/home/department_selection_screen.dart`
    - Added logo image, updated to use department logo images, fixed overflow
-   
 5. `lib/presentation/screens/home/osca_records_screen.dart`
    - Added logo image to header
-   
 6. `lib/presentation/screens/home/pdao_records_screen.dart`
    - Added logo image to header
 
 ### Assets
+
 - 8 new image files added to `assets/images/`
 
 ## Git Commit
 
 **Commit Message:**
+
 ```
 UI redesign: Updated camera colors, improved result screen layout, added image logos and VAL ID validation images
 ```
 
 **Stats:**
+
 - 31 files changed
 - 2,983 insertions(+)
 - 2,461 deletions(-)
@@ -184,6 +198,7 @@ UI redesign: Updated camera colors, improved result screen layout, added image l
 ## Next Steps & Recommendations
 
 ### Potential Improvements
+
 1. **Logo Optimization:**
    - Consider creating a cropped/transparent version of idetect_logo.png if background needs removal
    - Ensure consistent logo sizing across all screens
@@ -202,6 +217,7 @@ UI redesign: Updated camera colors, improved result screen layout, added image l
    - Update README.md with new screenshots
 
 ### Testing Checklist
+
 - [x] Camera screen displays with new colors
 - [x] Result screen card positioned correctly
 - [x] All logos display without "Asset not found" errors

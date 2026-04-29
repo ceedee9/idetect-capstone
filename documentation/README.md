@@ -65,6 +65,8 @@ flutter run
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview
 - [OCR_SYSTEM.md](OCR_SYSTEM.md) - OCR engine documentation
 - [SESSION_SUMMARY_JAN23_2026.md](SESSION_SUMMARY_JAN23_2026.md) - Latest session notes
+- [SIMPLE_TEAM_GUIDE.md](SIMPLE_TEAM_GUIDE.md) - Plain-language operations guide for team members
+- [FUNCTIONAL_REQUIREMENTS_REVIEW_GUIDE.md](FUNCTIONAL_REQUIREMENTS_REVIEW_GUIDE.md) - Functional requirements status, gaps, and fix priorities
 
 ## 🔧 Configuration
 

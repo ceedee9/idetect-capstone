@@ -1,0 +1,1309 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../core/constants/app_design_system.dart';
+import '../services/api_service.dart';
+import '../services/fcm_service.dart';
+import 'home_screen.dart';
+
+/// Keys for remembering the beneficiary so they don't re-type next time.
+const _kSavedId = 'saved_id_number';
+const _kSavedBirthdate = 'saved_birthdate';
+const _kSavedName = 'saved_full_name';
+const _kBiometricEnabled = 'biometric_enabled';
+const _kPinSet = 'pin_set';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+/// Login phases:
+///  0 = id entry (or welcome-back if remembered)
+///  1 = mobile registration (first-time, no mobile on file)
+///  2 = OTP entry (large numpad)
+enum _Phase { idEntry, registerMobile, otpEntry, pinEntry }
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _idController = TextEditingController();
+  final _birthdateController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _localAuth = LocalAuthentication();
+
+  _Phase _phase = _Phase.idEntry;
+  bool _isLoading = false;
+  String? _errorMessage;
+  DateTime? _selectedDate;
+
+  // Remembered user
+  String? _savedName;
+  bool _hasSavedId = false;
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+
+  // OTP state
+  String _otpDigits = '';
+
+  // PIN state
+  String _pinDigits = '';
+  bool _hasPinSet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  @override
+  void dispose() {
+    _idController.dispose();
+    _birthdateController.dispose();
+    _mobileController.dispose();
+    super.dispose();
+  }
+
+  // ── Saved credentials ────────────────────────────────────────────
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getString(_kSavedId);
+    final bd = prefs.getString(_kSavedBirthdate);
+    final name = prefs.getString(_kSavedName);
+    final bioEnabled = prefs.getBool(_kBiometricEnabled) ?? false;
+    final pinSet = prefs.getBool(_kPinSet) ?? false;
+
+    if (id != null && bd != null) {
+      _idController.text = id;
+      _birthdateController.text = bd;
+      _selectedDate = DateTime.tryParse(bd);
+      _hasSavedId = true;
+      _savedName = name;
+      _biometricEnabled = bioEnabled;
+      _hasPinSet = pinSet;
+    }
+
+    // Check if device supports biometrics
+    try {
+      final canAuth =
+          await _localAuth.canCheckBiometrics ||
+          await _localAuth.isDeviceSupported();
+      _biometricAvailable = canAuth;
+    } catch (_) {
+      _biometricAvailable = false;
+    }
+
+    if (mounted) setState(() {});
+
+    // Auto-attempt biometric login if everything is set up
+    if (_hasSavedId && _biometricEnabled && ApiService.isLoggedIn) {
+      _attemptBiometric();
+    }
+  }
+
+  Future<void> _saveCredentials(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kSavedId, _idController.text.trim());
+    await prefs.setString(_kSavedBirthdate, _birthdateController.text);
+    await prefs.setString(_kSavedName, name);
+  }
+
+  Future<void> _clearSaved() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kSavedId);
+    await prefs.remove(_kSavedBirthdate);
+    await prefs.remove(_kSavedName);
+    await prefs.remove(_kBiometricEnabled);
+    await prefs.remove(_kPinSet);
+    setState(() {
+      _hasSavedId = false;
+      _savedName = null;
+      _biometricEnabled = false;
+      _hasPinSet = false;
+      _idController.clear();
+      _birthdateController.clear();
+      _selectedDate = null;
+    });
+  }
+
+  // ── Biometric ────────────────────────────────────────────────────
+
+  Future<void> _attemptBiometric() async {
+    try {
+      final ok = await _localAuth.authenticate(
+        localizedReason: 'Sign in with your fingerprint or face',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false,
+        ),
+      );
+      if (ok && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } catch (_) {
+      // biometric failed, fall through to manual login
+    }
+  }
+
+  Future<void> _enableBiometric() async {
+    try {
+      final ok = await _localAuth.authenticate(
+        localizedReason: 'Enable quick sign-in for next time',
+        options: const AuthenticationOptions(biometricOnly: false),
+      );
+      if (ok) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(_kBiometricEnabled, true);
+        setState(() => _biometricEnabled = true);
+      }
+    } catch (_) {}
+  }
+
+  // ── Date picker ──────────────────────────────────────────────────
+
+  Future<void> _pickBirthdate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime(1970, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppDesignSystem.primaryBlue,
+            ),
+            textTheme: Theme.of(
+              context,
+            ).textTheme.copyWith(headlineMedium: const TextStyle(fontSize: 28)),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (date != null) {
+      setState(() {
+        _selectedDate = date;
+        _birthdateController.text =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  // ── Request OTP ──────────────────────────────────────────────────
+
+  Future<void> _requestOtp() async {
+    if (_idController.text.trim().isEmpty || _selectedDate == null) {
+      setState(
+        () => _errorMessage = 'Please enter your ID number and birthdate.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final result = await ApiService.requestOtp(
+      idNumber: _idController.text.trim(),
+      birthdate: _birthdateController.text,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (result['error'] != null) {
+      setState(() => _errorMessage = result['error']);
+    } else if (result['mobile_required'] == true) {
+      // No mobile on file — show registration form
+      setState(() {
+        _savedName = result['beneficiary_name'];
+        _phase = _Phase.registerMobile;
+        _errorMessage = null;
+      });
+    } else {
+      // OTP sent successfully
+      setState(() {
+        _phase = _Phase.otpEntry;
+        _otpDigits = '';
+        _errorMessage = null;
+      });
+    }
+  }
+
+  // ── Register Mobile ──────────────────────────────────────────────
+
+  Future<void> _submitMobile() async {
+    final mobile = _mobileController.text.trim();
+    if (mobile.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your mobile number.');
+      return;
+    }
+
+    // Basic PH mobile validation
+    final mobileRegex = RegExp(r'^(\+?63|0)9\d{9}$');
+    if (!mobileRegex.hasMatch(mobile)) {
+      setState(
+        () => _errorMessage =
+            'Please enter a valid PH mobile number\n(e.g. 09171234567)',
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final result = await ApiService.registerMobile(
+      idNumber: _idController.text.trim(),
+      birthdate: _birthdateController.text,
+      mobileNumber: mobile,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (result['error'] != null) {
+      setState(() => _errorMessage = result['error']);
+    } else {
+      // Mobile registered, OTP sent — go to OTP screen
+      setState(() {
+        _phase = _Phase.otpEntry;
+        _otpDigits = '';
+        _errorMessage = null;
+      });
+    }
+  }
+
+  // ── Verify OTP ───────────────────────────────────────────────────
+
+  Future<void> _verifyOtp() async {
+    if (_otpDigits.length != 6) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final result = await ApiService.verifyOtp(
+      idNumber: _idController.text.trim(),
+      otp: _otpDigits,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (result.success) {
+      // Register FCM token now that we have an auth token
+      await FcmService.onLogin();
+
+      // Remember credentials
+      await _saveCredentials(result.fullName ?? '');
+
+      if (!mounted) return;
+
+      // Offer security setup (PIN first, then biometric)
+      if (!_hasPinSet) {
+        _showPinSetupPrompt();
+      } else if (_biometricAvailable && !_biometricEnabled) {
+        _showBiometricPrompt();
+      } else {
+        _goHome();
+      }
+    } else {
+      setState(() {
+        _errorMessage = result.errorMessage;
+        _otpDigits = '';
+      });
+    }
+  }
+
+  void _showPinSetupPrompt() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Row(
+          children: [
+            Icon(Icons.pin, color: AppDesignSystem.primaryBlue, size: 32),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Set a PIN', style: TextStyle(fontSize: 20)),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Set a 4-digit PIN so you can sign in without waiting for a text message next time.',
+          style: TextStyle(fontSize: 17, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Still offer biometric if available
+              if (_biometricAvailable && !_biometricEnabled) {
+                _showBiometricPrompt();
+              } else {
+                _goHome();
+              }
+            },
+            child: const Text('Not Now', style: TextStyle(fontSize: 16)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppDesignSystem.primaryBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              // Show PIN entry phase for setup
+              setState(() {
+                _phase = _Phase.pinEntry;
+                _pinDigits = '';
+                _errorMessage = null;
+              });
+            },
+            child: const Text(
+              'Set PIN Now',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitPinSetup() async {
+    if (_pinDigits.length != 4) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final result = await ApiService.setPin(_pinDigits);
+
+    setState(() => _isLoading = false);
+
+    if (result['pin_set'] == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kPinSet, true);
+      _hasPinSet = true;
+
+      if (!mounted) return;
+
+      // Now offer biometric
+      if (_biometricAvailable && !_biometricEnabled) {
+        _showBiometricPrompt();
+      } else {
+        _goHome();
+      }
+    } else {
+      setState(() {
+        _errorMessage = result['error'] ?? 'Failed to set PIN';
+        _pinDigits = '';
+      });
+    }
+  }
+
+  Future<void> _loginWithPin() async {
+    if (_pinDigits.length != 4) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final result = await ApiService.loginWithPin(
+      idNumber: _idController.text.trim(),
+      pin: _pinDigits,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (result.success) {
+      await FcmService.onLogin();
+      await _saveCredentials(result.fullName ?? '');
+      if (!mounted) return;
+      _goHome();
+    } else {
+      setState(() {
+        _errorMessage = result.errorMessage;
+        _pinDigits = '';
+      });
+    }
+  }
+
+  void _showBiometricPrompt() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Row(
+          children: [
+            Icon(
+              Icons.fingerprint,
+              color: AppDesignSystem.primaryBlue,
+              size: 32,
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Quick Sign-In', style: TextStyle(fontSize: 20)),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Would you like to use your fingerprint or face to sign in next time?\n\nThis makes it easier — no need to type your OTP again.',
+          style: TextStyle(fontSize: 17, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _goHome();
+            },
+            child: const Text('Not Now', style: TextStyle(fontSize: 16)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppDesignSystem.primaryBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _enableBiometric();
+              _goHome();
+            },
+            child: const Text(
+              'Yes, Enable',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _goHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  }
+
+  // ── Numpad helpers ───────────────────────────────────────────────
+
+  void _onNumpadTap(String digit) {
+    if (_otpDigits.length < 6) {
+      setState(() => _otpDigits += digit);
+      if (_otpDigits.length == 6) {
+        _verifyOtp();
+      }
+    }
+  }
+
+  void _onNumpadDelete() {
+    if (_otpDigits.isNotEmpty) {
+      setState(
+        () => _otpDigits = _otpDigits.substring(0, _otpDigits.length - 1),
+      );
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // BUILD
+  // ═══════════════════════════════════════════════════════════════════
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLogo(),
+                const SizedBox(height: 8),
+                Text(
+                  'Beneficiary Portal',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppDesignSystem.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                if (_phase == _Phase.idEntry) _buildIdEntry(),
+                if (_phase == _Phase.registerMobile) _buildMobileRegistration(),
+                if (_phase == _Phase.otpEntry) _buildOtpEntry(),
+                if (_phase == _Phase.pinEntry) _buildPinEntry(),
+
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 16),
+                  _buildError(),
+                ],
+
+                // Dev-mode skip login
+                if (kDebugMode) ...[
+                  const SizedBox(height: 32),
+                  const Divider(),
+                  TextButton.icon(
+                    onPressed: () {
+                      ApiService.setToken(
+                        'dev-skip-token',
+                        user: {
+                          'full_name': 'Dev User',
+                          'beneficiary_type': 'senior_citizen',
+                          'id_number': 'DEV-0001',
+                          'type': 'beneficiary',
+                        },
+                      );
+                      _goHome();
+                    },
+                    icon: const Icon(Icons.developer_mode, size: 20),
+                    label: const Text('Skip Login (Dev Mode)'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Logo ─────────────────────────────────────────────────────────
+
+  Widget _buildLogo() {
+    return Image.asset(
+      'assets/images/idetect_logo.png',
+      width: 180,
+      errorBuilder: (_, __, _) => Container(
+        width: 180,
+        height: 70,
+        alignment: Alignment.center,
+        child: Text(
+          'iDETECT',
+          style: AppDesignSystem.heading1.copyWith(
+            color: AppDesignSystem.primaryBlue,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Phase 0: ID Entry ────────────────────────────────────────────
+
+  Widget _buildIdEntry() {
+    return Column(
+      children: [
+        // Welcome-back greeting for returning users
+        if (_hasSavedId && _savedName != null) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppDesignSystem.backgroundLightBlue,
+              borderRadius: AppDesignSystem.cardRadius,
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.waving_hand, size: 36, color: Colors.amber.shade700),
+                const SizedBox(height: 8),
+                Text(
+                  'Welcome back,',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppDesignSystem.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _savedName!,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppDesignSystem.primaryBlue,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Biometric button (big, prominent)
+          if (_biometricAvailable && _biometricEnabled) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 72,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppDesignSystem.primaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppDesignSystem.buttonRadius,
+                  ),
+                  elevation: 2,
+                ),
+                onPressed: _attemptBiometric,
+                icon: const Icon(
+                  Icons.fingerprint,
+                  size: 32,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Sign In with Fingerprint',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '— or sign in with OTP —',
+              style: TextStyle(
+                fontSize: 15,
+                color: AppDesignSystem.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // PIN login button for returning users
+          if (_hasPinSet) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 64,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(
+                    color: AppDesignSystem.primaryBlue,
+                    width: 2,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppDesignSystem.buttonRadius,
+                  ),
+                ),
+                onPressed: () => setState(() {
+                  _phase = _Phase.pinEntry;
+                  _pinDigits = '';
+                  _errorMessage = null;
+                }),
+                icon: const Icon(Icons.pin, size: 26),
+                label: const Text(
+                  'Sign In with PIN',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Quick OTP login — ID is pre-filled, just tap
+          SizedBox(
+            width: double.infinity,
+            height: 64,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(
+                  color: AppDesignSystem.primaryBlue,
+                  width: 2,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppDesignSystem.buttonRadius,
+                ),
+              ),
+              onPressed: _isLoading ? null : _requestOtp,
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sms_outlined, size: 26),
+              label: const Text(
+                'Send OTP to My Phone',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // "Not you?" link
+          TextButton(
+            onPressed: _clearSaved,
+            child: const Text(
+              'Not you? Use a different ID',
+              style: TextStyle(
+                fontSize: 15,
+                color: AppDesignSystem.secondaryBlue,
+              ),
+            ),
+          ),
+        ] else ...[
+          // First-time user — manual ID entry
+
+          // ID Number
+          TextField(
+            controller: _idController,
+            style: const TextStyle(fontSize: 20, letterSpacing: 1),
+            decoration:
+                AppDesignSystem.inputDecoration(
+                  hintText: 'Enter your ID Number',
+                  prefixIcon: Icons.badge_outlined,
+                ).copyWith(
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 16,
+                  ),
+                ),
+            textCapitalization: TextCapitalization.characters,
+          ),
+          const SizedBox(height: 16),
+
+          // Birthdate
+          TextField(
+            controller: _birthdateController,
+            readOnly: true,
+            onTap: _pickBirthdate,
+            style: const TextStyle(fontSize: 20),
+            decoration:
+                AppDesignSystem.inputDecoration(
+                  hintText: 'Select your Birthdate',
+                  prefixIcon: Icons.calendar_today_outlined,
+                ).copyWith(
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 16,
+                  ),
+                  suffixIcon: const Icon(Icons.arrow_drop_down, size: 30),
+                ),
+          ),
+          const SizedBox(height: 24),
+
+          // Request OTP button — large
+          SizedBox(
+            width: double.infinity,
+            height: 64,
+            child: ElevatedButton(
+              style: AppDesignSystem.primaryButton.copyWith(
+                minimumSize: WidgetStateProperty.all(
+                  const Size(double.infinity, 64),
+                ),
+                textStyle: WidgetStateProperty.all(
+                  const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
+                ),
+              ),
+              onPressed: _isLoading ? null : _requestOtp,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Continue',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ── Phase 1: Mobile Registration ─────────────────────────────────
+
+  Widget _buildMobileRegistration() {
+    return Column(
+      children: [
+        // Friendly explanation
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppDesignSystem.secondaryBlue.withAlpha(20),
+            borderRadius: AppDesignSystem.cardRadius,
+            border: Border.all(
+              color: AppDesignSystem.secondaryBlue.withAlpha(60),
+            ),
+          ),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.phone_android,
+                size: 48,
+                color: AppDesignSystem.secondaryBlue,
+              ),
+              const SizedBox(height: 12),
+              if (_savedName != null) ...[
+                Text(
+                  'Hello, $_savedName!',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppDesignSystem.primaryBlue,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+              ],
+              const Text(
+                'We need your mobile number to send you a verification code. '
+                'You only need to do this once.',
+                style: TextStyle(
+                  fontSize: 17,
+                  height: 1.5,
+                  color: AppDesignSystem.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Mobile input — large
+        TextField(
+          controller: _mobileController,
+          style: const TextStyle(fontSize: 22, letterSpacing: 1.5),
+          keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+            LengthLimitingTextInputFormatter(13),
+          ],
+          decoration:
+              AppDesignSystem.inputDecoration(
+                hintText: '09171234567',
+                prefixIcon: Icons.phone_outlined,
+              ).copyWith(
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 20,
+                  horizontal: 16,
+                ),
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Philippine mobile number (e.g. 09171234567)',
+          style: TextStyle(fontSize: 14, color: AppDesignSystem.textSecondary),
+        ),
+        const SizedBox(height: 24),
+
+        SizedBox(
+          width: double.infinity,
+          height: 64,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppDesignSystem.primaryBlue,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppDesignSystem.buttonRadius,
+              ),
+            ),
+            onPressed: _isLoading ? null : _submitMobile,
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.send, color: Colors.white, size: 24),
+            label: const Text(
+              'Register & Send OTP',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        TextButton(
+          onPressed: () => setState(() {
+            _phase = _Phase.idEntry;
+            _errorMessage = null;
+          }),
+          child: const Text(
+            '← Back',
+            style: TextStyle(
+              fontSize: 16,
+              color: AppDesignSystem.secondaryBlue,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Phase 2: OTP Entry (large numpad) ────────────────────────────
+
+  Widget _buildOtpEntry() {
+    return Column(
+      children: [
+        // Instruction
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppDesignSystem.statusValid.withAlpha(25),
+            borderRadius: AppDesignSystem.cardRadius,
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: AppDesignSystem.statusValid,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'A 6-digit code was sent to your phone.\nEnter it below.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppDesignSystem.statusValid,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // OTP display boxes
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(6, (i) {
+            final filled = i < _otpDigits.length;
+            return Container(
+              width: 48,
+              height: 60,
+              margin: EdgeInsets.only(left: i > 0 ? 8 : 0),
+              decoration: BoxDecoration(
+                color: filled
+                    ? AppDesignSystem.primaryBlue.withAlpha(25)
+                    : AppDesignSystem.backgroundLightBlue,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: filled
+                      ? AppDesignSystem.primaryBlue
+                      : AppDesignSystem.borderLight,
+                  width: filled ? 2 : 1,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                filled ? _otpDigits[i] : '',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppDesignSystem.primaryBlue,
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 8),
+
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: CircularProgressIndicator(
+              color: AppDesignSystem.primaryBlue,
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Large numpad
+        _buildNumpad(),
+
+        const SizedBox(height: 16),
+
+        // Back / resend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            TextButton(
+              onPressed: () => setState(() {
+                _phase = _Phase.idEntry;
+                _otpDigits = '';
+                _errorMessage = null;
+              }),
+              child: const Text(
+                '← Back',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppDesignSystem.secondaryBlue,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _isLoading ? null : _requestOtp,
+              child: const Text(
+                'Resend OTP',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppDesignSystem.secondaryBlue,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Phase 3: PIN Entry (setup or login) ──────────────────────────
+
+  /// True if user has a valid auth token (meaning they just OTP'd and are setting up)
+  bool get _isPinSetup => ApiService.isLoggedIn && !_hasPinSet;
+
+  Widget _buildPinEntry() {
+    final isSetup = _isPinSetup;
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppDesignSystem.primaryBlue.withAlpha(15),
+            borderRadius: AppDesignSystem.cardRadius,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                isSetup ? Icons.pin : Icons.lock_outline,
+                size: 40,
+                color: AppDesignSystem.primaryBlue,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isSetup ? 'Create Your 4-Digit PIN' : 'Enter Your PIN',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppDesignSystem.primaryBlue,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isSetup
+                    ? 'This PIN lets you sign in without a text message.'
+                    : 'Enter your 4-digit PIN to sign in.',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppDesignSystem.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // PIN display (4 dots/circles)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(4, (i) {
+            final filled = i < _pinDigits.length;
+            return Container(
+              width: 56,
+              height: 56,
+              margin: EdgeInsets.only(left: i > 0 ? 16 : 0),
+              decoration: BoxDecoration(
+                color: filled
+                    ? AppDesignSystem.primaryBlue
+                    : AppDesignSystem.backgroundLightBlue,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: filled
+                      ? AppDesignSystem.primaryBlue
+                      : AppDesignSystem.borderLight,
+                  width: 2,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: filled
+                  ? const Icon(Icons.circle, size: 18, color: Colors.white)
+                  : null,
+            );
+          }),
+        ),
+
+        if (_isLoading) ...[
+          const SizedBox(height: 16),
+          const CircularProgressIndicator(color: AppDesignSystem.primaryBlue),
+        ],
+
+        const SizedBox(height: 20),
+
+        // Reuse large numpad but for PIN
+        _buildNumpad(forPin: true),
+
+        const SizedBox(height: 16),
+
+        TextButton(
+          onPressed: () => setState(() {
+            _phase = _Phase.idEntry;
+            _pinDigits = '';
+            _errorMessage = null;
+          }),
+          child: const Text(
+            '← Back',
+            style: TextStyle(
+              fontSize: 16,
+              color: AppDesignSystem.secondaryBlue,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Numpad ───────────────────────────────────────────────────────
+
+  void _onPinTap(String digit) {
+    if (_pinDigits.length < 4) {
+      setState(() => _pinDigits += digit);
+      if (_pinDigits.length == 4) {
+        if (_isPinSetup) {
+          _submitPinSetup();
+        } else {
+          _loginWithPin();
+        }
+      }
+    }
+  }
+
+  void _onPinDelete() {
+    if (_pinDigits.isNotEmpty) {
+      setState(
+        () => _pinDigits = _pinDigits.substring(0, _pinDigits.length - 1),
+      );
+    }
+  }
+
+  Widget _buildNumpad({bool forPin = false}) {
+    const rows = [
+      ['1', '2', '3'],
+      ['4', '5', '6'],
+      ['7', '8', '9'],
+      ['', '0', 'DEL'],
+    ];
+
+    return Column(
+      children: rows.map((row) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: row.map((key) {
+              if (key.isEmpty) {
+                return const SizedBox(width: 88, height: 64);
+              }
+              final isDel = key == 'DEL';
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: SizedBox(
+                  width: 88,
+                  height: 64,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDel
+                          ? AppDesignSystem.backgroundLight
+                          : Colors.white,
+                      foregroundColor: isDel
+                          ? AppDesignSystem.accentRed
+                          : AppDesignSystem.primaryBlue,
+                      elevation: isDel ? 0 : 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: isDel
+                              ? AppDesignSystem.borderLight
+                              : AppDesignSystem.primaryBlue.withAlpha(50),
+                        ),
+                      ),
+                    ),
+                    onPressed: isDel
+                        ? (forPin ? _onPinDelete : _onNumpadDelete)
+                        : () => forPin ? _onPinTap(key) : _onNumpadTap(key),
+                    child: isDel
+                        ? const Icon(Icons.backspace_outlined, size: 26)
+                        : Text(
+                            key,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ── Error banner ─────────────────────────────────────────────────
+
+  Widget _buildError() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppDesignSystem.statusInvalid.withAlpha(25),
+        borderRadius: AppDesignSystem.buttonRadius,
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: AppDesignSystem.statusInvalid,
+            size: 24,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppDesignSystem.statusInvalid,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

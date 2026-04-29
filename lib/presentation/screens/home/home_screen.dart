@@ -5,6 +5,7 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import '../../widgets/account_profile_drawer.dart';
 import 'department_selection_screen.dart';
 import '../scan/camera_screen.dart';
 
@@ -17,14 +18,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
 
-  // Pages for bottom navigation
-  final List<Widget> _pages = [
-    const _HomePage(),
-    const SizedBox(), // Placeholder for scan (handled by button)
-    const DepartmentSelectionScreen(), // History shows department databases
-  ];
+  void _openProfileDrawer() {
+    _scaffoldKey.currentState?.openEndDrawer();
+  }
 
   void _onItemTapped(int index) {
     if (index == 1) {
@@ -124,9 +123,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      _HomePage(onProfileTap: _openProfileDrawer),
+      const SizedBox(), // Placeholder for scan (handled by button)
+      const DepartmentSelectionScreen(), // History shows department databases
+    ];
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
-      body: _selectedIndex == 1 ? const SizedBox() : _pages[_selectedIndex],
+      endDrawer: const AccountProfileDrawer(),
+      body: _selectedIndex == 1 ? const SizedBox() : pages[_selectedIndex],
       bottomNavigationBar: _buildBottomNavBar(),
     );
   }
@@ -237,7 +244,9 @@ class _HomeScreenState extends State<HomeScreen> {
 // =============================================================================
 
 class _HomePage extends StatelessWidget {
-  const _HomePage();
+  const _HomePage({required this.onProfileTap});
+
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -246,9 +255,10 @@ class _HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             _buildBannerSection(),
             _buildContentSection(),
+            _buildCampaignImageSection(),
             _buildInfoCards(),
             const SizedBox(height: 20),
           ],
@@ -257,7 +267,7 @@ class _HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       color: Colors.white,
@@ -267,18 +277,22 @@ class _HomePage extends StatelessWidget {
           // Logo
           Image.asset(
             'assets/images/idetect_logo.png',
-            height: 85,
+            height: 60,
             fit: BoxFit.contain,
           ),
-          // Profile icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade300, width: 2),
+          // Profile icon button
+          InkWell(
+            onTap: onProfileTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade300, width: 2),
+              ),
+              child: const Icon(Icons.person_outline, color: Colors.grey),
             ),
-            child: const Icon(Icons.person_outline, color: Colors.grey),
           ),
         ],
       ),
@@ -300,31 +314,100 @@ class _HomePage extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          children: [
-            // Banner image placeholder
-            Container(
-              height: 180,
-              width: double.infinity,
-              color: Colors.grey.shade200,
-              child: Image.asset(
-                'assets/images/valid_banner.jpg',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: const Color(0xFF002E6B).withOpacity(0.1),
-                    child: const Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 60,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+        child: Container(
+          height: 400,
+          width: double.infinity,
+          color: Colors.grey.shade200,
+          child: Image.asset(
+            'assets/images/campaign_1.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: const Color(0xFF002E6B).withOpacity(0.1),
+                child: const Center(
+                  child: Icon(
+                    Icons.image,
+                    size: 60,
+                    color: Colors.grey,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCampaignImageSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWideLayout = constraints.maxWidth >= 700;
+
+          if (isWideLayout) {
+            return Row(
+              children: [
+                Expanded(
+                  child:
+                      _buildCampaignImageCard('assets/images/campaign_2.jpg'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child:
+                      _buildCampaignImageCard('assets/images/campaign_3.jpg'),
+                ),
+              ],
+            );
+          }
+
+          return Column(
+            children: [
+              _buildCampaignImageCard('assets/images/campaign_2.jpg'),
+              const SizedBox(height: 12),
+              _buildCampaignImageCard('assets/images/campaign_3.jpg'),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCampaignImageCard(String imagePath) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 280,
+          width: double.infinity,
+          color: Colors.white,
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: const Color(0xFF002E6B).withOpacity(0.1),
+                child: const Center(
+                  child: Icon(
+                    Icons.image,
+                    size: 60,
+                    color: Colors.grey,
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -337,7 +420,7 @@ class _HomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'LOREM IPSUM',
+            'Know Your Benefits and Protect Your Community',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -346,14 +429,90 @@ class _HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Quisque dictus scelerisque efficitur. Aenean venenatis ultricies purus turpis. Nullam sodales, arcu nec dapibus semper, quam laoreet dui, eu suscipit quam laoreet vel. Donec vitae turpis at ullamcorper erat sagittis in. Morbi vestibulum dictum nunc eget varius magna. Vivamus magna tellus. Aenean odio urna, scelerisque ut lacinia ac. Condimentum id purus. Proin non consequat. Nunc condimentum sodales ultrices purus turpis turpis. Do nec justo, accumsan et, pharetra lacinia dignissim enim. Nunc at massa auctor, porta arcu ac, lacinia sit amet. Sed eu placerat finibus tellus sed.',
+            'iDetect supports the City of Valenzuela in promoting legitimate identification, proper benefit access, and respect for the rights of senior citizens and persons with disability (PWD).',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade700,
               height: 1.5,
             ),
-            maxLines: 6,
-            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 16),
+          _buildPolicyCard(
+            title: 'Republic Act 9994',
+            subtitle: 'Expanded Senior Citizens Act of 2010',
+            description:
+                'Provides additional benefits and privileges for qualified senior citizens, including discounts and social support measures. Proper ID validation helps ensure these benefits reach the rightful recipients.',
+          ),
+          const SizedBox(height: 12),
+          _buildPolicyCard(
+            title: 'Republic Act 10754',
+            subtitle:
+                'An Act Expanding the Benefits and Privileges of Persons with Disability',
+            description:
+                'Strengthens and expands mandatory privileges for persons with disability, including discounts and VAT exemptions. Accurate PWD ID verification protects both establishments and legitimate beneficiaries.',
+          ),
+          const SizedBox(height: 12),
+          _buildPolicyCard(
+            title: 'Bawal ang Pekeng ID Campaign',
+            subtitle: 'City Government of Valenzuela',
+            description:
+                'The campaign discourages the use of fake Senior Citizen and PWD IDs. Through consistent validation, the city promotes fairness, prevents fraud, and preserves trust in public and private services.',
+            isCampaign: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPolicyCard({
+    required String title,
+    required String subtitle,
+    required String description,
+    bool isCampaign = false,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isCampaign ? const Color(0xFFEAF3FF) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isCampaign ? const Color(0xFF5A8DCC) : const Color(0xFFD8DEE9),
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isCampaign
+                  ? const Color(0xFF003A8C)
+                  : const Color(0xFF002E6B),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isCampaign
+                  ? const Color(0xFF2D5F9A)
+                  : const Color(0xFF355C9A),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade800,
+              height: 1.45,
+            ),
           ),
         ],
       ),

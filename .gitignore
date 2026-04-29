@@ -43,3 +43,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Node.js dependencies — never commit these
+node_modules/
+**/node_modules/
+
+# Web portal build outputs
+apps/web-bplo/dist/
+apps/web-osca/dist/
+apps/web-pdao/dist/
+
+# Beneficiary app build
+apps/beneficiary/build/
+apps/beneficiary/.dart_tool/
+
+# Uploaded ID images (runtime data, not source code)
+apps/api/uploads/
+
+# Environment variables and secrets — NEVER commit these
+apps/api/.env
+apps/api/*-adminsdk-*.json
+apps/api/firebase-service-account.json
