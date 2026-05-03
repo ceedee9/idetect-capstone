@@ -46,9 +46,9 @@ const MIGRATIONS = [
   "023_unique_person_index.sql",
 ];
 
-// Path to migration files relative to repo root
-// When running on Railway, cwd is apps/api/ so we go up two levels
-const MIGRATIONS_DIR = path.resolve(__dirname, "../../../database/migrations");
+// Migration files are co-located inside apps/api/migrations/
+// so they are included when Railway deploys the apps/api root directory.
+const MIGRATIONS_DIR = path.resolve(__dirname, "../migrations");
 
 async function runMigrations() {
   const client = await pool.connect();
