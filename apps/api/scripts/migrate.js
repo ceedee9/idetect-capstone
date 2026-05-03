@@ -1,0 +1,102 @@
+/**
+ * migrate.js
+ * Runs all SQL migration files in order against the connected database.
+ * Usage: node scripts/migrate.js
+ * On Railway: set as a one-off command or add to package.json scripts.
+ */
+
+require("dotenv").config();
+const { Pool } = require("pg");
+const fs = require("fs");
+const path = require("path");
+
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    })
+  : new Pool({
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    });
+
+// Migrations in the order they must run
+const MIGRATIONS = [
+  "001_create_users.sql",
+  "002_create_establishments.sql",
+  "003_create_beneficiaries.sql",
+  "004_create_beneficiary_accounts.sql",
+  "005_create_verification_logs.sql",
+  "006_create_fraud_flags.sql",
+  "007_create_disputes.sql",
+  "008_create_notifications.sql",
+  "009_create_audit_logs.sql",
+  "010_add_pin_to_beneficiary_accounts.sql",
+  "011_add_disability_type.sql",
+  "012_add_staff_audit_actions.sql",
+  "016_add_login_lockout.sql",
+  "017_add_missing_audit_actions.sql",
+  "018_establishment_permit_and_reset.sql",
+  "020_add_establishment_bulk_import.sql",
+  "021_cross_validation_and_normalization.sql",
+  "022_staff_alerts.sql",
+  "023_unique_person_index.sql",
+];
+
+// Path to migration files relative to repo root
+// When running on Railway, cwd is apps/api/ so we go up two levels
+const MIGRATIONS_DIR = path.resolve(__dirname, "../../../database/migrations");
+
+async function runMigrations() {
+  const client = await pool.connect();
+  try {
+    console.log("🚀 Starting iDetect database migrations...\n");
+
+    // Enable pgcrypto for UUID generation
+    await client.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto"');
+    console.log("✓ pgcrypto extension ready");
+
+    for (const filename of MIGRATIONS) {
+      const filepath = path.join(MIGRATIONS_DIR, filename);
+
+      if (!fs.existsSync(filepath)) {
+        console.warn(`⚠  Skipping ${filename} — file not found`);
+        continue;
+      }
+
+      const sql = fs.readFileSync(filepath, "utf8");
+
+      try {
+        await client.query(sql);
+        console.log(`✓ ${filename}`);
+      } catch (err) {
+        // IF NOT EXISTS / duplicate column errors are safe to ignore —
+        // they mean this migration already ran
+        if (
+          err.code === "42P07" || // duplicate_table
+          err.code === "42701" || // duplicate_column
+          err.code === "42710" || // duplicate_object (index, constraint)
+          err.message?.includes("already exists")
+        ) {
+          console.log(`~ ${filename} (already applied, skipping)`);
+        } else {
+          console.error(`✗ ${filename} FAILED: ${err.message}`);
+          throw err;
+        }
+      }
+    }
+
+    console.log("\n=== iDetect schema ready ===");
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+runMigrations().catch((err) => {
+  console.error("Migration failed:", err);
+  process.exit(1);
+});

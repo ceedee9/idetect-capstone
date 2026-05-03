@@ -55,5 +55,14 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 020: add establishment_bulk_import audit action'
 \i 020_add_establishment_bulk_import.sql
 
+\echo '>>> Running migration 021: cross-validation columns + normalized ID index'
+\i 021_cross_validation_and_normalization.sql
+
+\echo '>>> Running migration 022: staff_alerts table'
+\i 022_staff_alerts.sql
+
+\echo '>>> Running migration 023: unique person index (full_name + birthdate + type)'
+\i 023_unique_person_index.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='

@@ -52,6 +52,7 @@ node_modules/
 apps/web-bplo/dist/
 apps/web-osca/dist/
 apps/web-pdao/dist/
+apps/web/dist/
 
 # Beneficiary app build
 apps/beneficiary/build/

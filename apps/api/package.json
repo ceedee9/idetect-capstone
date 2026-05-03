@@ -7,6 +7,7 @@
     "predev": "node scripts/kill-port.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "db:migrate": "node scripts/migrate.js",
     "test": "jest"
   },
   "dependencies": {
