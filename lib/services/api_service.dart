@@ -10,7 +10,8 @@ class ApiService {
   // Do NOT use localhost on a real Android phone: it points to the phone itself.
   static const String _configuredBaseUrl =
       String.fromEnvironment('IDETECT_API_BASE_URL');
-  static const String _defaultBaseUrl = 'http://10.219.21.31:3000/api';
+  static const String _defaultBaseUrl =
+      'https://idetect-capstone-production.up.railway.app/api';
   static String get baseUrl =>
       _configuredBaseUrl.isNotEmpty ? _configuredBaseUrl : _defaultBaseUrl;
 
@@ -121,6 +122,8 @@ class ApiService {
     double? ocrConfidence,
     String? imagePath,
     bool manuallyEntered = true,
+    String? extractedName,
+    String? extractedDob,
   }) async {
     try {
       if (_token == null) {
@@ -191,6 +194,13 @@ class ApiService {
               'ocr_confidence_score': normalizedConfidence,
               'manually_entered': manuallyEntered,
               if (imageData != null) 'image_data': imageData,
+              // Cross-validation fields: sent to the server so it can compare
+              // the OCR-extracted name and DOB against the stored record.
+              // If they don't match, the server downgrades result to SUSPICIOUS.
+              if (extractedName != null && extractedName.isNotEmpty)
+                'extracted_name': extractedName,
+              if (extractedDob != null && extractedDob.isNotEmpty)
+                'extracted_dob': extractedDob,
             }),
           )
           .timeout(const Duration(seconds: 30));
@@ -230,6 +240,10 @@ class ApiService {
   }
 
   /// REQ-2.5.6: Attempt to return a cached verification result when offline.
+  /// Cache entries older than [_cacheTtl] are rejected — a beneficiary's status
+  /// may have changed (e.g., suspended) since the last successful sync.
+  static const Duration _cacheTtl = Duration(hours: 6);
+
   static Future<VerificationResult> _tryOfflineCache(
     String idNumber,
     String beneficiaryType,
@@ -241,6 +255,17 @@ class ApiService {
       if (cached != null) {
         final ts = cached['timestamp'] as int? ?? 0;
         final cachedDate = DateTime.fromMillisecondsSinceEpoch(ts);
+        final age = DateTime.now().difference(cachedDate);
+
+        // Reject stale cache — status may be outdated (suspended, revoked)
+        if (age > _cacheTtl) {
+          final hoursAgo = age.inHours;
+          return VerificationResult.error(
+            'Cannot reach server. Cached result is $hoursAgo hour(s) old '
+            'and may be outdated. Please try when online.',
+          );
+        }
+
         final formatted =
             '${cachedDate.month}/${cachedDate.day}/${cachedDate.year} '
             '${cachedDate.hour.toString().padLeft(2, '0')}:${cachedDate.minute.toString().padLeft(2, '0')}';
@@ -267,7 +292,8 @@ class ApiService {
           beneficiaryName: cached['fullName'],
           idNumber: cached['idNumber'],
           beneficiaryType: cached['idType'],
-          message: '[OFFLINE CACHE] Last verified: $formatted',
+          message:
+              '[OFFLINE — synced ${age.inMinutes}m ago] Last verified: $formatted',
         );
       }
     } catch (e) {
@@ -472,6 +498,49 @@ class ApiService {
           .timeout(const Duration(seconds: 10));
 
       return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
+  // ── Verification History (REQ-2.16.5) ─────────────────────────────────────
+
+  /// Fetch this establishment's verification transaction history from the API.
+  /// Returns a list of records plus summary counts.
+  static Future<Map<String, dynamic>> getVerificationHistory({
+    int page = 1,
+    int limit = 20,
+    String? startDate, // ISO date string: 'YYYY-MM-DD'
+    String? endDate,
+    String? resultFilter, // 'valid' | 'suspicious' | 'invalid'
+  }) async {
+    try {
+      if (_token == null) return {'error': 'Not authenticated.'};
+
+      final params = <String, String>{
+        'page': page.toString(),
+        'limit': limit.toString(),
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
+        if (resultFilter != null) 'result': resultFilter,
+      };
+
+      final uri = Uri.parse('$baseUrl/verification/history')
+          .replace(queryParameters: params);
+
+      final response = await http
+          .get(uri, headers: _authHeaders())
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 401) {
+        clearToken();
+        return {'error': 'Session expired. Please log in again.'};
+      } else {
+        final body = jsonDecode(response.body);
+        return {'error': body['message'] ?? 'Failed to load history.'};
+      }
     } catch (e) {
       return {'error': 'Cannot reach server: $e'};
     }
