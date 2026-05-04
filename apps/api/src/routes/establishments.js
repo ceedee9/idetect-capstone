@@ -1008,19 +1008,26 @@ router.delete(
           "Only revoked establishments can be deleted. Revoke it first.",
         );
 
-      // Log deletion before deleting (record will be gone after)
-      await pool.query(
-        `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
+      // Log deletion before deleting (fire-and-forget to avoid enum errors blocking delete)
+      pool
+        .query(
+          `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
          VALUES ($1, 'establishment_deleted', 'establishments', $2, $3)`,
-        [
-          req.user.id,
-          id,
-          JSON.stringify({
-            business_name: existing.rows[0].business_name,
-            deleted_by: req.user.id,
-          }),
-        ],
-      );
+          [
+            req.user.id,
+            id,
+            JSON.stringify({
+              business_name: existing.rows[0].business_name,
+              deleted_by: req.user.id,
+            }),
+          ],
+        )
+        .catch((err) =>
+          console.error(
+            "[AUDIT] establishment_deleted log failed:",
+            err.message,
+          ),
+        );
 
       await pool.query("DELETE FROM establishments WHERE id = $1", [id]);
 
