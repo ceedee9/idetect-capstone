@@ -24,12 +24,18 @@ function getTransporter() {
     (process.env.SMTP_HOST ?? "").includes("gmail");
 
   if (isGmail) {
-    // Gmail App Password — use the service shorthand for reliable TLS handling
+    // Gmail App Password via smtp.gmail.com:587 (STARTTLS, IPv4 forced)
+    // Railway blocks IPv6 → Gmail SMTP, so we must use explicit host + family:4
     _transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      family: 4, // force IPv4
       auth: { user, pass },
+      tls: { rejectUnauthorized: false },
     });
-    console.log(`📧 [EMAIL] Gmail SMTP transporter ready for ${user}`);
+    console.log(`📧 [EMAIL] Gmail SMTP transporter ready for ${user} (IPv4, port 587)`);
   } else {
     const host = process.env.SMTP_HOST;
     const port = parseInt(process.env.SMTP_PORT ?? "587", 10);
