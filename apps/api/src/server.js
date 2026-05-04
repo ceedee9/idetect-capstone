@@ -2,6 +2,10 @@
 // iDetect API — main entry point.
 // Wires together all middleware, routes, and starts the server.
 
+// Force IPv4 DNS resolution globally — Railway blocks outbound IPv6 SMTP
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
+
 require("dotenv").config();
 const path = require("path");
 const fs = require("fs");
@@ -159,7 +163,10 @@ app.use("/api/staff", staffRoutes);
 // ── Test email endpoint (admin only — requires valid JWT) ──────
 app.post("/api/test-email", async (req, res) => {
   const { to } = req.body;
-  if (!to) return res.status(400).json({ error: "Provide { to: 'email@example.com' }" });
+  if (!to)
+    return res
+      .status(400)
+      .json({ error: "Provide { to: 'email@example.com' }" });
   const result = await sendEmail({
     to,
     subject: "iDetect SMTP Test",
