@@ -13,6 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { disputesAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import { fmtDateTime, fmtRelative } from "../utils/date";
 
@@ -155,6 +156,13 @@ function SlaIndicator({ dispute }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function DisputesPage() {
+  const { user } = useAuth();
+  const disputeScope =
+    user?.role === "bplo_admin"
+      ? "Business Refusals"
+      : user?.role === "pdao_admin"
+        ? "PWD Records"
+        : "Senior Citizens";
   const { data: disputes, loading, error, refetch } = useDisputes();
   const [statusFilter, setStatusFilter] = useState("");
   const [selected, setSelected] = useState(null);
@@ -227,7 +235,7 @@ export default function DisputesPage() {
               Dispute Resolution
             </h1>
             <p className="text-sm text-slate-500">
-              Review and resolve beneficiary disputes (Senior Citizens)
+              Review and resolve beneficiary disputes ({disputeScope})
             </p>
           </div>
         </div>

@@ -16,10 +16,12 @@ import {
   Calendar,
   Mail,
   FileText,
+  Accessibility,
 } from "lucide-react";
 import { beneficiariesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { parseBeneficiaryImportFile } from "../utils/beneficiaryImport";
+import { PDAO_DISABILITY_OPTIONS } from "../constants/disabilityTypes";
 
 const INITIAL = {
   id_number: "",
@@ -27,6 +29,7 @@ const INITIAL = {
   middle_name: "",
   last_name: "",
   date_of_birth: "",
+  disability_type: "",
   address: "",
   contact_number: "",
   email: "",
@@ -49,6 +52,17 @@ function FormField({ icon: Icon, label, required, children }) {
 export default function AddBeneficiaryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isOsca = user?.role === "osca_admin";
+  const recordLabel = isOsca ? "Senior Citizens" : "PWD Records";
+  const registryLabel = isOsca ? "OSCA" : "PDAO";
+  const issuingOffice = isOsca ? "OSCA Valenzuela" : "PDAO Valenzuela";
+  const idLabel = isOsca ? "OSCA ID Number" : "PWD ID Number";
+  const idPlaceholder = isOsca ? "Enter OSCA ID number" : "Enter PWD ID number";
+  const raText = isOsca ? "Republic Act 9994" : "Republic Act 10754";
+  const beneficiaryTypeLabel = isOsca ? "Senior Citizen" : "PWD";
+  const templateFilename = isOsca
+    ? "osca-beneficiaries-template.csv"
+    : "pdao-beneficiaries-template.csv";
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -101,7 +115,7 @@ export default function AddBeneficiaryPage() {
     try {
       const analyzed = await parseBeneficiaryImportFile(
         importFile,
-        "OSCA Valenzuela",
+        issuingOffice,
       );
       setImportPreview(analyzed);
       if (!analyzed.records.length) {
@@ -143,15 +157,17 @@ export default function AddBeneficiaryPage() {
   }
 
   function downloadTemplate() {
+    const sampleId = isOsca ? "SC-2026-0001" : "PWD-2026-0001";
+    const sampleDate = isOsca ? "1950-01-15" : "1990-01-15";
     const csv = [
       "id_number,full_name,birthdate,issuing_office,validity_start,validity_end,registered_mobile",
-      "SC-2026-0001,JUAN DELA CRUZ,1950-01-15,OSCA Valenzuela,2026-01-01,2027-01-01,09171234567",
+      `${sampleId},JUAN DELA CRUZ,${sampleDate},${issuingOffice},2026-01-01,2027-01-01,09171234567`,
     ].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "osca-beneficiaries-template.csv";
+    a.download = templateFilename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -169,8 +185,8 @@ export default function AddBeneficiaryPage() {
             Beneficiary Registered!
           </h2>
           <p className="text-slate-500 text-sm mt-2 font-medium">
-            {form.first_name} {form.last_name} has been added to the OSCA
-            registry.
+            {form.first_name} {form.last_name} has been added to the{" "}
+            {registryLabel} registry.
           </p>
           <p className="text-slate-400 text-xs mt-1">
             Redirecting to beneficiary list…
@@ -187,7 +203,7 @@ export default function AddBeneficiaryPage() {
           to="/beneficiaries"
           className="hover:text-gov-600 flex items-center gap-1 font-semibold"
         >
-          <ArrowLeft className="w-4 h-4" /> Senior Citizens
+          <ArrowLeft className="w-4 h-4" /> {recordLabel}
         </Link>
         <span>/</span>
         <span className="text-slate-900 font-semibold">Add Record</span>
@@ -196,10 +212,10 @@ export default function AddBeneficiaryPage() {
       {/* Header */}
       <div>
         <h1 className="font-heading font-bold text-2xl text-slate-900">
-          Register Senior Citizen
+          Register {beneficiaryTypeLabel}
         </h1>
         <p className="text-slate-500 text-sm mt-1 font-medium">
-          Add a new beneficiary to the OSCA registry (RA 9994)
+          Add a new beneficiary to the {registryLabel} registry ({raText})
         </p>
       </div>
 
@@ -346,12 +362,12 @@ export default function AddBeneficiaryPage() {
           <h2 className="font-heading font-semibold text-slate-900 text-sm border-b border-slate-50 pb-3">
             ID Information
           </h2>
-          <FormField icon={Hash} label="OSCA ID Number" required>
+          <FormField icon={Hash} label={idLabel} required>
             <input
               type="text"
               className="input font-mono"
               required
-              placeholder="Enter OSCA ID number"
+              placeholder={idPlaceholder}
               value={form.id_number}
               onChange={set("id_number")}
               disabled={loading}
@@ -407,17 +423,23 @@ export default function AddBeneficiaryPage() {
               className="input"
               required
               max={
-                new Date(new Date().setFullYear(new Date().getFullYear() - 60))
-                  .toISOString()
-                  .split("T")[0]
+                isOsca
+                  ? new Date(
+                      new Date().setFullYear(new Date().getFullYear() - 60),
+                    )
+                      .toISOString()
+                      .split("T")[0]
+                  : new Date().toISOString().split("T")[0]
               }
               value={form.date_of_birth}
               onChange={set("date_of_birth")}
               disabled={loading}
             />
-            <p className="text-xs text-slate-400 mt-1.5 font-medium">
-              Beneficiary must be 60 years old or older.
-            </p>
+            {isOsca && (
+              <p className="text-xs text-slate-400 mt-1.5 font-medium">
+                Beneficiary must be 60 years old or older.
+              </p>
+            )}
           </FormField>
         </div>
 
@@ -463,6 +485,30 @@ export default function AddBeneficiaryPage() {
           </div>
         </div>
 
+        {/* Disability Classification (PDAO only) */}
+        {!isOsca && (
+          <div className="card space-y-4">
+            <h2 className="font-heading font-semibold text-slate-900 text-sm border-b border-slate-50 pb-3">
+              Disability Classification
+            </h2>
+            <FormField icon={Accessibility} label="Disability Type" required>
+              <select
+                className="input"
+                required
+                value={form.disability_type}
+                onChange={set("disability_type")}
+                disabled={loading}
+              >
+                {PDAO_DISABILITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+        )}
+
         {/* Notes */}
         <div className="card space-y-4">
           <h2 className="font-heading font-semibold text-slate-900 text-sm border-b border-slate-50 pb-3">
@@ -485,9 +531,10 @@ export default function AddBeneficiaryPage() {
           <CheckCircle2 className="w-4 h-4 text-gov-600 flex-shrink-0 mt-0.5" />
           <p>
             By submitting this form, you confirm that the information provided
-            is accurate and that this individual qualifies as a Senior Citizen
-            beneficiary under <strong>Republic Act 9994</strong>. The record
-            will be immediately active in the iDetect verification system.
+            is accurate and that this individual qualifies as a{" "}
+            {beneficiaryTypeLabel} beneficiary under{" "}
+            <strong>{raText}</strong>. The record will be immediately active in
+            the iDetect verification system.
           </p>
         </div>
 

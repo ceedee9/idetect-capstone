@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useBeneficiary } from "../hooks/useBeneficiaries";
 import { beneficiariesAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
 import { fmtDate, fmtDateTime, fmtRelative, calcAge } from "../utils/date";
@@ -62,6 +63,12 @@ function TimelineDot({ done, color = "teal" }) {
 export default function BeneficiaryDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isOsca = user?.role === "osca_admin";
+  const recordLabel = isOsca ? "Senior Citizens" : "PWD Records";
+  const beneficiaryTypeLabel = isOsca ? "Senior Citizen" : "PWD";
+  const raText = isOsca ? "RA 9994" : "RA 10754";
+  const discountText = isOsca ? "Senior Citizen privileges" : "PWD benefits";
   const { data: b, loading, error, refetch } = useBeneficiary(id);
 
   const [modal, setModal] = useState(null);
@@ -225,7 +232,7 @@ export default function BeneficiaryDetailPage() {
           to="/beneficiaries"
           className="hover:text-gov-600 flex items-center gap-1 font-semibold"
         >
-          <ArrowLeft className="w-4 h-4" /> Senior Citizens
+          <ArrowLeft className="w-4 h-4" /> {recordLabel}
         </Link>
         <span>/</span>
         <span className="text-slate-900 font-semibold truncate">
@@ -249,7 +256,7 @@ export default function BeneficiaryDetailPage() {
               <StatusBadge status={b.status} />
             </div>
             <p className="text-slate-400 text-sm mt-0.5 font-medium">
-              Senior Citizen · {age ? `${age} years old` : "Age unknown"} ·{" "}
+              {beneficiaryTypeLabel} · {age ? `${age} years old` : "Age unknown"} ·{" "}
               {b.id_number}
             </p>
           </div>
@@ -299,7 +306,7 @@ export default function BeneficiaryDetailPage() {
               Personal Information
             </h2>
             <p className="text-xs text-slate-400 font-medium mb-4">
-              Official OSCA registry record
+              Official {isOsca ? "OSCA" : "PDAO"} registry record
             </p>
             <div>
               <InfoRow icon={Hash} label="ID Number" value={b.id_number} mono />
@@ -365,7 +372,7 @@ export default function BeneficiaryDetailPage() {
               <InfoRow
                 icon={ShieldCheck}
                 label="Beneficiary Type"
-                value="Senior Citizen (RA 9994)"
+                value={`${beneficiaryTypeLabel} (${raText})`}
               />
             </div>
           </div>
@@ -475,7 +482,7 @@ export default function BeneficiaryDetailPage() {
         }}
         onConfirm={handleAction}
         title="Activate Beneficiary"
-        description={`Restore active status for ${fullName}? They will be eligible for Senior Citizen discounts immediately.`}
+        description={`Restore active status for ${fullName}? They will be eligible for ${discountText} immediately.`}
         confirmLabel="Activate"
         variant="primary"
         loading={actionLoading}
