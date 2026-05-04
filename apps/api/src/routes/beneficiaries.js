@@ -98,7 +98,10 @@ const normalizeImportRecord = (raw, type) => {
 
   return {
     record: {
-      id_number,
+      // Normalize id_number for storage: strip all non-alphanumeric characters
+      // and uppercase. Matches the normalization applied at verification query
+      // time in verification.js so lookups are always consistent.
+      id_number: id_number.replace(/[^A-Z0-9]/g, ""),
       full_name,
       birthdate,
       issuing_office,
@@ -231,56 +234,85 @@ router.post("/import", async (req, res, next) => {
       });
     }
 
-    const client = await pool.connect();
     let inserted = 0;
     let duplicates = 0;
 
-    try {
-      await client.query("BEGIN");
+    // Split rows into 500-row chunks
+    const chunks = [];
+    for (let i = 0; i < validRows.length; i += IMPORT_INSERT_CHUNK_SIZE) {
+      chunks.push(validRows.slice(i, i + IMPORT_INSERT_CHUNK_SIZE));
+    }
 
-      const insertSql = `INSERT INTO beneficiaries
+    const insertSql = `INSERT INTO beneficiaries
         (id_number, full_name, birthdate, beneficiary_type,
          issuing_office, validity_start, validity_end,
          registered_mobile, disability_type, created_by, updated_by)
        VALUES %VALUES%
-       ON CONFLICT (id_number) DO NOTHING
+       ON CONFLICT DO NOTHING
        RETURNING id_number`;
 
-      for (let i = 0; i < validRows.length; i += IMPORT_INSERT_CHUNK_SIZE) {
-        const chunk = validRows.slice(i, i + IMPORT_INSERT_CHUNK_SIZE);
-        const values = [];
-        const placeholders = [];
+    // Process chunks in parallel batches of 5 (respects the pool size of 10).
+    // Each chunk runs in its own transaction on its own connection, so no
+    // single connection is held open for the full import duration.
+    const PARALLEL_WORKERS = 5;
+    try {
+      for (let b = 0; b < chunks.length; b += PARALLEL_WORKERS) {
+        const batch = chunks.slice(b, b + PARALLEL_WORKERS);
+        const batchResults = await Promise.all(
+          batch.map(async (chunk) => {
+            const c = await pool.connect();
+            try {
+              await c.query("BEGIN");
 
-        chunk.forEach((row, idx) => {
-          const base = idx * 11;
-          placeholders.push(
-            `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},$${base + 11})`,
-          );
-          values.push(
-            row.id_number,
-            row.full_name,
-            row.birthdate,
-            type,
-            row.issuing_office,
-            row.validity_start,
-            row.validity_end,
-            row.registered_mobile,
-            row.disability_type,
-            req.user.id,
-            req.user.id,
-          );
-        });
+              const values = [];
+              const placeholders = [];
+              chunk.forEach((row, idx) => {
+                const base = idx * 11;
+                placeholders.push(
+                  `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},$${base + 11})`,
+                );
+                values.push(
+                  row.id_number,
+                  row.full_name,
+                  row.birthdate,
+                  type,
+                  row.issuing_office,
+                  row.validity_start,
+                  row.validity_end,
+                  row.registered_mobile,
+                  row.disability_type,
+                  req.user.id,
+                  req.user.id,
+                );
+              });
 
-        const result = await client.query(
-          insertSql.replace("%VALUES%", placeholders.join(",")),
-          values,
+              const result = await c.query(
+                insertSql.replace("%VALUES%", placeholders.join(",")),
+                values,
+              );
+
+              await c.query("COMMIT");
+              return {
+                ins: result.rowCount,
+                dup: chunk.length - result.rowCount,
+              };
+            } catch (chunkErr) {
+              await c.query("ROLLBACK");
+              throw chunkErr;
+            } finally {
+              c.release();
+            }
+          }),
         );
 
-        inserted += result.rowCount;
-        duplicates += chunk.length - result.rowCount;
+        for (const r of batchResults) {
+          inserted += r.ins;
+          duplicates += r.dup;
+        }
       }
 
-      await client.query(
+      // Audit log written after all chunks complete
+      await pool.query(
         `INSERT INTO audit_logs (user_id, action, target_table, metadata)
          VALUES ($1, 'beneficiary_bulk_import', 'beneficiaries', $2)`,
         [
@@ -295,13 +327,8 @@ router.post("/import", async (req, res, next) => {
           }),
         ],
       );
-
-      await client.query("COMMIT");
     } catch (dbErr) {
-      await client.query("ROLLBACK");
       throw dbErr;
-    } finally {
-      client.release();
     }
 
     return res.status(200).json({
@@ -314,6 +341,44 @@ router.post("/import", async (req, res, next) => {
         invalid: invalidRows.length,
       },
       invalidRows,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── GET /api/beneficiaries/recently-auto-suspended ─────────────
+// Returns beneficiaries that were automatically suspended in the last N hours
+// (default 24h) due to flag threshold being reached. Used by OSCA/PDAO
+// BeneficiariesPage to show a staff-facing alert banner.
+router.get("/recently-auto-suspended", async (req, res, next) => {
+  try {
+    const type = getTypeForRole(req.user.role);
+    const hours = Math.min(parseInt(req.query.hours) || 24, 168); // max 7 days
+
+    const result = await pool.query(
+      `SELECT
+         b.id, b.id_number, b.full_name, b.beneficiary_type,
+         al.created_at AS suspended_at,
+         (al.metadata->>'distinct_flaggers')::int AS distinct_flaggers,
+         (al.metadata->>'threshold')::int         AS threshold
+       FROM audit_logs al
+       JOIN beneficiaries b ON b.id = al.target_id
+       WHERE al.action = 'flag_confirmed'
+         AND al.target_table = 'beneficiaries'
+         AND (al.metadata->>'auto_suspended')::boolean = true
+         AND al.created_at >= NOW() - ($1::int * INTERVAL '1 hour')
+         AND b.beneficiary_type = $2
+         AND b.status = 'suspended'
+       ORDER BY al.created_at DESC
+       LIMIT 20`,
+      [hours, type],
+    );
+
+    res.json({
+      data: result.rows,
+      total: result.rows.length,
+      window_hours: hours,
     });
   } catch (err) {
     next(err);
@@ -388,6 +453,11 @@ router.post(
         });
       }
 
+      // Normalize id_number for storage: strip punctuation, uppercase.
+      // Matches the normalization in normalizeIdNumber() used at verification
+      // query time, so the unique expression index on the normalized form works.
+      const storedIdNumber = id_number.replace(/[^A-Z0-9]/g, "");
+
       const result = await pool.query(
         `INSERT INTO beneficiaries
          (id_number, full_name, birthdate, beneficiary_type,
@@ -396,7 +466,7 @@ router.post(
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)
        RETURNING *`,
         [
-          id_number,
+          storedIdNumber,
           full_name,
           birthdate,
           type,

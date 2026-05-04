@@ -1,0 +1,164 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="ZjkWYSGmFs26VIgbrFSy" name="Page-1">
+    <mxGraphModel dx="1288" dy="703" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" value="DFD Level 1 — Process 1.0: Authentication" vertex="1">
+          <mxGeometry height="40" width="900" x="200" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="est" parent="1" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" value="Establishment Staff" vertex="1">
+          <mxGeometry height="60" width="150" x="30" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="bplo" parent="1" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" value="BPLO Admin" vertex="1">
+          <mxGeometry height="60" width="150" x="30" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="osca" parent="1" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" value="OSCA Admin" vertex="1">
+          <mxGeometry height="60" width="150" x="30" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="pdao" parent="1" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" value="PDAO Admin" vertex="1">
+          <mxGeometry height="60" width="150" x="30" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="ben" parent="1" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" value="Beneficiary" vertex="1">
+          <mxGeometry height="60" width="150" x="30" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=13;" value="1.0&#xa;Authentication" vertex="1">
+          <mxGeometry height="100" width="200" x="520" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" parent="1" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" value="D1: users" vertex="1">
+          <mxGeometry height="60" width="200" x="1050" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" parent="1" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" value="D2: establishments" vertex="1">
+          <mxGeometry height="60" width="200" x="1050" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="d4" parent="1" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" value="D4: beneficiary_accounts" vertex="1">
+          <mxGeometry height="60" width="200" x="1050" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="d9" parent="1" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" value="D9: audit_logs" vertex="1">
+          <mxGeometry height="60" width="200" x="1050" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="est" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="Login Credentials">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="bplo" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="Login Credentials">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="osca" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="Login Credentials">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="pdao" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="Login Credentials">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="ben" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="ID Number + Birthdate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="ben" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="OTP Code">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="205" y="545" />
+              <mxPoint x="205" y="620" />
+              <mxPoint x="620" y="620" />
+              <mxPoint x="620" y="400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="est" value="Auth Token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="330" />
+              <mxPoint x="300" y="330" />
+              <mxPoint x="300" y="130" />
+              <mxPoint x="180" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="bplo" value="Auth Token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="340" />
+              <mxPoint x="310" y="340" />
+              <mxPoint x="310" y="230" />
+              <mxPoint x="180" y="230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="osca" value="Auth Token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="350" />
+              <mxPoint x="320" y="350" />
+              <mxPoint x="320" y="330" />
+              <mxPoint x="180" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="pdao" value="Auth Token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="360" />
+              <mxPoint x="330" y="360" />
+              <mxPoint x="330" y="430" />
+              <mxPoint x="180" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="ben" value="Session Token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="370" />
+              <mxPoint x="340" y="370" />
+              <mxPoint x="340" y="530" />
+              <mxPoint x="180" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="d1" value="User Record Lookup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="d1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="User Credentials">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="160" />
+              <mxPoint x="980" y="160" />
+              <mxPoint x="980" y="320" />
+              <mxPoint x="720" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="d2" value="Establishment Lookup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="d2" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="Establishment Credentials">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="260" />
+              <mxPoint x="990" y="260" />
+              <mxPoint x="990" y="330" />
+              <mxPoint x="720" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="d4" value="Account + OTP Lookup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="d4" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="p1" value="Account Record">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="360" />
+              <mxPoint x="1000" y="360" />
+              <mxPoint x="1000" y="340" />
+              <mxPoint x="720" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" target="d9" value="Login Audit Event">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

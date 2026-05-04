@@ -13,6 +13,7 @@ import {
   Accessibility,
   Filter,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { useBeneficiaries } from "../hooks/useBeneficiaries";
 import { beneficiariesAPI } from "../services/api";
@@ -38,11 +39,16 @@ export default function BeneficiariesPage() {
   const [actionError, setActionError] = useState("");
   const [toast, setToast] = useState(null);
   const [expiringSoon, setExpiringSoon] = useState([]);
+  const [autoSuspended, setAutoSuspended] = useState([]);
 
   useEffect(() => {
     beneficiariesAPI
       .expiringSoon(30)
       .then((r) => setExpiringSoon(r.data?.beneficiaries ?? []))
+      .catch(() => {});
+    beneficiariesAPI
+      .recentlyAutoSuspended(24)
+      .then((r) => setAutoSuspended(r.data?.data ?? []))
       .catch(() => {});
   }, []);
 
@@ -144,6 +150,34 @@ export default function BeneficiariesPage() {
         <div className="flex items-center gap-2.5 px-4 py-3 bg-danger-50 border border-danger-100 rounded-xl text-danger-700 text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
+        </div>
+      )}
+
+      {/* Auto-Suspended Alert Banner */}
+      {autoSuspended.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldAlert className="w-4 h-4 text-red-600" />
+            <span className="text-sm font-bold text-red-800">
+              {autoSuspended.length} ID{autoSuspended.length > 1 ? "s" : ""}{" "}
+              auto-suspended in the last 24h — requires review
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {autoSuspended.map((b) => (
+              <Link
+                key={b.id}
+                to={`/beneficiaries/${b.id}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 rounded-lg text-xs font-medium text-red-900 hover:bg-red-100 transition-colors"
+              >
+                <ShieldAlert className="w-3 h-3 text-red-600" />
+                <span>{b.full_name}</span>
+                <span className="text-red-500 font-bold">
+                  {b.distinct_flaggers} flags
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 

@@ -9,6 +9,20 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 class PWDLayoutFieldExtractor {
   static final RegExp _idPattern = RegExp(r'\b\d{2}-\d{4}-\d{3}-\d{4,8}\b');
 
+  /// Substitutes common OCR misreads before running the ID number regex.
+  /// Applies only to the candidate string, not to name/disability fields.
+  static String _sanitizeForId(String text) {
+    return text
+        .replaceAll('O', '0')
+        .replaceAll('o', '0')
+        .replaceAll('I', '1')
+        .replaceAll('l', '1')
+        .replaceAll('S', '5')
+        .replaceAll('s', '5')
+        .replaceAll('B', '8')
+        .replaceAll('Z', '2');
+  }
+
   static final Map<String, String> _disabilityAliases = {
     'DEAF OR HARD OF HEARING': 'Deaf or Hard of Hearing',
     'DEAF': 'Deaf or Hard of Hearing',
@@ -196,8 +210,15 @@ class PWDLayoutFieldExtractor {
     required int imageHeight,
   }) {
     // Priority 1: explicit match across all lines.
+    // Try original text first, then OCR-sanitized fallback.
     for (final line in lines) {
       final match = _idPattern.firstMatch(line.text);
+      if (match != null) return match.group(0);
+    }
+    // Sanitized pass (O→0, I→1, l→1, S→5, etc.)
+    for (final line in lines) {
+      final sanitized = _sanitizeForId(line.text);
+      final match = _idPattern.firstMatch(sanitized);
       if (match != null) return match.group(0);
     }
 
@@ -209,10 +230,13 @@ class PWDLayoutFieldExtractor {
       final dy = (line.centerY - idAnchor.centerY).abs();
       if (dy > maxDistance) continue;
 
-      final match = RegExp(r'([0-9-]{8,30})').firstMatch(line.text);
-      if (match != null) {
-        final candidate = match.group(1) ?? '';
-        if (candidate.contains('-')) return candidate;
+      // Try original first, then sanitized
+      for (final candidate in [line.text, _sanitizeForId(line.text)]) {
+        final match = RegExp(r'([0-9-]{8,30})').firstMatch(candidate);
+        if (match != null) {
+          final val = match.group(1) ?? '';
+          if (val.contains('-')) return val;
+        }
       }
     }
 

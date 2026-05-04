@@ -33,36 +33,6 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-// ── Credentials CSV download ───────────────────────────────────
-function downloadCredentials(credentials) {
-  const header =
-    "business_name,business_permit_no,login_email,generated_password,email_auto_generated,note";
-  const rows = credentials.map((c) =>
-    [
-      `"${c.business_name.replace(/"/g, '""')}"`,
-      c.business_permit_no,
-      c.email,
-      c.password,
-      c.email_auto_generated ? "YES" : "NO",
-      c.email_auto_generated
-        ? '"Auto-generated login email — provide to establishment staff"'
-        : '"Establishment-provided email"',
-    ].join(","),
-  );
-  const csv = [header, ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `idetect-establishment-credentials-${new Date()
-    .toISOString()
-    .slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
 export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
   const fileInputRef = useRef(null);
 
@@ -73,8 +43,9 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
   const [analyzeError, setAnalyzeError] = useState("");
 
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState(null); // { summary, credentials, invalidRows }
+  const [importResult, setImportResult] = useState(null); // { summary, credentialToken, invalidRows }
   const [importError, setImportError] = useState("");
+  const [downloadingCreds, setDownloadingCreds] = useState(false);
 
   // ── File selection ─────────────────────────────────────────
   function handleFileChange(e) {
@@ -137,6 +108,31 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
       setImportError(msg);
     } finally {
       setImporting(false);
+    }
+  }
+
+  // ── One-time credential download ───────────────────────────
+  async function handleDownloadCredentials() {
+    if (!importResult?.credentialToken) return;
+    setDownloadingCreds(true);
+    try {
+      const res = await establishmentsAPI.downloadCredentials(
+        importResult.credentialToken,
+      );
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `idetect-credentials-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      // Mark token as consumed so the button disables
+      setImportResult((prev) => ({ ...prev, credentialToken: null }));
+    } catch {
+      alert("Credential download failed or link already used.");
+    } finally {
+      setDownloadingCreds(false);
     }
   }
 
@@ -427,8 +423,8 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
                 </div>
               </div>
 
-              {/* Credential table */}
-              {importResult.credentials?.length > 0 && (
+              {/* Credential download */}
+              {importResult.credentialToken && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
@@ -436,12 +432,15 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
                       Generated Credentials
                     </p>
                     <button
-                      onClick={() =>
-                        downloadCredentials(importResult.credentials)
-                      }
+                      onClick={handleDownloadCredentials}
+                      disabled={downloadingCreds}
                       className="btn-primary text-xs py-1.5 px-3"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      {downloadingCreds ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Download className="w-3.5 h-3.5" />
+                      )}
                       Download CSV
                     </button>
                   </div>
@@ -449,59 +448,23 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <p>
-                      <strong>Download credentials now.</strong> Passwords are
-                      stored as hashes and cannot be retrieved again. Distribute
-                      these credentials to each establishment so they can log in
-                      to the Client Portal.
+                      <strong>
+                        Download now — this link expires in 15 minutes.
+                      </strong>{" "}
+                      Credentials can only be downloaded once. Distribute them
+                      to each establishment so they can log in to the Client
+                      Portal.
                     </p>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-xl border border-gray-100 max-h-64">
-                    <table className="w-full text-xs">
-                      <thead className="bg-gray-50 text-gray-600 sticky top-0">
-                        <tr>
-                          {[
-                            "Business Name",
-                            "Permit No",
-                            "Login Email",
-                            "Password",
-                          ].map((h) => (
-                            <th
-                              key={h}
-                              className="px-3 py-2 text-left font-semibold whitespace-nowrap"
-                            >
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {importResult.credentials.map((c, i) => (
-                          <tr key={i} className="hover:bg-gray-50">
-                            <td className="px-3 py-2 font-medium text-gray-900 max-w-[160px] truncate">
-                              {c.business_name}
-                            </td>
-                            <td className="px-3 py-2 font-mono text-gray-600">
-                              {c.business_permit_no}
-                            </td>
-                            <td className="px-3 py-2 text-gray-600">
-                              {c.email}
-                              {c.email_auto_generated && (
-                                <span className="ml-1 text-blue-500 text-[10px]">
-                                  (auto)
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 font-mono text-gray-800 select-all">
-                              {c.password}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
                   </div>
                 </div>
               )}
+
+              {!importResult.credentialToken &&
+                importResult.summary?.inserted > 0 && (
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
+                    Credential download link was already used or has expired.
+                  </div>
+                )}
 
               {/* Import errors from API */}
               {importResult.invalidRows?.length > 0 && (

@@ -7,10 +7,49 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Attach JWT token to every request
-api.interceptors.request.use((config) => {
+// Silent JWT refresh helper
+let _refreshing = null;
+async function ensureFreshToken() {
   const token = localStorage.getItem("bplo_token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (!token) return token;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const secsLeft = payload.exp - Math.floor(Date.now() / 1000);
+    if (secsLeft > 300) return token;
+    if (!_refreshing) {
+      _refreshing = axios
+        .post(
+          "/api/auth/staff/refresh",
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+        .then((r) => {
+          localStorage.setItem("bplo_token", r.data.token);
+          return r.data.token;
+        })
+        .catch(() => token)
+        .finally(() => {
+          _refreshing = null;
+        });
+    }
+    return _refreshing;
+  } catch {
+    return token;
+  }
+}
+
+// Attach JWT token to every request (with proactive refresh)
+api.interceptors.request.use(async (config) => {
+  let token;
+  if (config.url?.includes("/auth/")) {
+    token = localStorage.getItem("bplo_token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    token = await ensureFreshToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   console.log(
     "[iDetect API Request]",
     config.method?.toUpperCase(),
@@ -77,6 +116,10 @@ export const establishmentsAPI = {
     api.get("/establishments/expiring-permits", { params: { days } }),
   delete: (id) => api.delete(`/establishments/${id}`),
   importBulk: (records) => api.post("/establishments/bulk-import", { records }),
+  downloadCredentials: (token) =>
+    api.get(`/establishments/bulk-credentials/${token}`, {
+      responseType: "blob",
+    }),
 };
 
 // ─── Verification logs (BPLO can see aggregate stats) ─────────────────────────
@@ -138,6 +181,11 @@ export const staffAPI = {
   changePassword: (current_password, new_password) =>
     api.patch("/staff/me/change-password", { current_password, new_password }),
   unlock: (id) => api.patch(`/staff/${id}/unlock`),
+};
+
+// ─── Breach incident report (REQ-2.17.6) ──────────────────────────────────────────
+export const breachReportAPI = {
+  generate: (payload) => api.post("/staff/breach-report", payload),
 };
 
 export default api;

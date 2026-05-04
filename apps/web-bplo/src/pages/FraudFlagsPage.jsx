@@ -10,6 +10,7 @@ import {
   AlertCircle,
   RefreshCw,
   MessageSquare,
+  Keyboard,
 } from "lucide-react";
 import { fraudFlagsAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -243,6 +244,12 @@ export default function FraudFlagsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <FlagStatusBadge status={flag.status} />
+                      {flag.manually_entered && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-50 border border-yellow-200 rounded-full text-[10px] font-semibold text-yellow-700">
+                          <Keyboard className="w-2.5 h-2.5" />
+                          Manual Entry
+                        </span>
+                      )}
                       <span className="text-xs text-slate-400 font-medium">
                         {fmtRelative(flag.created_at)}
                       </span>

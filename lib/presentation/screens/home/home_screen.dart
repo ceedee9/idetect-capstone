@@ -6,8 +6,9 @@
 
 import 'package:flutter/material.dart';
 import '../../widgets/account_profile_drawer.dart';
-import 'department_selection_screen.dart';
 import '../scan/camera_screen.dart';
+import '../history/history_screen.dart';
+import '../../../services/session_timeout_service.dart';
 
 /// Redesigned home screen with banner and info sections
 class HomeScreen extends StatefulWidget {
@@ -109,6 +110,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            // Auto-detect option
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CameraScreen(idType: 'auto'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.auto_awesome, size: 28),
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Column(
+                    children: [
+                      Text('Auto-detect', style: TextStyle(fontSize: 16)),
+                      Text(
+                        'System will identify the ID type',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -126,15 +156,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final pages = [
       _HomePage(onProfileTap: _openProfileDrawer),
       const SizedBox(), // Placeholder for scan (handled by button)
-      const DepartmentSelectionScreen(), // History shows department databases
+      const HistoryScreen(), // REQ-2.16.5: API-backed verification history + compliance report
     ];
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.white,
-      endDrawer: const AccountProfileDrawer(),
-      body: _selectedIndex == 1 ? const SizedBox() : pages[_selectedIndex],
-      bottomNavigationBar: _buildBottomNavBar(),
+    return SessionActivityWrapper(
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: Colors.white,
+        endDrawer: const AccountProfileDrawer(),
+        body: _selectedIndex == 1 ? const SizedBox() : pages[_selectedIndex],
+        bottomNavigationBar: _buildBottomNavBar(),
+      ),
     );
   }
 

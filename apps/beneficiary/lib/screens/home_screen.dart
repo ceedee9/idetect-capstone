@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../core/constants/app_design_system.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
+import '../services/session_timeout_service.dart';
 import 'login_screen.dart';
 import 'status_screen.dart';
 import 'transactions_screen.dart';
@@ -108,78 +109,82 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = ApiService.currentUser;
     final fullName = user?['full_name'] ?? 'Beneficiary';
 
-    return Scaffold(
-      backgroundColor: AppDesignSystem.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: AppDesignSystem.primaryBlue,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              fullName,
-              style: AppDesignSystem.buttonMedium.copyWith(color: Colors.white),
-            ),
-            Text(
-              user?['beneficiary_type']
-                      ?.toString()
-                      .replaceAll('_', ' ')
-                      .toUpperCase() ??
-                  '',
-              style: AppDesignSystem.caption.copyWith(color: Colors.white70),
+    return SessionActivityWrapper(
+      child: Scaffold(
+        backgroundColor: AppDesignSystem.backgroundLight,
+        appBar: AppBar(
+          backgroundColor: AppDesignSystem.primaryBlue,
+          elevation: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                fullName,
+                style: AppDesignSystem.buttonMedium.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                user?['beneficiary_type']
+                        ?.toString()
+                        .replaceAll('_', ' ')
+                        .toUpperCase() ??
+                    '',
+                style: AppDesignSystem.caption.copyWith(color: Colors.white70),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: _logout,
+              tooltip: 'Sign Out',
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: _logout,
-            tooltip: 'Sign Out',
+        body: _pages[_selectedIndex],
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(
-                  icon: Icons.badge_outlined,
-                  activeIcon: Icons.badge,
-                  label: 'STATUS',
-                  index: 0,
-                ),
-                _buildNavItem(
-                  icon: Icons.receipt_long_outlined,
-                  activeIcon: Icons.receipt_long,
-                  label: 'HISTORY',
-                  index: 1,
-                ),
-                _buildNavItem(
-                  icon: Icons.gavel_outlined,
-                  activeIcon: Icons.gavel,
-                  label: 'DISPUTES',
-                  index: 2,
-                ),
-              ],
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(
+                    icon: Icons.badge_outlined,
+                    activeIcon: Icons.badge,
+                    label: 'STATUS',
+                    index: 0,
+                  ),
+                  _buildNavItem(
+                    icon: Icons.receipt_long_outlined,
+                    activeIcon: Icons.receipt_long,
+                    label: 'HISTORY',
+                    index: 1,
+                  ),
+                  _buildNavItem(
+                    icon: Icons.gavel_outlined,
+                    activeIcon: Icons.gavel,
+                    label: 'DISPUTES',
+                    index: 2,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      ), // Scaffold
+    ); // SessionActivityWrapper
   }
 
   Widget _buildNavItem({

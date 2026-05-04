@@ -18,8 +18,25 @@ const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendSms } = require("../services/smsService");
+const { sendEstablishmentCredentials } = require("../services/emailService");
 
 const router = express.Router();
+
+// ── In-memory one-time credential token store ──────────────────
+// Bulk import generates a temporary token (15-min TTL).
+// The BPLO officer downloads credentials once via the token endpoint.
+// Tokens are deleted immediately after first download (or on expiry).
+const _credentialTokens = new Map(); // token → { credentials, expiresAt }
+
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [token, entry] of _credentialTokens.entries()) {
+      if (entry.expiresAt < now) _credentialTokens.delete(token);
+    }
+  },
+  5 * 60 * 1000,
+); // GC every 5 minutes
 
 // ── POST /api/establishments/register (PUBLIC) ─────────────────
 // Businesses self-register. Account starts as 'pending'.
@@ -356,7 +373,18 @@ router.post("/bulk-import", async (req, res, next) => {
         duplicates,
         invalid: invalidRows.length,
       },
-      credentials, // plaintext passwords — download immediately
+      // Credentials are NOT returned in this response to avoid plaintext
+      // exposure in logs/proxies. Use the one-time download token below.
+      credentialToken: (() => {
+        if (inserted === 0) return null;
+        const token = crypto.randomUUID();
+        _credentialTokens.set(token, {
+          credentials,
+          expiresAt: Date.now() + 15 * 60 * 1000,
+        });
+        return token;
+      })(),
+      credentialTokenExpiresInMinutes: inserted > 0 ? 15 : null,
       invalidRows,
     });
   } catch (err) {
@@ -364,15 +392,62 @@ router.post("/bulk-import", async (req, res, next) => {
   }
 });
 
+// ── GET /api/establishments/bulk-credentials/:token ───────────
+// One-time download of plaintext credentials from a bulk import.
+// Token is consumed on first access (or expires after 15 min).
+router.get(
+  "/bulk-credentials/:token",
+  authenticate,
+  requireRole(["bplo_admin"]),
+  (req, res) => {
+    const { token } = req.params;
+    const entry = _credentialTokens.get(token);
+
+    if (!entry) {
+      return res
+        .status(404)
+        .json({ error: "Token not found or already used." });
+    }
+    if (entry.expiresAt < Date.now()) {
+      _credentialTokens.delete(token);
+      return res.status(410).json({ error: "Token has expired." });
+    }
+
+    // Consume the token immediately (single-use)
+    _credentialTokens.delete(token);
+
+    const { credentials } = entry;
+
+    // Return as CSV for direct browser download
+    const header =
+      "business_name,business_permit_no,email,password,email_auto_generated\n";
+    const rows = credentials
+      .map((c) =>
+        [
+          `"${c.business_name}"`,
+          c.business_permit_no,
+          c.email,
+          c.password,
+          c.email_auto_generated,
+        ].join(","),
+      )
+      .join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="idetect_credentials_${Date.now()}.csv"`,
+    );
+    res.send(header + rows);
+  },
+);
+
 // REQ-2.2.1: BPLO officer directly creates a Client Portal account
 // for an establishment. Account is immediately approved.
 router.post(
   "/",
   [
     body("email").isEmail().normalizeEmail(),
-    body("password")
-      .isLength({ min: 8 })
-      .withMessage("Password must be at least 8 characters"),
     body("business_name").notEmpty().trim(),
     body("business_permit_no").notEmpty().trim().toUpperCase(),
     body("owner_name").notEmpty().trim(),
@@ -389,7 +464,6 @@ router.post(
 
       const {
         email,
-        password,
         business_name,
         business_permit_no,
         owner_name,
@@ -397,6 +471,7 @@ router.post(
         contact_number,
         business_permit_expiry,
       } = req.body;
+
       const existingPermit = await pool.query(
         "SELECT id FROM establishments WHERE business_permit_no = $1",
         [business_permit_no.toUpperCase()],
@@ -419,7 +494,9 @@ router.post(
         });
       }
 
-      const password_hash = await bcrypt.hash(password, 12);
+      // Auto-generate a secure password — returned once to BPLO and emailed to establishment
+      const plain_password = generatePassword(12);
+      const password_hash = await bcrypt.hash(plain_password, 12);
 
       const client = await pool.connect();
       let result;
@@ -468,17 +545,25 @@ router.post(
         client.release();
       }
 
-      // REQ-2.2.3: Notify establishment via SMS with credentials
+      // Send credentials to establishment email
+      await sendEstablishmentCredentials({
+        business_name,
+        email,
+        plain_password,
+      });
+
+      // Also notify via SMS if contact number provided
       if (contact_number) {
         await sendSms(
           contact_number,
-          `Welcome to iDetect! Your establishment account (${business_name}) has been created and approved. Login at the iDetect Client Portal using email: ${email} and the password set by your BPLO officer. Please change your password after first login.`,
+          `Welcome to iDetect! Your establishment account (${business_name}) has been created. Check your email (${email}) for your login credentials.`,
         );
       }
 
       res.status(201).json({
-        message: `Establishment "${business_name}" created and approved successfully.`,
+        message: `Establishment "${business_name}" created and approved successfully. Credentials have been sent to ${email}.`,
         establishment: result.rows[0],
+        plain_password,
       });
     } catch (err) {
       next(err);

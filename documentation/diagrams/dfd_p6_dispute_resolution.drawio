@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="850" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Title -->
+    <mxCell id="title" value="DFD Level 1 — Process 6.0: Dispute Resolution" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="20" width="900" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ===== EXTERNAL ENTITIES (left) ===== -->
+    <mxCell id="ben" value="Beneficiary" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="180" width="150" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="osca" value="OSCA Admin" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="380" width="150" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="pdao" value="PDAO Admin" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="500" width="150" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ===== PROCESS (middle) ===== -->
+    <mxCell id="p6" value="6.0&#xa;Dispute Resolution" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="510" y="310" width="220" height="110" as="geometry" />
+    </mxCell>
+
+    <!-- ===== DATA STORES (right) ===== -->
+    <mxCell id="d4" value="D4: beneficiary_accounts" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="120" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d5" value="D5: verification_logs" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="230" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d7" value="D7: disputes" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="340" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d9" value="D9: audit_logs" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="450" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="p7ref" value="7.0&#xa;Notification Dispatch" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=11;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="560" width="200" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ===== EDGES ===== -->
+    <!-- BEN → P6 -->
+    <mxCell id="e1" value="Dispute Submission" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="ben" target="p6" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e2" value="Supporting Document" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="ben" target="p6" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="205" y="200"/><mxPoint x="350" y="200"/><mxPoint x="350" y="330"/><mxPoint x="510" y="330"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- P6 → BEN -->
+    <mxCell id="e3" value="Dispute Status Update" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p6" target="ben" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="350"/><mxPoint x="330" y="350"/><mxPoint x="330" y="210"/><mxPoint x="180" y="210"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- OSCA → P6 -->
+    <mxCell id="e4" value="Resolution Decision" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="osca" target="p6" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <!-- P6 → OSCA -->
+    <mxCell id="e5" value="Dispute List" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p6" target="osca" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="380"/><mxPoint x="320" y="380"/><mxPoint x="320" y="410"/><mxPoint x="180" y="410"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- PDAO → P6 -->
+    <mxCell id="e6" value="Resolution Decision" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="pdao" target="p6" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <!-- P6 → PDAO -->
+    <mxCell id="e7" value="Dispute List" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p6" target="pdao" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="390"/><mxPoint x="310" y="390"/><mxPoint x="310" y="530"/><mxPoint x="180" y="530"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- Data Stores -->
+    <mxCell id="e8" value="Beneficiary Account Record" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d4" target="p6" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="150"/><mxPoint x="980" y="150"/><mxPoint x="980" y="320"/><mxPoint x="730" y="320"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="Verification Log Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d5" target="p6" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="260"/><mxPoint x="990" y="260"/><mxPoint x="990" y="330"/><mxPoint x="730" y="330"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e10" value="Existing Dispute Records" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d7" target="p6" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="370"/><mxPoint x="1000" y="370"/><mxPoint x="1000" y="345"/><mxPoint x="730" y="345"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e11" value="Updated Dispute Record" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p6" target="d7" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e12" value="Dispute Audit Event" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p6" target="d9" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e13" value="Dispute Notification Request" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p6" target="p7ref" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+  </root>
+</mxGraphModel>

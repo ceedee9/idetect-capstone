@@ -54,6 +54,8 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
         ocrConfidence: widget.parsedData.confidence,
         imagePath: widget.imagePath,
         manuallyEntered: false,
+        extractedName: widget.parsedData.fullName,
+        extractedDob: widget.parsedData.dateOfBirth,
       );
     }
 

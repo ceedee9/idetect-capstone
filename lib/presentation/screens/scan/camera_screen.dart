@@ -273,7 +273,11 @@ class _CameraScreenState extends State<CameraScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                widget.idType == 'senior' ? 'Senior Citizen ID' : 'PWD ID',
+                widget.idType == 'senior'
+                    ? 'Senior Citizen ID'
+                    : widget.idType == 'pwd'
+                        ? 'PWD ID'
+                        : 'Auto-detect ID Type',
                 style: AppDesignSystem.bodyMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

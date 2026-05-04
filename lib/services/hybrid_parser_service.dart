@@ -6,6 +6,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'enhanced_ocr_service.dart';
 import 'layout_based_field_extractor.dart';
 import 'opencv_image_processor.dart';
@@ -26,6 +27,53 @@ import 'pwd_layout_field_extractor.dart';
 class HybridParserService {
   final EnhancedOCRService _ocrService = EnhancedOCRService();
   final ParserService _fuzzyParser = ParserService();
+
+  // ─── Card-type auto-detection ─────────────────────────────────────────────
+
+  static const _seniorKeywords = [
+    'OSCA',
+    'SENIOR CITIZEN',
+    'SENIOR',
+    'CITIZEN AFFAIRS',
+    'CITIZENS AFFAIRS',
+  ];
+  static const _pwdKeywords = [
+    'PWD',
+    'PERSONS WITH DISABILITY',
+    'PERSON WITH DISABILITY',
+    'DIFFERENTLY ABLED',
+    'DISABILITY',
+  ];
+
+  /// Inspects raw OCR text and returns 'senior', 'pwd', or null (unknown).
+  static String? detectCardType(String rawText) {
+    final upper = rawText.toUpperCase();
+    int seniorScore = 0;
+    int pwdScore = 0;
+    for (final k in _seniorKeywords) {
+      if (upper.contains(k)) seniorScore++;
+    }
+    for (final k in _pwdKeywords) {
+      if (upper.contains(k)) pwdScore++;
+    }
+    if (seniorScore == 0 && pwdScore == 0) return null;
+    return seniorScore >= pwdScore ? 'senior' : 'pwd';
+  }
+
+  /// Runs a single fast ML Kit pass and returns 'senior', 'pwd', or null.
+  static Future<String?> sniffCardType(File imageFile) async {
+    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final input = InputImage.fromFile(imageFile);
+      final result = await recognizer.processImage(input);
+      return detectCardType(result.text);
+    } catch (e) {
+      debugPrint('⚠️ Card type sniff failed: $e');
+      return null;
+    } finally {
+      recognizer.close();
+    }
+  }
 
   /// Parse ID with hybrid approach
   Future<ParsedIDData> parseIDWithHybridApproach({
@@ -196,6 +244,9 @@ class HybridParserService {
         idType: IDType.seniorCitizen,
         fullName: merged['fullName'],
         age: _extractAge(merged['dateOfBirth']),
+        dateOfBirth: (merged['dateOfBirth'] as String?)?.isNotEmpty == true
+            ? merged['dateOfBirth'] as String
+            : null,
         sex: merged['sex'],
         dateIssued: merged['dateIssued'],
         controlNumber: merged['controlNumber'],
@@ -437,6 +488,7 @@ class HybridParserService {
         idNumber: parsedData.idNumber,
         fullName: parsedData.fullName,
         age: parsedData.age,
+        dateOfBirth: parsedData.dateOfBirth,
         sex: parsedData.sex,
         dateIssued: parsedData.dateIssued,
         controlNumber: parsedData.controlNumber,

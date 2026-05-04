@@ -1,11 +1,13 @@
 // src/services/expiryAlertScheduler.js
 // Runs once per day and creates in-app notifications for beneficiaries
 // whose IDs are expiring in 30, 7, or 1 day(s).
+// Also dispatches FCM push notifications for each alert.
 //
 // No external dependencies — uses setInterval on server start.
 // In production, replace with a proper cron job or Railway cron trigger.
 
 const pool = require("../config/database");
+const { sendPushNotification } = require("./fcmService");
 
 const ALERT_DAYS = [30, 7, 1];
 
@@ -30,7 +32,8 @@ async function runExpiryCheck() {
            b.id_number,
            b.beneficiary_type,
            b.validity_end,
-           ba.id         AS account_id
+           ba.id         AS account_id,
+           ba.device_token
          FROM beneficiaries b
          JOIN beneficiary_accounts ba ON ba.beneficiary_id = b.id
          WHERE b.status = 'active'
@@ -46,7 +49,7 @@ async function runExpiryCheck() {
 
       if (result.rows.length === 0) continue;
 
-      // Build bulk insert
+      // Build bulk insert and dispatch FCM pushes
       const values = [];
       const params = [];
       let idx = 1;
@@ -63,6 +66,24 @@ async function runExpiryCheck() {
 
         values.push(`($${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++})`);
         params.push(row.account_id, "id_expiring_soon", title, message, "push");
+
+        // Dispatch FCM push (fire-and-forget; clear invalid tokens automatically)
+        if (row.device_token) {
+          sendPushNotification(row.device_token, title, message, {
+            type: "id_expiring_soon",
+          })
+            .then((fcmResult) => {
+              if (fcmResult.invalidToken) {
+                pool
+                  .query(
+                    "UPDATE beneficiary_accounts SET device_token = NULL WHERE id = $1",
+                    [row.account_id],
+                  )
+                  .catch(() => {});
+              }
+            })
+            .catch(() => {});
+        }
       }
 
       await pool.query(

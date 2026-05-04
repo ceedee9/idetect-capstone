@@ -37,16 +37,28 @@ router.post(
 
       const {
         verification_log_id,
-        id_number_flagged,
+        id_number_flagged: raw_id_number_flagged,
         beneficiary_type,
         establishment_notes,
       } = req.body;
 
+      // Normalize the ID number to match how it is stored in beneficiaries
+      // (uppercase, alphanumeric only). Without this, a flag from a card with
+      // dashes (e.g. "12-3456-789") would fail to link to the beneficiary record
+      // stored without dashes ("123456789").
+      const id_number_flagged =
+        String(raw_id_number_flagged || "")
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "")
+          .trim() || raw_id_number_flagged;
+
       const establishment_id = req.establishment.id;
 
-      // Find beneficiary_id if the record exists
+      // Find beneficiary_id if the record exists — use the normalized form
+      // and the same expression index used by verification.js for consistency
       const bResult = await pool.query(
-        "SELECT id FROM beneficiaries WHERE id_number = $1",
+        `SELECT id FROM beneficiaries
+         WHERE UPPER(REGEXP_REPLACE(id_number, '[^A-Za-z0-9]', '', 'g')) = $1`,
         [id_number_flagged],
       );
       const beneficiary_id = bResult.rows[0]?.id || null;
@@ -155,6 +167,30 @@ router.post(
             );
 
             autoSuspended = true;
+
+            // Alert the relevant LGU portal staff (in-portal notification).
+            // senior_citizen flags → osca_admin; pwd flags → pdao_admin.
+            const alertRole =
+              beneficiary_type === "senior_citizen"
+                ? "osca_admin"
+                : "pdao_admin";
+            pool
+              .query(
+                `INSERT INTO staff_alerts (target_role, title, body, related_beneficiary_id)
+                 VALUES ($1, $2, $3, $4)`,
+                [
+                  alertRole,
+                  "⚠️ ID Auto-Suspended",
+                  `ID ${id_number_flagged} was automatically suspended after flags from ${distinctFlaggers} distinct establishment(s). Please review the active fraud flags.`,
+                  beneficiary_id,
+                ],
+              )
+              .catch((err) =>
+                console.error(
+                  "⚠️  Staff alert insert failed (migration 022 applied?):",
+                  err.message,
+                ),
+              );
           }
         }
       }
@@ -377,6 +413,58 @@ router.patch(
             JSON.stringify({ flag_id: id, decision }),
           ],
         );
+      }
+
+      // Auto-restore: if this flag was dismissed and the beneficiary was
+      // auto-suspended (not manually revoked), check whether any active flags
+      // remain. If none do, automatically restore the beneficiary to 'active'.
+      // This prevents indefinite suspension caused by wrongful or expired flags.
+      if (decision === "dismissed" && flag.beneficiary_id) {
+        const remainingResult = await pool.query(
+          `SELECT COUNT(*) AS cnt
+           FROM fraud_flags
+           WHERE beneficiary_id = $1
+             AND flag_status IN ('pending', 'reviewing')`,
+          [flag.beneficiary_id],
+        );
+        const remaining = parseInt(remainingResult.rows[0].cnt, 10);
+
+        if (remaining === 0) {
+          const benResult = await pool.query(
+            "SELECT status, status_reason FROM beneficiaries WHERE id = $1",
+            [flag.beneficiary_id],
+          );
+          const ben = benResult.rows[0];
+          // Only auto-restore system-generated suspensions, not manual ones.
+          const wasAutoSuspended =
+            ben?.status === "suspended" &&
+            ben?.status_reason?.includes("Automatically suspended");
+
+          if (wasAutoSuspended) {
+            await pool.query(
+              `UPDATE beneficiaries
+               SET status = 'active',
+                   status_reason = NULL,
+                   updated_at = NOW()
+               WHERE id = $1`,
+              [flag.beneficiary_id],
+            );
+
+            await pool.query(
+              `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
+               VALUES ($1, 'flag_dismissed', 'beneficiaries', $2, $3)`,
+              [
+                req.user.id,
+                flag.beneficiary_id,
+                JSON.stringify({
+                  auto_restored: true,
+                  trigger: "all_flags_dismissed",
+                  dismissing_flag_id: id,
+                }),
+              ],
+            );
+          }
+        }
       }
 
       res.json({ message: `Flag ${decision} successfully.` });

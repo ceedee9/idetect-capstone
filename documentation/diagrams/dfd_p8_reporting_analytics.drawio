@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="850" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Title -->
+    <mxCell id="title" value="DFD Level 1 — Process 8.0: Reporting &amp; Analytics" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="20" width="900" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ===== EXTERNAL ENTITIES (left) ===== -->
+    <mxCell id="bplo" value="BPLO Admin" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="230" width="150" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="osca" value="OSCA Admin" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="360" width="150" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="pdao" value="PDAO Admin" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="490" width="150" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ===== PROCESS (middle) ===== -->
+    <mxCell id="p8" value="8.0&#xa;Reporting &amp;&#xa;Analytics" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="510" y="320" width="220" height="110" as="geometry" />
+    </mxCell>
+
+    <!-- ===== DATA STORES (right) ===== -->
+    <mxCell id="d5" value="D5: verification_logs" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="200" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d6" value="D6: fraud_flags" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="310" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d7" value="D7: disputes" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="420" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d9" value="D9: audit_logs" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="530" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ===== EDGES ===== -->
+    <!-- Admins → P8 (report requests) -->
+    <mxCell id="e1" value="Report Request" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="bplo" target="p8" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e2" value="Report Request" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="osca" target="p8" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e3" value="Report Request" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="pdao" target="p8" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- P8 → BPLO -->
+    <mxCell id="e4" value="Analytics Dashboard Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p8" target="bplo" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="360"/><mxPoint x="330" y="360"/><mxPoint x="330" y="260"/><mxPoint x="180" y="260"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" value="Exported CSV Report" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p8" target="bplo" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="370"/><mxPoint x="320" y="370"/><mxPoint x="320" y="270"/><mxPoint x="180" y="270"/></Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- P8 → OSCA -->
+    <mxCell id="e6" value="Analytics Dashboard Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p8" target="osca" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="390"/><mxPoint x="310" y="390"/><mxPoint x="310" y="390"/><mxPoint x="180" y="390"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="Exported CSV Report" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p8" target="osca" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="400"/><mxPoint x="300" y="400"/><mxPoint x="300" y="400"/><mxPoint x="180" y="400"/></Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- P8 → PDAO -->
+    <mxCell id="e8" value="Analytics Dashboard Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p8" target="pdao" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="410"/><mxPoint x="290" y="410"/><mxPoint x="290" y="520"/><mxPoint x="180" y="520"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="Exported CSV Report" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p8" target="pdao" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="510" y="420"/><mxPoint x="280" y="420"/><mxPoint x="280" y="530"/><mxPoint x="180" y="530"/></Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Data Stores → P8 -->
+    <mxCell id="e10" value="Verification Log Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d5" target="p8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="230"/><mxPoint x="980" y="230"/><mxPoint x="980" y="340"/><mxPoint x="730" y="340"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e11" value="Fraud Flag Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d6" target="p8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="340"/><mxPoint x="990" y="340"/><mxPoint x="990" y="355"/><mxPoint x="730" y="355"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e12" value="Dispute Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d7" target="p8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="450"/><mxPoint x="1000" y="450"/><mxPoint x="1000" y="380"/><mxPoint x="730" y="380"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e13" value="Audit Log Data" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d9" target="p8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="560"/><mxPoint x="1010" y="560"/><mxPoint x="1010" y="400"/><mxPoint x="730" y="400"/></Array>
+      </mxGeometry>
+    </mxCell>
+
+  </root>
+</mxGraphModel>

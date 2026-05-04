@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Eye, EyeOff, AlertCircle, Loader2, Clock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const BG_IMAGE = "/idBackground.png";
@@ -9,6 +9,8 @@ const LOGO_SRC = "/IDETECT.png";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const idleExpired = searchParams.get("reason") === "idle";
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPw, setShowPw] = useState(false);
@@ -138,6 +140,22 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Idle session expiry notice */}
+            {idleExpired && !error && (
+              <div
+                className="flex items-start gap-2.5 px-4 py-3 rounded-lg text-sm"
+                style={{
+                  background: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  color: "#92400e",
+                }}
+              >
+                <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  Your session expired due to inactivity. Please sign in again.
+                </span>
+              </div>
+            )}
             {/* Error banner */}
             {error && (
               <div

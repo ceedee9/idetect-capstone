@@ -18,8 +18,77 @@ const pool = require("../config/database");
 const { authenticateEstablishment } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
+const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
+
+// Jaro-Winkler string similarity — returns 0.0 to 1.0.
+// Used to fuzzy-match OCR-extracted names against stored beneficiary names.
+// See: https://en.wikipedia.org/wiki/Jaro%E2%80%93Winkler_distance
+function jaroWinkler(s1, s2) {
+  if (!s1 || !s2) return 0;
+  s1 = s1.toUpperCase().trim();
+  s2 = s2.toUpperCase().trim();
+  if (s1 === s2) return 1;
+
+  const len1 = s1.length;
+  const len2 = s2.length;
+  const matchDist = Math.max(Math.floor(Math.max(len1, len2) / 2) - 1, 0);
+
+  const s1Matched = new Array(len1).fill(false);
+  const s2Matched = new Array(len2).fill(false);
+  let matches = 0;
+
+  for (let i = 0; i < len1; i++) {
+    const lo = Math.max(0, i - matchDist);
+    const hi = Math.min(i + matchDist + 1, len2);
+    for (let j = lo; j < hi; j++) {
+      if (!s2Matched[j] && s1[i] === s2[j]) {
+        s1Matched[i] = s2Matched[j] = true;
+        matches++;
+        break;
+      }
+    }
+  }
+
+  if (matches === 0) return 0;
+
+  let transpositions = 0;
+  let k = 0;
+  for (let i = 0; i < len1; i++) {
+    if (!s1Matched[i]) continue;
+    while (!s2Matched[k]) k++;
+    if (s1[i] !== s2[k]) transpositions++;
+    k++;
+  }
+
+  const jaro =
+    (matches / len1 +
+      matches / len2 +
+      (matches - transpositions / 2) / matches) /
+    3;
+
+  let prefixLen = 0;
+  const maxPrefix = Math.min(4, Math.min(len1, len2));
+  while (prefixLen < maxPrefix && s1[prefixLen] === s2[prefixLen]) prefixLen++;
+
+  return jaro + prefixLen * 0.1 * (1 - jaro);
+}
+
+// Per-establishment rate limit on the scan endpoint.
+// 60 scans per minute prevents automated ID enumeration even if an
+// establishment account credential is compromised.
+// Key is resolved after authenticateEstablishment runs.
+const scanLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  keyGenerator: (req) => req.establishment?.id || req.ip,
+  message: {
+    error: "Too many scan requests. Please wait before scanning again.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const uploadsDir = path.join(__dirname, "..", "..", "uploads");
 
@@ -54,6 +123,7 @@ const normalizeIdNumber = (value) =>
 router.post(
   "/scan",
   authenticateEstablishment,
+  scanLimiter,
   [
     body("id_number").notEmpty().trim().toUpperCase(),
     body("beneficiary_type").isIn(["senior_citizen", "pwd"]),
@@ -61,6 +131,8 @@ router.post(
     body("ocr_raw_text").optional().isString(),
     body("image_data").optional().isString(), // base64-encoded captured ID image
     body("manually_entered").optional().isBoolean(),
+    body("extracted_name").optional().isString().trim(),
+    body("extracted_dob").optional().isString().trim(),
   ],
   async (req, res, next) => {
     try {
@@ -76,7 +148,25 @@ router.post(
         ocr_raw_text = null,
         image_data = null,
         manually_entered = false,
+        extracted_name = null,
+        extracted_dob = null,
       } = req.body;
+
+      // Cross-validation state — populated below when result is VALID.
+      let crossNameMatchScore = null;
+      let crossFieldsMatched = null;
+
+      // Sanitize extracted_dob once to a YYYY-MM-DD string for safe DB insertion.
+      let safeExtractedDob = null;
+      if (extracted_dob) {
+        try {
+          const d = new Date(extracted_dob);
+          if (!isNaN(d.getTime()))
+            safeExtractedDob = d.toISOString().slice(0, 10);
+        } catch {
+          /* ignore invalid date strings */
+        }
+      }
 
       // Decode and save image if provided; build absolute URL for browser access
       let image_path = null;
@@ -84,7 +174,9 @@ router.post(
         const relativePath = saveBase64Image(image_data);
         if (relativePath) {
           const host = `${req.protocol}://${req.get("host")}`;
-          image_path = `${host}${relativePath}`;
+          // Store under /api/uploads/ so the authenticated serving route is used.
+          // Replacing /uploads/ prefix with /api/uploads/ keeps the file path intact.
+          image_path = `${host}/api${relativePath}`;
         }
       }
 
@@ -163,9 +255,60 @@ router.post(
         }
       }
 
-      // If OCR confidence was low, append a warning to whatever result we got
+      // ── Cross-validate OCR-extracted name and DOB against stored record ──
+      // Only runs when the ID was initially found and VALID. A mismatch
+      // downgrades the result to SUSPICIOUS so the discount is not granted.
+      const NAME_THRESHOLD = parseFloat(
+        process.env.OCR_NAME_MATCH_THRESHOLD || "0.80",
+      );
+      if (
+        result === "valid" &&
+        beneficiary &&
+        (extracted_name || safeExtractedDob)
+      ) {
+        let nameOk = true;
+        let dobOk = true;
+
+        if (extracted_name) {
+          crossNameMatchScore = parseFloat(
+            jaroWinkler(extracted_name, beneficiary.full_name).toFixed(3),
+          );
+          nameOk = crossNameMatchScore >= NAME_THRESHOLD;
+        }
+
+        if (safeExtractedDob) {
+          const dbDate = new Date(beneficiary.birthdate)
+            .toISOString()
+            .slice(0, 10);
+          dobOk = safeExtractedDob === dbDate;
+        }
+
+        crossFieldsMatched = nameOk && dobOk;
+
+        if (!crossFieldsMatched) {
+          result = "suspicious";
+          if (!nameOk && !dobOk) {
+            message =
+              "ID number found but name and date of birth on card do not match the record.";
+          } else if (!nameOk) {
+            message = `ID number found but name on card does not match record (similarity: ${(crossNameMatchScore * 100).toFixed(0)}%).`;
+          } else {
+            message =
+              "ID number found but date of birth on card does not match the record.";
+          }
+        }
+      }
+
+      // If OCR confidence was low on an otherwise-valid result, downgrade to
+      // manual_review so the cashier physically inspects the card.
+      // On already-invalid/suspicious results, just annotate the message.
       if (lowConfidence) {
-        message = `(Low OCR confidence — result may be inaccurate) ${message}`;
+        if (result === "valid") {
+          result = "manual_review";
+          message = `OCR confidence below threshold (${ocr_confidence_score?.toFixed(0)}%). Please inspect the physical ID carefully before approving the discount.`;
+        } else {
+          message = `(Low OCR confidence — ${ocr_confidence_score?.toFixed(0)}%) ${message}`;
+        }
       }
 
       // Save the verification log
@@ -173,8 +316,9 @@ router.post(
         `INSERT INTO verification_logs
          (establishment_id, beneficiary_id, id_number_scanned,
           beneficiary_type_detected, result, ocr_confidence_score,
-          ocr_raw_text, image_path, manually_entered)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+          ocr_raw_text, image_path, manually_entered,
+          extracted_name, extracted_dob, name_match_score, fields_matched)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING id, verified_at`,
         [
           establishment_id,
@@ -186,6 +330,10 @@ router.post(
           ocr_raw_text,
           image_path,
           manually_entered,
+          extracted_name,
+          safeExtractedDob,
+          crossNameMatchScore,
+          crossFieldsMatched,
         ],
       );
 
@@ -328,6 +476,26 @@ router.post(
               .catch(() => {});
           }
         }
+      }
+
+      // Audit log for manually entered IDs — gives supervisors visibility
+      // into cashier behaviour without OCR evidence
+      if (manually_entered) {
+        await pool.query(
+          `INSERT INTO audit_logs
+           (establishment_id, action, target_table, target_id, metadata)
+           VALUES ($1, 'verification_performed', 'verification_logs', $2, $3)`,
+          [
+            establishment_id,
+            log.id,
+            JSON.stringify({
+              manually_entered: true,
+              id_number,
+              beneficiary_type,
+              result,
+            }),
+          ],
+        );
       }
 
       // Build the response — minimal data back to the establishment

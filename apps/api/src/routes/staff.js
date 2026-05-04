@@ -385,4 +385,128 @@ router.patch("/:id/unlock", param("id").isUUID(), async (req, res, next) => {
   }
 });
 
+// ── GET /alerts — unread staff alerts for the logged-in admin's role ──────────
+router.get("/alerts", async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, title, body, related_beneficiary_id, is_read, created_at
+         FROM staff_alerts
+        WHERE target_role = $1
+        ORDER BY created_at DESC
+        LIMIT 50`,
+      [req.user.role],
+    );
+    const unread_count = rows.filter((r) => !r.is_read).length;
+    res.json({ alerts: rows, unread_count });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── POST /alerts/mark-all-read — dismiss all alerts for the admin's role ─────
+router.post("/alerts/mark-all-read", async (req, res, next) => {
+  try {
+    await pool.query(
+      `UPDATE staff_alerts SET is_read = TRUE
+        WHERE target_role = $1 AND is_read = FALSE`,
+      [req.user.role],
+    );
+    res.json({ message: "All alerts marked as read." });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── POST /staff/breach-report (REQ-2.17.6) ───────────────────────────────────
+// Generates and logs a breach incident report for NPC 72-hour notification.
+router.post(
+  "/breach-report",
+  [
+    body("nature_of_breach").isString().notEmpty().trim(),
+    body("affected_categories").isArray({ min: 1 }),
+    body("estimated_subjects").isInt({ min: 0 }),
+    body("discovery_date").isISO8601(),
+    body("notes").optional().isString().trim(),
+  ],
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(422).json({ message: errors.array()[0].msg });
+
+    try {
+      const {
+        nature_of_breach,
+        affected_categories,
+        estimated_subjects,
+        discovery_date,
+        notes,
+      } = req.body;
+
+      const reportId = crypto.randomUUID();
+      const generatedAt = new Date().toISOString();
+
+      // Log the breach event in audit_logs for accountability
+      await pool.query(
+        `INSERT INTO audit_logs (action, performed_by, details, created_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [
+          "breach_incident_report_generated",
+          req.user.id,
+          JSON.stringify({
+            report_id: reportId,
+            nature_of_breach,
+            affected_categories,
+            estimated_subjects,
+            discovery_date,
+            generated_by_role: req.user.role,
+          }),
+        ],
+      );
+
+      // Build a formatted plain-text report for NPC submission
+      const formattedReport = [
+        "===================================================",
+        "       DATA BREACH INCIDENT REPORT",
+        "       iDetect System — Valenzuela City LGU",
+        "===================================================",
+        `Report ID       : ${reportId}`,
+        `Generated At    : ${new Date(generatedAt).toLocaleString("en-PH", { timeZone: "Asia/Manila" })} (PHT)`,
+        `Reported By     : ${req.user.full_name || req.user.email} (${req.user.role})`,
+        "",
+        "SECTION 1 — NATURE OF THE BREACH",
+        "-".repeat(50),
+        nature_of_breach,
+        "",
+        "SECTION 2 — AFFECTED DATA CATEGORIES",
+        "-".repeat(50),
+        affected_categories.map((c) => `  • ${c}`).join("\n"),
+        "",
+        "SECTION 3 — SCOPE",
+        "-".repeat(50),
+        `Estimated number of affected data subjects: ${estimated_subjects.toLocaleString()}`,
+        `Date/Time breach was discovered: ${new Date(discovery_date).toLocaleString("en-PH", { timeZone: "Asia/Manila" })} (PHT)`,
+        "",
+        "SECTION 4 — ADDITIONAL NOTES",
+        "-".repeat(50),
+        notes || "(none)",
+        "",
+        "===================================================",
+        "NOTE: Under Republic Act 10173 (Data Privacy Act of 2012),",
+        "this breach must be reported to the National Privacy Commission",
+        "within 72 hours of discovery.",
+        "NPC Breach Notification: https://www.privacy.gov.ph",
+        "===================================================",
+      ].join("\n");
+
+      res.status(201).json({
+        report_id: reportId,
+        generated_at: generatedAt,
+        formatted_report: formattedReport,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 module.exports = router;

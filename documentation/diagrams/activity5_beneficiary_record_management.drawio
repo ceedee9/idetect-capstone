@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2600" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Title -->
+    <mxCell id="title" value="Activity Diagram 5 — Beneficiary Record Management (OSCA / PDAO Admin)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="20" width="980" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- SWIMLANES -->
+    <mxCell id="lane1" value="OSCA / PDAO Admin" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="20" y="70" width="480" height="2500" as="geometry" />
+    </mxCell>
+    <mxCell id="lane2" value="iDetect API Server" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="510" y="70" width="380" height="2500" as="geometry" />
+    </mxCell>
+
+    <!-- START -->
+    <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+      <mxGeometry x="225" y="120" width="30" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- P1: Log Into Web Portal -->
+    <mxCell id="p1" value="Log Into Web Portal&#xa;(OSCA: senior_citizen records only;&#xa;PDAO: pwd records only)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="110" y="175" width="260" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- D_ACTION: Action? (4-way split) -->
+    <mxCell id="d_action" value="Action?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="160" y="265" width="160" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- BRANCH A: Add New Beneficiary Record                         -->
+    <!-- ============================================================ -->
+    <mxCell id="lbl_add" value="Add New&#xa;Beneficiary Record" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="20" y="260" width="110" height="40" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p_form" value="Fill In Beneficiary Form&#xa;(ID Number, Full Name, Birthdate,&#xa;Issuing Office, Validity Start,&#xa;Validity End)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="25" y="370" width="220" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="p_pwd_extra" value="For PWD: Also Select Disability Type" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="25" y="470" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="p_submit_a" value="Submit Form" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="25" y="530" width="220" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- API: Normalize + Duplicate check -->
+    <mxCell id="a_norm" value="Normalize ID Number" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="370" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="d_dup_a" value="Duplicate ID Number OR&#xa;Name + Birthdate&#xa;Combination?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="435" width="210" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="a_dup_err" value="Return Validation Error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="760" y="460" width="170" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="p_correct_a" value="Correct Form and Resubmit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="280" y="460" width="200" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_insert_ben" value="Insert into Beneficiaries&#xa;(status = active)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="550" width="220" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="a_audit_a" value="Write to Audit Logs&#xa;(beneficiary_created)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="620" width="220" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="a_return_a" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="690" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="end_a" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="645" y="750" width="30" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- BRANCH B: Edit Existing Record                               -->
+    <!-- ============================================================ -->
+    <mxCell id="lbl_edit" value="Edit Existing&#xa;Record" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="155" y="345" width="90" height="40" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p_search_b" value="Search Beneficiary&#xa;by Name or ID Number" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="870" width="220" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="p_select_b" value="Select Record" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="940" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="p_edit_b" value="Edit Fields&#xa;(Name, Validity Dates, Contact, etc.)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="1000" width="220" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="p_submit_b" value="Submit Changes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="1070" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_val_b" value="Validate Changes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="870" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_update_b" value="Update Beneficiaries Record" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="930" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_audit_b" value="Write to Audit Logs&#xa;(beneficiary_updated)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="990" width="220" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="a_return_b" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="545" y="1060" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="end_b" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="645" y="1120" width="30" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- BRANCH C: Change Beneficiary Status                          -->
+    <!-- ============================================================ -->
+    <mxCell id="lbl_status" value="Change Beneficiary&#xa;Status" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="270" y="345" width="110" height="40" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p_search_c" value="Search and Select Beneficiary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="1220" width="220" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- D: New Status? -->
+    <mxCell id="d_status" value="New Status?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="135" y="1290" width="160" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- Suspend sub-branch -->
+    <mxCell id="lbl_c_susp" value="Suspend" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="25" y="1368" width="70" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="p_reason_susp" value="Enter Reason Text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="25" y="1400" width="160" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_set_susp" value="Set Status = suspended" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1400" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_audit_susp" value="Write to Audit Logs&#xa;(beneficiary_status_changed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1460" width="210" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="a_notif_susp" value="Send Notification to&#xa;Beneficiary App (if has account)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1530" width="210" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="a_ret_susp" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1600" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="end_susp" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="640" y="1660" width="30" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- Revoke sub-branch -->
+    <mxCell id="lbl_c_rev" value="Revoke" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="185" y="1368" width="60" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="p_reason_rev" value="Enter Reason Text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="175" y="1730" width="160" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_set_rev" value="Set Status = revoked" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1730" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_audit_rev" value="Write to Audit Logs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1790" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_notif_rev" value="Send Notification to&#xa;Beneficiary App" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1850" width="210" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="a_ret_rev" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="1920" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="end_rev" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="640" y="1980" width="30" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- Restore sub-branch -->
+    <mxCell id="lbl_c_res" value="Restore" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="330" y="1368" width="70" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="a_set_active" value="Set Status = active" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="2050" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_clear_reason" value="Clear status_reason" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="2110" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_audit_res" value="Write to Audit Logs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="2170" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_notif_res" value="Send Notification to&#xa;Beneficiary App" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="2230" width="210" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="a_ret_res" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="2300" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="end_res" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="640" y="2360" width="30" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- BRANCH D: View Verification History                          -->
+    <!-- ============================================================ -->
+    <mxCell id="lbl_hist" value="View Verification&#xa;History" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="355" y="260" width="105" height="40" as="geometry" />
+    </mxCell>
+
+    <mxCell id="p_search_d" value="Search and Select Beneficiary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="2130" width="220" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="a_query_logs" value="Query Verification Logs&#xa;for This Beneficiary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="2130" width="210" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="p_display" value="Display Scan History&#xa;(Date, Establishment, Result, Image)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="2200" width="220" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- D: Export Needed? -->
+    <mxCell id="d_export" value="Export Needed?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="130" y="2275" width="160" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="a_gen_csv" value="Generate CSV Export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="2350" width="210" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="p_dl_csv" value="Download CSV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="2350" width="160" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="end_d1" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="165" y="2410" width="30" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="end_d2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="330" y="2410" width="30" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- ===== EDGES ===== -->
+    <!-- Start → p1 → d_action -->
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="start" target="p1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p1" target="d_action" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- BRANCH A: Add New -->
+    <mxCell id="e3" value="Add New Record" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_action" target="p_form" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="160" y="335"/><mxPoint x="135" y="335"/><mxPoint x="135" y="370"/></Array></mxGeometry></mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_form" target="p_pwd_extra" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_pwd_extra" target="p_submit_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_submit_a" target="a_norm" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="135" y="570"/><mxPoint x="650" y="570"/><mxPoint x="650" y="370"/></Array></mxGeometry></mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_norm" target="d_dup_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e8" value="YES" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_dup_a" target="a_dup_err" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_dup_err" target="p_correct_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_correct_a" target="a_norm" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="380" y="480"/><mxPoint x="380" y="350"/><mxPoint x="650" y="350"/><mxPoint x="650" y="370"/></Array></mxGeometry></mxCell>
+    <mxCell id="e11" value="NO" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_dup_a" target="a_insert_ben" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_insert_ben" target="a_audit_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_a" target="a_return_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_return_a" target="end_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- BRANCH B: Edit Record -->
+    <mxCell id="e15" value="Edit Record" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_action" target="p_search_b" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="240" y="335"/><mxPoint x="210" y="335"/><mxPoint x="210" y="870"/></Array></mxGeometry></mxCell>
+    <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_search_b" target="p_select_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_select_b" target="p_edit_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_edit_b" target="p_submit_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e19" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_submit_b" target="a_val_b" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="210" y="1090"/><mxPoint x="650" y="1090"/><mxPoint x="650" y="890"/></Array></mxGeometry></mxCell>
+    <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_val_b" target="a_update_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_update_b" target="a_audit_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e22" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_b" target="a_return_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e23" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_return_b" target="end_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- BRANCH C: Change Status -->
+    <mxCell id="e24" value="Change Status" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_action" target="p_search_c" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="285" y="335"/><mxPoint x="210" y="335"/><mxPoint x="210" y="1220"/></Array></mxGeometry></mxCell>
+    <mxCell id="e25" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_search_c" target="d_status" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- Suspend -->
+    <mxCell id="e26" value="Suspend" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_status" target="p_reason_susp" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="135" y="1360"/><mxPoint x="105" y="1360"/><mxPoint x="105" y="1400"/></Array></mxGeometry></mxCell>
+    <mxCell id="e27" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_reason_susp" target="a_set_susp" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="105" y="1420"/><mxPoint x="645" y="1420"/></Array></mxGeometry></mxCell>
+    <mxCell id="e28" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_set_susp" target="a_audit_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e29" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_susp" target="a_notif_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e30" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_notif_susp" target="a_ret_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e31" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_susp" target="end_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- Revoke -->
+    <mxCell id="e32" value="Revoke" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_status" target="p_reason_rev" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="215" y="1360"/><mxPoint x="255" y="1360"/><mxPoint x="255" y="1730"/></Array></mxGeometry></mxCell>
+    <mxCell id="e33" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_reason_rev" target="a_set_rev" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="255" y="1750"/><mxPoint x="645" y="1750"/></Array></mxGeometry></mxCell>
+    <mxCell id="e34" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_set_rev" target="a_audit_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e35" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_rev" target="a_notif_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e36" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_notif_rev" target="a_ret_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e37" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_rev" target="end_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- Restore -->
+    <mxCell id="e38" value="Restore" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_status" target="a_set_active" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="295" y="1360"/><mxPoint x="645" y="1360"/><mxPoint x="645" y="2050"/></Array></mxGeometry></mxCell>
+    <mxCell id="e39" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_set_active" target="a_clear_reason" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e40" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_clear_reason" target="a_audit_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e41" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_res" target="a_notif_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e42" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_notif_res" target="a_ret_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e43" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_res" target="end_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- BRANCH D: View History -->
+    <mxCell id="e44" value="View History" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_action" target="p_search_d" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="320" y="335"/><mxPoint x="210" y="335"/><mxPoint x="210" y="2130"/></Array></mxGeometry></mxCell>
+    <mxCell id="e45" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_search_d" target="a_query_logs" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="210" y="2150"/><mxPoint x="645" y="2150"/></Array></mxGeometry></mxCell>
+    <mxCell id="e46" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_query_logs" target="p_display" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="645" y="2180"/><mxPoint x="210" y="2180"/><mxPoint x="210" y="2200"/></Array></mxGeometry></mxCell>
+    <mxCell id="e47" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_display" target="d_export" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e48" value="YES" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_export" target="a_gen_csv" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="290" y="2310"/><mxPoint x="645" y="2310"/><mxPoint x="645" y="2350"/></Array></mxGeometry></mxCell>
+    <mxCell id="e49" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_gen_csv" target="p_dl_csv" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="645" y="2370"/><mxPoint x="180" y="2370"/></Array></mxGeometry></mxCell>
+    <mxCell id="e50" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_dl_csv" target="end_d1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e51" value="NO" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_export" target="end_d2" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="210" y="2345"/><mxPoint x="345" y="2345"/><mxPoint x="345" y="2410"/></Array></mxGeometry></mxCell>
+
+  </root>
+</mxGraphModel>

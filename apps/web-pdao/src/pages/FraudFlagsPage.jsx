@@ -13,10 +13,45 @@ import {
   X,
   Eye,
   RotateCcw,
+  Keyboard,
 } from "lucide-react";
-import { fraudFlagsAPI } from "../services/api";
+import { fraudFlagsAPI, staffAlertsAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { fmtDateTime, fmtRelative } from "../utils/date";
+
+// Fetches a protected image URL using the staff JWT and returns a blob URL
+// safe to use in <img src>. Revokes the blob URL on cleanup.
+function useAuthImage(url) {
+  const [blobUrl, setBlobUrl] = useState(null);
+  useEffect(() => {
+    if (!url) {
+      setBlobUrl(null);
+      return;
+    }
+    let cancelled = false;
+    const token = localStorage.getItem("pdao_token");
+    fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : {})
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load image");
+        return r.blob();
+      })
+      .then((blob) => {
+        if (!cancelled) setBlobUrl(URL.createObjectURL(blob));
+      })
+      .catch(() => {
+        if (!cancelled) setBlobUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
+  return blobUrl;
+}
 
 function extractFlags(data) {
   if (!data) return [];
@@ -59,6 +94,9 @@ export default function FraudFlagsPage() {
   const [toast, setToast] = useState(null);
   const [selectedFlag, setSelectedFlag] = useState(null);
 
+  // Fetches the flag image via the authenticated /api/uploads/* route.
+  const flagImageUrl = useAuthImage(selectedFlag?.image_path ?? null);
+
   async function loadFlags() {
     setLoading(true);
     setError(null);
@@ -75,6 +113,20 @@ export default function FraudFlagsPage() {
   useEffect(() => {
     loadFlags();
   }, []);
+
+  // Staff alerts (auto-suspend notifications)
+  const [alerts, setAlerts] = useState([]);
+  useEffect(() => {
+    staffAlertsAPI
+      .list()
+      .then((res) => setAlerts(res.data?.alerts ?? []))
+      .catch(() => {});
+  }, []);
+
+  async function handleMarkAllRead() {
+    await staffAlertsAPI.markAllRead().catch(() => {});
+    setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
+  }
 
   const filtered = useMemo(
     () => flags.filter((f) => !statusFilter || f.status === statusFilter),
@@ -145,6 +197,35 @@ export default function FraudFlagsPage() {
         <div className="flex items-center gap-2.5 px-4 py-3 bg-danger-50 border border-danger-100 rounded-xl text-danger-700 text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
+        </div>
+      )}
+
+      {/* Staff alerts — auto-suspend notifications */}
+      {alerts.filter((a) => !a.is_read).length > 0 && (
+        <div className="space-y-2">
+          {alerts
+            .filter((a) => !a.is_read)
+            .map((alert) => (
+              <div
+                key={alert.id}
+                className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800"
+              >
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                <div className="flex-1">
+                  <p className="font-semibold">{alert.title}</p>
+                  <p className="text-amber-700 mt-0.5">{alert.body}</p>
+                  <p className="text-amber-500 text-xs mt-1">
+                    {fmtRelative(alert.created_at)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          <button
+            onClick={handleMarkAllRead}
+            className="text-xs text-amber-700 underline hover:text-amber-900"
+          >
+            Mark all read
+          </button>
         </div>
       )}
 
@@ -241,6 +322,12 @@ export default function FraudFlagsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <FlagStatusBadge status={flag.status} />
+                      {flag.manually_entered && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-50 border border-yellow-200 rounded-full text-[10px] font-semibold text-yellow-700">
+                          <Keyboard className="w-2.5 h-2.5" />
+                          Manual Entry
+                        </span>
+                      )}
                       <span className="text-xs text-slate-400 font-medium">
                         {fmtRelative(flag.created_at)}
                       </span>
@@ -368,7 +455,7 @@ export default function FraudFlagsPage() {
                 </h3>
                 {selectedFlag.image_path ? (
                   <img
-                    src={selectedFlag.image_path}
+                    src={flagImageUrl ?? ""}
                     alt="Captured ID"
                     className="w-full rounded-xl border border-slate-200 object-contain max-h-52"
                   />

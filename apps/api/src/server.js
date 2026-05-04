@@ -12,11 +12,16 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 
 const { errorHandler } = require("./middleware/errorHandler");
+const { authenticate } = require("./middleware/auth");
 const pool = require("./config/database");
 const { startExpiryScheduler } = require("./services/expiryAlertScheduler");
 const {
   startSlaEscalationScheduler,
 } = require("./services/slaEscalationScheduler");
+const { startFlagDecayScheduler } = require("./services/flagDecayScheduler");
+const {
+  startExpiredStatusScheduler,
+} = require("./services/expiredStatusScheduler");
 
 // Route imports
 const authRoutes = require("./routes/auth");
@@ -35,13 +40,24 @@ const staffRoutes = require("./routes/staff");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Trust proxy ────────────────────────────────────────────────
+// Required when running behind a reverse proxy (Railway, Nginx, etc.).
+// Without this, req.ip always returns the proxy's internal IP, making
+// rate limiting and audit-log IP capture ineffective.
+app.set("trust proxy", 1);
+
 // ── Security middleware ────────────────────────────────────────
 app.use(helmet()); // Sets secure HTTP headers
 app.use(
   cors({
     origin:
       process.env.NODE_ENV === "development"
-        ? "*" // Allow all origins in dev
+        ? [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+          ]
         : process.env.ALLOWED_ORIGINS?.split(","), // Restrict in production
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   }),
@@ -69,14 +85,42 @@ app.use(express.json({ limit: "10mb" })); // 10mb to allow base64 images
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 
-// ── Static uploads ─────────────────────────────────────────────
-// Serves captured ID images at GET /uploads/:filename
+// ── Uploads directory setup ───────────────────────────────────
+// Create upload directories if they don't exist.
+// Files are NOT served as public static — access requires a valid JWT.
 const uploadsDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 const disputeDocsDir = path.join(uploadsDir, "dispute-docs");
 if (!fs.existsSync(disputeDocsDir))
   fs.mkdirSync(disputeDocsDir, { recursive: true });
-app.use("/uploads", express.static(uploadsDir));
+
+// ── Authenticated file serving ────────────────────────────────
+// GET /api/uploads/<filename>  or  GET /api/uploads/dispute-docs/<filename>
+// Requires a valid staff JWT. Replaces the former public express.static
+// serving so PII-containing ID images and dispute documents are protected.
+// Path traversal is prevented by resolving the absolute path and confirming
+// it remains inside uploadsDir before streaming.
+app.get("/api/uploads/*", authenticate, (req, res) => {
+  const requestedFile = req.params[0]; // everything after /api/uploads/
+
+  // Reject empty or obviously invalid paths
+  if (!requestedFile || requestedFile.trim() === "") {
+    return res.status(400).json({ error: "File path is required." });
+  }
+
+  // Resolve and confirm the path stays inside uploadsDir
+  const filePath = path.resolve(uploadsDir, requestedFile);
+  const safePrefix = uploadsDir + path.sep;
+  if (!filePath.startsWith(safePrefix)) {
+    return res.status(400).json({ error: "Invalid file path." });
+  }
+
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    return res.status(404).json({ error: "File not found." });
+  }
+
+  res.sendFile(filePath);
+});
 
 // ── Health check ───────────────────────────────────────────────
 // Hit this to confirm the API is running: GET /api/health
@@ -120,7 +164,7 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ── Start server ───────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log("");
   console.log("  iDetect API running");
   console.log(`  http://localhost:${PORT}/api/health`);
@@ -131,7 +175,43 @@ app.listen(PORT, "0.0.0.0", () => {
 
   // Start 30-minute SLA breach escalation scheduler (REQ-2.13.6)
   startSlaEscalationScheduler();
+
+  // Start daily stale-flag auto-expiry scheduler
+  startFlagDecayScheduler();
+
+  // Start nightly job to set beneficiary status = 'expired' for lapsed IDs
+  startExpiredStatusScheduler();
   console.log("");
 });
+
+// ── Graceful shutdown ─────────────────────────────────────────
+// Railway (and Docker) stop containers with SIGTERM.
+// Without this handler, in-flight requests, bulk imports, and DB writes
+// are abruptly killed. Here we:
+//  1. Stop accepting new connections
+//  2. Wait for in-flight requests to finish (max 15s)
+//  3. Close the DB pool cleanly
+function gracefulShutdown(signal) {
+  console.log(`\n[Shutdown] ${signal} received — shutting down gracefully…`);
+  server.close(async () => {
+    console.log("[Shutdown] HTTP server closed.");
+    try {
+      await pool.end();
+      console.log("[Shutdown] Database pool drained.");
+    } catch (err) {
+      console.error("[Shutdown] Pool drain error:", err.message);
+    }
+    process.exit(0);
+  });
+
+  // Force-exit if the server hasn't closed within 15 seconds
+  setTimeout(() => {
+    console.error("[Shutdown] Forced exit after 15s timeout.");
+    process.exit(1);
+  }, 15_000);
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 module.exports = app;

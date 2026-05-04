@@ -16,6 +16,23 @@ import { disputesAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { fmtDateTime, fmtRelative } from "../utils/date";
 
+async function openAuthDocument(url) {
+  try {
+    const token = localStorage.getItem("pdao_token");
+    const res = await fetch(
+      url,
+      token ? { headers: { Authorization: `Bearer ${token}` } } : {},
+    );
+    if (!res.ok) throw new Error("Document not accessible");
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank");
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  } catch {
+    alert("Could not open document. Please try again.");
+  }
+}
+
 // ── Data hook ─────────────────────────────────────────────────────────────────
 function useDisputes() {
   const [data, setData] = useState([]);
@@ -373,14 +390,14 @@ export default function DisputesPage() {
                   <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5" /> Supporting Document
                   </p>
-                  <a
-                    href={selected.supporting_doc_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() =>
+                      openAuthDocument(selected.supporting_doc_path)
+                    }
                     className="text-sm text-blue-600 hover:underline"
                   >
                     View attached document
-                  </a>
+                  </button>
                 </div>
               )}
 

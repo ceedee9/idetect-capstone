@@ -6,10 +6,49 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Attach JWT token
-api.interceptors.request.use((config) => {
+// Silent JWT refresh helper — decodes exp without a library (base64 payload)
+let _refreshing = null;
+async function ensureFreshToken() {
   const token = localStorage.getItem("osca_token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (!token) return token;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const secsLeft = payload.exp - Math.floor(Date.now() / 1000);
+    if (secsLeft > 300) return token; // >5 min remaining — no refresh needed
+    if (!_refreshing) {
+      _refreshing = axios
+        .post(
+          "/api/auth/staff/refresh",
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+        .then((r) => {
+          localStorage.setItem("osca_token", r.data.token);
+          return r.data.token;
+        })
+        .catch(() => token) // refresh failed — return old token, 401 will redirect
+        .finally(() => {
+          _refreshing = null;
+        });
+    }
+    return _refreshing;
+  } catch {
+    return token;
+  }
+}
+
+// Attach JWT token (with proactive refresh if near expiry)
+api.interceptors.request.use(async (config) => {
+  // Skip refresh call for the refresh endpoint itself to avoid recursion
+  if (config.url?.includes("/auth/")) {
+    const token = localStorage.getItem("osca_token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    const token = await ensureFreshToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   console.log("[OSCA API]", config.method?.toUpperCase(), config.url);
   return config;
 });
@@ -102,6 +141,9 @@ export const beneficiariesAPI = {
 
   expiringSoon: (days = 30) =>
     api.get("/beneficiaries/expiring-soon", { params: { days } }),
+
+  recentlyAutoSuspended: (hours = 24) =>
+    api.get("/beneficiaries/recently-auto-suspended", { params: { hours } }),
 };
 
 // ─── Fraud flags ──────────────────────────────────────────────────────────────
@@ -163,6 +205,17 @@ export const staffAPI = {
   changePassword: (current_password, new_password) =>
     api.patch("/staff/me/change-password", { current_password, new_password }),
   unlock: (id) => api.patch(`/staff/${id}/unlock`),
+};
+
+// ─── Staff alerts ─────────────────────────────────────────────────────────────
+export const staffAlertsAPI = {
+  list: () => api.get("/staff/alerts"),
+  markAllRead: () => api.post("/staff/alerts/mark-all-read"),
+};
+
+// ─── Breach incident report (REQ-2.17.6) ─────────────────────────────────────
+export const breachReportAPI = {
+  generate: (payload) => api.post("/staff/breach-report", payload),
 };
 
 export default api;

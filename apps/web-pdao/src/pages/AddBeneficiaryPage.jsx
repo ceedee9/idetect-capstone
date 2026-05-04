@@ -63,6 +63,7 @@ export default function AddBeneficiaryPage() {
   const [importError, setImportError] = useState("");
   const [importPreview, setImportPreview] = useState(null);
   const [importResult, setImportResult] = useState(null);
+  const [importRowTotal, setImportRowTotal] = useState(0);
 
   const set = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -125,6 +126,7 @@ export default function AddBeneficiaryPage() {
     }
 
     setImportLoading(true);
+    setImportRowTotal(importPreview.records.length);
     setImportError("");
 
     try {
@@ -138,6 +140,7 @@ export default function AddBeneficiaryPage() {
       setImportError(msg);
     } finally {
       setImportLoading(false);
+      setImportRowTotal(0);
     }
   }
 
@@ -274,6 +277,27 @@ export default function AddBeneficiaryPage() {
             )}
           </button>
         </div>
+
+        {/* Bulk import progress bar */}
+        {importLoading && importRowTotal > 0 && (
+          <div className="rounded-xl bg-pdao-50 border border-pdao-100 px-4 py-3 space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-pdao-700">
+              <span>Importing {importRowTotal.toLocaleString()} records…</span>
+              <span className="text-pdao-500">Please wait</span>
+            </div>
+            <div className="h-2 rounded-full bg-pdao-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-pdao-500 animate-pulse"
+                style={{ width: "100%" }}
+              />
+            </div>
+            <p className="text-[11px] text-pdao-500">
+              Large imports may take up to{" "}
+              {Math.ceil((importRowTotal / 500) * 2)}–
+              {Math.ceil((importRowTotal / 500) * 4)} seconds.
+            </p>
+          </div>
+        )}
 
         {importPreview && (
           <div className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-1">

@@ -131,6 +131,46 @@ router.post(
   },
 );
 
+// ── Staff Token Refresh ─────────────────────────────────────────
+// Accepts the current still-valid staff JWT and returns a fresh one.
+// Called silently by portal interceptor before expiry to avoid logout.
+router.post("/staff/refresh", async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+    const token = authHeader.slice(7);
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET_STAFF);
+    } catch {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    // Confirm user still exists and is active
+    const result = await pool.query(
+      "SELECT id, email, role, full_name, is_active FROM users WHERE id = $1",
+      [decoded.id],
+    );
+    if (!result.rows.length || !result.rows[0].is_active) {
+      return res.status(401).json({ error: "Account not found or inactive" });
+    }
+    const user = result.rows[0];
+
+    const newToken = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, name: user.full_name },
+      process.env.JWT_SECRET_STAFF,
+      { expiresIn: process.env.JWT_EXPIRES_IN },
+    );
+
+    res.json({ token: newToken });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Establishment Login (Client Portal mobile app) ─────────────
 router.post(
   "/establishment/login",

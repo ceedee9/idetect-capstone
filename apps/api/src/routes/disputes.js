@@ -9,6 +9,7 @@
 //   PATCH /api/disputes/:id/resolve     — OSCA/PDAO resolves a dispute
 
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const { body, validationResult } = require("express-validator");
@@ -48,18 +49,57 @@ const upload = multer({
   },
 });
 
+// ── Magic-bytes MIME validation ────────────────────────────────
+// Extension spoofing (e.g. malware.php renamed to malware.jpg) bypasses
+// extension-only checks. Reading the first 8 bytes of the saved file and
+// comparing against known file signatures catches these attacks.
+// If the file does not match any allowed signature it is deleted before
+// the response is sent so no invalid file ever persists on disk.
+const MAGIC_BYTES = {
+  jpg: [0xff, 0xd8, 0xff], // JPEG
+  png: [0x89, 0x50, 0x4e, 0x47], // PNG
+  pdf: [0x25, 0x50, 0x44, 0x46], // PDF (%PDF)
+};
+
+function validateFileMagicBytes(req, res, next) {
+  if (!req.file) return next();
+
+  const fd = fs.openSync(req.file.path, "r");
+  const buf = Buffer.alloc(8);
+  fs.readSync(fd, buf, 0, 8, 0);
+  fs.closeSync(fd);
+
+  const valid = Object.values(MAGIC_BYTES).some((sig) =>
+    sig.every((byte, i) => buf[i] === byte),
+  );
+
+  if (!valid) {
+    // Delete the file — it has a spoofed extension
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (_) {}
+    return res.status(400).json({
+      error:
+        "Invalid file type. Only genuine JPG, PNG, and PDF files are accepted.",
+    });
+  }
+
+  next();
+}
+
 // ── POST /api/disputes/upload-doc ──────────────────────────────
 // REQ-2.13.3: Upload supporting documentation before dispute submission
 router.post(
   "/upload-doc",
   authenticateBeneficiary,
   upload.single("document"),
+  validateFileMagicBytes,
   (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded." });
     }
     // Return a relative URL path the client includes as supporting_doc_path
-    const docPath = `/uploads/dispute-docs/${req.file.filename}`;
+    const docPath = `/api/uploads/dispute-docs/${req.file.filename}`;
     res.json({ path: docPath });
   },
 );
@@ -348,7 +388,18 @@ router.patch(
         sendPushNotification(deviceToken, notifTitle, notifBody, {
           type: "dispute_acknowledged",
           dispute_id: id,
-        }).catch(() => {});
+        })
+          .then((fcmResult) => {
+            if (fcmResult.invalidToken) {
+              pool
+                .query(
+                  "UPDATE beneficiary_accounts SET device_token = NULL WHERE id = $1",
+                  [dispute.beneficiary_account_id],
+                )
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
       }
 
       await pool.query(
@@ -476,7 +527,18 @@ router.patch(
           type: "dispute_resolved",
           dispute_id: id,
           decision,
-        }).catch(() => {});
+        })
+          .then((fcmResult) => {
+            if (fcmResult.invalidToken) {
+              pool
+                .query(
+                  "UPDATE beneficiary_accounts SET device_token = NULL WHERE id = $1",
+                  [dispute.beneficiary_account_id],
+                )
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
       }
 
       await pool.query(

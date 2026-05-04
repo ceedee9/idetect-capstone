@@ -37,6 +37,21 @@ class _ResultScreenState extends State<ResultScreen> {
       _status == VerificationStatus.suspicious;
 
   @override
+  void initState() {
+    super.initState();
+    // Pre-populate default reason so staff can tap "Flag & Save" in one tap
+    if (_status == VerificationStatus.suspicious) {
+      _flagNotesController.text =
+          'ID record found but verification raised concerns. '
+          'Customer may not be the legitimate card owner. '
+          'Please verify with secondary ID.';
+    } else if (_status == VerificationStatus.invalid) {
+      _flagNotesController.text =
+          'ID not found in database. Possible fraudulent, expired, or unknown ID.';
+    }
+  }
+
+  @override
   void dispose() {
     _flagNotesController.dispose();
     super.dispose();
@@ -238,6 +253,8 @@ class _ResultScreenState extends State<ResultScreen> {
               _buildSummaryCard(),
               const SizedBox(height: 20),
               if (_canFlag) ...[
+                _buildGuidancePanel(),
+                const SizedBox(height: 10),
                 _buildFlagReasonInput(),
                 const SizedBox(height: 10),
                 _buildActionButton(
@@ -289,6 +306,75 @@ class _ResultScreenState extends State<ResultScreen> {
               style: TextStyle(fontSize: 12, color: Color(0xFFE65100)),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuidancePanel() {
+    final isSuspicious = _status == VerificationStatus.suspicious;
+    final color =
+        isSuspicious ? Colors.orange.shade700 : const Color(0xFFD32F2F);
+    final borderColor =
+        isSuspicious ? Colors.orange.shade300 : Colors.red.shade200;
+    final bgColor =
+        isSuspicious ? const Color(0xFFFFF8E1) : const Color(0xFFFFEBEE);
+
+    final steps = isSuspicious
+        ? [
+            'Do NOT approve the discount.',
+            'Ask the customer for a secondary ID.',
+            'Contact your supervisor or manager.',
+            'Tap "Flag & Save" below to report this ID.',
+          ]
+        : [
+            'Do NOT approve the discount.',
+            'This ID number is not in our database.',
+            'It may be forged, expired, or belong to another system.',
+            'Tap "Flag & Save" below to report this ID.',
+          ];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: color, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                isSuspicious ? 'Action Required' : 'Invalid ID Detected',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...steps.map((step) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.circle, size: 6, color: color),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        step,
+                        style: TextStyle(fontSize: 12, color: color),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
         ],
       ),
     );

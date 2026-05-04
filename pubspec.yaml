@@ -20,6 +20,7 @@ dependencies:
 
   # OCR - Multiple engines for best accuracy
   google_mlkit_text_recognition: ^0.11.0 # Fast, on-device
+  google_mlkit_face_detection: ^0.9.0 # Face presence check on captured ID image
   flutter_tesseract_ocr: ^0.4.25 # Better for documents, highly accurate
   fuzzywuzzy: ^1.1.6 # Fuzzy string matching for name extraction
 

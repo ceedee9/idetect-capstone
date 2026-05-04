@@ -10,9 +10,13 @@ import {
   Bell,
   Menu,
   X,
+  AlertTriangle,
+  ShieldAlert,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useSessionTimeout } from "../hooks/useSessionTimeout";
+import BreachReportModal from "./BreachReportModal";
 
 const NAV = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
@@ -26,6 +30,8 @@ export default function AppShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showBreachModal, setShowBreachModal] = useState(false);
+  const { showWarning, secondsLeft, stayLoggedIn } = useSessionTimeout();
 
   function handleLogout() {
     logout();
@@ -100,6 +106,17 @@ export default function AppShell() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Breach report shortcut */}
+        <div className="mx-3 mb-1 px-3 py-2">
+          <button
+            onClick={() => setShowBreachModal(true)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-red-600 hover:text-red-700 transition-colors"
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            Generate Breach Report
+          </button>
+        </div>
 
         {/* User footer */}
         <div className="border-t border-gray-100 px-3 py-3">
@@ -177,6 +194,48 @@ export default function AppShell() {
           </div>
         </main>
       </div>
+
+      {/* ── Session inactivity warning (REQ-2.17.7) ── */}
+      {showWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Session Expiring Soon
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  You will be automatically signed out in{" "}
+                  <span className="font-bold text-amber-600">
+                    {secondsLeft}s
+                  </span>{" "}
+                  due to inactivity.
+                </p>
+              </div>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Sign out now
+                </button>
+                <button
+                  onClick={stayLoggedIn}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-bplo-600 text-white text-sm font-semibold hover:bg-bplo-700 transition-colors"
+                >
+                  Stay logged in
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showBreachModal && (
+        <BreachReportModal onClose={() => setShowBreachModal(false)} />
+      )}
     </div>
   );
 }

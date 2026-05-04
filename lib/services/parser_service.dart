@@ -884,6 +884,10 @@ class ParsedIDData {
   final String? fullName;
   final String? disabilityType;
   final int? age;
+  // Raw date-of-birth string from OCR, e.g. "1952-06-15" or "June 15, 1952".
+  // Sent to the API for cross-validation against the stored beneficiary record.
+  // NULL for PWD cards (DOB not printed on card).
+  final String? dateOfBirth;
   final String? sex;
   final String? dateIssued;
   final String? controlNumber;
@@ -911,6 +915,7 @@ class ParsedIDData {
     this.fullName,
     this.disabilityType,
     this.age,
+    this.dateOfBirth,
     this.sex,
     this.dateIssued,
     this.controlNumber,

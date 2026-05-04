@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="700" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Title -->
+    <mxCell id="title" value="DFD Level 1 — Process 2.0: ID Verification" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="20" width="900" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ===== EXTERNAL ENTITIES (left) ===== -->
+    <mxCell id="est" value="Establishment Staff" style="shape=mxgraph.flowchart.start_2;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="260" width="150" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ===== PROCESS (middle) ===== -->
+    <mxCell id="p2" value="2.0&#xa;ID Verification" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="520" y="230" width="200" height="100" as="geometry" />
+    </mxCell>
+
+    <!-- ===== DATA STORES (right) ===== -->
+    <mxCell id="d3" value="D3: beneficiaries" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="120" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d5" value="D5: verification_logs" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="220" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d8" value="D8: notifications" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="320" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- P7 as sub-process reference -->
+    <mxCell id="p7ref" value="7.0&#xa;Notification Dispatch" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=11;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="420" width="200" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ===== EDGES ===== -->
+    <mxCell id="e1" value="Scanned ID Image + ID Type" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="est" target="p2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e2" value="Verification Result" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p2" target="est" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="520" y="310"/><mxPoint x="340" y="310"/><mxPoint x="340" y="300"/><mxPoint x="180" y="300"/></Array>
+      </mxGeometry>
+    </mxCell>
+
+    <mxCell id="e3" value="Beneficiary ID Lookup" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p2" target="d3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e4" value="Beneficiary Record" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="d3" target="p2" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="1050" y="160"/><mxPoint x="980" y="160"/><mxPoint x="980" y="250"/><mxPoint x="720" y="250"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" value="Verification Log Entry" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p2" target="d5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e6" value="Notification Request (queued)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p2" target="d8" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e7" value="Notification Request" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p2" target="p7ref" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+  </root>
+</mxGraphModel>

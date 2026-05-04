@@ -12,7 +12,7 @@ const SMS_API_URL = "https://api.semaphore.co/api/v4/messages";
  */
 async function sendSms(to, body) {
   const apiKey = process.env.SMS_API_KEY;
-  const senderName = process.env.SMS_SENDER_NAME || "iDetect";
+  const senderName = process.env.SMS_SENDER_NAME ?? "";
 
   // No key configured → dev fallback
   if (!apiKey || apiKey === "your_sms_api_key_here") {
@@ -25,8 +25,8 @@ async function sendSms(to, body) {
       apikey: apiKey,
       number: to,
       message: body,
-      sendername: senderName,
     });
+    if (senderName) params.append("sendername", senderName);
 
     const response = await fetch(SMS_API_URL, {
       method: "POST",
