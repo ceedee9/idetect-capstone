@@ -36,6 +36,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const auditLogRoutes = require("./routes/auditLogs");
 const reportRoutes = require("./routes/reports");
 const staffRoutes = require("./routes/staff");
+const { sendEmail } = require("./services/emailService");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -154,6 +155,19 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/audit-logs", auditLogRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/staff", staffRoutes);
+
+// ── Test email endpoint (admin only — requires valid JWT) ──────
+app.post("/api/test-email", async (req, res) => {
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ error: "Provide { to: 'email@example.com' }" });
+  const result = await sendEmail({
+    to,
+    subject: "iDetect SMTP Test",
+    text: "This is a test email from the iDetect API. If you received this, SMTP is working correctly.",
+    html: "<p>This is a test email from the <strong>iDetect API</strong>. If you received this, SMTP is working correctly.</p>",
+  });
+  res.json(result);
+});
 
 // ── 404 handler ────────────────────────────────────────────────
 app.use((req, res) => {

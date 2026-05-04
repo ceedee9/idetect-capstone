@@ -1,5 +1,5 @@
 // src/services/emailService.js
-// Email delivery via SMTP (e.g. Gmail, SendGrid, Mailtrap).
+// Email delivery via SMTP (Gmail App Password recommended).
 // Falls back to console logging when no SMTP config is provided.
 
 const nodemailer = require("nodemailer");
@@ -9,19 +9,40 @@ let _transporter = null;
 function getTransporter() {
   if (_transporter) return _transporter;
 
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT ?? "587", 10);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
-  if (!host || !user || !pass) return null;
+  if (!user || !pass) {
+    console.warn(
+      "📧 [EMAIL] SMTP_USER or SMTP_PASS not set — emails will be logged only.",
+    );
+    return null;
+  }
 
-  _transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
+  const isGmail =
+    user.endsWith("@gmail.com") ||
+    (process.env.SMTP_HOST ?? "").includes("gmail");
+
+  if (isGmail) {
+    // Gmail App Password — use the service shorthand for reliable TLS handling
+    _transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass },
+    });
+    console.log(`📧 [EMAIL] Gmail SMTP transporter ready for ${user}`);
+  } else {
+    const host = process.env.SMTP_HOST;
+    const port = parseInt(process.env.SMTP_PORT ?? "587", 10);
+    _transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      requireTLS: port === 587,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+    });
+    console.log(`📧 [EMAIL] SMTP transporter ready (${host}:${port})`);
+  }
 
   return _transporter;
 }
