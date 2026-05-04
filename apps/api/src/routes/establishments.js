@@ -545,19 +545,24 @@ router.post(
         client.release();
       }
 
-      // Send credentials to establishment email
-      await sendEstablishmentCredentials({
+      // Send credentials to establishment email (fire-and-forget — never block the response)
+      sendEstablishmentCredentials({
         business_name,
         email,
         plain_password,
-      });
+      }).catch((err) =>
+        console.error(
+          `[EMAIL] Failed to send credentials to ${email}:`,
+          err.message,
+        ),
+      );
 
-      // Also notify via SMS if contact number provided
+      // Also notify via SMS if contact number provided (fire-and-forget)
       if (contact_number) {
-        await sendSms(
+        sendSms(
           contact_number,
           `Welcome to iDetect! Your establishment account (${business_name}) has been created. Check your email (${email}) for your login credentials.`,
-        );
+        ).catch((err) => console.error("[SMS] Failed:", err.message));
       }
 
       res.status(201).json({
