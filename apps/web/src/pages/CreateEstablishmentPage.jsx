@@ -12,9 +12,11 @@ import {
   Phone,
   Mail,
   User,
-  Lock,
   Building2,
   Calendar,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { establishmentsAPI } from "../services/api";
 
@@ -26,8 +28,6 @@ const INITIAL = {
   address: "",
   contact_number: "",
   email: "",
-  password: "",
-  confirm_password: "",
 };
 
 function FormField({ icon: Icon, label, required, children }) {
@@ -49,6 +49,7 @@ export default function CreateEstablishmentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   function set(field) {
     return (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -61,14 +62,9 @@ export default function CreateEstablishmentPage() {
     if (!form.owner_name.trim()) return "Owner name is required.";
     if (!form.address.trim()) return "Address is required.";
     if (!form.contact_number.trim()) return "Contact number is required.";
-    if (!form.email.trim()) return "Staff email is required.";
+    if (!form.email.trim()) return "Email address is required.";
     if (!/\S+@\S+\.\S+/.test(form.email))
       return "Please enter a valid email address.";
-    if (!form.password) return "Password is required.";
-    if (form.password.length < 8)
-      return "Password must be at least 8 characters.";
-    if (form.password !== form.confirm_password)
-      return "Passwords do not match.";
     return null;
   }
 
@@ -91,10 +87,10 @@ export default function CreateEstablishmentPage() {
         address: form.address.trim(),
         contact_number: form.contact_number.trim(),
         email: form.email.trim(),
-        password: form.password,
         business_permit_expiry: form.business_permit_expiry || undefined,
       });
       setSuccess(data);
+      setShowPassword(false);
       setForm(INITIAL);
     } catch (err) {
       const msg =
@@ -157,6 +153,28 @@ export default function CreateEstablishmentPage() {
               <span className="font-medium text-gray-900">Login Email: </span>
               {success.establishment?.email}
             </p>
+            <div className="flex items-center gap-2">
+              <p className="text-gray-600">
+                <span className="font-medium text-gray-900">
+                  Generated Password:{" "}
+                </span>
+                <code className="bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-mono">
+                  {showPassword ? success.plain_password : "••••••••••••"}
+                </code>
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="text-gray-400 hover:text-gray-600"
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
             <p className="text-gray-600">
               <span className="font-medium text-gray-900">Status: </span>
               <span className="text-success-700 font-medium">
@@ -164,6 +182,10 @@ export default function CreateEstablishmentPage() {
               </span>
             </p>
           </div>
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            ⚠ The password is shown once here for your reference. It has also
+            been sent to the establishment's email address.
+          </p>
           <p className="text-xs text-success-700">
             The establishment can now log in to the Client Portal and begin
             scanning IDs immediately.
@@ -254,6 +276,20 @@ export default function CreateEstablishmentPage() {
               />
             </FormField>
 
+            <FormField icon={Mail} label="Business Email Address" required>
+              <input
+                type="email"
+                className="input"
+                placeholder="e.g. owner@restaurant.com"
+                value={form.email}
+                onChange={set("email")}
+                disabled={loading}
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Login credentials will be auto-generated and sent to this email.
+              </p>
+            </FormField>
+
             <FormField icon={Calendar} label="Business Permit Expiry Date">
               <input
                 type="date"
@@ -265,52 +301,14 @@ export default function CreateEstablishmentPage() {
             </FormField>
           </div>
 
-          {/* Staff Credentials */}
-          <div className="card space-y-5">
-            <div>
-              <h2 className="font-heading font-semibold text-gray-900">
-                Staff Login Credentials
-              </h2>
-              <p className="text-xs text-gray-400 mt-0.5">
-                These credentials will be used by establishment staff to log in
-                to the Client Portal mobile app
-              </p>
-            </div>
-
-            <FormField icon={Mail} label="Staff Email" required>
-              <input
-                type="email"
-                className="input"
-                placeholder="e.g. staff@restaurant.com"
-                value={form.email}
-                onChange={set("email")}
-                disabled={loading}
-              />
-            </FormField>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <FormField icon={Lock} label="Password" required>
-                <input
-                  type="password"
-                  className="input"
-                  placeholder="Minimum 8 characters"
-                  value={form.password}
-                  onChange={set("password")}
-                  disabled={loading}
-                />
-              </FormField>
-
-              <FormField icon={Lock} label="Confirm Password" required>
-                <input
-                  type="password"
-                  className="input"
-                  placeholder="Re-enter password"
-                  value={form.confirm_password}
-                  onChange={set("confirm_password")}
-                  disabled={loading}
-                />
-              </FormField>
-            </div>
+          {/* Credentials note */}
+          <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border border-blue-100 rounded-lg text-blue-700 text-sm">
+            <KeyRound className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>
+              A secure login email and password will be{" "}
+              <strong>automatically generated</strong> and sent to the
+              establishment's email address. No manual credential entry needed.
+            </span>
           </div>
 
           {/* Error */}
