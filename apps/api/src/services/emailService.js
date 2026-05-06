@@ -1,37 +1,52 @@
 ﻿// src/services/emailService.js
-// Email delivery via Resend HTTP API (https://resend.com).
-// Railway blocks outbound SMTP — Resend uses HTTPS so it works everywhere.
-// Falls back to console logging when RESEND_API_KEY is not set.
+// Email delivery via Mailjet HTTP API (https://mailjet.com).
+// Uses Basic auth with MAILJET_API_KEY + MAILJET_SECRET_KEY.
+// Falls back to console logging when keys are not set.
 
 async function sendEmail({ to, subject, text, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? "iDetect BPLO <noreply@idetect.it.com>";
+  const apiKey = process.env.MAILJET_API_KEY;
+  const secretKey = process.env.MAILJET_SECRET_KEY;
+  const fromEmail = process.env.EMAIL_FROM_ADDRESS ?? "noreply@idetect.it.com";
+  const fromName = process.env.EMAIL_FROM_NAME ?? "iDetect BPLO";
 
-  if (!apiKey) {
-    console.log(`📧 [EMAIL-DEV] No RESEND_API_KEY set.\nTo: ${to}\nSubject: ${subject}\n${text}`);
-    return { success: true, message: "Logged to console (no API key)" };
+  if (!apiKey || !secretKey) {
+    console.log(`📧 [EMAIL-DEV] No MAILJET keys set.\nTo: ${to}\nSubject: ${subject}\n${text}`);
+    return { success: true, message: "Logged to console (no API keys)" };
   }
 
+  const credentials = Buffer.from(`${apiKey}:${secretKey}`).toString("base64");
+
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.mailjet.com/v3.1/send", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Basic ${credentials}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to: [to], subject, text, html }),
+      body: JSON.stringify({
+        Messages: [
+          {
+            From: { Email: fromEmail, Name: fromName },
+            To: [{ Email: to }],
+            Subject: subject,
+            TextPart: text,
+            HTMLPart: html,
+          },
+        ],
+      }),
     });
 
     const data = await res.json();
 
-    if (!res.ok) {
-      const errMsg = data?.message ?? JSON.stringify(data);
-      console.error(`📧 [EMAIL] Resend error for ${to}: ${errMsg}`);
+    if (!res.ok || data?.Messages?.[0]?.Status !== "success") {
+      const errMsg = data?.Messages?.[0]?.Errors?.[0]?.ErrorMessage ?? JSON.stringify(data);
+      console.error(`📧 [EMAIL] Mailjet error for ${to}: ${errMsg}`);
       return { success: false, error: errMsg };
     }
 
-    console.log(`📧 [EMAIL] Sent to ${to}: ${data.id}`);
-    return { success: true, messageId: data.id };
+    const msgId = data.Messages[0].To[0].MessageID;
+    console.log(`📧 [EMAIL] Sent to ${to}: ${msgId}`);
+    return { success: true, messageId: msgId };
   } catch (err) {
     console.error(`📧 [EMAIL] Network error sending to ${to}:`, err.message);
     return { success: false, error: err.message };
