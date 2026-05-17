@@ -166,7 +166,7 @@ export default function DashboardPage() {
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="px-6 lg:px-8 py-8 space-y-8 max-w-7xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-5 sm:space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Analytics Overview ─────────────────────────────────────── */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Registration Trend */}
         <div className="lg:col-span-2 card space-y-4">
           <div className="flex items-center gap-3">
@@ -239,7 +239,7 @@ export default function DashboardPage() {
             </div>
           </div>
           {loading ? (
-            <div className="skeleton h-52 rounded-xl" />
+            <div className="skeleton h-40 sm:h-52 rounded-xl" />
           ) : (
             <RegistrationTrendChart beneficiaries={beneficiaries} />
           )}
@@ -261,15 +261,15 @@ export default function DashboardPage() {
             </div>
           </div>
           {loading ? (
-            <div className="skeleton h-52 rounded-xl" />
+            <div className="skeleton h-40 sm:h-52 rounded-xl" />
           ) : (
             <StatusDonutChart stats={stats} />
           )}
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recently added */}
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Recently added */}}
         <div className="lg:col-span-2 card space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -512,7 +512,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Fraud & Verification Analytics */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Fraud flags overview */}
         <div className="card space-y-4">
           <div className="flex items-center gap-3">
@@ -640,7 +640,7 @@ export default function DashboardPage() {
             </div>
           ) : dashStats?.verifications ? (
             <>
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                 <div className="p-2 rounded-lg bg-success-50">
                   <p className="text-lg font-bold text-success-700">
                     {dashStats.verifications.valid}
@@ -744,7 +744,7 @@ export default function DashboardPage() {
               View all <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          <div className="grid grid-cols-4 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="p-3 rounded-xl bg-blue-50">
               <p className="text-xl font-bold text-blue-800">
                 {dashStats.disputes.total}

@@ -30,7 +30,7 @@ export default function StatCard({
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             {label}
           </p>
-          <p className="font-heading font-bold text-3xl text-slate-900 mt-1.5">
+          <p className="font-heading font-bold text-2xl sm:text-3xl text-slate-900 mt-1.5">
             {value ?? "—"}
           </p>
           {sub && (
@@ -39,7 +39,7 @@ export default function StatCard({
         </div>
         {Icon && (
           <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center ${colors[color]}`}
+            className={`w-9 h-9 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${colors[color]}`}
           >
             <Icon className="w-5 h-5" />
           </div>
