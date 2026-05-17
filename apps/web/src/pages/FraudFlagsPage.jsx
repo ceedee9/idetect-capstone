@@ -73,7 +73,11 @@ function useFraudFlags() {
           : (Object.values(raw).find((v) => Array.isArray(v)) ?? []),
       );
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load fraud flags.");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to load fraud flags.",
+      );
     } finally {
       setLoading(false);
     }

@@ -104,7 +104,11 @@ export default function FraudFlagsPage() {
       const res = await fraudFlagsAPI.list();
       setFlags(extractFlags(res.data));
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load fraud flags.");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to load fraud flags.",
+      );
     } finally {
       setLoading(false);
     }
