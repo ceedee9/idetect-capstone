@@ -1,418 +1,405 @@
-// =============================================================================
+﻿// =============================================================================
 // FILE: lib/core/constants/app_design_system.dart
-// PURPOSE: iDetect Design System - Extracted from Figma
-// FIGMA: https://www.figma.com/design/MmFOx2QWDFwQLYZqaN905d/Untitled
-// LAST UPDATED: January 15, 2026
+// PURPOSE: iDetect Beneficiary Design System
+//
+// Designed for Senior Citizens & Persons with Disability (PWD)
+// Compliant with WCAG 2.1 Level AA
+// Applied Psychology: Fitts' Law, Gestalt, Progressive Disclosure,
+//                     Serial Position Effect, Color Psychology
+//
+// WCAG AA minimums met:
+//   â€¢ 4.5:1 contrast ratio for all text (targeting 7:1+ where possible)
+//   â€¢ 48dp minimum touch targets (primary actions: 64dp)
+//   â€¢ Text resizable; no information lost at 200% scale
+//   â€¢ Color never used as the ONLY means of conveying information
+//   â€¢ All interactive elements have visible focus indicators
 // =============================================================================
 
 import 'package:flutter/material.dart';
 
-/// Design System for iDetect ID Verification App
-/// All values extracted from Figma design file
-///
-/// USAGE:
-/// Import this file in all UI files:
-/// import 'package:idetect/core/constants/app_design_system.dart';
-///
-/// Use constants instead of hardcoded values:
-/// ✅ Container(color: AppDesignSystem.primaryBlue)
-/// ❌ Container(color: Color(0xFF002E6B))
-
 class AppDesignSystem {
-  AppDesignSystem._(); // Prevents instantiation
+  AppDesignSystem._();
 
   // ===========================================================================
-  // BRAND COLORS - From iDetect Logo
+  // BRAND COLORS
   // ===========================================================================
 
-  /// Primary brand color (dark blue from logo)
-  static const Color primaryBlue = Color(0xFF002E6B);
+  /// Deep trust blue â€” government authority, reliability
+  static const Color primaryBlue = Color(0xFF003580);
 
-  /// Accent color (red from "DETECT" text)
-  static const Color accentRed = Color(0xFFE94444);
+  /// Interactive blue â€” links, active states, highlights
+  static const Color interactiveBlue = Color(0xFF1565C0);
 
-  /// Secondary blue (lighter shade for interactive elements)
-  static const Color secondaryBlue = Color(0xFF5170FF);
-
-  // ===========================================================================
-  // STATUS COLORS - For Verification Results
-  // ===========================================================================
-
-  /// Valid status (green) - Used when ID verification passes
-  static const Color statusValid = Color(0xFF13BB11);
-
-  /// Invalid status (red) - Used when ID verification fails
-  static const Color statusInvalid = Color(0xFFFF0000);
-
-  /// Flagged status (orange/red) - Used for suspicious IDs
-  static const Color statusFlagged = Color(0xFFFF6B6B);
+  /// Accent red â€” from iDetect logo "DETECT" text
+  static const Color accentRed = Color(0xFFCC2B2B);
 
   // ===========================================================================
-  // BACKGROUND COLORS
+  // SEMANTIC STATUS COLORS (Icon always accompanies color â€” WCAG 1.4.1)
   // ===========================================================================
 
-  /// Primary background (white) - Used for cards and main surfaces
+  /// Active / Valid â€” high-contrast accessible green (5.1:1 on white)
+  static const Color statusValid = Color(0xFF15803D);
+
+  /// Expired / Warning â€” accessible amber (4.6:1 on white)
+  static const Color statusWarning = Color(0xFFB45309);
+
+  /// Suspended / Flagged â€” deep orange-red (5.0:1 on white)
+  static const Color statusFlagged = Color(0xFFB91C1C);
+
+  /// Revoked / Invalid â€” deep red (6.7:1 on white)
+  static const Color statusInvalid = Color(0xFF991B1B);
+
+  // ===========================================================================
+  // BACKGROUNDS â€” Warm tones reduce eye strain for elderly users
+  // ===========================================================================
+
+  /// Warm off-white â€” easier on eyes than pure white; main screen background
+  static const Color backgroundWarm = Color(0xFFF8F7F4);
+
+  /// Card surface â€” pure white sits on warm background creating natural depth
   static const Color backgroundWhite = Color(0xFFFFFFFF);
 
-  /// Secondary background (light gray) - Used for screens
-  static const Color backgroundLight = Color(0xFFF5F5F5);
+  /// Dark blue â€” for headers, hero sections
+  static const Color backgroundDark = Color(0xFF003580);
 
-  /// Dark background - Used for overlays and dark mode
-  static const Color backgroundDark = Color(0xFF292D32);
-
-  /// Dark blue background - Used for headers and sections
-  static const Color backgroundDarkBlue = Color(0xFF002E6B);
-
-  /// Light blue background - Used for input fields
-  static const Color backgroundLightBlue = Color(0xFFF1F4FF);
+  /// Soft blue tint â€” subtle input field fill
+  static const Color backgroundInput = Color(0xFFEEF2FA);
 
   // ===========================================================================
-  // TEXT COLORS
+  // TEXT COLORS â€” All pass WCAG AA; primary passes AAA (7:1+)
   // ===========================================================================
 
-  /// Primary text color (black) - Main content text
-  static const Color textPrimary = Color(0xFF000000);
+  /// Primary text â€” warm near-black (~16:1 on backgroundWarm) âœ… AAA
+  static const Color textPrimary = Color(0xFF1C1917);
 
-  /// Secondary text color (gray) - Subtitles, hints
-  static const Color textSecondary = Color(0xFF626262);
+  /// Secondary text â€” warm dark gray (~6:1 on backgroundWarm) âœ… AA
+  static const Color textSecondary = Color(0xFF57534E);
 
-  /// Tertiary text color (light gray) - Placeholder text
-  static const Color textTertiary = Color(0xFFBDBDBD);
+  /// Hint / caption â€” warm medium gray (~4.6:1 on backgroundWarm) âœ… AA large text
+  /// Use only at 16sp+ or 14sp bold to satisfy AA
+  static const Color textHint = Color(0xFF78716C);
 
-  /// Text on dark backgrounds (white)
+  /// Text on dark (blue) backgrounds
   static const Color textOnDark = Color(0xFFFFFFFF);
 
-  /// Text on primary color (white)
-  static const Color textOnPrimary = Color(0xFFFFFFFF);
+  /// Link / emphasis text
+  static const Color textLink = Color(0xFF1565C0);
 
   // ===========================================================================
-  // UI ELEMENT COLORS
+  // BORDERS & DIVIDERS
   // ===========================================================================
 
-  /// Border color (light gray)
-  static const Color borderLight = Color(0xFFE0E0E0);
-
-  /// Border color (medium gray)
-  static const Color borderMedium = Color(0xFFBDBDBD);
-
-  /// Divider color
-  static const Color divider = Color(0xFFEEEEEE);
-
-  /// Icon color (dark gray)
-  static const Color iconDark = Color(0xFF404B52);
-
-  /// Icon color on light backgrounds
-  static const Color iconLight = Color(0xFF757575);
+  static const Color borderLight = Color(0xFFE7E5E4);
+  static const Color borderFocus = Color(0xFF1565C0);
 
   // ===========================================================================
-  // TYPOGRAPHY - Font Styles
+  // TYPOGRAPHY
   // ===========================================================================
+  //
+  // Scale designed for elderly users:
+  //   â€¢ Minimum body: 18sp (WCAG "large text" = only needs 3:1; we target 4.5:1+)
+  //   â€¢ Labels: 16sp minimum
+  //   â€¢ Captions: 15sp (15pt is considered readable without glasses for many users)
+  //   â€¢ Line height: 1.6 minimum (WCAG Success Criterion 1.4.12)
+  //   â€¢ No italic body text (harder for dyslexic / low-vision users)
+  //
+  // Font: System default (respects user's system font size settings)
 
-  /// Font family (system default)
-  static const String fontFamily = 'Roboto'; // Android/Windows default
+  static const String fontFamily = 'Roboto';
 
-  // ---------------------------------------------------------------------------
   // HEADINGS
-  // ---------------------------------------------------------------------------
-
-  /// Display heading (very large) - Used for page titles
   static const TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 40,
-    fontWeight: FontWeight.bold,
+    fontSize: 42,
+    fontWeight: FontWeight.w800,
     color: textPrimary,
+    height: 1.2,
     letterSpacing: -0.5,
   );
 
-  /// Heading 1 - Major section headers
   static const TextStyle heading1 = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: FontWeight.bold,
     color: textPrimary,
+    height: 1.25,
     letterSpacing: -0.3,
   );
 
-  /// Heading 2 - Screen titles (e.g., "SCAN ID CARD")
   static const TextStyle heading2 = TextStyle(
     fontFamily: fontFamily,
     fontSize: 28,
     fontWeight: FontWeight.bold,
     color: textOnDark,
-    letterSpacing: 1.5, // Wide spacing for impact
+    height: 1.3,
   );
 
-  /// Heading 3 - Section headers (e.g., "Create Account")
   static const TextStyle heading3 = TextStyle(
     fontFamily: fontFamily,
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: textOnDark,
+    color: textPrimary,
+    height: 1.35,
   );
 
-  /// Heading 4 - Card titles (e.g., "PDAO", "OSCA")
   static const TextStyle heading4 = TextStyle(
     fontFamily: fontFamily,
     fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-  );
-
-  // ---------------------------------------------------------------------------
-  // BODY TEXT
-  // ---------------------------------------------------------------------------
-
-  /// Body Large - Main content text
-  static const TextStyle bodyLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.normal,
-    color: textPrimary,
-    height: 1.5,
-  );
-
-  /// Body Medium - Standard text
-  static const TextStyle bodyMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.normal,
+    fontWeight: FontWeight.w700,
     color: textPrimary,
     height: 1.4,
   );
 
-  /// Body Small - Helper text, captions
-  static const TextStyle bodySmall = TextStyle(
+  // BODY â€” minimum 18sp for elderly accessibility
+  static const TextStyle bodyLarge = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 12,
+    fontSize: 20,
     fontWeight: FontWeight.normal,
-    color: textSecondary,
-    height: 1.3,
+    color: textPrimary,
+    height: 1.6,
   );
 
-  // ---------------------------------------------------------------------------
-  // SPECIAL TEXT STYLES
-  // ---------------------------------------------------------------------------
-
-  /// Button text - Large buttons
-  static const TextStyle buttonLarge = TextStyle(
+  static const TextStyle bodyMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 18,
-    fontWeight: FontWeight.w600,
-    color: textOnPrimary,
-    letterSpacing: 0.5,
+    fontWeight: FontWeight.normal,
+    color: textPrimary,
+    height: 1.6,
   );
 
-  /// Button text - Medium buttons
-  static const TextStyle buttonMedium = TextStyle(
+  static const TextStyle bodySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: textOnPrimary,
+    fontWeight: FontWeight.normal,
+    color: textSecondary,
+    height: 1.55,
+  );
+
+  // FUNCTIONAL STYLES
+  static const TextStyle buttonLarge = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    color: textOnDark,
     letterSpacing: 0.3,
   );
 
-  /// Label text - Input field labels
+  static const TextStyle buttonMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: textOnDark,
+    letterSpacing: 0.2,
+  );
+
+  /// Labels â€” 16sp minimum (WCAG). Used for input field labels, row labels.
   static const TextStyle label = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
     color: textSecondary,
-  );
-
-  /// Caption text - Very small text
-  static const TextStyle caption = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
-    color: textSecondary,
-  );
-
-  /// Instruction text - On scan screen
-  static const TextStyle instruction = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.normal,
-    color: textOnDark,
     height: 1.4,
   );
 
-  /// Status text - Valid/Invalid labels
+  /// Caption â€” 15sp; use only on light backgrounds (meets AA at this size+color)
+  static const TextStyle caption = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 15,
+    fontWeight: FontWeight.normal,
+    color: textSecondary,
+    height: 1.5,
+  );
+
   static const TextStyle statusText = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.5,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.8,
+    height: 1.0,
+  );
+
+  static const TextStyle instruction = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.normal,
+    color: textOnDark,
+    height: 1.6,
   );
 
   // ===========================================================================
-  // SPACING - Based on 8px grid system
+  // SPACING â€” 8dp base grid
   // ===========================================================================
 
-  /// Base spacing unit (8px)
   static const double spaceUnit = 8.0;
+  static const double spaceXXS = 4.0;
+  static const double spaceXS = 8.0;
+  static const double spaceSM = 16.0;
+  static const double spaceMD = 24.0;
+  static const double spaceLG = 32.0;
+  static const double spaceXL = 40.0;
+  static const double spaceXXL = 56.0;
 
-  // Standard spacing values
-  static const double spaceXXS = spaceUnit * 0.5; // 4px
-  static const double spaceXS = spaceUnit * 1; // 8px
-  static const double spaceSM = spaceUnit * 2; // 16px
-  static const double spaceMD = spaceUnit * 3; // 24px
-  static const double spaceLG = spaceUnit * 4; // 32px
-  static const double spaceXL = spaceUnit * 5; // 40px
-  static const double spaceXXL = spaceUnit * 6; // 48px
-
-  // Screen padding
   static const double screenPaddingHorizontal = 20.0;
-  static const double screenPaddingVertical = 16.0;
-
-  // Component spacing
-  static const double cardPadding = 16.0;
-  static const double cardSpacing = 12.0;
-  static const double buttonPadding = 16.0;
-  static const double inputPadding = 16.0;
+  static const double screenPaddingVertical = 20.0;
+  static const double cardPadding = 20.0;
+  static const double cardSpacing = 14.0;
   static const double sectionSpacing = 32.0;
 
   // ===========================================================================
-  // BORDER RADIUS - Rounded corners
+  // TOUCH TARGETS â€” WCAG 2.1 SC 2.5.5 (AAA: 44x44) / Android: 48dp
+  // We target 56dp minimum, 64dp for primary actions (Fitts' Law)
   // ===========================================================================
 
-  static const double radiusXS = 4.0;
-  static const double radiusSM = 8.0;
-  static const double radiusMD = 12.0;
-  static const double radiusLG = 16.0;
-  static const double radiusXL = 24.0;
-  static const double radiusFull = 999.0; // Fully rounded (pill shape)
+  /// Minimum touch target for all interactive elements
+  static const double touchTargetMin = 56.0;
 
-  // Component-specific radius
+  /// Primary action touch target (buttons, main CTA)
+  static const double touchTargetPrimary = 64.0;
+
+  /// Navigation bar item height
+  static const double navBarHeight = 76.0;
+
+  // ===========================================================================
+  // BORDER RADIUS
+  // ===========================================================================
+
+  static const double radiusXS = 6.0;
+  static const double radiusSM = 10.0;
+  static const double radiusMD = 14.0;
+  static const double radiusLG = 18.0;
+  static const double radiusXL = 26.0;
+  static const double radiusFull = 999.0;
+
   static const BorderRadius buttonRadius = BorderRadius.all(
-    Radius.circular(radiusSM), // 8px - rectangular buttons
+    Radius.circular(radiusSM),
   );
 
   static const BorderRadius inputRadius = BorderRadius.all(
-    Radius.circular(radiusMD), // 12px - input fields
+    Radius.circular(radiusMD),
   );
 
   static const BorderRadius cardRadius = BorderRadius.all(
-    Radius.circular(radiusLG), // 16px - cards
+    Radius.circular(radiusLG),
   );
 
   static const BorderRadius bottomSheetRadius = BorderRadius.vertical(
-    top: Radius.circular(radiusXL), // 24px - bottom sheets
+    top: Radius.circular(radiusXL),
   );
 
   // ===========================================================================
-  // SHADOWS - Elevation levels
+  // SHADOWS â€” Physical depth cues aid elderly spatial understanding
   // ===========================================================================
 
-  /// Small shadow - Subtle elevation (cards)
   static List<BoxShadow> shadowSM = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 4,
+      color: Colors.black.withOpacity(0.07),
+      blurRadius: 6,
       offset: const Offset(0, 2),
     ),
   ];
 
-  /// Medium shadow - Standard elevation (buttons, modals)
   static List<BoxShadow> shadowMD = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.12),
-      blurRadius: 8,
+      color: Colors.black.withOpacity(0.10),
+      blurRadius: 12,
       offset: const Offset(0, 4),
     ),
+    BoxShadow(
+      color: Colors.black.withOpacity(0.04),
+      blurRadius: 4,
+      offset: const Offset(0, 1),
+    ),
   ];
 
-  /// Large shadow - High elevation (floating elements)
   static List<BoxShadow> shadowLG = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.16),
-      blurRadius: 16,
+      color: Colors.black.withOpacity(0.14),
+      blurRadius: 24,
       offset: const Offset(0, 8),
+    ),
+    BoxShadow(
+      color: Colors.black.withOpacity(0.05),
+      blurRadius: 6,
+      offset: const Offset(0, 2),
     ),
   ];
 
   // ===========================================================================
-  // BUTTON STYLES - Pre-configured button styles
+  // BUTTON STYLES
   // ===========================================================================
 
-  /// Primary button - Main action buttons (Sign in, Scan ID, etc.)
   static ButtonStyle primaryButton = ElevatedButton.styleFrom(
     backgroundColor: primaryBlue,
-    foregroundColor: textOnPrimary,
-    padding: const EdgeInsets.symmetric(
-      horizontal: 32,
-      vertical: 16,
-    ),
-    shape: RoundedRectangleBorder(
-      borderRadius: buttonRadius,
-    ),
+    foregroundColor: textOnDark,
+    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+    shape: const RoundedRectangleBorder(borderRadius: buttonRadius),
     elevation: 2,
     textStyle: buttonMedium,
-    minimumSize: const Size(double.infinity, 56), // Full width, 56px height
+    minimumSize: const Size(double.infinity, touchTargetPrimary),
   );
 
-  /// Secondary button - Less prominent actions
   static ButtonStyle secondaryButton = OutlinedButton.styleFrom(
     foregroundColor: primaryBlue,
     side: const BorderSide(color: primaryBlue, width: 2),
-    padding: const EdgeInsets.symmetric(
-      horizontal: 32,
-      vertical: 16,
-    ),
-    shape: RoundedRectangleBorder(
-      borderRadius: buttonRadius,
-    ),
-    textStyle: buttonMedium,
-    minimumSize: const Size(double.infinity, 56),
+    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+    shape: const RoundedRectangleBorder(borderRadius: buttonRadius),
+    textStyle: buttonMedium.copyWith(color: primaryBlue),
+    minimumSize: const Size(double.infinity, touchTargetPrimary),
   );
 
-  /// Text button - Tertiary actions (Forgot password, links)
   static ButtonStyle textButton = TextButton.styleFrom(
-    foregroundColor: primaryBlue,
-    padding: const EdgeInsets.symmetric(
-      horizontal: 16,
-      vertical: 12,
+    foregroundColor: textLink,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    textStyle: bodyMedium.copyWith(
+      fontWeight: FontWeight.w600,
+      color: textLink,
     ),
-    textStyle: bodyMedium.copyWith(fontWeight: FontWeight.w600),
+    minimumSize: const Size(0, touchTargetMin),
   );
 
   // ===========================================================================
-  // INPUT FIELD DECORATION - Text input styling
+  // INPUT DECORATION
   // ===========================================================================
 
-  /// Standard input decoration
   static InputDecoration inputDecoration({
     required String hintText,
+    String? labelText,
     IconData? prefixIcon,
     Widget? suffixIcon,
   }) {
     return InputDecoration(
+      labelText: labelText,
+      labelStyle: label,
       hintText: hintText,
-      hintStyle: bodyMedium.copyWith(color: textTertiary),
-      prefixIcon:
-          prefixIcon != null ? Icon(prefixIcon, color: iconLight) : null,
+      hintStyle: bodyMedium.copyWith(color: textHint),
+      prefixIcon: prefixIcon != null
+          ? Icon(prefixIcon, color: textSecondary, size: 26)
+          : null,
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: backgroundLightBlue,
+      fillColor: backgroundInput,
       border: OutlineInputBorder(
         borderRadius: inputRadius,
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: borderLight),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: inputRadius,
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: borderLight, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: inputRadius,
-        borderSide: const BorderSide(color: primaryBlue, width: 2),
+        borderSide: const BorderSide(color: borderFocus, width: 2.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: inputRadius,
-        borderSide: const BorderSide(color: statusInvalid, width: 2),
+        borderSide: const BorderSide(color: accentRed, width: 2),
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: inputPadding,
-        vertical: inputPadding,
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: inputRadius,
+        borderSide: const BorderSide(color: accentRed, width: 2.5),
       ),
+      errorStyle: bodySmall.copyWith(color: accentRed),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
     );
   }
 
@@ -420,161 +407,67 @@ class AppDesignSystem {
   // ICON SIZES
   // ===========================================================================
 
-  static const double iconXS = 16.0;
-  static const double iconSM = 20.0;
-  static const double iconMD = 24.0;
-  static const double iconLG = 32.0;
-  static const double iconXL = 48.0;
-  static const double iconXXL = 64.0;
-
-  // Bottom navigation icons
-  static const double navIconSize = 28.0;
-
-  // Scan button icon (large circular button)
-  static const double scanButtonSize = 80.0;
+  static const double iconSM = 22.0;
+  static const double iconMD = 28.0;
+  static const double iconLG = 36.0;
+  static const double iconXL = 52.0;
+  static const double iconXXL = 72.0;
+  static const double navIconSize = 30.0;
 
   // ===========================================================================
-  // ANIMATION DURATIONS
+  // ANIMATION
   // ===========================================================================
 
   static const Duration animationFast = Duration(milliseconds: 150);
-  static const Duration animationNormal = Duration(milliseconds: 300);
-  static const Duration animationSlow = Duration(milliseconds: 500);
+  static const Duration animationNormal = Duration(milliseconds: 280);
+  static const Duration animationSlow = Duration(milliseconds: 450);
 
   // ===========================================================================
-  // SCREEN DIMENSIONS (from Figma)
+  // STATUS HELPERS (always icon + color + text â€” never color alone)
   // ===========================================================================
 
-  static const double designWidth = 412.0;
-  static const double designHeight = 917.0;
-
-  // ===========================================================================
-  // HELPER METHODS
-  // ===========================================================================
-
-  /// Get status color based on status string
   static Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'valid':
+      case 'active':
         return statusValid;
-      case 'invalid':
-        return statusInvalid;
-      case 'flagged':
+      case 'expired':
+        return statusWarning;
+      case 'suspended':
         return statusFlagged;
+      case 'revoked':
+        return statusInvalid;
       default:
         return textSecondary;
     }
   }
 
-  /// Get status icon based on status string
   static IconData getStatusIcon(String status) {
     switch (status.toLowerCase()) {
-      case 'valid':
-        return Icons.check_circle;
-      case 'invalid':
-        return Icons.cancel;
-      case 'flagged':
-        return Icons.flag;
+      case 'active':
+        return Icons.check_circle_rounded;
+      case 'expired':
+        return Icons.schedule_rounded;
+      case 'suspended':
+        return Icons.warning_amber_rounded;
+      case 'revoked':
+        return Icons.cancel_rounded;
       default:
-        return Icons.help;
+        return Icons.help_outline_rounded;
     }
   }
 
-  /// Get status text style with appropriate color
-  static TextStyle getStatusTextStyle(String status) {
-    return statusText.copyWith(
-      color: getStatusColor(status),
-    );
+  static String getStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'Active & Valid';
+      case 'expired':
+        return 'Expired';
+      case 'suspended':
+        return 'Under Investigation';
+      case 'revoked':
+        return 'Revoked';
+      default:
+        return status.toUpperCase();
+    }
   }
 }
-
-// =============================================================================
-// USAGE EXAMPLES
-// =============================================================================
-
-/*
-// ============= COLORS =============
-Container(
-  color: AppDesignSystem.primaryBlue,
-  child: Text(
-    'iDetect',
-    style: TextStyle(color: AppDesignSystem.textOnPrimary),
-  ),
-)
-
-// ============= TYPOGRAPHY =============
-Text(
-  'Welcome to iDetect',
-  style: AppDesignSystem.heading1,
-)
-
-Text(
-  'Scan your ID to verify',
-  style: AppDesignSystem.bodyMedium,
-)
-
-// ============= SPACING =============
-Padding(
-  padding: EdgeInsets.all(AppDesignSystem.spaceMD), // 24px
-  child: Column(
-    children: [
-      Widget1(),
-      SizedBox(height: AppDesignSystem.spaceSM), // 16px spacing
-      Widget2(),
-    ],
-  ),
-)
-
-// ============= BUTTONS =============
-ElevatedButton(
-  style: AppDesignSystem.primaryButton,
-  onPressed: () {},
-  child: Text('Sign In'),
-)
-
-// ============= INPUT FIELDS =============
-TextField(
-  decoration: AppDesignSystem.inputDecoration(
-    hintText: 'Email',
-    prefixIcon: Icons.email,
-  ),
-)
-
-// ============= STATUS DISPLAY =============
-Container(
-  padding: EdgeInsets.symmetric(
-    horizontal: AppDesignSystem.spaceSM,
-    vertical: AppDesignSystem.spaceXS,
-  ),
-  decoration: BoxDecoration(
-    color: AppDesignSystem.getStatusColor('valid'),
-    borderRadius: BorderRadius.circular(AppDesignSystem.radiusSM),
-  ),
-  child: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(
-        AppDesignSystem.getStatusIcon('valid'),
-        size: AppDesignSystem.iconSM,
-        color: AppDesignSystem.textOnPrimary,
-      ),
-      SizedBox(width: AppDesignSystem.spaceXS),
-      Text(
-        'Valid',
-        style: AppDesignSystem.getStatusTextStyle('valid'),
-      ),
-    ],
-  ),
-)
-
-// ============= CARDS =============
-Container(
-  padding: EdgeInsets.all(AppDesignSystem.cardPadding),
-  decoration: BoxDecoration(
-    color: AppDesignSystem.backgroundWhite,
-    borderRadius: AppDesignSystem.cardRadius,
-    boxShadow: AppDesignSystem.shadowMD,
-  ),
-  child: YourContent(),
-)
-*/

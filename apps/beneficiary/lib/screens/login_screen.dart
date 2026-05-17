@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // ── Saved credentials ────────────────────────────────────────────
+  // â”€â”€ Saved credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
@@ -129,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // ── Biometric ────────────────────────────────────────────────────
+  // â”€â”€ Biometric â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _attemptBiometric() async {
     try {
@@ -165,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (_) {}
   }
 
-  // ── Date picker ──────────────────────────────────────────────────
+  // â”€â”€ Date picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _pickBirthdate() async {
     final date = await showDatePicker(
@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ── Request OTP ──────────────────────────────────────────────────
+  // â”€â”€ Request OTP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _requestOtp() async {
     if (_idController.text.trim().isEmpty || _selectedDate == null) {
@@ -221,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result['error'] != null) {
       setState(() => _errorMessage = result['error']);
     } else if (result['mobile_required'] == true) {
-      // No mobile on file — show registration form
+      // No mobile on file â€” show registration form
       setState(() {
         _savedName = result['beneficiary_name'];
         _phase = _Phase.registerMobile;
@@ -237,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ── Register Mobile ──────────────────────────────────────────────
+  // â”€â”€ Register Mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _submitMobile() async {
     final mobile = _mobileController.text.trim();
@@ -272,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result['error'] != null) {
       setState(() => _errorMessage = result['error']);
     } else {
-      // Mobile registered, OTP sent — go to OTP screen
+      // Mobile registered, OTP sent â€” go to OTP screen
       setState(() {
         _phase = _Phase.otpEntry;
         _otpDigits = '';
@@ -281,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ── Verify OTP ───────────────────────────────────────────────────
+  // â”€â”€ Verify OTP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<void> _verifyOtp() async {
     if (_otpDigits.length != 6) return;
@@ -460,7 +460,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
         content: const Text(
-          'Would you like to use your fingerprint or face to sign in next time?\n\nThis makes it easier — no need to type your OTP again.',
+          'Would you like to use your fingerprint or face to sign in next time?\n\nThis makes it easier â€” no need to type your OTP again.',
           style: TextStyle(fontSize: 17, height: 1.5),
         ),
         actions: [
@@ -498,7 +498,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Numpad helpers ───────────────────────────────────────────────
+  // â”€â”€ Numpad helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _onNumpadTap(String digit) {
     if (_otpDigits.length < 6) {
@@ -517,9 +517,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // BUILD
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   @override
   Widget build(BuildContext context) {
@@ -583,7 +583,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Logo ─────────────────────────────────────────────────────────
+  // â”€â”€ Logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildLogo() {
     return Image.asset(
@@ -603,7 +603,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Phase 0: ID Entry ────────────────────────────────────────────
+  // â”€â”€ Phase 0: ID Entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildIdEntry() {
     return Column(
@@ -614,7 +614,7 @@ class _LoginScreenState extends State<LoginScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppDesignSystem.backgroundLightBlue,
+              color: AppDesignSystem.backgroundInput,
               borderRadius: AppDesignSystem.cardRadius,
             ),
             child: Column(
@@ -674,7 +674,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              '— or sign in with OTP —',
+              'â€” or sign in with OTP â€”',
               style: TextStyle(
                 fontSize: 15,
                 color: AppDesignSystem.textSecondary,
@@ -713,7 +713,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 12),
           ],
 
-          // Quick OTP login — ID is pre-filled, just tap
+          // Quick OTP login â€” ID is pre-filled, just tap
           SizedBox(
             width: double.infinity,
             height: 64,
@@ -750,12 +750,12 @@ class _LoginScreenState extends State<LoginScreen> {
               'Not you? Use a different ID',
               style: TextStyle(
                 fontSize: 15,
-                color: AppDesignSystem.secondaryBlue,
+                color: AppDesignSystem.interactiveBlue,
               ),
             ),
           ),
         ] else ...[
-          // First-time user — manual ID entry
+          // First-time user â€” manual ID entry
 
           // ID Number
           TextField(
@@ -795,7 +795,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Request OTP button — large
+          // Request OTP button â€” large
           SizedBox(
             width: double.infinity,
             height: 64,
@@ -833,7 +833,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Phase 1: Mobile Registration ─────────────────────────────────
+  // â”€â”€ Phase 1: Mobile Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildMobileRegistration() {
     return Column(
@@ -843,10 +843,10 @@ class _LoginScreenState extends State<LoginScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppDesignSystem.secondaryBlue.withAlpha(20),
+            color: AppDesignSystem.interactiveBlue.withAlpha(20),
             borderRadius: AppDesignSystem.cardRadius,
             border: Border.all(
-              color: AppDesignSystem.secondaryBlue.withAlpha(60),
+              color: AppDesignSystem.interactiveBlue.withAlpha(60),
             ),
           ),
           child: Column(
@@ -854,7 +854,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Icon(
                 Icons.phone_android,
                 size: 48,
-                color: AppDesignSystem.secondaryBlue,
+                color: AppDesignSystem.interactiveBlue,
               ),
               const SizedBox(height: 12),
               if (_savedName != null) ...[
@@ -884,7 +884,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Mobile input — large
+        // Mobile input â€” large
         TextField(
           controller: _mobileController,
           style: const TextStyle(fontSize: 22, letterSpacing: 1.5),
@@ -950,10 +950,10 @@ class _LoginScreenState extends State<LoginScreen> {
             _errorMessage = null;
           }),
           child: const Text(
-            '← Back',
+            'â† Back',
             style: TextStyle(
               fontSize: 16,
-              color: AppDesignSystem.secondaryBlue,
+              color: AppDesignSystem.interactiveBlue,
             ),
           ),
         ),
@@ -961,7 +961,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Phase 2: OTP Entry (large numpad) ────────────────────────────
+  // â”€â”€ Phase 2: OTP Entry (large numpad) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildOtpEntry() {
     return Column(
@@ -1009,7 +1009,7 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: BoxDecoration(
                 color: filled
                     ? AppDesignSystem.primaryBlue.withAlpha(25)
-                    : AppDesignSystem.backgroundLightBlue,
+                    : AppDesignSystem.backgroundInput,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: filled
@@ -1058,10 +1058,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 _errorMessage = null;
               }),
               child: const Text(
-                '← Back',
+                'â† Back',
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppDesignSystem.secondaryBlue,
+                  color: AppDesignSystem.interactiveBlue,
                 ),
               ),
             ),
@@ -1071,7 +1071,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Resend OTP',
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppDesignSystem.secondaryBlue,
+                  color: AppDesignSystem.interactiveBlue,
                 ),
               ),
             ),
@@ -1081,7 +1081,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Phase 3: PIN Entry (setup or login) ──────────────────────────
+  // â”€â”€ Phase 3: PIN Entry (setup or login) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// True if user has a valid auth token (meaning they just OTP'd and are setting up)
   bool get _isPinSetup => ApiService.isLoggedIn && !_hasPinSet;
@@ -1141,7 +1141,7 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: BoxDecoration(
                 color: filled
                     ? AppDesignSystem.primaryBlue
-                    : AppDesignSystem.backgroundLightBlue,
+                    : AppDesignSystem.backgroundInput,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
                   color: filled
@@ -1177,10 +1177,10 @@ class _LoginScreenState extends State<LoginScreen> {
             _errorMessage = null;
           }),
           child: const Text(
-            '← Back',
+            'â† Back',
             style: TextStyle(
               fontSize: 16,
-              color: AppDesignSystem.secondaryBlue,
+              color: AppDesignSystem.interactiveBlue,
             ),
           ),
         ),
@@ -1188,7 +1188,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Numpad ───────────────────────────────────────────────────────
+  // â”€â”€ Numpad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _onPinTap(String digit) {
     if (_pinDigits.length < 4) {
@@ -1238,7 +1238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isDel
-                          ? AppDesignSystem.backgroundLight
+                          ? AppDesignSystem.backgroundWarm
                           : Colors.white,
                       foregroundColor: isDel
                           ? AppDesignSystem.accentRed
@@ -1275,7 +1275,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Error banner ─────────────────────────────────────────────────
+  // â”€â”€ Error banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildError() {
     return Container(

@@ -40,33 +40,11 @@ class _StatusScreenState extends State<StatusScreen> {
   }
 
   Color _statusColor(String status) {
-    switch (status) {
-      case 'active':
-        return AppDesignSystem.statusValid;
-      case 'expired':
-        return Colors.orange;
-      case 'suspended':
-        return AppDesignSystem.statusFlagged;
-      case 'revoked':
-        return AppDesignSystem.statusInvalid;
-      default:
-        return AppDesignSystem.textSecondary;
-    }
+    return AppDesignSystem.getStatusColor(status);
   }
 
   IconData _statusIcon(String status) {
-    switch (status) {
-      case 'active':
-        return Icons.check_circle;
-      case 'expired':
-        return Icons.schedule;
-      case 'suspended':
-        return Icons.warning_amber_rounded;
-      case 'revoked':
-        return Icons.cancel;
-      default:
-        return Icons.help_outline;
-    }
+    return AppDesignSystem.getStatusIcon(status);
   }
 
   @override
@@ -96,12 +74,16 @@ class _StatusScreenState extends State<StatusScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.cloud_off,
-                  size: 64,
-                  color: AppDesignSystem.textTertiary,
+                  Icons.cloud_off_rounded,
+                  size: 72,
+                  color: AppDesignSystem.textHint,
                 ),
                 const SizedBox(height: AppDesignSystem.spaceSM),
-                Text(_error!, style: AppDesignSystem.bodyMedium),
+                Text(
+                  _error!,
+                  style: AppDesignSystem.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
@@ -136,50 +118,57 @@ class _StatusScreenState extends State<StatusScreen> {
           ),
           child: Column(
             children: [
-              // Status indicator
+              // Status indicator — large, prominent (Von Restorff Effect)
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: 24,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(
                     AppDesignSystem.radiusFull,
                   ),
-                  border: Border.all(color: color, width: 1.5),
+                  border: Border.all(color: color, width: 2),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(_statusIcon(p.status), color: color, size: 22),
-                    const SizedBox(width: 8),
+                    Icon(_statusIcon(p.status), color: color, size: 28),
+                    const SizedBox(width: 10),
                     Text(
-                      p.status.toUpperCase(),
-                      style: AppDesignSystem.buttonMedium.copyWith(
+                      AppDesignSystem.getStatusLabel(p.status),
+                      style: AppDesignSystem.buttonLarge.copyWith(
                         color: color,
-                        letterSpacing: 1.5,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppDesignSystem.spaceSM),
+              const SizedBox(height: AppDesignSystem.spaceMD),
 
               // Name
               Text(
                 p.fullName,
-                style: AppDesignSystem.heading3,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.2,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
 
               // ID Number
               Text(
                 p.idNumber,
-                style: AppDesignSystem.bodyLarge.copyWith(
+                style: const TextStyle(
+                  fontSize: 18,
                   color: Colors.white70,
-                  letterSpacing: 1,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: AppDesignSystem.spaceSM),
@@ -187,21 +176,22 @@ class _StatusScreenState extends State<StatusScreen> {
               // Type badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
+                  horizontal: 16,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(
                     AppDesignSystem.radiusFull,
                   ),
                 ),
                 child: Text(
                   p.beneficiaryType.replaceAll('_', ' ').toUpperCase(),
-                  style: AppDesignSystem.caption.copyWith(
+                  style: const TextStyle(
+                    fontSize: 15,
                     color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
                   ),
                 ),
               ),
@@ -227,8 +217,10 @@ class _StatusScreenState extends State<StatusScreen> {
                       Expanded(
                         child: Text(
                           p.statusReason!,
-                          style: AppDesignSystem.bodySmall.copyWith(
+                          style: const TextStyle(
+                            fontSize: 15,
                             color: Colors.white70,
+                            height: 1.5,
                           ),
                         ),
                       ),
@@ -259,13 +251,13 @@ class _StatusScreenState extends State<StatusScreen> {
         // ── Quick Stats ──
         _buildSection('Activity Summary', [
           _buildStatRow(
-            Icons.verified,
+            Icons.verified_rounded,
             'Total Verifications',
             '${p.totalVerifications}',
-            AppDesignSystem.secondaryBlue,
+            AppDesignSystem.interactiveBlue,
           ),
           _buildStatRow(
-            Icons.flag_outlined,
+            Icons.flag_rounded,
             'Pending Flags',
             '${p.pendingFlags}',
             p.pendingFlags > 0
@@ -273,41 +265,51 @@ class _StatusScreenState extends State<StatusScreen> {
                 : AppDesignSystem.textSecondary,
           ),
           _buildStatRow(
-            Icons.gavel,
+            Icons.gavel_rounded,
             'Active Disputes',
             '${p.activeDisputes}',
             p.activeDisputes > 0
-                ? Colors.orange
+                ? AppDesignSystem.statusWarning
                 : AppDesignSystem.textSecondary,
           ),
         ]),
         const SizedBox(height: AppDesignSystem.spaceMD),
 
         // ── Report Fraud Button ──
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FraudReportScreen()),
-              );
-            },
-            icon: const Icon(
-              Icons.report_outlined,
-              color: AppDesignSystem.accentRed,
-            ),
-            label: Text(
-              'Report Fraud on My ID',
-              style: AppDesignSystem.buttonMedium.copyWith(
+        Semantics(
+          label: 'Report fraud on my ID',
+          child: SizedBox(
+            width: double.infinity,
+            height: AppDesignSystem.touchTargetPrimary,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FraudReportScreen()),
+                );
+              },
+              icon: const Icon(
+                Icons.report_problem_rounded,
                 color: AppDesignSystem.accentRed,
+                size: 24,
               ),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppDesignSystem.accentRed),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: AppDesignSystem.buttonRadius,
+              label: const Text(
+                'Report Fraud on My ID',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppDesignSystem.accentRed,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(
+                  color: AppDesignSystem.accentRed,
+                  width: 2,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppDesignSystem.buttonRadius,
+                ),
               ),
             ),
           ),
@@ -388,10 +390,17 @@ class _StatusScreenState extends State<StatusScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(title, style: AppDesignSystem.heading4),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppDesignSystem.textPrimary,
+              ),
+            ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: AppDesignSystem.borderLight),
           ...children,
         ],
       ),
@@ -400,20 +409,29 @@ class _StatusScreenState extends State<StatusScreen> {
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: AppDesignSystem.bodyMedium.copyWith(
+            style: const TextStyle(
+              fontSize: 16,
               color: AppDesignSystem.textSecondary,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Text(
-            value,
-            style: AppDesignSystem.bodyMedium.copyWith(
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppDesignSystem.textPrimary,
+              ),
+              textAlign: TextAlign.right,
             ),
           ),
         ],
@@ -423,13 +441,28 @@ class _StatusScreenState extends State<StatusScreen> {
 
   Widget _buildStatRow(IconData icon, String label, String value, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 12),
-          Expanded(child: Text(label, style: AppDesignSystem.bodyMedium)),
-          Text(value, style: AppDesignSystem.heading4.copyWith(color: color)),
+          Icon(icon, color: color, size: 26),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 17,
+                color: AppDesignSystem.textPrimary,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
         ],
       ),
     );

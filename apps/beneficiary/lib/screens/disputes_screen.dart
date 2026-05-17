@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -38,7 +38,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
       case 'open':
         return Colors.orange;
       case 'investigating':
-        return AppDesignSystem.secondaryBlue;
+        return AppDesignSystem.interactiveBlue;
       case 'resolved':
         return AppDesignSystem.statusValid;
       case 'rejected':
@@ -51,7 +51,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppDesignSystem.backgroundLight,
+      backgroundColor: AppDesignSystem.backgroundWarm,
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
@@ -85,7 +85,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.gavel, size: 64, color: AppDesignSystem.textTertiary),
+          Icon(Icons.gavel, size: 64, color: AppDesignSystem.textHint),
           const SizedBox(height: AppDesignSystem.spaceSM),
           Text('No disputes filed', style: AppDesignSystem.bodyMedium),
           const SizedBox(height: AppDesignSystem.spaceXS),
@@ -159,7 +159,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
               Text(
                 date,
                 style: AppDesignSystem.caption.copyWith(
-                  color: AppDesignSystem.textTertiary,
+                  color: AppDesignSystem.textHint,
                 ),
               ),
             ],
@@ -182,7 +182,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
 
   void _showDetail(DisputeRecord d) {
     final formatted = DateFormat(
-      'MMMM d, yyyy  •  h:mm a',
+      'MMMM d, yyyy  â€¢  h:mm a',
     ).format(d.submittedAt);
     final color = _statusColor(d.status);
 
@@ -260,7 +260,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppDesignSystem.backgroundLight,
+                color: AppDesignSystem.backgroundWarm,
                 borderRadius: BorderRadius.circular(AppDesignSystem.radiusSM),
               ),
               child: Text(d.explanation, style: AppDesignSystem.bodyMedium),
@@ -313,7 +313,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
     );
   }
 
-  // ── New Dispute Sheet ──
+  // â”€â”€ New Dispute Sheet â”€â”€
   void _showNewDispute() {
     String selectedType = 'wrong_denial';
     final descCtrl = TextEditingController();
@@ -405,11 +405,11 @@ class _DisputesScreenState extends State<DisputesScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // ── Supporting document picker ──────────────────────────
+                // â”€â”€ Supporting document picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Text('Supporting Document', style: AppDesignSystem.heading4),
                 const SizedBox(height: 4),
                 Text(
-                  'Optional — attach a photo of your ID, barangay cert, etc.',
+                  'Optional â€” attach a photo of your ID, barangay cert, etc.',
                   style: AppDesignSystem.caption.copyWith(
                     color: AppDesignSystem.textSecondary,
                   ),

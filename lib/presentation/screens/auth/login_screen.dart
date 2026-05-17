@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 import '../home/home_screen.dart';
 
@@ -76,61 +77,57 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppDesignSystem.backgroundDarkBlue,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
                 Image.asset(
                   'assets/images/idetect_logo.png',
-                  width: 200,
+                  width: 180,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 const Text(
-                  'Establishment Portal',
+                  'ESTABLISHMENT PORTAL',
                   style: TextStyle(
-                    color: Color(0xFF002E6B),
-                    fontSize: 14,
-                    letterSpacing: 1,
+                    color: Colors.white54,
+                    fontSize: 11,
+                    letterSpacing: 2.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
 
                 const SizedBox(height: 48),
 
-                // Card
+                // Login Card
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0A4A9E),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    color: AppDesignSystem.backgroundWhite,
+                    borderRadius: AppDesignSystem.cardRadius,
+                    boxShadow: AppDesignSystem.shadowLG,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text(
-                        'Log In',
+                        'Sign In',
                         style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: AppDesignSystem.textPrimary,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       const SizedBox(height: 4),
                       const Text(
                         'Use your establishment credentials',
-                        style: TextStyle(fontSize: 13, color: Colors.white70),
+                        style: AppDesignSystem.bodySmall,
                       ),
 
                       const SizedBox(height: 24),
@@ -138,159 +135,174 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Error message
                       if (_errorMessage != null) ...[
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: AppDesignSystem.inputRadius,
+                            border: Border.all(
+                              color: AppDesignSystem.statusInvalid.withOpacity(0.4),
+                              width: 1.5,
+                            ),
                           ),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.error_outline,
-                                  color: Colors.red, size: 18),
-                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                color: AppDesignSystem.statusInvalid,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   _errorMessage!,
                                   style: const TextStyle(
-                                      color: Colors.red, fontSize: 13),
+                                    color: AppDesignSystem.statusInvalid,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.4,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                       ],
 
                       // Email field
-                      const Text(
-                        'Email',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         autocorrect: false,
-                        style: const TextStyle(color: Colors.black87),
-                        cursorColor: Color(0xFF002E6B),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppDesignSystem.textPrimary,
+                        ),
                         decoration: InputDecoration(
-                          hintText: 'Enter your email',
-                          hintStyle: const TextStyle(color: Color(0xFF9E9E9E)),
-                          prefixIcon: const Icon(Icons.email_outlined,
-                              color: Color(0xFF0A4A9E)),
+                          labelText: 'Email',
+                          labelStyle: const TextStyle(
+                            color: AppDesignSystem.textSecondary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          hintText: 'you@example.com',
+                          hintStyle: const TextStyle(
+                            color: AppDesignSystem.textTertiary,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.email_outlined,
+                            color: AppDesignSystem.iconLight,
+                            size: 22,
+                          ),
+                          filled: true,
+                          fillColor: AppDesignSystem.backgroundLightBlue,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: AppDesignSystem.inputRadius,
+                            borderSide: const BorderSide(color: AppDesignSystem.borderLight),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Color(0xFFBDBDBD)),
+                            borderRadius: AppDesignSystem.inputRadius,
+                            borderSide: const BorderSide(color: AppDesignSystem.borderLight, width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Colors.white, width: 2),
+                            borderRadius: AppDesignSystem.inputRadius,
+                            borderSide: const BorderSide(color: AppDesignSystem.secondaryBlue, width: 2),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 18),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                         ),
                       ),
 
                       const SizedBox(height: 16),
 
                       // Password field
-                      const Text(
-                        'Password',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       TextField(
                         controller: _passwordController,
                         obscureText: !_showPassword,
-                        style: const TextStyle(color: Colors.black87),
-                        cursorColor: Color(0xFF002E6B),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppDesignSystem.textPrimary,
+                        ),
                         decoration: InputDecoration(
-                          hintText: 'Enter your password',
-                          hintStyle: const TextStyle(color: Color(0xFF9E9E9E)),
-                          prefixIcon: const Icon(Icons.lock_outlined,
-                              color: Color(0xFF0A4A9E)),
+                          labelText: 'Password',
+                          labelStyle: const TextStyle(
+                            color: AppDesignSystem.textSecondary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          hintText: 'Your password',
+                          hintStyle: const TextStyle(
+                            color: AppDesignSystem.textTertiary,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline_rounded,
+                            color: AppDesignSystem.iconLight,
+                            size: 22,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                                _showPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: const Color(0xFF0A4A9E)),
-                            onPressed: () =>
-                                setState(() => _showPassword = !_showPassword),
+                              _showPassword
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: AppDesignSystem.iconLight,
+                              size: 22,
+                            ),
+                            tooltip: _showPassword ? 'Hide password' : 'Show password',
+                            onPressed: () => setState(() => _showPassword = !_showPassword),
                           ),
+                          filled: true,
+                          fillColor: AppDesignSystem.backgroundLightBlue,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: AppDesignSystem.inputRadius,
+                            borderSide: const BorderSide(color: AppDesignSystem.borderLight),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Color(0xFFBDBDBD)),
+                            borderRadius: AppDesignSystem.inputRadius,
+                            borderSide: const BorderSide(color: AppDesignSystem.borderLight, width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Colors.white, width: 2),
+                            borderRadius: AppDesignSystem.inputRadius,
+                            borderSide: const BorderSide(color: AppDesignSystem.secondaryBlue, width: 2),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 18),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                         ),
                         onSubmitted: (_) => _login(),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
-                      // Login button
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _login,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      // Sign In button
+                      SizedBox(
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppDesignSystem.primaryBlue,
+                            foregroundColor: Colors.white,
+                            elevation: 3,
+                            shadowColor: AppDesignSystem.primaryBlue.withOpacity(0.4),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: AppDesignSystem.buttonRadius,
+                            ),
                           ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2),
-                              )
-                            : const Text(
-                                'Log In',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF002E6B),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
-                              ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Test hint
-                      const Text(
-                        'Test: jollibee.mcarthur@example.com',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                        ),
                       ),
                     ],
                   ),

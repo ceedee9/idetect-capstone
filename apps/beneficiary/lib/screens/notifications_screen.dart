@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_design_system.dart';
 import '../services/api_service.dart';
@@ -168,7 +168,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'dispute_escalated':
         return Colors.deepOrange;
       case 'dispute_resolved':
-        return AppDesignSystem.secondaryBlue;
+        return AppDesignSystem.interactiveBlue;
       case 'flag_confirmed':
         return AppDesignSystem.accentRed;
       case 'id_expiring_soon':
@@ -220,12 +220,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 icon: const Icon(
                   Icons.done_all,
                   size: 18,
-                  color: AppDesignSystem.secondaryBlue,
+                  color: AppDesignSystem.interactiveBlue,
                 ),
                 label: Text(
                   'Mark all as read',
                   style: AppDesignSystem.bodySmall.copyWith(
-                    color: AppDesignSystem.secondaryBlue,
+                    color: AppDesignSystem.interactiveBlue,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -279,7 +279,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Icon(
                   Icons.notifications_none,
                   size: 64,
-                  color: AppDesignSystem.textTertiary,
+                  color: AppDesignSystem.textHint,
                 ),
                 const SizedBox(height: AppDesignSystem.spaceSM),
                 Text('No notifications', style: AppDesignSystem.bodyMedium),
@@ -287,7 +287,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Text(
                   'Pull down to refresh',
                   style: AppDesignSystem.bodySmall.copyWith(
-                    color: AppDesignSystem.textTertiary,
+                    color: AppDesignSystem.textHint,
                   ),
                 ),
               ],
@@ -310,7 +310,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         boxShadow: AppDesignSystem.shadowSM,
         border: n.isRead
             ? null
-            : Border.all(color: AppDesignSystem.secondaryBlue.withOpacity(0.3)),
+            : Border.all(color: AppDesignSystem.interactiveBlue.withOpacity(0.3)),
       ),
       child: InkWell(
         borderRadius: AppDesignSystem.cardRadius,
@@ -362,7 +362,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Text(
                       timeStr,
                       style: AppDesignSystem.caption.copyWith(
-                        color: AppDesignSystem.textTertiary,
+                        color: AppDesignSystem.textHint,
                       ),
                     ),
                   ],
@@ -373,7 +373,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: AppDesignSystem.secondaryBlue,
+                    color: AppDesignSystem.interactiveBlue,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -385,7 +385,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _showDetail(AppNotification n) {
-    final formatted = DateFormat('MMMM d, yyyy  •  h:mm a').format(n.sentAt);
+    final formatted = DateFormat('MMMM d, yyyy  â€¢  h:mm a').format(n.sentAt);
 
     showModalBottomSheet(
       context: context,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_design_system.dart';
 import '../services/api_service.dart';
@@ -88,7 +88,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     Icon(
                       Icons.receipt_long,
                       size: 64,
-                      color: AppDesignSystem.textTertiary,
+                      color: AppDesignSystem.textHint,
                     ),
                     const SizedBox(height: AppDesignSystem.spaceSM),
                     Text(
@@ -185,7 +185,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Text('$date  •  $time', style: AppDesignSystem.caption),
+                    Text('$date  â€¢  $time', style: AppDesignSystem.caption),
                   ],
                 ),
               ),
@@ -218,7 +218,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   void _showDetail(TransactionRecord tx) {
     final formatted = DateFormat(
-      'MMMM d, yyyy  •  h:mm a',
+      'MMMM d, yyyy  â€¢  h:mm a',
     ).format(tx.verifiedAt);
 
     showModalBottomSheet(

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_design_system.dart';
 import '../../../data/datasources/local/local_database.dart';
 import '../../../services/api_service.dart';
 import '../../../services/parser_service.dart';
@@ -231,11 +232,19 @@ class _ResultScreenState extends State<ResultScreen> {
     final cfg = _statusConfig(_status);
 
     return Scaffold(
+      backgroundColor: AppDesignSystem.backgroundLight,
       appBar: AppBar(
         title: const Text('Verification Result'),
         centerTitle: true,
-        backgroundColor: const Color(0xFF002E6B),
+        backgroundColor: AppDesignSystem.primaryBlue,
         foregroundColor: Colors.white,
+        elevation: 0,
+        titleTextStyle: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+          letterSpacing: 0.3,
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -248,36 +257,36 @@ class _ResultScreenState extends State<ResultScreen> {
                 const SizedBox(height: 10),
                 _buildLowConfidenceWarning()
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _buildImagePreview(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _buildSummaryCard(),
               const SizedBox(height: 20),
               if (_canFlag) ...[
                 _buildGuidancePanel(),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _buildFlagReasonInput(),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _buildActionButton(
                   label: 'Flag & Save',
-                  icon: Icons.flag,
-                  color: Colors.red.shade700,
+                  icon: Icons.flag_rounded,
+                  color: AppDesignSystem.statusInvalid,
                   onPressed:
                       _isSaving ? null : () => _saveToDatabase(flagged: true),
                 ),
                 const SizedBox(height: 10),
                 _buildActionButton(
-                  label: 'Save Only',
-                  icon: Icons.save,
-                  color: const Color(0xFF002E6B),
+                  label: 'Save Without Flagging',
+                  icon: Icons.save_rounded,
+                  color: AppDesignSystem.textSecondary,
                   onPressed:
                       _isSaving ? null : () => _saveToDatabase(flagged: false),
                 ),
               ] else
                 _buildActionButton(
                   label: 'Save Result',
-                  icon: Icons.save,
-                  color: const Color(0xFF002E6B),
+                  icon: Icons.save_rounded,
+                  color: AppDesignSystem.primaryBlue,
                   onPressed:
                       _isSaving ? null : () => _saveToDatabase(flagged: false),
                 ),
@@ -336,7 +345,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final List<String> steps;
     if (isManualReview) {
       steps = [
-        'Manually check the cardholder's name and date of birth against the physical card.',
+        'Manually check the cardholder\'s name and date of birth against the physical card.',
         'If the card appears legitimate, you may approve the discount.',
         'If anything looks wrong or suspicious, tap "Flag & Save" to report it.',
       ];
@@ -371,7 +380,11 @@ class _ResultScreenState extends State<ResultScreen> {
               Icon(Icons.info_outline, color: color, size: 18),
               const SizedBox(width: 8),
               Text(
-                isManualReview ? 'Manual Verification Required' : isSuspicious ? 'Action Required' : 'Invalid ID Detected',
+                isManualReview
+                    ? 'Manual Verification Required'
+                    : isSuspicious
+                        ? 'Action Required'
+                        : 'Invalid ID Detected',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -420,16 +433,24 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Widget _buildStatusCard(_StatusConfig cfg) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       decoration: BoxDecoration(
         color: cfg.background,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cfg.border, width: 2),
+        borderRadius: AppDesignSystem.cardRadius,
+        border: Border.all(color: cfg.border, width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: cfg.background.withOpacity(0.40),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(cfg.icon, color: Colors.white, size: 34),
-          const SizedBox(width: 12),
+          Icon(cfg.icon, color: Colors.white, size: 44),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,15 +459,23 @@ class _ResultScreenState extends State<ResultScreen> {
                   cfg.label,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                    letterSpacing: 0.6,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 22,
+                    letterSpacing: 0.5,
+                    height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   cfg.subtitle,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    height: 1.4,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -477,19 +506,26 @@ class _ResultScreenState extends State<ResultScreen> {
         widget.verificationResult?.displayStatus ?? 'MANUAL REVIEW';
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        color: AppDesignSystem.backgroundWhite,
+        borderRadius: AppDesignSystem.cardRadius,
+        boxShadow: AppDesignSystem.shadowSM,
+        border: Border.all(color: AppDesignSystem.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Result Summary',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: AppDesignSystem.textPrimary,
+            ),
           ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: AppDesignSystem.borderLight),
           const SizedBox(height: 10),
           _row('Verification', displayStatus),
           _row('Name', displayName),
@@ -520,21 +556,29 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Widget _row(String key, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 130,
             child: Text(
-              '$key:',
+              key,
               style: const TextStyle(
-                  fontWeight: FontWeight.w600, color: Colors.black54),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: AppDesignSystem.textSecondary,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: AppDesignSystem.textPrimary,
+              ),
             ),
           ),
         ],
@@ -550,26 +594,35 @@ class _ResultScreenState extends State<ResultScreen> {
   }) {
     return SizedBox(
       width: double.infinity,
+      height: 56,
       child: ElevatedButton.icon(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: onPressed == null ? 0 : 2,
+          shadowColor: color.withOpacity(0.4),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppDesignSystem.buttonRadius,
+          ),
         ),
         icon: _isSaving
             ? const SizedBox(
-                width: 18,
-                height: 18,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2),
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
               )
-            : Icon(icon),
+            : Icon(icon, size: 22),
         label: Text(
           _isSaving ? 'Saving...' : label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            letterSpacing: 0.3,
+          ),
         ),
       ),
     );
@@ -581,42 +634,42 @@ class _ResultScreenState extends State<ResultScreen> {
         return _StatusConfig(
           label: 'VALID ID',
           subtitle: _cleanMessage ?? 'ID verified successfully.',
-          icon: Icons.verified_user,
-          background: const Color(0xFF13BB11),
-          border: const Color(0xFF0D8A0C),
+          icon: Icons.verified_user_rounded,
+          background: AppDesignSystem.statusValid,
+          border: const Color(0xFF0A6000),
         );
       case VerificationStatus.suspicious:
         return _StatusConfig(
           label: 'SUSPICIOUS ID',
           subtitle: _cleanMessage ?? 'Record found but requires review.',
           icon: Icons.warning_amber_rounded,
-          background: Colors.orange.shade700,
-          border: Colors.orange.shade900,
+          background: AppDesignSystem.statusSuspicious,
+          border: const Color(0xFF8A3D00),
         );
       case VerificationStatus.invalid:
         return _StatusConfig(
           label: 'INVALID ID',
           subtitle: _cleanMessage ?? 'ID not found in records.',
-          icon: Icons.cancel,
-          background: const Color(0xFFD32F2F),
-          border: const Color(0xFF9A0007),
+          icon: Icons.cancel_rounded,
+          background: AppDesignSystem.statusInvalid,
+          border: const Color(0xFF8B0000),
         );
       case VerificationStatus.error:
         return _StatusConfig(
           label: 'VERIFICATION ERROR',
           subtitle: widget.verificationResult?.errorMessage ??
               'Could not reach server.',
-          icon: Icons.error_outline,
-          background: const Color(0xFFD32F2F),
-          border: const Color(0xFF9A0007),
+          icon: Icons.error_outline_rounded,
+          background: AppDesignSystem.statusInvalid,
+          border: const Color(0xFF8B0000),
         );
       case VerificationStatus.manualReview:
         return _StatusConfig(
           label: 'MANUAL REVIEW',
           subtitle: _cleanMessage ?? 'Unable to verify automatically.',
-          icon: Icons.help_outline,
-          background: const Color(0xFF455A64),
-          border: const Color(0xFF263238),
+          icon: Icons.manage_search_rounded,
+          background: AppDesignSystem.statusManualReview,
+          border: const Color(0xFF0D3B8E),
         );
     }
   }

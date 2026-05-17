@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../core/constants/app_design_system.dart';
@@ -111,16 +111,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return SessionActivityWrapper(
       child: Scaffold(
-        backgroundColor: AppDesignSystem.backgroundLight,
+        backgroundColor: AppDesignSystem.backgroundWarm,
         appBar: AppBar(
           backgroundColor: AppDesignSystem.primaryBlue,
           elevation: 0,
+          toolbarHeight: 64,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 fullName,
-                style: AppDesignSystem.buttonMedium.copyWith(
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
@@ -128,17 +131,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 user?['beneficiary_type']
                         ?.toString()
                         .replaceAll('_', ' ')
-                        .toUpperCase() ??
+                        .replaceFirstMapped(
+                          RegExp(r'^\w'),
+                          (m) => m[0]!.toUpperCase(),
+                        ) ??
                     '',
-                style: AppDesignSystem.caption.copyWith(color: Colors.white70),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ],
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white),
-              onPressed: _logout,
-              tooltip: 'Sign Out',
+            Semantics(
+              label: 'Sign out',
+              child: IconButton(
+                icon: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                onPressed: _logout,
+                tooltip: 'Sign Out',
+                padding: const EdgeInsets.all(12),
+              ),
             ),
           ],
         ),
@@ -148,34 +166,34 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
+                color: Colors.black.withOpacity(0.10),
+                blurRadius: 16,
+                offset: const Offset(0, -3),
               ),
             ],
           ),
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: SizedBox(
+              height: AppDesignSystem.navBarHeight,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(
                     icon: Icons.badge_outlined,
-                    activeIcon: Icons.badge,
-                    label: 'STATUS',
+                    activeIcon: Icons.badge_rounded,
+                    label: 'Status',
                     index: 0,
                   ),
                   _buildNavItem(
                     icon: Icons.receipt_long_outlined,
-                    activeIcon: Icons.receipt_long,
-                    label: 'HISTORY',
+                    activeIcon: Icons.receipt_long_rounded,
+                    label: 'History',
                     index: 1,
                   ),
                   _buildNavItem(
                     icon: Icons.gavel_outlined,
-                    activeIcon: Icons.gavel,
-                    label: 'DISPUTES',
+                    activeIcon: Icons.gavel_rounded,
+                    label: 'Disputes',
                     index: 2,
                   ),
                 ],
@@ -194,33 +212,54 @@ class _HomeScreenState extends State<HomeScreen> {
     required int index,
   }) {
     final isSelected = _selectedIndex == index;
-    return InkWell(
-      onTap: () => _onItemTapped(index),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              size: 26,
-              color: isSelected
-                  ? AppDesignSystem.primaryBlue
-                  : AppDesignSystem.textSecondary,
+    return Expanded(
+      child: Semantics(
+        label: label,
+        selected: isSelected,
+        button: true,
+        child: InkWell(
+          onTap: () => _onItemTapped(index),
+          splashColor: AppDesignSystem.primaryBlue.withOpacity(0.08),
+          highlightColor: AppDesignSystem.primaryBlue.withOpacity(0.05),
+          child: SizedBox(
+            height: AppDesignSystem.navBarHeight,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: AppDesignSystem.animationFast,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppDesignSystem.primaryBlue.withOpacity(0.12)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    isSelected ? activeIcon : icon,
+                    size: AppDesignSystem.navIconSize,
+                    color: isSelected
+                        ? AppDesignSystem.primaryBlue
+                        : AppDesignSystem.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppDesignSystem.primaryBlue
+                        : AppDesignSystem.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected
-                    ? AppDesignSystem.primaryBlue
-                    : AppDesignSystem.textSecondary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

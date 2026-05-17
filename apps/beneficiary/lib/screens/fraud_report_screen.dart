@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../core/constants/app_design_system.dart';
 import '../services/api_service.dart';
 
@@ -82,7 +82,7 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppDesignSystem.backgroundLight,
+      backgroundColor: AppDesignSystem.backgroundWarm,
       appBar: AppBar(
         backgroundColor: AppDesignSystem.primaryBlue,
         foregroundColor: Colors.white,
