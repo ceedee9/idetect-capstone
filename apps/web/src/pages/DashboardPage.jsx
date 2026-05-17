@@ -245,7 +245,7 @@ function BeneficiaryDashboard({ user }) {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Recently added — 2/3 */}}
+        {/* Recently added — 2/3 */}
         <div className="lg:col-span-2 card space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -848,7 +848,7 @@ function EstablishmentDashboard({ user }) {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Pending queue */}}
+        {/* Pending queue */}
         <div className="lg:col-span-2 card space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
