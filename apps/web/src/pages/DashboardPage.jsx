@@ -28,6 +28,8 @@ import { reportsAPI } from "../services/api";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import { fmtRelative, fmtDate, calcAge } from "../utils/date";
+import EstablishmentStatusDonut from "../components/charts/EstablishmentStatusDonut";
+import EstablishmentTrendChart from "../components/charts/EstablishmentTrendChart";
 
 function downloadBlob(blob, name) {
   const url = URL.createObjectURL(blob);
@@ -796,6 +798,53 @@ function EstablishmentDashboard({ user }) {
           color="red"
           loading={loading}
         />
+      </div>
+
+      {/* ── Analytics Overview ─────────────────────────────────────── */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Registration Trend */}
+        <div className="lg:col-span-2 card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gov-50 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-gov-600" />
+            </div>
+            <div>
+              <h2 className="font-heading font-semibold text-gray-900 text-sm">
+                Registrations — Last 6 Months
+              </h2>
+              <p className="text-xs text-gray-500">
+                New establishments registered monthly
+              </p>
+            </div>
+          </div>
+          {loading ? (
+            <div className="skeleton h-52 rounded-xl" />
+          ) : (
+            <EstablishmentTrendChart establishments={establishments} />
+          )}
+        </div>
+
+        {/* Status Donut */}
+        <div className="card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gov-50 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-gov-600" />
+            </div>
+            <div>
+              <h2 className="font-heading font-semibold text-gray-900 text-sm">
+                Status Breakdown
+              </h2>
+              <p className="text-xs text-gray-500">
+                Current permit distribution
+              </p>
+            </div>
+          </div>
+          {loading ? (
+            <div className="skeleton h-52 rounded-xl" />
+          ) : (
+            <EstablishmentStatusDonut stats={stats} />
+          )}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">

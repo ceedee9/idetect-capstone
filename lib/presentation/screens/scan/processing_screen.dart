@@ -116,7 +116,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           if (mounted) {
             final chosen = await _showTypeConfirmDialog();
             if (chosen == null) {
-              _handleError('Card type could not be determined. Please select manually.');
+              _handleError(
+                  'Card type could not be determined. Please select manually.');
               return;
             }
             _resolvedIdType = chosen;
@@ -132,7 +133,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         _progress = 0.65;
       });
 
-      debugPrint('🔄 Starting HYBRID OCR + Parsing (type: $_resolvedIdType)...');
+      debugPrint(
+          '🔄 Starting HYBRID OCR + Parsing (type: $_resolvedIdType)...');
 
       try {
         _parsedData = await _hybridParser.parseIDWithHybridApproach(
@@ -638,6 +640,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
   Widget _buildDataFields() {
     final isPWD = _resolvedIdType == 'pwd';
+    return Container(
       padding: EdgeInsets.all(AppDesignSystem.spaceMD),
       decoration: BoxDecoration(
         color: AppDesignSystem.backgroundWhite,

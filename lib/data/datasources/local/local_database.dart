@@ -4,11 +4,15 @@ class LocalDatabase {
   static const String _scannedIDsBox = 'scanned_ids';
   // REQ-2.9.1 / REQ-2.9.3: local cache of revoked/suspended beneficiary IDs
   static const String _blockedIDsBox = 'blocked_ids';
+  // Key-value store for internal metadata (sync timestamps, etc.)
+  static const String _metaBox = 'meta';
+  static const String _lastSyncMsKey = 'status_last_sync_ms';
 
   static Future init() async {
     await Hive.initFlutter();
     await Hive.openBox(_scannedIDsBox);
     await Hive.openBox(_blockedIDsBox);
+    await Hive.openBox(_metaBox);
   }
 
   static Future openBox(String boxName) async {
@@ -129,6 +133,28 @@ class LocalDatabase {
   }
 
   // ── Blocked IDs cache (REQ-2.9.1 / REQ-2.9.3) ────────────────────────────
+
+  /// Persist the last successful sync timestamp (Unix ms) so it survives
+  /// app restarts. Without this, _lastSyncMs resets to 0 on every cold start
+  /// and the blocked-IDs cache is served with no age awareness.
+  static Future<void> saveLastSyncMs(int ms) async {
+    final box = await Hive.openBox(_metaBox);
+    await box.put(_lastSyncMsKey, ms);
+  }
+
+  /// Return the persisted last sync timestamp, or 0 if never synced.
+  static Future<int> loadLastSyncMs() async {
+    final box = await Hive.openBox(_metaBox);
+    return (box.get(_lastSyncMsKey) as int?) ?? 0;
+  }
+
+  /// How many milliseconds have elapsed since the last successful sync.
+  /// Returns a very large number if never synced (cache is unconditionally stale).
+  static Future<int> cacheAgeMs() async {
+    final last = await loadLastSyncMs();
+    if (last == 0) return 999999999;
+    return DateTime.now().millisecondsSinceEpoch - last;
+  }
 
   /// Upsert a batch of status updates received from the server.
   /// [updates] is a list of maps: { 'id_number': String, 'status': String }

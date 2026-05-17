@@ -23,6 +23,10 @@ import { reportsAPI } from "../services/api";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import { fmtRelative, fmtDate, calcAge } from "../utils/date";
+import StatusDonutChart from "../components/charts/StatusDonutChart";
+import RegistrationTrendChart from "../components/charts/RegistrationTrendChart";
+import AgeDistributionChart from "../components/charts/AgeDistributionChart";
+import DailyVerificationChart from "../components/charts/DailyVerificationChart";
 
 function downloadBlob(blob, name) {
   const url = URL.createObjectURL(blob);
@@ -191,6 +195,75 @@ export default function DashboardPage() {
           loading={loading}
           sub="ID past validity"
         />
+      </div>
+
+      {/* ── Analytics Overview ─────────────────────────────────────── */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Registration Trend */}
+        <div className="lg:col-span-2 card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-osca-50 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-osca-600" />
+            </div>
+            <div>
+              <h2 className="font-heading font-semibold text-slate-900 text-sm">
+                Registrations — Last 6 Months
+              </h2>
+              <p className="text-xs text-slate-400 font-medium">
+                Monthly new Senior Citizen records
+              </p>
+            </div>
+          </div>
+          {loading ? (
+            <div className="skeleton h-52 rounded-xl" />
+          ) : (
+            <RegistrationTrendChart beneficiaries={beneficiaries} />
+          )}
+        </div>
+
+        {/* Status Donut */}
+        <div className="card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-osca-50 rounded-xl flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4 text-osca-600" />
+            </div>
+            <div>
+              <h2 className="font-heading font-semibold text-slate-900 text-sm">
+                Status Breakdown
+              </h2>
+              <p className="text-xs text-slate-400 font-medium">
+                Current distribution
+              </p>
+            </div>
+          </div>
+          {loading ? (
+            <div className="skeleton h-52 rounded-xl" />
+          ) : (
+            <StatusDonutChart stats={stats} />
+          )}
+        </div>
+      </div>
+
+      {/* Age Distribution */}
+      <div className="card space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-osca-50 rounded-xl flex items-center justify-center">
+            <Users className="w-4 h-4 text-osca-600" />
+          </div>
+          <div>
+            <h2 className="font-heading font-semibold text-slate-900 text-sm">
+              Age Distribution
+            </h2>
+            <p className="text-xs text-slate-400 font-medium">
+              Senior Citizens by age bracket
+            </p>
+          </div>
+        </div>
+        {loading ? (
+          <div className="skeleton h-36 rounded-xl" />
+        ) : (
+          <AgeDistributionChart beneficiaries={beneficiaries} />
+        )}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -570,33 +643,13 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* Mini trend bar chart */}
+              {/* Daily verification bar chart */}
               {dashStats.verificationTrend?.length > 0 && (
                 <div className="pt-3 border-t border-slate-100">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                     Daily Scans (14 days)
                   </p>
-                  <div className="flex items-end gap-1 h-16">
-                    {dashStats.verificationTrend.map((d) => {
-                      const max = Math.max(
-                        ...dashStats.verificationTrend.map((t) => t.count),
-                        1,
-                      );
-                      const pct = Math.max((d.count / max) * 100, 4);
-                      return (
-                        <div
-                          key={d.date}
-                          className="flex-1 rounded-t-sm bg-osca-300 hover:bg-osca-500 transition-colors cursor-default"
-                          style={{ height: `${pct}%` }}
-                          title={`${d.date}: ${d.count} scans`}
-                        />
-                      );
-                    })}
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-[9px] text-slate-400">14d ago</span>
-                    <span className="text-[9px] text-slate-400">Today</span>
-                  </div>
+                  <DailyVerificationChart data={dashStats.verificationTrend} />
                 </div>
               )}
             </>

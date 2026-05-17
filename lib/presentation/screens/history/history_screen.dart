@@ -88,8 +88,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     setState(() {
       _loading = false;
       _currentPage = page;
-      _totalRecords = pagination['total'] as int? ?? 0;
-      _totalPages = pagination['pages'] as int? ?? 1;
+      _totalRecords = (pagination['total'] is num
+              ? (pagination['total'] as num)
+              : num.tryParse(pagination['total'].toString()) ?? 0)
+          .toInt();
+      _totalPages = (pagination['pages'] is num
+              ? (pagination['pages'] as num)
+              : num.tryParse(pagination['pages'].toString()) ?? 1)
+          .toInt();
       if (replace) {
         _records = rows;
       } else {
@@ -666,9 +672,12 @@ class _RecordTile extends StatelessWidget {
     final ts = fmtTs(record['verified_at'] as String?);
     final manual = record['manually_entered'] == true;
     final confidence = record['ocr_confidence_score'];
-    final confStr = confidence != null
-        ? '${(confidence as num).toStringAsFixed(0)}%'
-        : null;
+    final confNum = confidence == null
+        ? null
+        : confidence is num
+            ? confidence
+            : num.tryParse(confidence.toString());
+    final confStr = confNum != null ? '${confNum.toStringAsFixed(0)}%' : null;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),

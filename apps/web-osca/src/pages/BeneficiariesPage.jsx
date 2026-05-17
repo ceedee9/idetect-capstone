@@ -24,7 +24,7 @@ const STATUS_TABS = [
   { value: "active", label: "Active" },
   { value: "suspended", label: "Suspended" },
   { value: "expired", label: "Expired" },
-  { value: "inactive", label: "Inactive" },
+  { value: "revoked", label: "Revoked" },
 ];
 
 export default function BeneficiariesPage() {

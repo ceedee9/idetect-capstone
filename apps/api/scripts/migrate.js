@@ -44,6 +44,8 @@ const MIGRATIONS = [
   "021_cross_validation_and_normalization.sql",
   "022_staff_alerts.sql",
   "023_unique_person_index.sql",
+  "024_add_beneficiary_contact_fields.sql",
+  "025_partial_unique_person_index.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

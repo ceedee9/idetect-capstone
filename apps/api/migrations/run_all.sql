@@ -64,5 +64,11 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 023: unique person index (full_name + birthdate + type)'
 \i 023_unique_person_index.sql
 
+\echo '>>> Running migration 024: add contact fields to beneficiaries'
+\i 024_add_beneficiary_contact_fields.sql
+
+\echo '>>> Running migration 025: partial unique person index (exclude revoked)'
+\i 025_partial_unique_person_index.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='

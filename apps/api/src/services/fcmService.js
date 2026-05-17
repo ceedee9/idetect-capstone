@@ -2,12 +2,14 @@
 // Firebase Cloud Messaging (FCM) push notification dispatcher.
 // Uses the Firebase Admin SDK — free, no per-message cost.
 //
-// Setup:
-//   1. Create a Firebase project at https://console.firebase.google.com
-//   2. Project Settings → Service Accounts → Generate new private key
-//   3. Save the JSON file and set FIREBASE_KEY_PATH in .env
+// Credential priority (first match wins):
+//   1. FIREBASE_SERVICE_ACCOUNT_JSON  — full service-account JSON as a string.
+//      Paste the entire JSON file contents as a Railway/Render env var.
+//      This is the recommended production approach (no file on disk needed).
+//   2. FIREBASE_KEY_PATH  — path to a service-account JSON file on disk.
+//      Useful for local development.
 //
-// Falls back to console logging when FIREBASE_KEY_PATH is not configured
+// Falls back to console logging when neither variable is configured
 // (safe for dev/demo without Firebase credentials).
 
 let admin = null;
@@ -15,6 +17,33 @@ let admin = null;
 function getAdmin() {
   if (admin) return admin;
 
+  const firebase = require("firebase-admin");
+
+  // ── Priority 1: JSON string in env var (preferred for Railway/Render) ──
+  const jsonEnv = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (jsonEnv) {
+    try {
+      const serviceAccount = JSON.parse(jsonEnv);
+      if (!firebase.apps.length) {
+        firebase.initializeApp({
+          credential: firebase.credential.cert(serviceAccount),
+        });
+      }
+      admin = firebase;
+      console.log(
+        "🔥 Firebase Admin SDK initialized via FIREBASE_SERVICE_ACCOUNT_JSON",
+      );
+      return admin;
+    } catch (err) {
+      console.error(
+        "🔥 Firebase Admin SDK init failed (FIREBASE_SERVICE_ACCOUNT_JSON):",
+        err.message,
+      );
+      return null;
+    }
+  }
+
+  // ── Priority 2: file path env var (local dev) ──
   const keyPath = process.env.FIREBASE_KEY_PATH;
   if (!keyPath || keyPath === "path/to/firebase-service-account.json") {
     return null; // dev fallback — no credentials configured
@@ -22,7 +51,6 @@ function getAdmin() {
 
   try {
     const serviceAccount = require(require("path").resolve(keyPath));
-    const firebase = require("firebase-admin");
 
     if (!firebase.apps.length) {
       firebase.initializeApp({
@@ -31,7 +59,7 @@ function getAdmin() {
     }
 
     admin = firebase;
-    console.log("🔥 Firebase Admin SDK initialized");
+    console.log("🔥 Firebase Admin SDK initialized via FIREBASE_KEY_PATH");
     return admin;
   } catch (err) {
     console.error("🔥 Firebase Admin SDK init failed:", err.message);

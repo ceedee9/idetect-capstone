@@ -256,8 +256,8 @@ export default function BeneficiaryDetailPage() {
               <StatusBadge status={b.status} />
             </div>
             <p className="text-slate-400 text-sm mt-0.5 font-medium">
-              {beneficiaryTypeLabel} · {age ? `${age} years old` : "Age unknown"} ·{" "}
-              {b.id_number}
+              {beneficiaryTypeLabel} ·{" "}
+              {age ? `${age} years old` : "Age unknown"} · {b.id_number}
             </p>
           </div>
         </div>

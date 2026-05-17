@@ -28,6 +28,10 @@ class StatusSyncService {
 
   /// Call once from main() after LocalDatabase.init() and ApiService.loadToken().
   static Future<void> init() async {
+    // Restore last sync cursor from persistent storage so we don't re-request
+    // all updates from the beginning after every cold start.
+    _lastSyncMs = await LocalDatabase.loadLastSyncMs();
+
     // Attempt an immediate sync on startup (catches any changes while offline)
     await _sync();
 
@@ -84,9 +88,13 @@ class StatusSyncService {
               '✅ StatusSync: applied ${updates.length} status update(s)');
         }
 
-        // Advance the cursor to the server's current time
+        // Advance the cursor to the server's current time and persist it
+        // so it survives app restarts (fixes M-2: stale cache after cold start).
         final serverTime = data['server_time'];
-        if (serverTime is int) _lastSyncMs = serverTime;
+        if (serverTime is int) {
+          _lastSyncMs = serverTime;
+          await LocalDatabase.saveLastSyncMs(_lastSyncMs);
+        }
       } else if (response.statusCode == 401) {
         // Token expired — stop polling until re-login
         stop();

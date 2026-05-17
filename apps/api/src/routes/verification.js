@@ -258,10 +258,26 @@ router.post(
       // ── Cross-validate OCR-extracted name and DOB against stored record ──
       // Only runs when the ID was initially found and VALID. A mismatch
       // downgrades the result to SUSPICIOUS so the discount is not granted.
+      //
+      // When the scan is NOT manually entered (i.e. OCR was used) but the
+      // pipeline failed to extract BOTH the name and DOB, we cannot confirm
+      // the cardholder's identity from the card image alone. Downgrade to
+      // manual_review so the cashier physically inspects the card.
       const NAME_THRESHOLD = parseFloat(
         process.env.OCR_NAME_MATCH_THRESHOLD || "0.80",
       );
       if (
+        result === "valid" &&
+        beneficiary &&
+        !manually_entered &&
+        !extracted_name &&
+        !safeExtractedDob
+      ) {
+        result = "manual_review";
+        message =
+          "OCR could not extract name or date of birth from this card. " +
+          "Please inspect the physical ID carefully before approving the discount.";
+      } else if (
         result === "valid" &&
         beneficiary &&
         (extracted_name || safeExtractedDob)

@@ -211,7 +211,7 @@ class ApiService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return VerificationResult.fromJson(data);
-      } else if (response.statusCode == 401) {
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
         // Token rejected by server — clear it so the user is sent back to login
         clearToken();
         return VerificationResult.error(
@@ -534,7 +534,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
-      } else if (response.statusCode == 401) {
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
         clearToken();
         return {'error': 'Session expired. Please log in again.'};
       } else {

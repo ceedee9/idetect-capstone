@@ -7,6 +7,7 @@
 
 const express = require("express");
 const { body, validationResult } = require("express-validator");
+const rateLimit = require("express-rate-limit");
 const pool = require("../config/database");
 const {
   authenticate,
@@ -17,11 +18,28 @@ const { createError } = require("../middleware/errorHandler");
 
 const router = express.Router();
 
+// ── Rate limit: flag submissions ────────────────────────────────
+// 30 flags per hour per establishment. A legitimate cashier would
+// rarely flag more than a handful of IDs per shift. A high volume
+// from one account is a sign of scripted abuse or a compromised credential.
+const flagLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 30,
+  keyGenerator: (req) => req.establishment?.id || req.ip,
+  message: {
+    error:
+      "Too many fraud flag submissions from this account. Please contact your supervisor.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ── POST /api/fraud-flags ──────────────────────────────────────
 // Called by the Client Portal after a SUSPICIOUS or INVALID scan
 router.post(
   "/",
   authenticateEstablishment,
+  flagLimiter,
   [
     body("verification_log_id").isUUID(),
     body("id_number_flagged").notEmpty().trim().toUpperCase(),

@@ -532,9 +532,9 @@ export default function AddBeneficiaryPage() {
           <p>
             By submitting this form, you confirm that the information provided
             is accurate and that this individual qualifies as a{" "}
-            {beneficiaryTypeLabel} beneficiary under{" "}
-            <strong>{raText}</strong>. The record will be immediately active in
-            the iDetect verification system.
+            {beneficiaryTypeLabel} beneficiary under <strong>{raText}</strong>.
+            The record will be immediately active in the iDetect verification
+            system.
           </p>
         </div>
 

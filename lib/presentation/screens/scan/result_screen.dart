@@ -34,7 +34,8 @@ class _ResultScreenState extends State<ResultScreen> {
 
   bool get _canFlag =>
       _status == VerificationStatus.invalid ||
-      _status == VerificationStatus.suspicious;
+      _status == VerificationStatus.suspicious ||
+      _status == VerificationStatus.manualReview;
 
   @override
   void initState() {
@@ -312,27 +313,48 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildGuidancePanel() {
+    final isManualReview = _status == VerificationStatus.manualReview;
     final isSuspicious = _status == VerificationStatus.suspicious;
-    final color =
-        isSuspicious ? Colors.orange.shade700 : const Color(0xFFD32F2F);
-    final borderColor =
-        isSuspicious ? Colors.orange.shade300 : Colors.red.shade200;
-    final bgColor =
-        isSuspicious ? const Color(0xFFFFF8E1) : const Color(0xFFFFEBEE);
 
-    final steps = isSuspicious
-        ? [
-            'Do NOT approve the discount.',
-            'Ask the customer for a secondary ID.',
-            'Contact your supervisor or manager.',
-            'Tap "Flag & Save" below to report this ID.',
-          ]
-        : [
-            'Do NOT approve the discount.',
-            'This ID number is not in our database.',
-            'It may be forged, expired, or belong to another system.',
-            'Tap "Flag & Save" below to report this ID.',
-          ];
+    final Color color;
+    final Color borderColor;
+    final Color bgColor;
+    if (isManualReview) {
+      color = const Color(0xFF455A64);
+      borderColor = const Color(0xFF90A4AE);
+      bgColor = const Color(0xFFECEFF1);
+    } else if (isSuspicious) {
+      color = Colors.orange.shade700;
+      borderColor = Colors.orange.shade300;
+      bgColor = const Color(0xFFFFF8E1);
+    } else {
+      color = const Color(0xFFD32F2F);
+      borderColor = Colors.red.shade200;
+      bgColor = const Color(0xFFFFEBEE);
+    }
+
+    final List<String> steps;
+    if (isManualReview) {
+      steps = [
+        'Manually check the cardholder's name and date of birth against the physical card.',
+        'If the card appears legitimate, you may approve the discount.',
+        'If anything looks wrong or suspicious, tap "Flag & Save" to report it.',
+      ];
+    } else if (isSuspicious) {
+      steps = [
+        'Do NOT approve the discount.',
+        'Ask the customer for a secondary ID.',
+        'Contact your supervisor or manager.',
+        'Tap "Flag & Save" below to report this ID.',
+      ];
+    } else {
+      steps = [
+        'Do NOT approve the discount.',
+        'This ID number is not in our database.',
+        'It may be forged, expired, or belong to another system.',
+        'Tap "Flag & Save" below to report this ID.',
+      ];
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -349,7 +371,7 @@ class _ResultScreenState extends State<ResultScreen> {
               Icon(Icons.info_outline, color: color, size: 18),
               const SizedBox(width: 8),
               Text(
-                isSuspicious ? 'Action Required' : 'Invalid ID Detected',
+                isManualReview ? 'Manual Verification Required' : isSuspicious ? 'Action Required' : 'Invalid ID Detected',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,

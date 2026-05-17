@@ -427,6 +427,9 @@ router.post(
     body("validity_end").isDate(),
     body("registered_mobile").optional().isMobilePhone(),
     body("disability_type").optional().isString().trim(),
+    body("address").optional().isString().trim(),
+    body("contact_number").optional().isString().trim(),
+    body("email").optional().isEmail().normalizeEmail(),
   ],
   async (req, res, next) => {
     try {
@@ -445,6 +448,9 @@ router.post(
         validity_end,
         registered_mobile,
         disability_type,
+        address,
+        contact_number,
+        email,
       } = req.body;
 
       if (type === "pwd" && !PWD_ID_PATTERN.test(String(id_number || ""))) {
@@ -462,8 +468,10 @@ router.post(
         `INSERT INTO beneficiaries
          (id_number, full_name, birthdate, beneficiary_type,
           issuing_office, validity_start, validity_end,
-          registered_mobile, disability_type, created_by, updated_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)
+          registered_mobile, disability_type,
+          address, contact_number, email,
+          created_by, updated_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)
        RETURNING *`,
         [
           storedIdNumber,
@@ -475,6 +483,9 @@ router.post(
           validity_end,
           registered_mobile || null,
           type === "pwd" ? disability_type || null : null,
+          address || null,
+          contact_number || null,
+          email || null,
           req.user.id,
         ],
       );
@@ -502,6 +513,9 @@ router.put(
     body("issuing_office").optional().trim().notEmpty(),
     body("registered_mobile").optional({ nullable: true }).isMobilePhone(),
     body("disability_type").optional({ nullable: true }).isString().trim(),
+    body("address").optional({ nullable: true }).isString().trim(),
+    body("contact_number").optional({ nullable: true }).isString().trim(),
+    body("email").optional({ nullable: true }).isEmail().normalizeEmail(),
   ],
   async (req, res, next) => {
     try {
@@ -525,17 +539,23 @@ router.put(
         issuing_office,
         registered_mobile,
         disability_type,
+        address,
+        contact_number,
+        email,
       } = req.body;
 
       const updated = await pool.query(
         `UPDATE beneficiaries
-         SET full_name       = COALESCE($1, full_name),
-             birthdate       = COALESCE($2, birthdate),
-             issuing_office  = COALESCE($3, issuing_office),
+         SET full_name         = COALESCE($1, full_name),
+             birthdate         = COALESCE($2, birthdate),
+             issuing_office    = COALESCE($3, issuing_office),
              registered_mobile = COALESCE($4, registered_mobile),
-             disability_type = COALESCE($5, disability_type),
-             updated_by      = $6
-         WHERE id = $7
+             disability_type   = COALESCE($5, disability_type),
+             address           = COALESCE($6, address),
+             contact_number    = COALESCE($7, contact_number),
+             email             = COALESCE($8, email),
+             updated_by        = $9
+         WHERE id = $10
          RETURNING *`,
         [
           full_name || null,
@@ -545,6 +565,9 @@ router.put(
             ? normalizeMobile(registered_mobile)
             : null,
           disability_type !== undefined ? disability_type || null : null,
+          address !== undefined ? address || null : null,
+          contact_number !== undefined ? contact_number || null : null,
+          email !== undefined ? email || null : null,
           req.user.id,
           req.params.id,
         ],
