@@ -38,6 +38,41 @@ router.get("/", async (req, res, next) => {
   }
 });
 
+// ── GET /staff/alerts ─────────────────────────────────────────
+// Returns the 50 most recent staff alerts for the logged-in admin's role.
+router.get("/alerts", async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, title, body, related_beneficiary_id, is_read, created_at
+         FROM staff_alerts
+        WHERE target_role = $1
+        ORDER BY created_at DESC
+        LIMIT 50`,
+      [req.user.role],
+    );
+    res.json({ alerts: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── POST /staff/alerts/mark-all-read ──────────────────────────
+// Marks every unread alert for the logged-in admin's role as read.
+router.post("/alerts/mark-all-read", async (req, res, next) => {
+  try {
+    await pool.query(
+      `UPDATE staff_alerts
+          SET is_read = TRUE
+        WHERE target_role = $1
+          AND is_read = FALSE`,
+      [req.user.role],
+    );
+    res.json({ message: "All alerts marked as read." });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── GET single staff member ────────────────────────────────────
 router.get("/:id", param("id").isUUID(), async (req, res, next) => {
   try {

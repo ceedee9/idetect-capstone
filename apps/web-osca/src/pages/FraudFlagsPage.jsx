@@ -56,22 +56,27 @@ function useAuthImage(url) {
 
 import { useState as useLocalState } from "react";
 
+function extractFlags(data) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  for (const key of ["fraud_flags", "flags", "data", "rows", "results"]) {
+    if (Array.isArray(data[key])) return data[key];
+  }
+  const first = Object.values(data).find((v) => Array.isArray(v));
+  return first ?? [];
+}
+
 function useFraudFlags() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetch = async () => {
+  const loadFlags = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fraudFlagsAPI.list();
-      const raw = res.data?.fraud_flags ?? res.data?.flags ?? res.data;
-      setData(
-        Array.isArray(raw)
-          ? raw
-          : (Object.values(raw).find((v) => Array.isArray(v)) ?? []),
-      );
+      setData(extractFlags(res.data));
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load fraud flags.");
     } finally {
@@ -79,17 +84,11 @@ function useFraudFlags() {
     }
   };
 
-  useState(() => {
-    fetch();
+  useEffect(() => {
+    loadFlags();
   }, []);
-  // Trigger on mount via effect
-  const [init, setInit] = useState(false);
-  if (!init) {
-    setInit(true);
-    fetch();
-  }
 
-  return { data, loading, error, refetch: fetch };
+  return { data, loading, error, refetch: loadFlags };
 }
 
 const STATUS_TABS = [
