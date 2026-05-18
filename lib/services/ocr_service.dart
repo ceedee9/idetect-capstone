@@ -527,7 +527,7 @@ Future<void> processImage(File imageFile) async {
         context: context,
         builder: (context) => AlertDialog(
           title: Text('Low Confidence'),
-          content: Text('OCR confidence is ${result.confidencePercent}. Please retake photo or enter details manually.'),
+          content: Text('Extraction quality score is ${result.confidencePercent}. Please retake photo or enter details manually.'),
           actions: [
             TextButton(
               onPressed: () => retakePhoto(),

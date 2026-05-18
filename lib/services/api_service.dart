@@ -292,8 +292,9 @@ class ApiService {
           beneficiaryName: cached['fullName'],
           idNumber: cached['idNumber'],
           beneficiaryType: cached['idType'],
-          message:
-              '[OFFLINE — synced ${age.inMinutes}m ago] Last verified: $formatted',
+          message: 'Last verified: $formatted',
+          isOffline: true,
+          offlineSyncedAt: cachedDate,
         );
       }
     } catch (e) {
@@ -567,6 +568,10 @@ class VerificationResult {
   final String? message;
   final String? errorMessage;
   final Map<String, dynamic>? rawData;
+  // true when served from local Hive cache — server was unreachable
+  final bool isOffline;
+  // timestamp of the cached record that was used (for age display in the UI)
+  final DateTime? offlineSyncedAt;
 
   VerificationResult({
     required this.status,
@@ -577,6 +582,8 @@ class VerificationResult {
     this.message,
     this.errorMessage,
     this.rawData,
+    this.isOffline = false,
+    this.offlineSyncedAt,
   });
 
   factory VerificationResult.fromJson(Map<String, dynamic> json) {

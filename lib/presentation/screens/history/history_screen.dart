@@ -761,7 +761,7 @@ class _RecordTile extends StatelessWidget {
                       ],
                       if (confStr != null) ...[
                         const SizedBox(width: 6),
-                        _chip('OCR $confStr', Icons.text_fields),
+                        _chip('Quality: $confStr', Icons.text_fields),
                       ],
                     ],
                   ),

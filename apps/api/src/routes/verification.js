@@ -188,7 +188,8 @@ router.post(
 
       const establishment_id = req.establishment.id;
 
-      // Check if OCR confidence is below threshold — note it but still verify
+      // Check if extraction quality score is below threshold — note it but still verify
+      // (This score is a heuristic indicator of OCR output quality, not a true statistical confidence)
       const threshold = parseFloat(process.env.OCR_CONFIDENCE_THRESHOLD || 75);
       const lowConfidence =
         !manually_entered &&
@@ -316,15 +317,15 @@ router.post(
         }
       }
 
-      // If OCR confidence was low on an otherwise-valid result, downgrade to
+      // If extraction quality score was low on an otherwise-valid result, downgrade to
       // manual_review so the cashier physically inspects the card.
       // On already-invalid/suspicious results, just annotate the message.
       if (lowConfidence) {
         if (result === "valid") {
           result = "manual_review";
-          message = `OCR confidence below threshold (${ocr_confidence_score?.toFixed(0)}%). Please inspect the physical ID carefully before approving the discount.`;
+          message = `Low extraction quality score (${ocr_confidence_score?.toFixed(0)}%). Please inspect the physical ID carefully before approving the discount.`;
         } else {
-          message = `(Low OCR confidence — ${ocr_confidence_score?.toFixed(0)}%) ${message}`;
+          message = `(Low extraction quality: ${ocr_confidence_score?.toFixed(0)}%) ${message}`;
         }
       }
 

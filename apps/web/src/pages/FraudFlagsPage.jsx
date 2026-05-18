@@ -523,7 +523,7 @@ export default function FraudFlagsPage() {
                   </div>
                   {selectedFlag.ocr_confidence_score != null && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">OCR Confidence</span>
+                      <span className="text-slate-500">Extraction Quality</span>
                       <span className="font-semibold">
                         {selectedFlag.ocr_confidence_score}%
                       </span>

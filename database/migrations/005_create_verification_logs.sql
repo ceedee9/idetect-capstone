@@ -49,5 +49,5 @@ CREATE INDEX idx_verification_logs_est_date         ON verification_logs(establi
 
 COMMENT ON TABLE  verification_logs                     IS 'Immutable log of every verification attempt. Never delete rows.';
 COMMENT ON COLUMN verification_logs.beneficiary_id      IS 'NULL when no matching record was found in the database.';
-COMMENT ON COLUMN verification_logs.ocr_confidence_score IS 'Tesseract confidence (0-100). Below threshold triggers manual_review result.';
+COMMENT ON COLUMN verification_logs.ocr_confidence_score IS 'Extraction quality score (0-100): heuristic indicator based on text length, character ratios, and keyword presence. Not a true statistical OCR confidence. Below OCR_CONFIDENCE_THRESHOLD triggers manual_review.';
 COMMENT ON COLUMN verification_logs.image_path          IS 'Cloudinary URL of the captured ID image. Retained for fraud investigation.';

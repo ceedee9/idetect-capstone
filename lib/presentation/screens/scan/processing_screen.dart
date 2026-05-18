@@ -158,7 +158,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       }
 
       debugPrint(
-          '✅ OCR complete — confidence: ${(_parsedData!.confidence * 100).toInt()}%');
+          '✅ OCR complete — extraction quality: ${(_parsedData!.confidence * 100).toInt()}%');
       _ocrEngine = 'ML Kit (with ${_parsedData!.extractionMethod})';
 
       // Done — show fields for user review

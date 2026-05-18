@@ -93,7 +93,7 @@ class EnhancedOCRService {
           tesseractConfidence = _estimateTesseractConfidence(tesseractText);
           debugPrint('✅ Tesseract extracted ${tesseractText.length} chars');
           debugPrint(
-              '📊 Tesseract confidence: ${(tesseractConfidence * 100).toInt()}%');
+              '📊 Tesseract extraction quality (heuristic): ${(tesseractConfidence * 100).toInt()}%');
         } else {
           debugPrint('⚠️ Tesseract returned empty text');
         }
@@ -115,7 +115,7 @@ class EnhancedOCRService {
           mlkitConfidence = _calculateMLKitConfidence(recognizedText);
           debugPrint('✅ ML Kit extracted ${mlkitText.length} chars');
           debugPrint(
-              '📊 ML Kit confidence: ${(mlkitConfidence * 100).toInt()}%');
+              '📊 ML Kit extraction quality (heuristic): ${(mlkitConfidence * 100).toInt()}%');
         } else {
           debugPrint('⚠️ ML Kit returned empty text');
         }
@@ -147,7 +147,7 @@ class EnhancedOCRService {
       }
 
       debugPrint(
-          '🏆 Selected: $engine (confidence: ${(confidence * 100).toInt()}%)');
+          '🏆 Selected: $engine (extraction quality: ${(confidence * 100).toInt()}%)');
 
       // STEP 5: Post-Processing
       debugPrint('🧹 Step 5/5: Post-processing and error correction...');
@@ -159,7 +159,8 @@ class EnhancedOCRService {
       );
 
       debugPrint('✅ OCR Complete!');
-      debugPrint('📝 Final confidence: ${(finalConfidence * 100).toInt()}%');
+      debugPrint(
+          '📝 Extraction quality score: ${(finalConfidence * 100).toInt()}%');
       debugPrint('=== EXTRACTED TEXT ===');
       debugPrint(cleanedText);
       debugPrint('======================');
@@ -296,10 +297,16 @@ class EnhancedOCRService {
   }
 
   // ===========================================================================
-  // CONFIDENCE ESTIMATION
+  // EXTRACTION QUALITY ESTIMATION
+  // Note: these are heuristic quality indicators, not statistical OCR confidence
+  // scores. They use text length, character ratios, and keyword presence as
+  // proxies for extraction quality, since the flutter_tesseract_ocr plugin does
+  // not expose per-character confidence values.
   // ===========================================================================
 
-  /// Estimate Tesseract confidence from output quality
+  /// Heuristic extraction quality estimate for Tesseract output.
+  /// Not equivalent to Tesseract's internal per-character confidence.
+  /// Interpret as an extraction quality indicator only.
   double _estimateTesseractConfidence(String text) {
     double score = 0.5; // Base score
 
@@ -347,7 +354,9 @@ class EnhancedOCRService {
     return lineCount > 0 ? (totalScore / lineCount).clamp(0.0, 1.0) : 0.0;
   }
 
-  /// Calculate final confidence after post-processing
+  /// Adjust extraction quality score after post-processing.
+  /// Applies keyword-presence bonuses to reflect expected ID content.
+  /// Note: bonuses indicate likely correct extraction, not character accuracy.
   double _calculateFinalConfidence(
       String text, double baseConfidence, String idType) {
     double bonus = 0.0;

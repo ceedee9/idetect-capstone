@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../../data/datasources/local/local_database.dart';
 import '../../../services/api_service.dart';
+import '../../../services/offline_scan_sync_service.dart';
 import '../../../services/parser_service.dart';
 import '../../../services/fraud_flag_sync_service.dart';
 
@@ -32,6 +33,8 @@ class _ResultScreenState extends State<ResultScreen> {
 
   VerificationStatus get _status =>
       widget.verificationResult?.status ?? VerificationStatus.manualReview;
+
+  bool get _isOffline => widget.verificationResult?.isOffline == true;
 
   bool get _canFlag =>
       _status == VerificationStatus.invalid ||
@@ -130,6 +133,8 @@ class _ResultScreenState extends State<ResultScreen> {
         }
       }
 
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+
       await database.insertScannedID(
         fullName: widget.parsedData.fullName ?? '',
         idNumber: idNumber,
@@ -139,10 +144,24 @@ class _ResultScreenState extends State<ResultScreen> {
         controlNumber: widget.parsedData.controlNumber ?? '',
         imagePath: widget.imagePath,
         idType: widget.idType,
-        timestamp: DateTime.now().millisecondsSinceEpoch,
+        timestamp: nowMs,
         verificationStatus: flagged ? 'flagged' : _status.name,
         establishmentId: ApiService.currentUser?['id']?.toString(),
       );
+
+      // Problem A fix: if this was an offline verification, queue the scan
+      // so it is replayed to PostgreSQL verification_logs once online.
+      if (_isOffline) {
+        await OfflineScanSyncService.queueOfflineScan(
+          idNumber: idNumber,
+          beneficiaryType: widget.idType == 'senior' ? 'senior_citizen' : 'pwd',
+          extractedName: widget.parsedData.fullName,
+          extractedDob: widget.parsedData.dateOfBirth,
+          ocrConfidence: widget.parsedData.confidence,
+          imagePath: widget.imagePath,
+          scannedAt: nowMs,
+        );
+      }
 
       if (!mounted) return;
 
@@ -217,14 +236,14 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   bool get _isLowConfidence =>
-      widget.verificationResult?.message?.contains('Low OCR confidence') ==
+      widget.verificationResult?.message?.contains('Low extraction quality') ==
       true;
 
   String? get _cleanMessage {
     final msg = widget.verificationResult?.message;
     if (msg == null) return null;
-    // Strip the low-confidence prefix — it's shown in the dedicated banner
-    return msg.replaceFirst(RegExp(r'^\(Low OCR confidence[^)]*\)\s*'), '');
+    // Strip the low-extraction-quality prefix — it's shown in the dedicated banner
+    return msg.replaceFirst(RegExp(r'^\(Low extraction quality[^)]*\)\s*'), '');
   }
 
   @override
@@ -234,9 +253,26 @@ class _ResultScreenState extends State<ResultScreen> {
     return Scaffold(
       backgroundColor: AppDesignSystem.backgroundLight,
       appBar: AppBar(
-        title: const Text('Verification Result'),
+        title: _isOffline
+            ? const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Verification Result'),
+                  Text(
+                    'OFFLINE MODE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFFFCCBC),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              )
+            : const Text('Verification Result'),
         centerTitle: true,
-        backgroundColor: AppDesignSystem.primaryBlue,
+        backgroundColor:
+            _isOffline ? const Color(0xFFBF360C) : AppDesignSystem.primaryBlue,
         foregroundColor: Colors.white,
         elevation: 0,
         titleTextStyle: const TextStyle(
@@ -252,6 +288,10 @@ class _ResultScreenState extends State<ResultScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_isOffline) ...[
+                _buildOfflineBanner(),
+                const SizedBox(height: 10)
+              ],
               _buildStatusCard(cfg),
               if (_isLowConfidence) ...[
                 const SizedBox(height: 10),
@@ -297,6 +337,85 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  /// Problem B fix: prominent full-width banner that makes offline results
+  /// visually unmistakable from live server results.
+  Widget _buildOfflineBanner() {
+    final syncedAt = widget.verificationResult?.offlineSyncedAt;
+    final age = syncedAt != null ? DateTime.now().difference(syncedAt) : null;
+    final ageText = age == null
+        ? 'an unknown time'
+        : age.inHours > 0
+            ? '${age.inHours}h ${age.inMinutes.remainder(60)}m ago'
+            : '${age.inMinutes}m ago';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFBF360C),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF7F0000), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.wifi_off_rounded, color: Colors.white, size: 22),
+              SizedBox(width: 10),
+              Text(
+                'OFFLINE RESULT — SERVER UNREACHABLE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This result is based on a cached scan from $ageText. '
+            'It may NOT reflect the ID\'s current status on the server.',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12.5,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Do not approve high-value transactions based on an offline result. '
+            'Verify online when possible.',
+            style: TextStyle(
+              color: Color(0xFFFFCCBC),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black26,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'This scan will be automatically synced to the server when connectivity is restored.',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLowConfidenceWarning() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -311,8 +430,8 @@ class _ResultScreenState extends State<ResultScreen> {
           SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Low OCR confidence — the ID image was unclear. '
-              'Verify the result manually if uncertain.',
+              'Low extraction quality score — the ID image may have been unclear. '
+              'Verify the result manually against the physical card.',
               style: TextStyle(fontSize: 12, color: Color(0xFFE65100)),
             ),
           ),
