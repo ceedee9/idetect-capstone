@@ -70,5 +70,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 025: partial unique person index (exclude revoked)'
 \i 025_partial_unique_person_index.sql
 
+\echo '>>> Running migration 026: verification_logs + audit_logs immutability rules'
+\i 026_verification_logs_immutability.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='

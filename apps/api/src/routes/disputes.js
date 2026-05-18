@@ -21,6 +21,7 @@ const {
 } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
+const { sendSms } = require("../services/smsService");
 
 const router = express.Router();
 
@@ -378,12 +379,16 @@ router.patch(
         [dispute.beneficiary_account_id, notifTitle, notifBody, id],
       );
 
-      // Send FCM push (fire-and-forget)
+      // Send FCM push + SMS (fire-and-forget)
       const tokenResult = await pool.query(
-        "SELECT device_token FROM beneficiary_accounts WHERE id = $1",
+        `SELECT ba.device_token, b.registered_mobile
+         FROM beneficiary_accounts ba
+         JOIN beneficiaries b ON b.id = ba.beneficiary_id
+         WHERE ba.id = $1`,
         [dispute.beneficiary_account_id],
       );
       const deviceToken = tokenResult.rows[0]?.device_token;
+      const disputeMobile = tokenResult.rows[0]?.registered_mobile;
       if (deviceToken) {
         sendPushNotification(deviceToken, notifTitle, notifBody, {
           type: "dispute_acknowledged",
@@ -400,6 +405,9 @@ router.patch(
             }
           })
           .catch(() => {});
+      }
+      if (disputeMobile) {
+        sendSms(disputeMobile, `${notifTitle}: ${notifBody}`).catch(() => {});
       }
 
       await pool.query(
@@ -516,12 +524,16 @@ router.patch(
         [dispute.beneficiary_account_id, resolveTitle, resolveBody, id],
       );
 
-      // Send FCM push (fire-and-forget)
+      // Send FCM push + SMS (fire-and-forget)
       const resolveTokenResult = await pool.query(
-        "SELECT device_token FROM beneficiary_accounts WHERE id = $1",
+        `SELECT ba.device_token, b.registered_mobile
+         FROM beneficiary_accounts ba
+         JOIN beneficiaries b ON b.id = ba.beneficiary_id
+         WHERE ba.id = $1`,
         [dispute.beneficiary_account_id],
       );
       const resolveToken = resolveTokenResult.rows[0]?.device_token;
+      const resolveMobile = resolveTokenResult.rows[0]?.registered_mobile;
       if (resolveToken) {
         sendPushNotification(resolveToken, resolveTitle, resolveBody, {
           type: "dispute_resolved",
@@ -539,6 +551,11 @@ router.patch(
             }
           })
           .catch(() => {});
+      }
+      if (resolveMobile) {
+        sendSms(resolveMobile, `${resolveTitle}: ${resolveBody}`).catch(
+          () => {},
+        );
       }
 
       await pool.query(

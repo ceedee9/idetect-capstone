@@ -18,6 +18,7 @@ const pool = require("../config/database");
 const { authenticateEstablishment } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
+const { sendSms } = require("../services/smsService");
 const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
@@ -421,7 +422,10 @@ router.post(
       // REQ-2.11.2: Include specific denial reason for denied outcomes
       if (beneficiary_id) {
         const accountResult = await pool.query(
-          "SELECT id, device_token FROM beneficiary_accounts WHERE beneficiary_id = $1 AND is_active = TRUE",
+          `SELECT ba.id, ba.device_token, b.registered_mobile
+           FROM beneficiary_accounts ba
+           JOIN beneficiaries b ON b.id = ba.beneficiary_id
+           WHERE ba.beneficiary_id = $1 AND ba.is_active = TRUE`,
           [beneficiary_id],
         );
         if (accountResult.rows.length > 0) {
@@ -462,7 +466,7 @@ router.post(
             [accountId, notifType, title, body, log.id],
           );
 
-          // REQ-2.11.3: Insert SMS notification (independent of data access)
+          // REQ-2.11.3: Insert SMS notification record and dispatch via Semaphore
           await pool.query(
             `INSERT INTO notifications
              (beneficiary_account_id, notification_type, title, body,
@@ -470,6 +474,12 @@ router.post(
            VALUES ($1, $2, $3, $4, 'sms', $5)`,
             [accountId, notifType, title, body, log.id],
           );
+
+          // Dispatch SMS (fire-and-forget, non-blocking)
+          const mobile = accountResult.rows[0].registered_mobile;
+          if (mobile) {
+            sendSms(mobile, `${title}: ${body}`).catch(() => {});
+          }
 
           // Dispatch push notification via FCM (fire-and-forget, non-blocking)
           const token = accountResult.rows[0].device_token;

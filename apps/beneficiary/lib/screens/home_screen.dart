@@ -9,6 +9,7 @@ import 'login_screen.dart';
 import 'status_screen.dart';
 import 'transactions_screen.dart';
 import 'disputes_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,24 +20,29 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  int _unreadCount = 0;
   StreamSubscription<RemoteMessage>? _fcmSub;
 
-  final List<Widget> _pages = const [
-    StatusScreen(),
-    TransactionsScreen(),
-    DisputesScreen(),
-  ];
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _pages = [
+      const StatusScreen(),
+      const TransactionsScreen(),
+      const DisputesScreen(),
+      NotificationsScreen(onReadChanged: _fetchUnreadCount),
+    ];
     _fcmSub = FcmService.foregroundMessages.listen(_onForegroundMessage);
+    _fetchUnreadCount();
   }
 
   void _onForegroundMessage(RemoteMessage message) {
     final title = message.notification?.title ?? 'Notification';
     final body = message.notification?.body ?? '';
     if (!mounted) return;
+    setState(() => _unreadCount++);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Column(
@@ -63,6 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _fetchUnreadCount() async {
+    final count = await ApiService.getUnreadCount();
+    if (mounted) setState(() => _unreadCount = count);
+  }
+
   @override
   void dispose() {
     _fcmSub?.cancel();
@@ -71,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
+    if (index == 3) _fetchUnreadCount();
   }
 
   void _logout() {
@@ -196,6 +208,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: 'Disputes',
                     index: 2,
                   ),
+                  _buildNavItem(
+                    icon: Icons.notifications_outlined,
+                    activeIcon: Icons.notifications_rounded,
+                    label: 'Alerts',
+                    index: 3,
+                    badgeCount: _unreadCount,
+                  ),
                 ],
               ),
             ),
@@ -210,8 +229,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData activeIcon,
     required String label,
     required int index,
+    int badgeCount = 0,
   }) {
     final isSelected = _selectedIndex == index;
+    final iconWidget = Icon(
+      isSelected ? activeIcon : icon,
+      size: AppDesignSystem.navIconSize,
+      color: isSelected
+          ? AppDesignSystem.primaryBlue
+          : AppDesignSystem.textSecondary,
+    );
     return Expanded(
       child: Semantics(
         label: label,
@@ -238,13 +265,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(
-                    isSelected ? activeIcon : icon,
-                    size: AppDesignSystem.navIconSize,
-                    color: isSelected
-                        ? AppDesignSystem.primaryBlue
-                        : AppDesignSystem.textSecondary,
-                  ),
+                  child: badgeCount > 0
+                      ? Badge.count(count: badgeCount, child: iconWidget)
+                      : iconWidget,
                 ),
                 const SizedBox(height: 4),
                 Text(

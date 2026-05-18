@@ -1,6 +1,6 @@
-# iDetect - Philippine Senior Citizen ID Scanner
+# iDetect - Philippine Senior Citizen and PWD ID Verification System
 
-A Flutter-based OCR application for scanning and extracting information from Philippine Senior Citizen IDs.
+iDetect is an integrated ID verification and fraud detection platform for Philippine LGU social welfare offices. It comprises an OCR-based mobile scanner for establishment cashiers, multi-portal LGU management systems (OSCA, PDAO, BPLO), and a beneficiary-facing mobile app.
 
 ## 🎯 Features
 
@@ -8,18 +8,21 @@ A Flutter-based OCR application for scanning and extracting information from Phi
 - **Layout-Based Extraction**: Zone-specific field extraction with precise coordinates
 - **Smart Fallback System**: Multi-layer extraction (Zone → Keyword → Fuzzy → Name-hint)
 - **Filipino Name Support**: Handles Ñ characters, compound surnames (DELA CRUZ, DELOS SANTOS)
-- **Flexible Validation**: Non-restrictive approach that accepts valid data without unnecessary gatekeeping
+- **Cross-Validation**: Name fuzzy-matching (Jaro-Winkler) + DOB check against central records
+- **Fraud Detection**: Multi-establishment flag aggregation with auto-suspend and OSCA/PDAO review workflow
+- **Multi-Portal Management**: Separate web portals for OSCA, PDAO, and BPLO staff
+- **Beneficiary App**: OTP-based login for senior citizens and PWDs to view their verification history
 
 ## 📊 Current Accuracy (v3.1 - January 23, 2026)
 
-| Field          | Accuracy | Method                      |
-| -------------- | -------- | --------------------------- |
-| Name           | 92%+     | Zone + Keyword fallback     |
-| Date of Birth  | 97%      | Zone extraction             |
-| Sex            | 80%+     | OCR → Keyword → Name-hint   |
-| Age            | 100%     | Calculated from DOB (exact) |
-| Date Issued    | 97%      | Zone extraction             |
-| Control Number | 95%      | Zone extraction             |
+| Field          | Accuracy | Method                                       |
+| -------------- | -------- | -------------------------------------------- |
+| Name           | 92%+     | Zone + Keyword fallback                      |
+| Date of Birth  | 97%      | Zone extraction                              |
+| Sex            | 80%+     | OCR → Keyword → Name-hint                    |
+| Age            | N/A      | Derived from DOB — exact when DOB is correct |
+| Date Issued    | 97%      | Zone extraction                              |
+| Control Number | 95%      | Zone extraction                              |
 
 ## 🏗️ Architecture
 
@@ -93,4 +96,4 @@ This project is for educational purposes.
 
 ---
 
-**Last Updated:** January 23, 2026
+**Last Updated:** May 18, 2026
