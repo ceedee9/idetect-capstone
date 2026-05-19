@@ -352,6 +352,26 @@ class ApiService {
     }
   }
 
+  /// Gap 8: Log the cashier's deliberate action on a SUSPICIOUS or MANUAL_REVIEW
+  /// result. [action] must be 'approved' | 'denied' | 'reported'.
+  /// Call as fire-and-forget: `ApiService.logCashierAction(...).catchError((_) {})`.
+  static Future<void> logCashierAction({
+    required String verificationId,
+    required String action,
+  }) async {
+    if (_token == null) return;
+    await http
+        .post(
+          Uri.parse('$baseUrl/verification/$verificationId/cashier-action'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_token',
+          },
+          body: jsonEncode({'action': action}),
+        )
+        .timeout(const Duration(seconds: 10));
+  }
+
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   static Future<AuthResult> login({

@@ -638,4 +638,53 @@ router.get("/history", authenticateEstablishment, async (req, res, next) => {
   }
 });
 
+// ── POST /api/verification/:id/cashier-action ────────────────────────────
+// Gap 8: Record the cashier's deliberate action on a SUSPICIOUS/MANUAL_REVIEW
+// result. action must be 'approved' | 'denied' | 'reported'.
+// Inserted into audit_logs so BPLO supervisors can see override patterns.
+router.post(
+  "/:id/cashier-action",
+  authenticateEstablishment,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { action } = req.body;
+      const establishment_id = req.establishment.id;
+
+      const VALID_ACTIONS = ["approved", "denied", "reported"];
+      if (!action || !VALID_ACTIONS.includes(action)) {
+        return res.status(400).json({
+          message: `action must be one of: ${VALID_ACTIONS.join(", ")}`,
+        });
+      }
+
+      // Verify the log belongs to this establishment before writing
+      const logCheck = await pool.query(
+        "SELECT id FROM verification_logs WHERE id = $1 AND establishment_id = $2",
+        [id, establishment_id],
+      );
+      if (logCheck.rows.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Verification log not found." });
+      }
+
+      await pool.query(
+        `INSERT INTO audit_logs
+         (establishment_id, action, target_table, target_id, metadata)
+         VALUES ($1, 'verification_action_taken', 'verification_logs', $2, $3)`,
+        [
+          establishment_id,
+          id,
+          JSON.stringify({ cashier_action: action }),
+        ],
+      );
+
+      res.json({ logged: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 module.exports = router;

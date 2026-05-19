@@ -29,6 +29,9 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   bool _isSaving = false;
+  // Gap 8: tracks the cashier's mandatory action choice on SUSPICIOUS/MANUAL_REVIEW.
+  // null = not yet chosen; 'reported' | 'denied' | 'approved' after choice.
+  String? _actionChoice;
   final TextEditingController _flagNotesController = TextEditingController();
 
   VerificationStatus get _status =>
@@ -38,6 +41,12 @@ class _ResultScreenState extends State<ResultScreen> {
 
   bool get _canFlag =>
       _status == VerificationStatus.invalid ||
+      _status == VerificationStatus.suspicious ||
+      _status == VerificationStatus.manualReview;
+
+  // Gap 8: suspicious and manual_review require a mandatory 3-way action choice
+  // before the cashier can save/dismiss. INVALID keeps the old flag/save flow.
+  bool get _requiresMandatoryChoice =>
       _status == VerificationStatus.suspicious ||
       _status == VerificationStatus.manualReview;
 
@@ -62,7 +71,7 @@ class _ResultScreenState extends State<ResultScreen> {
     super.dispose();
   }
 
-  Future<void> _saveToDatabase({required bool flagged}) async {
+  Future<void> _saveToDatabase({required bool flagged, String? cashierAction}) async {
     setState(() => _isSaving = true);
 
     try {
@@ -145,7 +154,11 @@ class _ResultScreenState extends State<ResultScreen> {
         imagePath: widget.imagePath,
         idType: widget.idType,
         timestamp: nowMs,
-        verificationStatus: flagged ? 'flagged' : _status.name,
+        verificationStatus: flagged
+            ? 'flagged'
+            : cashierAction != null
+                ? '${_status.name}_$cashierAction'
+                : _status.name,
         establishmentId: ApiService.currentUser?['id']?.toString(),
       );
 
@@ -185,6 +198,16 @@ class _ResultScreenState extends State<ResultScreen> {
       // The image was already uploaded to the server (base64 via verifyId()) before
       // this screen loaded, so local copies no longer serve any purpose.
       await _deleteTempImageFiles(widget.imagePath);
+
+      // Gap 8: Log the cashier's explicit action choice to the server for audit.
+      // Fire-and-forget — a network error here must never block navigation.
+      final logId = widget.verificationResult?.verificationId;
+      if (cashierAction != null && logId != null) {
+        ApiService.logCashierAction(
+          verificationId: logId,
+          action: cashierAction,
+        ).catchError((_) {});
+      }
 
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
@@ -330,7 +353,36 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 14),
               _buildSummaryCard(),
               const SizedBox(height: 20),
-              if (_canFlag) ...[
+              if (_requiresMandatoryChoice) ...[
+                _buildGuidancePanel(),
+                const SizedBox(height: 12),
+                if (_actionChoice == null) ...[
+                  _buildMandatoryActionPanel(),
+                ] else if (_actionChoice == 'reported') ...[
+                  _buildFlagReasonInput(),
+                  const SizedBox(height: 10),
+                  _buildActionButton(
+                    label: 'Submit Report & Save',
+                    icon: Icons.flag_rounded,
+                    color: AppDesignSystem.statusInvalid,
+                    onPressed: _isSaving
+                        ? null
+                        : () => _saveToDatabase(
+                              flagged: true,
+                              cashierAction: 'reported',
+                            ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _actionChoice = null),
+                    icon: const Icon(Icons.arrow_back_rounded, size: 16),
+                    label: const Text('Change choice'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppDesignSystem.textSecondary,
+                    ),
+                  ),
+                ],
+              ] else if (_canFlag) ...[
                 _buildGuidancePanel(),
                 const SizedBox(height: 12),
                 _buildFlagReasonInput(),
@@ -557,6 +609,117 @@ class _ResultScreenState extends State<ResultScreen> {
                   ],
                 ),
               )),
+        ],
+      ),
+    );
+  }
+
+  /// Gap 8: mandatory 3-button action panel for SUSPICIOUS and MANUAL_REVIEW results.
+  /// The cashier must tap one option; the choice is logged to the audit trail.
+  Widget _buildMandatoryActionPanel() {
+    final isSuspicious = _status == VerificationStatus.suspicious;
+    final accentColor =
+        isSuspicious ? Colors.orange.shade800 : const Color(0xFF1565C0);
+    final borderColor =
+        isSuspicious ? const Color(0xFFFFA726) : const Color(0xFF90CAF9);
+    final bgColor =
+        isSuspicious ? const Color(0xFFFFF3E0) : const Color(0xFFE3F2FD);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.touch_app_rounded, color: accentColor, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'You must select an action before proceeding',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Report — opens the notes field so cashier can add context
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: _isSaving
+                  ? null
+                  : () => setState(() => _actionChoice = 'reported'),
+              icon: const Icon(Icons.flag_rounded, size: 20),
+              label: const Text(
+                'Report This ID',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD32F2F),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Deny — cashier explicitly refuses the discount and saves
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: _isSaving
+                  ? null
+                  : () => _saveToDatabase(
+                        flagged: false,
+                        cashierAction: 'denied',
+                      ),
+              icon: const Icon(Icons.block_rounded, size: 20),
+              label: const Text(
+                'Deny Discount',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF37474F),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Approve Anyway — cashier overrides the warning; logged for audit
+          SizedBox(
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: _isSaving
+                  ? null
+                  : () => _saveToDatabase(
+                        flagged: false,
+                        cashierAction: 'approved',
+                      ),
+              icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+              label: const Text(
+                'Approve Anyway',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: accentColor,
+                side: BorderSide(color: borderColor, width: 1.5),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
         ],
       ),
     );
