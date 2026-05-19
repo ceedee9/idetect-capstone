@@ -664,20 +664,14 @@ router.post(
         [id, establishment_id],
       );
       if (logCheck.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "Verification log not found." });
+        return res.status(404).json({ message: "Verification log not found." });
       }
 
       await pool.query(
         `INSERT INTO audit_logs
          (establishment_id, action, target_table, target_id, metadata)
          VALUES ($1, 'verification_action_taken', 'verification_logs', $2, $3)`,
-        [
-          establishment_id,
-          id,
-          JSON.stringify({ cashier_action: action }),
-        ],
+        [establishment_id, id, JSON.stringify({ cashier_action: action })],
       );
 
       res.json({ logged: true });

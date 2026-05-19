@@ -71,7 +71,8 @@ class _ResultScreenState extends State<ResultScreen> {
     super.dispose();
   }
 
-  Future<void> _saveToDatabase({required bool flagged, String? cashierAction}) async {
+  Future<void> _saveToDatabase(
+      {required bool flagged, String? cashierAction}) async {
     setState(() => _isSaving = true);
 
     try {
