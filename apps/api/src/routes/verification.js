@@ -505,13 +505,15 @@ router.post(
         }
       }
 
-      // Audit log for manually entered IDs — gives supervisors visibility
-      // into cashier behaviour without OCR evidence
+      // Gap 7: Audit log for manually entered IDs — gives supervisors visibility
+      // into cashier behaviour without OCR evidence. Uses the dedicated action
+      // 'verification_manual' so the BPLO can filter and visually distinguish
+      // these entries from camera-based scans.
       if (manually_entered) {
         await pool.query(
           `INSERT INTO audit_logs
            (establishment_id, action, target_table, target_id, metadata)
-           VALUES ($1, 'verification_performed', 'verification_logs', $2, $3)`,
+           VALUES ($1, 'verification_manual', 'verification_logs', $2, $3)`,
           [
             establishment_id,
             log.id,

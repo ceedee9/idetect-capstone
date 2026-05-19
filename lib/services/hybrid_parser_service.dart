@@ -89,8 +89,7 @@ class HybridParserService {
 
       // Cap at 0.60 — signals this is a degraded, timeout-based result so the
       // API threshold check correctly routes low-quality scans to manual_review.
-      final cappedConfidence =
-          (parsed.confidence * 0.75).clamp(0.0, 0.60);
+      final cappedConfidence = (parsed.confidence * 0.75).clamp(0.0, 0.60);
 
       return ParsedIDData(
         success: result.text.isNotEmpty,
@@ -112,7 +111,8 @@ class HybridParserService {
         controlNumberConfidence: parsed.controlNumberConfidence,
         extractionMethod: 'ml-kit-only (ocr-timeout)',
         templateMatched: false,
-        errorMessage: result.text.isEmpty ? 'No text detected after timeout' : null,
+        errorMessage:
+            result.text.isEmpty ? 'No text detected after timeout' : null,
       );
     } catch (e) {
       debugPrint('❌ ML Kit-only fallback also failed: $e');

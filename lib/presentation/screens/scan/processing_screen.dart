@@ -48,6 +48,10 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   // Gap 5: true when the OCR pipeline exceeded 20 s and fell back to ML Kit only.
   bool _isTimeoutFallback = false;
 
+  // Gap 6: true when OCR header keywords contradict the cashier's manual type selection.
+  bool _typeWasCorrected = false;
+  String _originalIdType = ''; // the type the cashier originally chose
+
   // Resolved ID type: same as widget.idType unless 'auto' was selected
   late String _resolvedIdType;
 
@@ -145,18 +149,17 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         // and we fall back to a fast ML Kit-only pass so the UI never freezes.
         _parsedData = await _hybridParser
             .parseIDWithHybridApproach(
-              imageFile: imageFile,
-              idType: _resolvedIdType,
-            )
+          imageFile: imageFile,
+          idType: _resolvedIdType,
+        )
             .timeout(
-              const Duration(seconds: 20),
-              onTimeout: () async {
-                debugPrint(
-                    '⏱️ OCR exceeded 20 s — falling back to ML Kit only');
-                _isTimeoutFallback = true;
-                return _hybridParser.parseMlKitOnly(imageFile, _resolvedIdType);
-              },
-            );
+          const Duration(seconds: 20),
+          onTimeout: () async {
+            debugPrint('⏱️ OCR exceeded 20 s — falling back to ML Kit only');
+            _isTimeoutFallback = true;
+            return _hybridParser.parseMlKitOnly(imageFile, _resolvedIdType);
+          },
+        );
       } catch (e) {
         debugPrint('❌ Hybrid Parser Exception: $e');
         _handleError('Hybrid parsing failed: $e');
@@ -176,6 +179,23 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       debugPrint(
           '✅ OCR complete — extraction quality: ${(_parsedData!.confidence * 100).toInt()}%');
       _ocrEngine = 'ML Kit (with ${_parsedData!.extractionMethod})';
+
+      // Gap 6: When the cashier pre-selected a type manually (not 'auto'),
+      // cross-check the OCR header keywords against that selection.
+      // If they disagree, silently correct _resolvedIdType so the right
+      // beneficiary_type is sent to the API.
+      if (widget.idType != 'auto') {
+        final detected =
+            HybridParserService.detectCardType(_parsedData!.rawText ?? '');
+        if (detected != null && detected != _resolvedIdType) {
+          debugPrint(
+              '⚠️ Gap 6: Cashier selected "$_resolvedIdType" but OCR header '
+              'keywords indicate "$detected" — correcting.');
+          _originalIdType = _resolvedIdType;
+          _resolvedIdType = detected;
+          _typeWasCorrected = true;
+        }
+      }
 
       // Done — show fields for user review
       setState(() {
@@ -626,12 +646,60 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_typeWasCorrected) _buildTypeCorrectionBanner(),
         _buildReviewBanner(),
         SizedBox(height: AppDesignSystem.spaceMD),
         _buildDataFields(),
         SizedBox(height: AppDesignSystem.spaceMD),
         _buildActionButtons(),
       ],
+    );
+  }
+
+  /// Gap 6: Shown when OCR header keywords contradict the cashier's manual
+  /// type selection.  _resolvedIdType has already been corrected, so
+  /// verification will use the right beneficiary_type.
+  Widget _buildTypeCorrectionBanner() {
+    final correctedLabel =
+        _resolvedIdType == 'senior' ? 'Senior Citizen' : 'PWD';
+    final originalLabel =
+        _originalIdType == 'senior' ? 'Senior Citizen' : 'PWD';
+    return Container(
+      margin: EdgeInsets.only(bottom: AppDesignSystem.spaceMD),
+      padding: EdgeInsets.all(AppDesignSystem.spaceMD),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: AppDesignSystem.cardRadius,
+        border: Border.all(color: Colors.amber.shade400),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.auto_fix_high,
+              color: Colors.amber.shade700, size: AppDesignSystem.iconLG),
+          SizedBox(width: AppDesignSystem.spaceSM),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ID Type Auto-Corrected',
+                  style: AppDesignSystem.bodyLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber.shade800),
+                ),
+                SizedBox(height: AppDesignSystem.spaceXXS),
+                Text(
+                  'OCR detected a $correctedLabel card '
+                  '(you selected $originalLabel). '
+                  'Verification will use the correct type.',
+                  style: AppDesignSystem.bodyMedium
+                      .copyWith(color: Colors.amber.shade900),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

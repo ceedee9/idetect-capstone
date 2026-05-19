@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Calendar,
   Filter,
+  Keyboard,
 } from "lucide-react";
 import { auditLogsAPI } from "../services/api";
 import { fmtDateTime } from "../utils/date";
@@ -69,6 +70,11 @@ const ACTION_GROUPS = [
     label: "System",
     actions: ["data_export", "report_generated"],
   },
+  {
+    value: "verification",
+    label: "Verifications",
+    actions: ["verification_manual"],
+  },
 ];
 
 function actionLabel(action) {
@@ -79,6 +85,7 @@ function actionLabel(action) {
 
 function actionColor(action) {
   if (!action) return "bg-slate-100 text-slate-600";
+  if (action === "verification_manual") return "bg-amber-100 text-amber-800";
   if (action.startsWith("flag_") || action.startsWith("dispute_"))
     return "bg-accent-50 text-accent-700";
   if (action.startsWith("beneficiary_")) return "bg-gov-50 text-gov-700";
@@ -345,15 +352,20 @@ export default function AuditLogsPage() {
                 filtered.map((log) => (
                   <tr
                     key={log.id}
-                    className="hover:bg-slate-50/50 transition-colors"
+                    className={`hover:bg-slate-50/50 transition-colors ${
+                      log.action === "verification_manual" ? "bg-amber-50" : ""
+                    }`}
                   >
                     <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
                       {fmtDateTime(log.created_at)}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${actionColor(log.action)}`}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${actionColor(log.action)}`}
                       >
+                        {log.action === "verification_manual" && (
+                          <Keyboard className="w-3 h-3" />
+                        )}
                         {actionLabel(log.action)}
                       </span>
                     </td>
