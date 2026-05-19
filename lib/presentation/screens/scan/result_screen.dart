@@ -181,6 +181,11 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
       );
 
+      // Gap 4: Delete all local temp image files created during OCR processing.
+      // The image was already uploaded to the server (base64 via verifyId()) before
+      // this screen loaded, so local copies no longer serve any purpose.
+      await _deleteTempImageFiles(widget.imagePath);
+
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
@@ -192,6 +197,29 @@ class _ResultScreenState extends State<ResultScreen> {
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  /// Gap 4: Delete the captured image and all intermediate OCR temp files.
+  /// Uses a fire-and-forget approach (non-fatal on any I/O error) so a cleanup
+  /// failure never blocks the user from finishing a scan.
+  Future<void> _deleteTempImageFiles(String imagePath) async {
+    // Derive expected derivative filenames from the original path.
+    // Matches the suffix patterns used by OpenCV, Tesseract, and optimized pipelines.
+    final base = imagePath.replaceAll(RegExp(r'\.(jpg|jpeg|png)$'), '');
+    final candidates = [
+      imagePath, // original captured & cropped image
+      '${base}_ocr.jpg', // OpenCV preprocessed output
+      '${base}_processed.jpg', // Tesseract / advanced preprocessed output
+      '${base}_optimized.jpg', // Optimized OCR output
+    ];
+    for (final p in candidates) {
+      try {
+        final f = File(p);
+        if (await f.exists()) await f.delete();
+      } catch (_) {
+        // Non-fatal — silently ignore individual cleanup errors.
+      }
     }
   }
 

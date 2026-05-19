@@ -75,6 +75,56 @@ class HybridParserService {
     }
   }
 
+  /// Gap 5: Lightweight ML Kit-only parse used when the full hybrid pipeline
+  /// exceeds the 20-second timeout. Tesseract is never invoked here.
+  /// Confidence is capped at 0.60 to signal reduced extraction quality to
+  /// downstream consumers (API call, result screen, cross-validation).
+  Future<ParsedIDData> parseMlKitOnly(File imageFile, String idType) async {
+    debugPrint('⏱️ Gap 5 timeout fallback: ML Kit only (Tesseract skipped)');
+    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final input = InputImage.fromFile(imageFile);
+      final result = await recognizer.processImage(input);
+      final parsed = await _fuzzyParser.parseIDText(result.text);
+
+      // Cap at 0.60 — signals this is a degraded, timeout-based result so the
+      // API threshold check correctly routes low-quality scans to manual_review.
+      final cappedConfidence =
+          (parsed.confidence * 0.75).clamp(0.0, 0.60);
+
+      return ParsedIDData(
+        success: result.text.isNotEmpty,
+        idType: idType == 'pwd' ? IDType.pwd : IDType.seniorCitizen,
+        idNumber: parsed.idNumber,
+        fullName: parsed.fullName,
+        age: parsed.age,
+        dateOfBirth: parsed.dateOfBirth,
+        sex: parsed.sex,
+        dateIssued: parsed.dateIssued,
+        controlNumber: parsed.controlNumber,
+        confidence: cappedConfidence,
+        rawText: result.text,
+        nameConfidence: parsed.nameConfidence,
+        idNumberConfidence: parsed.idNumberConfidence,
+        ageConfidence: parsed.ageConfidence,
+        sexConfidence: parsed.sexConfidence,
+        dateIssuedConfidence: parsed.dateIssuedConfidence,
+        controlNumberConfidence: parsed.controlNumberConfidence,
+        extractionMethod: 'ml-kit-only (ocr-timeout)',
+        templateMatched: false,
+        errorMessage: result.text.isEmpty ? 'No text detected after timeout' : null,
+      );
+    } catch (e) {
+      debugPrint('❌ ML Kit-only fallback also failed: $e');
+      return ParsedIDData(
+        success: false,
+        errorMessage: 'OCR timed out and ML Kit fallback failed: $e',
+      );
+    } finally {
+      recognizer.close();
+    }
+  }
+
   /// Parse ID with hybrid approach
   Future<ParsedIDData> parseIDWithHybridApproach({
     required File imageFile,

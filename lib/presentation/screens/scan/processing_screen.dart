@@ -45,6 +45,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   String? _errorMessage;
   String? _ocrEngine;
 
+  // Gap 5: true when the OCR pipeline exceeded 20 s and fell back to ML Kit only.
+  bool _isTimeoutFallback = false;
+
   // Resolved ID type: same as widget.idType unless 'auto' was selected
   late String _resolvedIdType;
 
@@ -137,10 +140,23 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           '🔄 Starting HYBRID OCR + Parsing (type: $_resolvedIdType)...');
 
       try {
-        _parsedData = await _hybridParser.parseIDWithHybridApproach(
-          imageFile: imageFile,
-          idType: _resolvedIdType,
-        );
+        // Gap 5: 20-second hard timeout on the full hybrid OCR pipeline.
+        // If Tesseract stalls (common on low-RAM devices), the timeout fires
+        // and we fall back to a fast ML Kit-only pass so the UI never freezes.
+        _parsedData = await _hybridParser
+            .parseIDWithHybridApproach(
+              imageFile: imageFile,
+              idType: _resolvedIdType,
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () async {
+                debugPrint(
+                    '⏱️ OCR exceeded 20 s — falling back to ML Kit only');
+                _isTimeoutFallback = true;
+                return _hybridParser.parseMlKitOnly(imageFile, _resolvedIdType);
+              },
+            );
       } catch (e) {
         debugPrint('❌ Hybrid Parser Exception: $e');
         _handleError('Hybrid parsing failed: $e');
@@ -170,6 +186,20 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
       _animationController.stop();
       _initializeControllers();
+
+      // Gap 5: Warn the cashier when we had to skip Tesseract due to timeout.
+      if (_isTimeoutFallback && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'OCR took too long — showing reduced-confidence result. '
+              'Please review each field carefully before confirming.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 6),
+          ),
+        );
+      }
 
       debugPrint('=== OCR COMPLETE — awaiting user confirmation ===');
     } catch (e, stackTrace) {
