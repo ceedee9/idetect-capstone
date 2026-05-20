@@ -176,6 +176,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Color _resultColor(String r) {
     switch (r.toLowerCase()) {
       case 'valid':
+      case 'manual_review': // ID found in DB — treat as valid
         return _validColor;
       case 'suspicious':
         return _suspiciousColor;
@@ -189,6 +190,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   IconData _resultIcon(String r) {
     switch (r.toLowerCase()) {
       case 'valid':
+      case 'manual_review': // ID found in DB — treat as valid
         return Icons.check_circle_outline;
       case 'suspicious':
         return Icons.warning_amber_outlined;
@@ -665,7 +667,9 @@ class _RecordTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final result = (record['result'] as String? ?? '').toUpperCase();
+    final rawResult = (record['result'] as String? ?? '').toLowerCase();
+    final isManualReview = rawResult == 'manual_review';
+    final result = isManualReview ? 'VALID' : rawResult.toUpperCase();
     final idNumber = record['id_number_scanned'] as String? ?? '—';
     final name = record['beneficiary_name'] as String? ?? '—';
     final type = typeLabel(record['beneficiary_type_detected'] as String?);
@@ -762,6 +766,11 @@ class _RecordTile extends StatelessWidget {
                       if (confStr != null) ...[
                         const SizedBox(width: 6),
                         _chip('Quality: $confStr', Icons.text_fields),
+                      ],
+                      if (isManualReview) ...[
+                        const SizedBox(width: 6),
+                        _chip('Manual Review', Icons.remove_red_eye_outlined,
+                            color: Color(0xFF1A56DB)),
                       ],
                     ],
                   ),

@@ -431,10 +431,12 @@ router.post(
         );
         if (accountResult.rows.length > 0) {
           const accountId = accountResult.rows[0].id;
-          const notifType =
-            result === "valid"
-              ? "verification_approved"
-              : "verification_denied";
+          // manual_review means the ID IS in the database (valid record found);
+          // treat it as approved but note that a physical check was required.
+          const isApproved = result === "valid" || result === "manual_review";
+          const notifType = isApproved
+            ? "verification_approved"
+            : "verification_denied";
 
           // Get establishment name for the notification
           const estResult = await pool.query(
@@ -447,13 +449,16 @@ router.post(
           const now = new Date().toLocaleString("en-PH", {
             timeZone: "Asia/Manila",
           });
-          const title =
-            result === "valid" ? "Discount Approved ✓" : "Discount Denied ✗";
+          const title = isApproved
+            ? "Discount Approved ✓"
+            : "Discount Denied ✗";
 
           // REQ-2.11.2: Include specific denial reason
           let body;
           if (result === "valid") {
             body = `Your ID was verified at ${businessName} on ${now}. Outcome: Approved.`;
+          } else if (result === "manual_review") {
+            body = `Your ID was verified at ${businessName} on ${now}. Outcome: Approved — your ID is registered. Note: scan quality was low; the cashier verified your physical card.`;
           } else {
             body = `Your ID was verified at ${businessName} on ${now}. Outcome: Denied — ${message}`;
           }
