@@ -210,6 +210,7 @@ class _ResultScreenState extends State<ResultScreen> {
         ).catchError((_) {});
       }
 
+      if (!mounted) return;
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
@@ -290,6 +291,14 @@ class _ResultScreenState extends State<ResultScreen> {
   bool get _isLowConfidence =>
       widget.verificationResult?.message?.contains('Low extraction quality') ==
       true;
+
+  /// True when the server returned MANUAL_REVIEW but the ID was found in the
+  /// database (beneficiary name present). In this case we know the ID is valid
+  /// — OCR just failed to confirm the cardholder — so we display it as VALID
+  /// with a physical-verification banner, not the ambiguous "MANUAL REVIEW" label.
+  bool get _isManualReviewWithRecord =>
+      _status == VerificationStatus.manualReview &&
+      widget.verificationResult?.beneficiaryName != null;
 
   String? get _cleanMessage {
     final msg = widget.verificationResult?.message;
@@ -528,7 +537,12 @@ class _ResultScreenState extends State<ResultScreen> {
     final Color color;
     final Color borderColor;
     final Color bgColor;
-    if (isManualReview) {
+    if (isManualReview && _isManualReviewWithRecord) {
+      // ID is in database — use a warning-amber tone to signal "valid but check person"
+      color = const Color(0xFF6A3E00);
+      borderColor = const Color(0xFFFFCC02);
+      bgColor = const Color(0xFFFFF9E6);
+    } else if (isManualReview) {
       color = const Color(0xFF455A64);
       borderColor = const Color(0xFF90A4AE);
       bgColor = const Color(0xFFECEFF1);
@@ -543,7 +557,14 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     final List<String> steps;
-    if (isManualReview) {
+    if (isManualReview && _isManualReviewWithRecord) {
+      steps = [
+        'This ID is registered and VALID in the database.',
+        'Compare the name shown above against the physical card.',
+        'If the person matches the card, tap "Approve Anyway" to grant the discount.',
+        'If anything looks wrong, tap "Deny Discount" or "Report This ID".',
+      ];
+    } else if (isManualReview) {
       steps = [
         'Manually check the cardholder\'s name and date of birth against the physical card.',
         'If the card appears legitimate, you may approve the discount.',
@@ -565,6 +586,17 @@ class _ResultScreenState extends State<ResultScreen> {
       ];
     }
 
+    final String panelTitle;
+    if (isManualReview && _isManualReviewWithRecord) {
+      panelTitle = 'Physical Verification Required';
+    } else if (isManualReview) {
+      panelTitle = 'Manual Verification Required';
+    } else if (isSuspicious) {
+      panelTitle = 'Action Required';
+    } else {
+      panelTitle = 'Invalid ID Detected';
+    }
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -580,11 +612,7 @@ class _ResultScreenState extends State<ResultScreen> {
               Icon(Icons.info_outline, color: color, size: 18),
               const SizedBox(width: 8),
               Text(
-                isManualReview
-                    ? 'Manual Verification Required'
-                    : isSuspicious
-                        ? 'Action Required'
-                        : 'Invalid ID Detected',
+                panelTitle,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -975,9 +1003,22 @@ class _ResultScreenState extends State<ResultScreen> {
           border: const Color(0xFF8B0000),
         );
       case VerificationStatus.manualReview:
+        // If the ID was found in the database, display as VALID — the record
+        // exists and is registered. The physical-check banner explains why
+        // manual verification is still needed.
+        if (_isManualReviewWithRecord) {
+          return _StatusConfig(
+            label: 'VALID ID',
+            subtitle: 'ID found in database — physical verification required.',
+            icon: Icons.verified_user_rounded,
+            background: AppDesignSystem.statusValid,
+            border: const Color(0xFF0A6000),
+          );
+        }
+        // No database record found (e.g. ID number wasn't extracted at all).
         return _StatusConfig(
           label: 'MANUAL REVIEW',
-          subtitle: _cleanMessage ?? 'Unable to verify automatically.',
+          subtitle: _cleanMessage ?? 'Unable to verify — check ID manually.',
           icon: Icons.manage_search_rounded,
           background: AppDesignSystem.statusManualReview,
           border: const Color(0xFF0D3B8E),

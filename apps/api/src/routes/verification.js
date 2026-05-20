@@ -536,8 +536,11 @@ router.post(
         verified_at: log.verified_at,
       };
 
-      // On VALID, include just enough for the cashier to confirm
-      if (result === "valid" && beneficiary) {
+      // On VALID or MANUAL_REVIEW, include just enough for the cashier to confirm.
+      // manual_review means the ID IS in the database (found and active) but OCR
+      // could not confirm the cardholder — so the cashier needs the stored name
+      // to compare against the physical card.
+      if ((result === "valid" || result === "manual_review") && beneficiary) {
         response.beneficiary = {
           full_name: beneficiary.full_name,
           beneficiary_type: beneficiary.beneficiary_type,
