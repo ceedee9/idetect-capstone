@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1200" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Title -->
+    <mxCell id="title" value="DFD Level 2 — Process 6.0: Dispute Resolution (Exploded)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="150" y="20" width="1100" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         EXTERNAL ENTITIES  (left column, x=30, w=160)
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="ent_ben" value="Beneficiary" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="120" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="ent_admin" value="OSCA / PDAO / BPLO Admin" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="710" width="160" height="70" as="geometry" />
+    </mxCell>
+    <!-- Beneficiary receives the final outcome -->
+    <mxCell id="ent_ben2" value="Beneficiary&#xa;(Receives Result)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFCC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="30" y="970" width="160" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SUB-PROCESSES  (middle column, x=380, w=230)
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="p61" value="6.1&#xa;Upload Supporting&#xa;Document (Optional)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="110" width="230" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="p62" value="6.2&#xa;Submit Dispute" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="305" width="230" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="p63" value="6.3&#xa;Route Dispute&#xa;to Admin Queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="500" width="230" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="p64" value="6.4&#xa;Acknowledge Dispute&#xa;(24-hour SLA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="700" width="230" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="p65" value="6.5&#xa;Investigate &amp; Resolve&#xa;/ Reject" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="900" width="230" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- SLA Escalation Scheduler — automated external service -->
+    <mxCell id="sla_scheduler" value="SLA Escalation&#xa;Scheduler&#xa;(Runs Periodically)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEECC;strokeColor=#996633;fontStyle=1;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="680" y="690" width="190" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- ANNOTATION NOTES -->
+    <mxCell id="note61" value="POST /api/disputes/upload-doc&#xa;multer diskStorage → uploads/dispute-docs/&#xa;Max 8 MB | Allowed: .jpg .png .pdf&#xa;Magic bytes validation" style="text;html=1;strokeColor=#AAAAAA;fillColor=#FFFDE7;align=left;verticalAlign=top;whiteSpace=wrap;rounded=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="40" y="205" width="250" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="note62" value="dispute_type: wrong_denial |&#xa;unauthorized_use | business_refusal |&#xa;incorrect_db_info" style="text;html=1;strokeColor=#AAAAAA;fillColor=#FFFDE7;align=left;verticalAlign=top;whiteSpace=wrap;rounded=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="40" y="400" width="250" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="note63" value="senior_citizen → OSCA Admin portal&#xa;pwd → PDAO Admin portal&#xa;business_refusal → BPLO Admin portal" style="text;html=1;strokeColor=#AAAAAA;fillColor=#FFFDE7;align=left;verticalAlign=top;whiteSpace=wrap;rounded=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="40" y="595" width="260" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         DATA STORES  (right column, x=1040, w=200)
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="d4" value="D4: beneficiary_accounts" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1040" y="110" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d7" value="D7: disputes" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1040" y="290" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d8" value="D8: notifications" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1040" y="500" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="d9" value="D9: audit_logs" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#EEFFEE;strokeColor=#336633;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1040" y="700" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- SMS Service — used for acknowledge + resolve notifications -->
+    <mxCell id="sms" value="SMS Service&#xa;(Semaphore)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEECC;strokeColor=#996633;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1040" y="900" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Cross-process reference to P7 -->
+    <mxCell id="p7_ref" value="(Ref) 7.0&#xa;Notification Dispatch" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DDEEFF;strokeColor=#336699;fontStyle=1;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="680" y="1090" width="180" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         LEGEND
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="legend_text" value="Entities (FFFFCC) | Sub-Processes (DDEEFF) | Data Stores (EEFFEE) | External Services (FFEECC) | Dashed = Automated / Cross-Process Reference" style="text;html=1;strokeColor=#AAAAAA;fillColor=#F8F8F8;align=center;verticalAlign=middle;fontSize=9;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="1152" width="700" height="35" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         EDGES — 6.1 Upload Supporting Document
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="e1" value="Document File&#xa;(JPG/PNG/PDF, max 8 MB)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="ent_ben" target="p61" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- 6.1 validates against D4 (auth token) -->
+    <mxCell id="e2" value="Auth Token Validation" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p61" target="d4" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="730" y="150" />
+          <mxPoint x="730" y="140" />
+          <mxPoint x="1040" y="140" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.1 outputs doc path to 6.2 -->
+    <mxCell id="e3" value="Document Path&#xa;(supporting_doc_path)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;" edge="1" source="p61" target="p62" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         EDGES — 6.2 Submit Dispute
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="e4" value="Dispute Submission&#xa;(dispute_type, explanation, doc_path)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="ent_ben" target="p62" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="210" y="170" />
+          <mxPoint x="210" y="345" />
+          <mxPoint x="380" y="345" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.2 inserts into D7: disputes -->
+    <mxCell id="e5" value="INSERT dispute&#xa;(status=submitted)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p62" target="d7" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="730" y="345" />
+          <mxPoint x="730" y="320" />
+          <mxPoint x="1040" y="320" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.2 pushes submission confirmation to D8 -->
+    <mxCell id="e6" value="Submission Confirmation&#xa;(within 24h message)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p62" target="d8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="740" y="360" />
+          <mxPoint x="740" y="530" />
+          <mxPoint x="1040" y="530" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.2 writes audit log -->
+    <mxCell id="e7" value="Audit Log&#xa;(dispute_submitted)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p62" target="d9" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="750" y="370" />
+          <mxPoint x="750" y="730" />
+          <mxPoint x="1040" y="730" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.2 → 6.3 internal flow -->
+    <mxCell id="e8" value="Dispute Data&#xa;(with beneficiary_type)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;" edge="1" source="p62" target="p63" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         EDGES — 6.3 Route Dispute
+    ═══════════════════════════════════════════════════════════════ -->
+    <!-- 6.3 → 6.4 internal flow -->
+    <mxCell id="e9" value="Dispute Appears in Admin Queue" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;" edge="1" source="p63" target="p64" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         EDGES — 6.4 Acknowledge Dispute
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="e10" value="Acknowledge Action" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="ent_admin" target="p64" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- SLA escalation scheduler triggers this if not acknowledged in 24h -->
+    <mxCell id="e11" value="SLA Alert (if &gt;24h unacknowledged)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;" edge="1" source="sla_scheduler" target="p64" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- 6.4 updates D7 -->
+    <mxCell id="e12" value="UPDATE status='acknowledged'&#xa;acknowledged_at, handled_by" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p64" target="d7" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="740" y="740" />
+          <mxPoint x="740" y="335" />
+          <mxPoint x="1040" y="335" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.4 pushes acknowledgment notification (push + SMS) to D8 -->
+    <mxCell id="e13" value="Acknowledgment Notification&#xa;(push + SMS to beneficiary)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p64" target="d8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="750" y="740" />
+          <mxPoint x="750" y="545" />
+          <mxPoint x="1040" y="545" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.4 writes audit log -->
+    <mxCell id="e14" value="Audit Log&#xa;(dispute_acknowledged)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p64" target="d9" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="760" y="760" />
+          <mxPoint x="760" y="745" />
+          <mxPoint x="1040" y="745" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.4 → 6.5 internal flow -->
+    <mxCell id="e15" value="Acknowledged Dispute&#xa;(status→under_review)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;" edge="1" source="p64" target="p65" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         EDGES — 6.5 Investigate & Resolve / Reject
+    ═══════════════════════════════════════════════════════════════ -->
+    <mxCell id="e16" value="Resolution Decision&#xa;(resolved / rejected, staff_response)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="ent_admin" target="p65" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="210" y="760" />
+          <mxPoint x="210" y="940" />
+          <mxPoint x="380" y="940" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.5 updates D7: disputes (status, resolved_at, staff_response) -->
+    <mxCell id="e17" value="UPDATE status=resolved/rejected&#xa;staff_response, resolved_at" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p65" target="d7" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="740" y="940" />
+          <mxPoint x="740" y="350" />
+          <mxPoint x="1040" y="350" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.5 pushes resolution notification (push + SMS) to D8 -->
+    <mxCell id="e18" value="Resolution Notification&#xa;(push + SMS to beneficiary)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p65" target="d8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="750" y="960" />
+          <mxPoint x="750" y="560" />
+          <mxPoint x="1040" y="560" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.5 writes audit log -->
+    <mxCell id="e19" value="Audit Log&#xa;(dispute_resolved)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p65" target="d9" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="760" y="950" />
+          <mxPoint x="760" y="760" />
+          <mxPoint x="1040" y="760" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.5 sends SMS via SMS Service -->
+    <mxCell id="e20" value="SMS Notification" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p65" target="sms" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="770" y="970" />
+          <mxPoint x="770" y="930" />
+          <mxPoint x="1040" y="930" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.5 → beneficiary (result) -->
+    <mxCell id="e21" value="Push + SMS: Dispute Decision&#xa;(Ref#, staff_response)" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;" edge="1" source="p65" target="ent_ben2" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="310" y="940" />
+          <mxPoint x="310" y="1000" />
+          <mxPoint x="190" y="1000" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <!-- 6.5 → P7 ref: FCM dispatch -->
+    <mxCell id="e22" value="FCM Push Dispatch" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;" edge="1" source="p65" target="p7_ref" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="610" y="960" />
+          <mxPoint x="610" y="1125" />
+          <mxPoint x="680" y="1125" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- SLA Escalation to D8 (scheduler itself inserts escalation notification) -->
+    <mxCell id="e23" value="Insert SLA Escalation&#xa;Notification" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;" edge="1" source="sla_scheduler" target="d8" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="870" y="725" />
+          <mxPoint x="870" y="575" />
+          <mxPoint x="1040" y="575" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+  </root>
+</mxGraphModel>
