@@ -2,9 +2,126 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import axios from "axios";
 
 const BG_IMAGE = "/idBackground.png";
 const LOGO_SRC = "/IDETECT.png";
+
+function ForgotPasswordModal({ onClose }) {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setMsg("");
+    try {
+      await axios.post("/api/auth/staff/forgot-password", {
+        email,
+        origin: window.location.origin,
+      });
+      setSent(true);
+    } catch {
+      setMsg("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4"
+        style={{ border: "1px solid #e5e7eb" }}
+      >
+        <h3 className="font-bold text-lg text-gray-900 mb-1">Reset Password</h3>
+        {sent ? (
+          <>
+            <p className="text-sm text-gray-600 mb-4">
+              If an account exists for that email, a password reset link has
+              been sent. Please check your inbox (and spam folder).
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full rounded-md py-2.5 text-sm font-semibold text-white"
+              style={{ background: "#3b82f6" }}
+            >
+              Done
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-gray-500 mb-4">
+              Enter your staff email address and we&apos;ll send you a link to
+              reset your password.
+            </p>
+            {msg && (
+              <div
+                className="flex items-start gap-2 px-3 py-2 rounded-lg text-sm mb-3"
+                style={{
+                  background: "#fef2f2",
+                  color: "#dc2626",
+                  border: "1px solid #fecaca",
+                }}
+              >
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{msg}</span>
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <input
+                type="email"
+                required
+                placeholder="staff@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="w-full rounded-md px-3.5 py-2.5 text-sm text-gray-900 outline-none"
+                style={{ background: "#f3f4f6", border: "1px solid transparent" }}
+                onFocus={(e) => (e.target.style.border = "1px solid #3b82f6")}
+                onBlur={(e) => (e.target.style.border = "1px solid transparent")}
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  className="flex-1 rounded-md py-2.5 text-sm font-medium text-gray-600"
+                  style={{ background: "#f3f4f6" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !email}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-semibold text-white"
+                  style={{
+                    background: loading || !email ? "#93c5fd" : "#3b82f6",
+                    cursor: loading || !email ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending…
+                    </>
+                  ) : (
+                    "Send Link"
+                  )}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -15,6 +132,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showForgotPw, setShowForgotPw] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -253,6 +371,7 @@ export default function LoginPage() {
 
               <button
                 type="button"
+                onClick={() => setShowForgotPw(true)}
                 className="text-xs font-medium hover:underline"
                 style={{ color: "#3b82f6" }}
               >
@@ -291,5 +410,8 @@ export default function LoginPage() {
         <p className="text-center text-xs text-gray-400">© Valenzuela City</p>
       </div>
     </div>
+    {showForgotPw && (
+      <ForgotPasswordModal onClose={() => setShowForgotPw(false)} />
+    )}
   );
 }

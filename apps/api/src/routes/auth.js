@@ -734,6 +734,139 @@ router.post(
   },
 );
 
+// ── Staff: Forgot Password (Self-service via email link) ──────
+// Accepts email, generates a secure reset token, and emails a
+// reset link back.  Always returns 200 to prevent enumeration.
+router.post(
+  "/staff/forgot-password",
+  [body("email").isEmail().normalizeEmail()],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty())
+        return res.status(400).json({ errors: errors.array() });
+
+      const { email, origin } = req.body;
+
+      const result = await pool.query(
+        "SELECT id, full_name FROM users WHERE email = $1 AND is_active = TRUE",
+        [email],
+      );
+
+      // Always reply the same message (don't reveal whether email exists)
+      if (!result.rows.length) {
+        return res.json({
+          message:
+            "If an account with that email exists, a reset link has been sent.",
+        });
+      }
+
+      const user = result.rows[0];
+      const crypto = require("crypto");
+      const token = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await pool.query(
+        "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3",
+        [tokenHash, expires, user.id],
+      );
+
+      // Build reset URL from the requesting portal's origin (whitelist-validated)
+      const allowedOrigins = (process.env.ALLOWED_PORTAL_ORIGINS || "")
+        .split(",")
+        .map((o) => o.trim())
+        .filter(Boolean);
+
+      let safeOrigin =
+        origin && allowedOrigins.length && allowedOrigins.includes(origin)
+          ? origin
+          : allowedOrigins[0] || "https://idetect-bplo.up.railway.app";
+
+      const resetUrl = `${safeOrigin}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+      const { sendEmail } = require("../services/emailService");
+      await sendEmail({
+        to: email,
+        subject: "iDetect — Password Reset Request",
+        text: `Hello ${user.full_name},\n\nA password reset was requested for your iDetect staff account.\n\nClick the link below to set a new password (expires in 1 hour):\n${resetUrl}\n\nIf you did not request this, ignore this email — your password has not changed.\n\n— iDetect System`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><div style="background:#1e40af;padding:20px 24px;"><h2 style="color:#fff;margin:0;font-size:18px;">iDetect Staff Portal</h2><p style="color:#bfdbfe;margin:4px 0 0;font-size:13px;">Password Reset</p></div><div style="padding:24px;"><p style="margin-top:0;">Hello <strong>${user.full_name}</strong>,</p><p>A password reset was requested for your iDetect staff account. Click the button below to set a new password.</p><p style="text-align:center;margin:24px 0;"><a href="${resetUrl}" style="background:#1d4ed8;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">Reset My Password</a></p><p style="font-size:12px;color:#6b7280;">This link expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email.</p><hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;"><p style="font-size:11px;color:#9ca3af;margin:0;">iDetect · Valenzuela City LGU</p></div></div>`,
+      });
+
+      res.json({
+        message:
+          "If an account with that email exists, a reset link has been sent.",
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── Staff: Reset Password via email token ──────────────────────
+// Verifies the token from the reset link and sets the new password.
+// Also clears any account lockout.
+router.post(
+  "/staff/reset-password",
+  [
+    body("email").isEmail().normalizeEmail(),
+    body("token").notEmpty().trim(),
+    body("new_password")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters"),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty())
+        return res.status(400).json({ errors: errors.array() });
+
+      const { email, token, new_password } = req.body;
+      const crypto = require("crypto");
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+      const result = await pool.query(
+        `SELECT id FROM users
+         WHERE email = $1
+           AND reset_token = $2
+           AND reset_token_expires > NOW()
+           AND is_active = TRUE`,
+        [email, tokenHash],
+      );
+
+      if (!result.rows.length) {
+        return res.status(400).json({
+          message: "Invalid or expired reset link. Please request a new one.",
+        });
+      }
+
+      const user = result.rows[0];
+      const password_hash = await bcrypt.hash(new_password, 12);
+
+      await pool.query(
+        `UPDATE users
+         SET password_hash       = $1,
+             reset_token         = NULL,
+             reset_token_expires = NULL,
+             failed_attempts     = 0,
+             locked_until        = NULL
+         WHERE id = $2`,
+        [password_hash, user.id],
+      );
+
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, action, metadata)
+         VALUES ($1, 'password_reset', $2)`,
+        [user.id, JSON.stringify({ email, via: "self_service_email_token" })],
+      );
+
+      res.json({ message: "Password reset successfully. You can now log in." });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ── Establishment: Forgot Password (Self-service) ─────────────
 // REQ-2.2.6: Send OTP to registered contact_number
 router.post(

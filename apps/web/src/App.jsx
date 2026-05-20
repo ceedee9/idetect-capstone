@@ -30,6 +30,7 @@ const FraudFlagsPage = lazy(() => import("./pages/FraudFlagsPage"));
 const DisputesPage = lazy(() => import("./pages/DisputesPage"));
 const AuditLogsPage = lazy(() => import("./pages/AuditLogsPage"));
 const StaffPage = lazy(() => import("./pages/StaffPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 
 // ── Error boundary ────────────────────────────────────────────────────────────
 class ErrorBoundary extends Component {
@@ -133,6 +134,7 @@ export default function App() {
                   </PublicRoute>
                 }
               />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               {/* Protected shell */}
               <Route

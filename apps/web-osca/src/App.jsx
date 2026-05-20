@@ -3,6 +3,7 @@ import { Component } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import AppShell from "./components/AppShell";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import BeneficiariesPage from "./pages/BeneficiariesPage";
 import BeneficiaryDetailPage from "./pages/BeneficiaryDetailPage";
@@ -76,6 +77,7 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/login"
               element={

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Component } from "react";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import EstablishmentsPage from "./pages/EstablishmentsPage";
 import EstablishmentDetailPage from "./pages/EstablishmentDetailPage";
@@ -86,6 +87,7 @@ export default function App() {
                 </PublicRoute>
               }
             />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/"
               element={
