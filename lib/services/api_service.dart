@@ -11,7 +11,7 @@ class ApiService {
   static const String _configuredBaseUrl =
       String.fromEnvironment('IDETECT_API_BASE_URL');
   static const String _defaultBaseUrl =
-      'https://idetect-capstone-production.up.railway.app/api';
+      'https://idetect-capstone.onrender.com/api';
   static String get baseUrl =>
       _configuredBaseUrl.isNotEmpty ? _configuredBaseUrl : _defaultBaseUrl;
 
