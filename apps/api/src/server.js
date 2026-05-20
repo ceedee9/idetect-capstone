@@ -184,7 +184,27 @@ app.use((req, res) => {
 // ── Central error handler (must be last) ──────────────────────
 app.use(errorHandler);
 
+// ── Startup migrations ─────────────────────────────────────────
+// Runs safe, idempotent schema patches before accepting traffic.
+// Each statement uses IF NOT EXISTS so it is a no-op on subsequent deploys.
+async function runStartupMigrations() {
+  try {
+    await pool.query(`
+      ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'dispute_submitted';
+    `);
+    await pool.query(`
+      ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'dispute_escalated';
+    `);
+    console.log("✅ Startup migrations applied.");
+  } catch (err) {
+    // Non-fatal: log and continue. The ENUM values may already exist.
+    console.warn("⚠️  Startup migration warning:", err.message);
+  }
+}
+
 // ── Start server ───────────────────────────────────────────────
+// Apply startup migrations first (fire-and-forget — fast idempotent DDL)
+runStartupMigrations();
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log("");
   console.log("  iDetect API running");
