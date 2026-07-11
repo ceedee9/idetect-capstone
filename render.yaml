@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: idetect-api
+    env: node
+    plan: free
+    region: oregon
+    rootDir: apps/api
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
