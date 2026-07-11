@@ -16,6 +16,9 @@ import {
   startOfMonth,
   endOfMonth,
 } from "date-fns";
+import { STATUS_TONES } from "../constants/statusTheme"; // adjust path to wherever you place statusTheme.js
+
+const INK = STATUS_TONES.gov.hex; // #16233F — swap here to retint the whole chart
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -24,6 +27,54 @@ function CustomTooltip({ active, payload, label }) {
       <p className="font-semibold text-slate-500 mb-0.5">{label}</p>
       <p className="text-slate-900 font-bold">{payload[0].value} registered</p>
     </div>
+  );
+}
+
+function EmptyLedger() {
+  return (
+    <svg
+      viewBox="0 0 80 56"
+      className="w-16 h-11 mx-auto mb-3 text-slate-300"
+      aria-hidden="true"
+    >
+      <rect
+        x="6"
+        y="6"
+        width="68"
+        height="44"
+        rx="4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1"
+      />
+      <line
+        x1="14"
+        y1="18"
+        x2="66"
+        y2="18"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeDasharray="2 3"
+      />
+      <line
+        x1="14"
+        y1="28"
+        x2="66"
+        y2="28"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeDasharray="2 3"
+      />
+      <line
+        x1="14"
+        y1="38"
+        x2="46"
+        y2="38"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeDasharray="2 3"
+      />
+    </svg>
   );
 }
 
@@ -61,8 +112,15 @@ export default function EstablishmentTrendChart({ establishments }) {
 
   if (!hasData) {
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-slate-400">
-        No registration data yet
+      <div className="flex flex-col items-center justify-center h-48 text-center px-6">
+        <EmptyLedger />
+        <p className="text-sm font-semibold text-slate-600">
+          No registrations yet
+        </p>
+        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+          New establishments will show up here as they're registered, month by
+          month.
+        </p>
       </div>
     );
   }
@@ -70,7 +128,10 @@ export default function EstablishmentTrendChart({ establishments }) {
   return (
     <div className="space-y-3">
       {insight && (
-        <p className="text-xs text-slate-500 font-medium border-l-2 border-gov-400 pl-2">
+        <p
+          className="text-xs text-slate-500 font-medium border-l-2 pl-2"
+          style={{ borderColor: INK }}
+        >
           {insight}
         </p>
       )}
@@ -81,9 +142,9 @@ export default function EstablishmentTrendChart({ establishments }) {
             margin={{ top: 4, right: 4, left: -28, bottom: 0 }}
           >
             <defs>
-              <linearGradient id="govFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0038f5" stopOpacity={0.15} />
-                <stop offset="95%" stopColor="#0038f5" stopOpacity={0} />
+              <linearGradient id="inkFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={INK} stopOpacity={0.16} />
+                <stop offset="95%" stopColor={INK} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="#f1f5f9" vertical={false} />
@@ -102,7 +163,7 @@ export default function EstablishmentTrendChart({ establishments }) {
             <Tooltip
               content={<CustomTooltip />}
               cursor={{
-                stroke: "#0038f5",
+                stroke: INK,
                 strokeWidth: 1,
                 strokeDasharray: "4 2",
               }}
@@ -111,13 +172,13 @@ export default function EstablishmentTrendChart({ establishments }) {
               type="monotone"
               dataKey="count"
               name="Registrations"
-              stroke="#0038f5"
+              stroke={INK}
               strokeWidth={2}
-              fill="url(#govFill)"
-              dot={{ fill: "#0038f5", strokeWidth: 0, r: 3 }}
+              fill="url(#inkFill)"
+              dot={{ fill: INK, strokeWidth: 0, r: 3 }}
               activeDot={{
                 r: 5,
-                fill: "#0038f5",
+                fill: INK,
                 strokeWidth: 2,
                 stroke: "#fff",
               }}
