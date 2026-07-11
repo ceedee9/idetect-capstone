@@ -18,6 +18,7 @@ const rateLimit = require("express-rate-limit");
 const { errorHandler } = require("./middleware/errorHandler");
 const { authenticate } = require("./middleware/auth");
 const pool = require("./config/database");
+const { waitForDatabaseConnection } = require("./config/database");
 const { startExpiryScheduler } = require("./services/expiryAlertScheduler");
 const {
   startSlaEscalationScheduler,
@@ -202,28 +203,40 @@ async function runStartupMigrations() {
   }
 }
 
-// ── Start server ───────────────────────────────────────────────
-// Apply startup migrations first (fire-and-forget — fast idempotent DDL)
-runStartupMigrations();
-const server = app.listen(PORT, "0.0.0.0", () => {
-  console.log("");
-  console.log("  iDetect API running");
-  console.log(`  http://localhost:${PORT}/api/health`);
-  console.log(`  Environment: ${process.env.NODE_ENV}`);
+async function startServer() {
+  const dbReady = await waitForDatabaseConnection();
+  if (!dbReady) {
+    console.warn("⚠️ Database is unavailable; continuing in degraded mode.");
+  }
 
-  // Start daily ID expiry alert scheduler
-  startExpiryScheduler();
+  if (dbReady) {
+    await runStartupMigrations();
+  }
 
-  // Start 30-minute SLA breach escalation scheduler (REQ-2.13.6)
-  startSlaEscalationScheduler();
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log("");
+    console.log("  iDetect API running");
+    console.log(`  http://localhost:${PORT}/api/health`);
+    console.log(`  Environment: ${process.env.NODE_ENV}`);
 
-  // Start daily stale-flag auto-expiry scheduler
-  startFlagDecayScheduler();
+    // Start daily ID expiry alert scheduler
+    startExpiryScheduler();
 
-  // Start nightly job to set beneficiary status = 'expired' for lapsed IDs
-  startExpiredStatusScheduler();
-  console.log("");
-});
+    // Start 30-minute SLA breach escalation scheduler (REQ-2.13.6)
+    startSlaEscalationScheduler();
+
+    // Start daily stale-flag auto-expiry scheduler
+    startFlagDecayScheduler();
+
+    // Start nightly job to set beneficiary status = 'expired' for lapsed IDs
+    startExpiredStatusScheduler();
+    console.log("");
+  });
+
+  return server;
+}
+
+const server = startServer();
 
 // ── Graceful shutdown ─────────────────────────────────────────
 // Railway (and Docker) stop containers with SIGTERM.
