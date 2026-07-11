@@ -1,8 +1,16 @@
 import axios from "axios";
 
-// Base URL — Vite proxy forwards /api -> http://localhost:3000
+const configuredApiBaseUrl = (import.meta.env?.VITE_API_URL || "/api").trim();
+const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/$/, "");
+const buildApiPath = (path) => {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return normalizedPath.startsWith("/api")
+    ? normalizedPath
+    : `/api${normalizedPath}`;
+};
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: normalizedApiBaseUrl,
   headers: { "Content-Type": "application/json" },
   timeout: 10000,
 });
@@ -19,7 +27,7 @@ async function ensureFreshToken() {
     if (!_refreshing) {
       _refreshing = axios
         .post(
-          "/api/auth/staff/refresh",
+          buildApiPath("/auth/staff/refresh"),
           {},
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -42,8 +50,13 @@ async function ensureFreshToken() {
 
 // Attach JWT token to every request (with proactive refresh)
 api.interceptors.request.use(async (config) => {
+  const requestUrl = config.url || "";
+  if (!/^https?:\/\//i.test(requestUrl)) {
+    config.url = buildApiPath(requestUrl);
+  }
+
   let token;
-  if (config.url?.includes("/auth/")) {
+  if (requestUrl.includes("/auth/")) {
     token = localStorage.getItem("bplo_token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
   } else {

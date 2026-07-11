@@ -149,9 +149,12 @@ export default function LoginPage() {
       await login(form.email, form.password);
       navigate("/");
     } catch (err) {
-      const msg = err.message?.includes("Access denied")
-        ? err.message
-        : err.response?.data?.message || "Invalid email or password.";
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        (err.message?.includes("Access denied")
+          ? err.message
+          : "Invalid email or password.");
       setError(msg);
     } finally {
       setLoading(false);

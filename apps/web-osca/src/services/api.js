@@ -1,7 +1,16 @@
 import axios from "axios";
 
+const configuredApiBaseUrl = (import.meta.env?.VITE_API_URL || "/api").trim();
+const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/$/, "");
+const buildApiPath = (path) => {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return normalizedPath.startsWith("/api")
+    ? normalizedPath
+    : `/api${normalizedPath}`;
+};
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: normalizedApiBaseUrl,
   headers: { "Content-Type": "application/json" },
   timeout: 10000,
 });
@@ -18,7 +27,7 @@ async function ensureFreshToken() {
     if (!_refreshing) {
       _refreshing = axios
         .post(
-          "/api/auth/staff/refresh",
+          buildApiPath("/auth/staff/refresh"),
           {},
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -41,8 +50,13 @@ async function ensureFreshToken() {
 
 // Attach JWT token (with proactive refresh if near expiry)
 api.interceptors.request.use(async (config) => {
+  const requestUrl = config.url || "";
+  if (!/^https?:\/\//i.test(requestUrl)) {
+    config.url = buildApiPath(requestUrl);
+  }
+
   // Skip refresh call for the refresh endpoint itself to avoid recursion
-  if (config.url?.includes("/auth/")) {
+  if (requestUrl.includes("/auth/")) {
     const token = localStorage.getItem("osca_token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
   } else {
