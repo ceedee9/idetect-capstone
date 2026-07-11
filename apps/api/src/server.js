@@ -20,6 +20,8 @@ const { authenticate } = require("./middleware/auth");
 const pool = require("./config/database");
 const { waitForDatabaseConnection } = require("./config/database");
 const { startExpiryScheduler } = require("./services/expiryAlertScheduler");
+const { execFile } = require("child_process");
+const path = require("path");
 const {
   startSlaEscalationScheduler,
 } = require("./services/slaEscalationScheduler");
@@ -203,6 +205,26 @@ async function runStartupMigrations() {
   }
 }
 
+async function runMigrationsOnStartup() {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(__dirname, "..", "scripts", "migrate.js");
+    console.log("🔄 Running database migrations on startup...");
+    execFile(
+      "node",
+      [scriptPath],
+      { env: process.env, cwd: path.resolve(__dirname, "..") },
+      (err) => {
+        if (err) {
+          console.warn("⚠️ Startup migrations skipped or failed:", err.message);
+        } else {
+          console.log("✅ Startup migrations completed.");
+        }
+        resolve();
+      },
+    );
+  });
+}
+
 async function startServer() {
   const dbReady = await waitForDatabaseConnection();
   if (!dbReady) {
@@ -211,6 +233,7 @@ async function startServer() {
 
   if (dbReady) {
     await runStartupMigrations();
+    await runMigrationsOnStartup();
   }
 
   return app.listen(PORT, "0.0.0.0", () => {
