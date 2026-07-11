@@ -253,20 +253,24 @@ startServer()
 //  3. Close the DB pool cleanly
 function gracefulShutdown(signal) {
   console.log(`\n[Shutdown] ${signal} received — shutting down gracefully…`);
-  if (server && typeof server.close === "function") {
-    server.close(async () => {
-      console.log("[Shutdown] HTTP server closed.");
-      try {
-        await pool.end();
-        console.log("[Shutdown] Database pool drained.");
-      } catch (err) {
-        console.error("[Shutdown] Pool drain error:", err.message);
-      }
+  const closeServer = () => {
+    if (server && typeof server.close === "function") {
+      server.close(async () => {
+        console.log("[Shutdown] HTTP server closed.");
+        try {
+          await pool.end();
+          console.log("[Shutdown] Database pool drained.");
+        } catch (err) {
+          console.error("[Shutdown] Pool drain error:", err.message);
+        }
+        process.exit(0);
+      });
+    } else {
       process.exit(0);
-    });
-  } else {
-    process.exit(0);
-  }
+    }
+  };
+
+  closeServer();
 
   // Force-exit if the server hasn't closed within 15 seconds
   setTimeout(() => {
