@@ -6,7 +6,7 @@ services:
     region: oregon
     rootDir: apps/api
     buildCommand: npm install
-    startCommand: npm run db:migrate && npm start
+    startCommand: node scripts/migrate.js && node src/server.js
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
