@@ -204,6 +204,50 @@ async function runStartupMigrations() {
   }
 }
 
+async function ensureSeedAdminAccounts() {
+  const defaultPassword = process.env.DEFAULT_STAFF_PASSWORD || "Password123!";
+  const passwordHash = require("bcryptjs").hashSync(defaultPassword, 12);
+  try {
+    const existing = await pool.query(
+      `SELECT email FROM users WHERE email IN ($1, $2, $3)`,
+      [
+        "bplo.admin@valenzuela.gov.ph",
+        "osca.admin@valenzuela.gov.ph",
+        "pdao.admin@valenzuela.gov.ph",
+      ],
+    );
+    const existingEmails = new Set(existing.rows.map((row) => row.email));
+    const inserts = [
+      {
+        email: "bplo.admin@valenzuela.gov.ph",
+        full_name: "Maria Santos",
+        role: "bplo_admin",
+      },
+      {
+        email: "osca.admin@valenzuela.gov.ph",
+        full_name: "Jose Reyes",
+        role: "osca_admin",
+      },
+      {
+        email: "pdao.admin@valenzuela.gov.ph",
+        full_name: "Ana Cruz",
+        role: "pdao_admin",
+      },
+    ];
+    for (const account of inserts) {
+      if (!existingEmails.has(account.email)) {
+        await pool.query(
+          `INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4)`,
+          [account.email, passwordHash, account.full_name, account.role],
+        );
+        console.log(`✅ Seeded staff account: ${account.email}`);
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️ Seed admin accounts skipped:", err.message);
+  }
+}
+
 async function runMigrationsOnStartup() {
   return new Promise((resolve, reject) => {
     const scriptPath = path.resolve(__dirname, "..", "scripts", "migrate.js");
@@ -235,6 +279,7 @@ async function startServer() {
 
   await runStartupMigrations();
   await runMigrationsOnStartup();
+  await ensureSeedAdminAccounts();
 
   return app.listen(PORT, "0.0.0.0", () => {
     console.log("");
