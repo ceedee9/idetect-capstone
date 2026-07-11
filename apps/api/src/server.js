@@ -21,7 +21,6 @@ const pool = require("./config/database");
 const { waitForDatabaseConnection } = require("./config/database");
 const { startExpiryScheduler } = require("./services/expiryAlertScheduler");
 const { execFile } = require("child_process");
-const path = require("path");
 const {
   startSlaEscalationScheduler,
 } = require("./services/slaEscalationScheduler");
@@ -206,19 +205,22 @@ async function runStartupMigrations() {
 }
 
 async function runMigrationsOnStartup() {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const scriptPath = path.resolve(__dirname, "..", "scripts", "migrate.js");
     console.log("🔄 Running database migrations on startup...");
     execFile(
       "node",
       [scriptPath],
       { env: process.env, cwd: path.resolve(__dirname, "..") },
-      (err) => {
+      (err, stdout, stderr) => {
+        if (stdout) console.log(stdout.trim());
+        if (stderr) console.error(stderr.trim());
         if (err) {
-          console.warn("⚠️ Startup migrations skipped or failed:", err.message);
-        } else {
-          console.log("✅ Startup migrations completed.");
+          console.error("❌ Startup migrations failed:", err.message);
+          reject(err);
+          return;
         }
+        console.log("✅ Startup migrations completed.");
         resolve();
       },
     );
@@ -228,13 +230,11 @@ async function runMigrationsOnStartup() {
 async function startServer() {
   const dbReady = await waitForDatabaseConnection();
   if (!dbReady) {
-    console.warn("⚠️ Database is unavailable; continuing in degraded mode.");
+    throw new Error("Database is unavailable; refusing to start server.");
   }
 
-  if (dbReady) {
-    await runStartupMigrations();
-    await runMigrationsOnStartup();
-  }
+  await runStartupMigrations();
+  await runMigrationsOnStartup();
 
   return app.listen(PORT, "0.0.0.0", () => {
     console.log("");

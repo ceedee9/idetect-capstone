@@ -10,14 +10,25 @@ const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
 
-const pool = process.env.DATABASE_URL
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const hasFallbackConfig = Boolean(
+  process.env.DB_HOST && process.env.DB_NAME && process.env.DB_USER,
+);
+
+if (!connectionString && !hasFallbackConfig) {
+  throw new Error(
+    "No database connection config found. Set DATABASE_URL or POSTGRES_URL, or DB_HOST/DB_NAME/DB_USER/DB_PASSWORD.",
+  );
+}
+
+const pool = connectionString
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       ssl: { rejectUnauthorized: false },
     })
   : new Pool({
       host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT),
+      port: parseInt(process.env.DB_PORT || "5432", 10),
       database: process.env.DB_NAME,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
