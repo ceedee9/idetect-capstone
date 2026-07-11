@@ -4,9 +4,16 @@ const configuredApiBaseUrl = (import.meta.env?.VITE_API_URL || "/api").trim();
 const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/$/, "");
 const buildApiPath = (path) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return normalizedPath.startsWith("/api")
-    ? normalizedPath
-    : `/api${normalizedPath}`;
+  if (normalizedPath.startsWith("/api")) {
+    return normalizedPath;
+  }
+  if (
+    normalizedPath.startsWith("http://") ||
+    normalizedPath.startsWith("https://")
+  ) {
+    return normalizedPath;
+  }
+  return `/api${normalizedPath}`;
 };
 
 const api = axios.create({
@@ -51,7 +58,8 @@ async function ensureFreshToken() {
 // ── Request interceptor — attach JWT (with proactive refresh) ─────────────────
 api.interceptors.request.use(async (config) => {
   const requestUrl = config.url || "";
-  if (!/^https?:\/\//i.test(requestUrl)) {
+  const isAbsoluteUrl = /^https?:\/\//i.test(requestUrl);
+  if (!isAbsoluteUrl) {
     config.url = buildApiPath(requestUrl);
   }
 
