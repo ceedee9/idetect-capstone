@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { STATUS_TONES } from "../constants/statusTheme"; // adjust path to wherever you place statusTheme.js
+import { STATUS_TONES } from "../../constants/statusTheme";
 
 const STATUS_META = {
   Approved: STATUS_TONES.success,

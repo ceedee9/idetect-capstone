@@ -16,7 +16,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from "date-fns";
-import { STATUS_TONES } from "../constants/statusTheme"; // adjust path to wherever you place statusTheme.js
+import { STATUS_TONES } from "../../constants/statusTheme";
 
 const INK = STATUS_TONES.gov.hex; // #16233F — swap here to retint the whole chart
 
