@@ -213,7 +213,7 @@ async function startServer() {
     await runStartupMigrations();
   }
 
-  const server = app.listen(PORT, "0.0.0.0", () => {
+  return app.listen(PORT, "0.0.0.0", () => {
     console.log("");
     console.log("  iDetect API running");
     console.log(`  http://localhost:${PORT}/api/health`);
@@ -232,11 +232,17 @@ async function startServer() {
     startExpiredStatusScheduler();
     console.log("");
   });
-
-  return server;
 }
 
-const server = startServer();
+let server;
+startServer()
+  .then((listeningServer) => {
+    server = listeningServer;
+  })
+  .catch((err) => {
+    console.error("❌ Failed to start API server:", err.message);
+    process.exit(1);
+  });
 
 // ── Graceful shutdown ─────────────────────────────────────────
 // Railway (and Docker) stop containers with SIGTERM.
@@ -247,16 +253,20 @@ const server = startServer();
 //  3. Close the DB pool cleanly
 function gracefulShutdown(signal) {
   console.log(`\n[Shutdown] ${signal} received — shutting down gracefully…`);
-  server.close(async () => {
-    console.log("[Shutdown] HTTP server closed.");
-    try {
-      await pool.end();
-      console.log("[Shutdown] Database pool drained.");
-    } catch (err) {
-      console.error("[Shutdown] Pool drain error:", err.message);
-    }
+  if (server && typeof server.close === "function") {
+    server.close(async () => {
+      console.log("[Shutdown] HTTP server closed.");
+      try {
+        await pool.end();
+        console.log("[Shutdown] Database pool drained.");
+      } catch (err) {
+        console.error("[Shutdown] Pool drain error:", err.message);
+      }
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 
   // Force-exit if the server hasn't closed within 15 seconds
   setTimeout(() => {
