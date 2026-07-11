@@ -18,7 +18,7 @@ function ForgotPasswordModal({ onClose }) {
     setLoading(true);
     setMsg("");
     try {
-      await axios.post("/api/auth/staff/forgot-password", {
+      await axios.post("/auth/staff/forgot-password", {
         email,
         origin: window.location.origin,
       });

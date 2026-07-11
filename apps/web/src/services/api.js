@@ -13,7 +13,7 @@ const buildApiPath = (path) => {
   ) {
     return normalizedPath;
   }
-  return `/api${normalizedPath}`;
+  return normalizedPath;
 };
 
 const api = axios.create({
