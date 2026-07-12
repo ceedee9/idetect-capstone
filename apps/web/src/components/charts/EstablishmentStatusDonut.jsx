@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell } from "recharts";
 import { STATUS_TONES } from "../../constants/statusTheme";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart";
 
 const STATUS_META = {
   Approved: STATUS_TONES.success,
@@ -8,16 +9,11 @@ const STATUS_META = {
   Suspended: STATUS_TONES.danger,
 };
 
-function CustomTooltip({ active, payload }) {
-  if (!active || !payload?.length) return null;
-  const { name, value } = payload[0];
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-card px-3 py-2 text-xs">
-      <p className="font-semibold text-slate-700">{name}</p>
-      <p className="text-slate-900 font-bold mt-0.5">{value} establishments</p>
-    </div>
-  );
-}
+const chartConfig = {
+  Approved: { label: "Approved", color: STATUS_TONES.success.hex },
+  Pending: { label: "Pending", color: STATUS_TONES.warn.hex },
+  Suspended: { label: "Suspended", color: STATUS_TONES.danger.hex },
+};
 
 // Center checkmark — small enough to sit inside the ring without a second
 // dashed border, since the donut segments already act as the seal's ring.
@@ -108,7 +104,7 @@ export default function EstablishmentStatusDonut({ stats }) {
   return (
     <div className="space-y-3">
       <div className="relative h-48">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartContainer config={chartConfig} className="h-full aspect-auto">
           <PieChart>
             <Pie
               data={data}
@@ -122,12 +118,19 @@ export default function EstablishmentStatusDonut({ stats }) {
               strokeWidth={0}
             >
               {data.map((entry) => (
-                <Cell key={entry.name} fill={STATUS_META[entry.name].hex} />
+                <Cell key={entry.name} fill={`var(--color-${entry.name})`} />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  nameKey="name"
+                  formatter={(value) => `${value} establishments`}
+                />
+              }
+            />
           </PieChart>
-        </ResponsiveContainer>
+        </ChartContainer>
 
         {/* Center reading — the ring itself is the seal, this is just the face */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

@@ -20,18 +20,14 @@ const ChartContext = React.createContext(null);
 function useChart() {
   const context = React.useContext(ChartContext);
   if (!context) {
-    throw new Error("Chart components must be used within a <ChartContainer />");
+    throw new Error(
+      "Chart components must be used within a <ChartContainer />",
+    );
   }
   return context;
 }
 
-function ChartContainer({
-  id,
-  className = "",
-  children,
-  config,
-  ...props
-}) {
+function ChartContainer({ id, className = "", children, config, ...props }) {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
 
@@ -93,6 +89,8 @@ function ChartTooltipContent({
   label,
   labelFormatter,
   formatter,
+  nameKey, // pass "name" for categorical charts (pie/donut) where the
+  // config key lives in item.name rather than item.dataKey
 }) {
   const { config } = useChart();
 
@@ -109,7 +107,7 @@ function ChartTooltipContent({
       )}
       <div className="grid gap-1.5">
         {payload.map((item, i) => {
-          const key = item.dataKey || item.name;
+          const key = nameKey ? item[nameKey] : item.dataKey || item.name;
           const cfg = config[key];
           const color = item.color || cfg?.color;
           return (
