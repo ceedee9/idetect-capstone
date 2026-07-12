@@ -7,17 +7,16 @@ export default {
         // Valenzuela City / government palette — BPLO portal identity
         // Ink navy (reworked from session: replaces the old bright blue #0038f5)
         gov: {
-          50: "#eef1f6",
-          100: "#d7dee9",
-          200: "#b0bdd0",
-          300: "#8697b3",
-          400: "#5c7096",
-          500: "#3c4f75",
-          600: "#16233F", // anchor value from session log
-          700: "#121d34",
-          800: "#0e1628",
-          900: "#0a101c",
-          950: "#050810",
+          50: "#EAF0FA",
+          100: "#CBDAED",
+          200: "#9FBADC",
+          300: "#6F97C6",
+          400: "#4874AC",
+          500: "#2F5A8C",
+          600: "#1F4370",
+          700: "#16233F",
+          800: "#101A2F",
+          900: "#0A1220",
         },
         // Pre-existing amber/gold utility token — NOT part of the portal
         // identity system (not referenced in session log). Left untouched.
@@ -36,31 +35,29 @@ export default {
         // OSCA portal identity — civic gold/mustard
         // (reworked from session: replaces the old green ramp)
         // Intentionally shifted away from `warn`'s hue to avoid collision.
-        osca: {
-          50: "#faf5ea",
-          100: "#f0e3c4",
-          200: "#e0c788",
-          300: "#cca94f",
-          400: "#a3801f",
-          500: "#8a6813",
-          600: "#6B4E0F", // anchor value from session log
-          700: "#573f0c",
-          800: "#453209",
-          900: "#352606",
-        },
+        50: "#FBF3DE",
+        100: "#F5E3AE",
+        200: "#EACB6E",
+        300: "#D9AE3E",
+        400: "#BE9020",
+        500: "#9F7817",
+        600: "#8A6613",
+        700: "#6B4E0F",
+        800: "#4A3609",
+        900: "#2E2205",
         // PDAO portal identity — advocacy violet
         // (reworked from session: replaces the old teal ramp)
         pdao: {
-          50: "#f1effa",
-          100: "#e0dcf3",
-          200: "#c3bbe8",
-          300: "#a294d9",
-          400: "#7f6cc4",
-          500: "#5f4dab",
-          600: "#443C9E", // anchor value from session log
-          700: "#37307f",
-          800: "#2b2665",
-          900: "#211d4d",
+          50: "#EEEDFE",
+          100: "#CECBF6",
+          200: "#AFA9EC",
+          300: "#9691E4",
+          400: "#7F77DD",
+          500: "#6860CB",
+          600: "#534AB7",
+          700: "#443C9E",
+          800: "#3C3489",
+          900: "#26215C",
         },
         // Shared civic chrome — NOT yet applied anywhere in components
         // (header/footer/login layer deferred per session notes).
