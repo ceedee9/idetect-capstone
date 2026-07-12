@@ -54,6 +54,7 @@ const NAV_BY_ROLE = {
 const THEME = {
   osca_admin: {
     accent: "osca", // used as text-osca-600, bg-osca-50, etc.
+    brandText: "text-osca-600",
     portalLabel: "OSCA Portal",
     scopeText: "Senior Citizen records only. PWD data is in the PDAO Portal.",
     headerLabel: "Office of Senior Citizens Affairs",
@@ -71,6 +72,7 @@ const THEME = {
   },
   pdao_admin: {
     accent: "pdao",
+    brandText: "text-pdao-600",
     portalLabel: "PDAO Portal",
     scopeText: "PWD records only. Senior Citizen data is in the OSCA Portal.",
     headerLabel: "Persons with Disability Affairs Office",
@@ -88,6 +90,7 @@ const THEME = {
   },
   bplo_admin: {
     accent: "gov",
+    brandText: "text-gov-600",
     portalLabel: "BPLO Portal",
     scopeText: "Business Permit & Licensing Office management.",
     headerLabel: "Business Permit & Licensing Office",
@@ -190,9 +193,7 @@ export default function AppShell() {
               alt="iDetect"
               className="h-12 w-auto"
             />
-            <p
-              className={`text-xs font-semibold mt-1 text-${theme.accent}-600`}
-            >
+            <p className={`text-xs font-semibold mt-1 ${theme.brandText}`}>
               {theme.portalLabel}
             </p>
           </div>

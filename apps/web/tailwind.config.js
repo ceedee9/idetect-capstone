@@ -4,20 +4,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Valenzuela City / government palette (used by BPLO + shared UI)
+        // Valenzuela City / government palette — BPLO portal identity
+        // Ink navy (reworked from session: replaces the old bright blue #0038f5)
         gov: {
-          50: "#eef4ff",
-          100: "#dce9ff",
-          200: "#b2d0ff",
-          300: "#7aadff",
-          400: "#3a82ff",
-          500: "#1a5cff",
-          600: "#0038f5",
-          700: "#002ee0",
-          800: "#0127b5",
-          900: "#06228e",
-          950: "#051554",
+          50: "#eef1f6",
+          100: "#d7dee9",
+          200: "#b0bdd0",
+          300: "#8697b3",
+          400: "#5c7096",
+          500: "#3c4f75",
+          600: "#16233F", // anchor value from session log
+          700: "#121d34",
+          800: "#0e1628",
+          900: "#0a101c",
+          950: "#050810",
         },
+        // Pre-existing amber/gold utility token — NOT part of the portal
+        // identity system (not referenced in session log). Left untouched.
         accent: {
           50: "#fef9ec",
           100: "#fdf0c9",
@@ -30,26 +33,42 @@ export default {
           800: "#8a430b",
           900: "#73380f",
         },
-        // OSCA portal identity — green
+        // OSCA portal identity — civic gold/mustard
+        // (reworked from session: replaces the old green ramp)
+        // Intentionally shifted away from `warn`'s hue to avoid collision.
         osca: {
-          50: "#ecfdf5",
-          100: "#d1fae5",
-          400: "#34d399",
-          600: "#059669",
-          700: "#047857",
+          50: "#faf5ea",
+          100: "#f0e3c4",
+          200: "#e0c788",
+          300: "#cca94f",
+          400: "#a3801f",
+          500: "#8a6813",
+          600: "#6B4E0F", // anchor value from session log
+          700: "#573f0c",
+          800: "#453209",
+          900: "#352606",
         },
-        // PDAO portal identity — teal
+        // PDAO portal identity — advocacy violet
+        // (reworked from session: replaces the old teal ramp)
         pdao: {
-          50: "#f0fdfa",
-          100: "#ccfbf1",
-          200: "#99f6e4",
-          300: "#5eead4",
-          400: "#2dd4bf",
-          500: "#14b8a6",
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
+          50: "#f1effa",
+          100: "#e0dcf3",
+          200: "#c3bbe8",
+          300: "#a294d9",
+          400: "#7f6cc4",
+          500: "#5f4dab",
+          600: "#443C9E", // anchor value from session log
+          700: "#37307f",
+          800: "#2b2665",
+          900: "#211d4d",
+        },
+        // Shared civic chrome — NOT yet applied anywhere in components
+        // (header/footer/login layer deferred per session notes).
+        // Colors inferred from Valenzuela City seal heraldry —
+        // UNVERIFIED against an actual brand guide, confirm before shipping.
+        civic: {
+          maroon: "#7A1F1A",
+          gold: "#B8860B",
         },
         danger: {
           50: "#fff1f2",
