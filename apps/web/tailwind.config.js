@@ -59,14 +59,48 @@ export default {
           800: "#3C3489",
           900: "#26215C",
         },
-        // Shared civic chrome — NOT yet applied anywhere in components
-        // (header/footer/login layer deferred per session notes).
-        // Colors inferred from Valenzuela City seal heraldry —
-        // UNVERIFIED against an actual brand guide, confirm before shipping.
-        civic: {
-          maroon: "#7A1F1A",
-          gold: "#B8860B",
+
+        // Shared civic chrome — Valenzuela City seal colors, CONFIRMED
+        // (Philippine Blue / Red / Golden Yellow, per official seal legend).
+        // Used sparingly (thin stripe + seal badge) to avoid visually
+        // colliding with BPLO's navy and OSCA's gold portal accents.
+        civicBlue: {
+          50: "#e6ecf7",
+          100: "#c0d0ec",
+          200: "#8fa9dd",
+          300: "#5680cb",
+          400: "#265cb8",
+          500: "#0f47ac",
+          600: "#0038A8", // Philippine Blue — anchor value, verified
+          700: "#002d87",
+          800: "#00225f",
+          900: "#001739",
         },
+        civicRed: {
+          50: "#fbe9eb",
+          100: "#f4c1c8",
+          200: "#e893a0",
+          300: "#dc616f",
+          400: "#d33646",
+          500: "#d3202f",
+          600: "#CE1126", // Philippine Red — anchor value, verified
+          700: "#a80d1e",
+          800: "#820a17",
+          900: "#5c060f",
+        },
+        civicGold: {
+          50: "#fef9e7",
+          100: "#fcedb8",
+          200: "#fbe089",
+          300: "#fcd450", // close to anchor, kept for a mid-light stop
+          400: "#FCD116", // Golden Yellow — anchor value, verified
+          500: "#e0b800",
+          600: "#b89600",
+          700: "#8f7400",
+          800: "#665300",
+          900: "#3d3200",
+        },
+
         danger: {
           50: "#fff1f2",
           100: "#ffe4e6",

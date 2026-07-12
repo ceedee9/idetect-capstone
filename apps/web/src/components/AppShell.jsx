@@ -21,6 +21,7 @@ import { useSessionTimeout } from "../hooks/useSessionTimeout";
 import BreachReportModal from "./BreachReportModal";
 import { staffAlertsAPI } from "../services/api";
 import { fmtRelative } from "../utils/date";
+import { CivicStripe } from "./CivicChrome";
 
 // ── Role-based navigation configuration ──────────────────────────────────────
 const NAV_BY_ROLE = {
@@ -167,229 +168,165 @@ export default function AppShell() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-      {/* Mobile overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
+    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden">
+      <CivicStripe />
+      <div className="flex flex-1 min-h-0">
+        {/* Mobile overlay */}
+        {open && (
+          <div
+            className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+            onClick={() => setOpen(false)}
+          />
+        )}
 
-      {/* ── Sidebar ── */}
-      <aside
-        className={`
+        {/* ── Sidebar ── */}
+        <aside
+          className={`
           fixed lg:static inset-y-0 left-0 z-30 flex flex-col w-64
           bg-white border-r border-slate-100
           transform transition-transform duration-200
           ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
-      >
-        {/* Brand */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
-          <div className="min-w-0">
-            <img
-              src="/idetect-logo.png"
-              alt="iDetect"
-              className="h-12 w-auto"
-            />
-            <p className={`text-xs font-semibold mt-1 ${theme.brandText}`}>
-              {theme.portalLabel}
+        >
+          {/* Brand */}
+          <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
+            <div className="min-w-0">
+              <img
+                src="/idetect-logo.png"
+                alt="iDetect"
+                className="h-12 w-auto"
+              />
+              <p className={`text-xs font-semibold mt-1 ${theme.brandText}`}>
+                {theme.portalLabel}
+              </p>
+            </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="ml-auto text-slate-400 hover:text-slate-600 lg:hidden"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Section label */}
+          <div className="px-5 pt-5 pb-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Navigation
             </p>
           </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="ml-auto text-slate-400 hover:text-slate-600 lg:hidden"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Section label */}
-        <div className="px-5 pt-5 pb-2">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            Navigation
-          </p>
-        </div>
-
-        {/* Nav links */}
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {nav.map(({ to, icon: Icon, label, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-100 group
+          {/* Nav links */}
+          <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+            {nav.map(({ to, icon: Icon, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-100 group
                  ${
                    isActive
                      ? `${theme.sidebarActive}`
                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                  }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon
-                    className={`w-4.5 h-4.5 flex-shrink-0 ${
-                      isActive
-                        ? theme.sidebarIcon
-                        : "text-slate-400 group-hover:text-slate-600"
-                    }`}
-                  />
-                  <span className="flex-1">{label}</span>
-                  {isActive && (
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 ${theme.sidebarChevron}`}
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      className={`w-4.5 h-4.5 flex-shrink-0 ${
+                        isActive
+                          ? theme.sidebarIcon
+                          : "text-slate-400 group-hover:text-slate-600"
+                      }`}
                     />
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
-        </nav>
+                    <span className="flex-1">{label}</span>
+                    {isActive && (
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 ${theme.sidebarChevron}`}
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </nav>
 
-        {/* Scope note */}
-        <div
-          className={`mx-3 mb-3 px-3 py-2.5 rounded-xl border ${theme.scopeBg}`}
-        >
-          <p
-            className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${theme.scopeTitle}`}
+          {/* Scope note */}
+          <div
+            className={`mx-3 mb-3 px-3 py-2.5 rounded-xl border ${theme.scopeBg}`}
           >
-            Scope
-          </p>
-          <p className={`text-xs leading-relaxed ${theme.scopeBody}`}>
-            {theme.scopeText}
-          </p>
-          <button
-            onClick={() => setShowBreachModal(true)}
-            className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-red-600 hover:text-red-700 transition-colors"
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            Generate Breach Report
-          </button>
-        </div>
-
-        {/* User footer */}
-        <div className="border-t border-slate-100 px-3 py-3">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${theme.avatarBg}`}
+            <p
+              className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${theme.scopeTitle}`}
             >
-              <span className={`text-xs font-bold ${theme.avatarText}`}>
-                {user?.first_name?.[0]}
-                {user?.last_name?.[0]}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">
-                {user?.first_name} {user?.last_name}
-              </p>
-              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
-            </div>
+              Scope
+            </p>
+            <p className={`text-xs leading-relaxed ${theme.scopeBody}`}>
+              {theme.scopeText}
+            </p>
             <button
-              onClick={handleLogout}
-              title="Sign out"
-              className="text-slate-400 hover:text-danger-600 transition-colors"
+              onClick={() => setShowBreachModal(true)}
+              className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-red-600 hover:text-red-700 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Generate Breach Report
             </button>
           </div>
-        </div>
-      </aside>
 
-      {/* ── Main content area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile header */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-100">
-          <button onClick={() => setOpen(true)} className="text-slate-500">
-            <Menu className="w-5 h-5" />
-          </button>
-          <img src="/idetect-logo.png" alt="iDetect" className="h-8 w-auto" />
-          <div className="ml-auto" ref={bellRef}>
-            <button
-              className="btn-ghost p-1.5 relative"
-              onClick={() => {
-                setBellOpen((b) => !b);
-                loadAlerts();
-              }}
-            >
-              <Bell className="w-4.5 h-4.5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger-500 rounded-full text-[9px] text-white font-bold flex items-center justify-center">
-                  {unreadCount > 9 ? "9+" : unreadCount}
+          {/* User footer */}
+          <div className="border-t border-slate-100 px-3 py-3">
+            <div className="flex items-center gap-3 px-2 py-2 rounded-xl">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${theme.avatarBg}`}
+              >
+                <span className={`text-xs font-bold ${theme.avatarText}`}>
+                  {user?.first_name?.[0]}
+                  {user?.last_name?.[0]}
                 </span>
-              )}
-            </button>
-            {bellOpen && (
-              <div className="absolute right-4 top-14 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Notifications
-                  </h3>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={handleMarkAllRead}
-                      className={`text-xs font-medium ${theme.viewBtn}`}
-                    >
-                      Mark all read
-                    </button>
-                  )}
-                </div>
-                <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                  {alerts.length === 0 ? (
-                    <div className="py-8 text-center text-slate-400 text-sm">
-                      <Bell className="w-7 h-7 mx-auto mb-2 opacity-25" />
-                      No notifications
-                    </div>
-                  ) : (
-                    alerts.map((a) => (
-                      <div
-                        key={a.id}
-                        className={`px-4 py-3 ${a.is_read ? "" : theme.alertBg}`}
-                      >
-                        <p className="text-xs font-semibold text-slate-800">
-                          {a.title}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5 leading-snug">
-                          {a.body}
-                        </p>
-                        <p className="text-[10px] text-slate-300 mt-1">
-                          {fmtRelative(a.created_at)}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
-            )}
-          </div>
-        </header>
-
-        {/* Desktop header */}
-        <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-slate-100">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-            Pamantasan ng Lungsod ng Valenzuela · {theme.headerLabel}
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="relative" ref={bellRef}>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">
+                  {user?.first_name} {user?.last_name}
+                </p>
+                <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              </div>
               <button
-                className="btn-ghost relative"
+                onClick={handleLogout}
+                title="Sign out"
+                className="text-slate-400 hover:text-danger-600 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* ── Main content area ── */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Mobile header */}
+          <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-100">
+            <button onClick={() => setOpen(true)} className="text-slate-500">
+              <Menu className="w-5 h-5" />
+            </button>
+            <img src="/idetect-logo.png" alt="iDetect" className="h-8 w-auto" />
+            <div className="ml-auto" ref={bellRef}>
+              <button
+                className="btn-ghost p-1.5 relative"
                 onClick={() => {
                   setBellOpen((b) => !b);
                   loadAlerts();
                 }}
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-4.5 h-4.5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-danger-500 rounded-full text-[9px] text-white font-bold flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger-500 rounded-full text-[9px] text-white font-bold flex items-center justify-center">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </button>
               {bellOpen && (
-                <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
+                <div className="absolute right-4 top-14 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                     <h3 className="text-sm font-semibold text-slate-800">
                       Notifications
@@ -431,25 +368,99 @@ export default function AppShell() {
                 </div>
               )}
             </div>
-            <div className="w-px h-5 bg-slate-200" />
-            <span className="text-sm text-slate-600 font-medium">
-              {user?.first_name} {user?.last_name}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="btn-ghost text-danger-600 hover:bg-danger-50"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Sign out</span>
-            </button>
-          </div>
-        </header>
+          </header>
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="page-enter">
-            <Outlet />
-          </div>
-        </main>
+          {/* Desktop header */}
+          <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-slate-100">
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+              Pamantasan ng Lungsod ng Valenzuela · {theme.headerLabel}
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="relative" ref={bellRef}>
+                <button
+                  className="btn-ghost relative"
+                  onClick={() => {
+                    setBellOpen((b) => !b);
+                    loadAlerts();
+                  }}
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-danger-500 rounded-full text-[9px] text-white font-bold flex items-center justify-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+                {bellOpen && (
+                  <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                      <h3 className="text-sm font-semibold text-slate-800">
+                        Notifications
+                      </h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={handleMarkAllRead}
+                          className={`text-xs font-medium ${theme.viewBtn}`}
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
+                      {alerts.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400 text-sm">
+                          <Bell className="w-7 h-7 mx-auto mb-2 opacity-25" />
+                          No notifications
+                        </div>
+                      ) : (
+                        alerts.map((a) => (
+                          <div
+                            key={a.id}
+                            className={`px-4 py-3 ${a.is_read ? "" : theme.alertBg}`}
+                          >
+                            <p className="text-xs font-semibold text-slate-800">
+                              {a.title}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5 leading-snug">
+                              {a.body}
+                            </p>
+                            <p className="text-[10px] text-slate-300 mt-1">
+                              {fmtRelative(a.created_at)}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="w-px h-5 bg-slate-200" />
+              <span className="text-sm text-slate-600 font-medium">
+                {user?.first_name} {user?.last_name}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="btn-ghost text-danger-600 hover:bg-danger-50"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-y-auto">
+            <div className="page-enter">
+              <Outlet />
+            </div>
+          </main>
+
+          {/* ── Shared footer ── */}
+          <footer className="border-t border-slate-100 bg-white px-8 py-2.5 flex-shrink-0">
+            <p className="text-[11px] text-slate-400">
+              iDetect · Pamantasan ng Lungsod ng Valenzuela · CEIT Capstone 2026
+            </p>
+          </footer>
+        </div>
       </div>
 
       {/* ── Session inactivity warning (REQ-2.17.7) ── */}
