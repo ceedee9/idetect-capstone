@@ -9,7 +9,7 @@ export function CivicStripe({ className = "" }) {
   return (
     <div
       aria-hidden="true"
-      className={`h-[1.5px] w-full shrink-0 opacity-60 ${className}`}
+      className={`h-[2px] w-full shrink-0 opacity-70 ${className}`}
       style={{
         background:
           "linear-gradient(90deg, #0038A8 0%, #0038A8 33%, #CE1126 33%, #CE1126 66%, #FCD116 66%, #FCD116 100%)",
