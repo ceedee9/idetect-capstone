@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, Loader2, Clock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
-import { CivicStripe, CivicSealBadge } from "../components/CivicChrome";
+import { CivicStripe } from "./CivicChrome";
 
 // NOTE: this screen predates the shared design-system tokens and used
 // ad-hoc inline hex colors throughout (#3b82f6 etc.) instead of Tailwind
@@ -282,9 +282,6 @@ export default function LoginPage() {
 
               {/* Heading */}
               <div className="mb-7">
-                <div className="mb-3">
-                  <CivicSealBadge />
-                </div>
                 <h1
                   className="font-heading font-bold text-3xl text-gray-900"
                   style={{ letterSpacing: "-0.5px" }}
