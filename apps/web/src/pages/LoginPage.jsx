@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, Loader2, Clock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
-import { CivicStripe, CivicSealBadge } from "./CivicChrome";
+import { CivicStripe, CivicSealBadge } from "../components/CivicChrome";
 
 // NOTE: this screen predates the shared design-system tokens and used
 // ad-hoc inline hex colors throughout (#3b82f6 etc.) instead of Tailwind
