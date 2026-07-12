@@ -193,12 +193,12 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
           {step === "upload" && (
             <>
               {/* Info box */}
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-800 space-y-1.5">
+              <div className="p-4 bg-gov-50 border border-gov-100 rounded-xl text-sm text-gov-800 space-y-1.5">
                 <p className="font-semibold flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4" /> How credentials are
                   generated
                 </p>
-                <ul className="list-disc list-inside space-y-0.5 text-blue-700">
+                <ul className="list-disc list-inside space-y-0.5 text-gov-700">
                   <li>
                     <strong>Password</strong> — 12-character random password
                     auto-generated for every row
@@ -378,7 +378,7 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
                         </td>
                         <td className="px-3 py-2 text-gray-500 italic">
                           {r.email || (
-                            <span className="text-blue-500 not-italic">
+                            <span className="text-gov-500 not-italic">
                               auto-generated
                             </span>
                           )}

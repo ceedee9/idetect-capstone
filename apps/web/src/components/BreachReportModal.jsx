@@ -95,8 +95,8 @@ export default function BreachReportModal({ onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 flex-shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center">
-            <ShieldAlert className="w-5 h-5 text-red-600" />
+          <div className="w-9 h-9 rounded-xl bg-danger-100 flex items-center justify-center">
+            <ShieldAlert className="w-5 h-5 text-danger-600" />
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-900">
@@ -124,7 +124,8 @@ export default function BreachReportModal({ onClose }) {
               {/* Nature of breach */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Nature of the Breach <span className="text-red-500">*</span>
+                  Nature of the Breach{" "}
+                  <span className="text-danger-500">*</span>
                 </label>
                 <textarea
                   rows={3}
@@ -133,7 +134,7 @@ export default function BreachReportModal({ onClose }) {
                     setForm((f) => ({ ...f, nature_of_breach: e.target.value }))
                   }
                   placeholder="Describe what happened — e.g., unauthorized access to beneficiary records via compromised admin credentials..."
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-danger-400 resize-none"
                 />
               </div>
 
@@ -141,7 +142,7 @@ export default function BreachReportModal({ onClose }) {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Affected Data Categories{" "}
-                  <span className="text-red-500">*</span>
+                  <span className="text-danger-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {DATA_CATEGORIES.map((cat) => (
@@ -153,7 +154,7 @@ export default function BreachReportModal({ onClose }) {
                         type="checkbox"
                         checked={form.affected_categories.includes(cat)}
                         onChange={() => toggleCategory(cat)}
-                        className="accent-red-600"
+                        className="accent-danger-600"
                       />
                       <span className="text-xs text-slate-700">{cat}</span>
                     </label>
@@ -166,7 +167,7 @@ export default function BreachReportModal({ onClose }) {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                     Estimated Affected Subjects{" "}
-                    <span className="text-red-500">*</span>
+                    <span className="text-danger-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -179,13 +180,13 @@ export default function BreachReportModal({ onClose }) {
                       }))
                     }
                     placeholder="0"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-danger-400"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                     Date / Time Discovered{" "}
-                    <span className="text-red-500">*</span>
+                    <span className="text-danger-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
@@ -193,7 +194,7 @@ export default function BreachReportModal({ onClose }) {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, discovery_date: e.target.value }))
                     }
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-danger-400"
                   />
                 </div>
               </div>
@@ -210,12 +211,12 @@ export default function BreachReportModal({ onClose }) {
                     setForm((f) => ({ ...f, notes: e.target.value }))
                   }
                   placeholder="Any additional context, remediation steps taken, etc."
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-danger-400 resize-none"
                 />
               </div>
 
               {error && (
-                <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                <p className="text-sm text-danger-600 bg-danger-50 px-3 py-2 rounded-lg">
                   {error}
                 </p>
               )}
@@ -223,7 +224,7 @@ export default function BreachReportModal({ onClose }) {
           ) : (
             /* Result view */
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-3 rounded-xl">
+              <div className="flex items-center gap-2 text-success-700 bg-success-50 px-4 py-3 rounded-xl">
                 <ShieldAlert className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm font-semibold">
                   Report generated and logged to audit trail. Report ID:{" "}
@@ -258,7 +259,7 @@ export default function BreachReportModal({ onClose }) {
                 </button>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors"
+                  className="px-4 py-2 rounded-xl bg-danger-600 text-white text-sm font-semibold hover:bg-danger-700 transition-colors"
                 >
                   Close
                 </button>
@@ -276,7 +277,7 @@ export default function BreachReportModal({ onClose }) {
                 type="submit"
                 form="breach-form"
                 disabled={loading}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-danger-600 text-white text-sm font-semibold hover:bg-danger-700 disabled:opacity-50 transition-colors"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Generate Report
