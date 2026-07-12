@@ -1,13 +1,5 @@
 import { useMemo } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 import {
   format,
   parseISO,
@@ -17,18 +9,13 @@ import {
   endOfMonth,
 } from "date-fns";
 import { STATUS_TONES } from "../../constants/statusTheme";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"; // adjust path if your ui/ folder lives elsewhere
 
 const INK = STATUS_TONES.gov.hex; // #16233F — swap here to retint the whole chart
 
-function CustomTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-card px-3 py-2 text-xs">
-      <p className="font-semibold text-slate-500 mb-0.5">{label}</p>
-      <p className="text-slate-900 font-bold">{payload[0].value} registered</p>
-    </div>
-  );
-}
+const chartConfig = {
+  count: { label: "Registrations", color: INK },
+};
 
 function EmptyLedger() {
   return (
@@ -135,57 +122,67 @@ export default function EstablishmentTrendChart({ establishments }) {
           {insight}
         </p>
       )}
-      <div className="h-44">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={data}
-            margin={{ top: 4, right: 4, left: -28, bottom: 0 }}
-          >
-            <defs>
-              <linearGradient id="inkFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={INK} stopOpacity={0.16} />
-                <stop offset="95%" stopColor={INK} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="#f1f5f9" vertical={false} />
-            <XAxis
-              dataKey="month"
-              tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "DM Sans" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "DM Sans" }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-            <Tooltip
-              content={<CustomTooltip />}
-              cursor={{
-                stroke: INK,
-                strokeWidth: 1,
-                strokeDasharray: "4 2",
-              }}
-            />
-            <Area
-              type="monotone"
-              dataKey="count"
-              name="Registrations"
-              stroke={INK}
-              strokeWidth={2}
-              fill="url(#inkFill)"
-              dot={{ fill: INK, strokeWidth: 0, r: 3 }}
-              activeDot={{
-                r: 5,
-                fill: INK,
-                strokeWidth: 2,
-                stroke: "#fff",
-              }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      <ChartContainer config={chartConfig} className="h-44 aspect-auto">
+        <AreaChart
+          data={data}
+          margin={{ top: 4, right: 4, left: -28, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="inkFill" x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="5%"
+                stopColor="var(--color-count)"
+                stopOpacity={0.16}
+              />
+              <stop
+                offset="95%"
+                stopColor="var(--color-count)"
+                stopOpacity={0}
+              />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="#f1f5f9" vertical={false} />
+          <XAxis
+            dataKey="month"
+            tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "DM Sans" }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "DM Sans" }}
+            axisLine={false}
+            tickLine={false}
+            allowDecimals={false}
+          />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value) => `${value} registered`}
+              />
+            }
+            cursor={{
+              stroke: INK,
+              strokeWidth: 1,
+              strokeDasharray: "4 2",
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="count"
+            name="Registrations"
+            stroke="var(--color-count)"
+            strokeWidth={2}
+            fill="url(#inkFill)"
+            dot={{ fill: "var(--color-count)", strokeWidth: 0, r: 3 }}
+            activeDot={{
+              r: 5,
+              fill: "var(--color-count)",
+              strokeWidth: 2,
+              stroke: "#fff",
+            }}
+          />
+        </AreaChart>
+      </ChartContainer>
     </div>
   );
 }
