@@ -14,14 +14,14 @@ const PALETTE = {
     iconBg: "bg-osca-50",
     iconBorder: "border-osca-200",
     iconText: "text-osca-700",
-    stroke: "#7c3aed",
+    stroke: "#6B4E0F",
   },
   pdao: {
     bar: "bg-pdao-600",
     iconBg: "bg-pdao-50",
     iconBorder: "border-pdao-200",
     iconText: "text-pdao-700",
-    stroke: "#0891b2",
+    stroke: "#443C9E",
   },
   warm: {
     bar: "bg-accent-600",

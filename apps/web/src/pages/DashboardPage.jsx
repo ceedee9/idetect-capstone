@@ -222,7 +222,7 @@ function BeneficiaryDashboard({ user }) {
           label="Active"
           value={stats.active}
           icon={UserCheck}
-          color="green"
+          color={roleColor}
           loading={loading}
           sub="Verified & eligible"
         />
@@ -230,7 +230,7 @@ function BeneficiaryDashboard({ user }) {
           label="Suspended"
           value={stats.suspended}
           icon={AlertTriangle}
-          color="warm"
+          color={roleColor}
           loading={loading}
           sub="Flagged or on hold"
         />
@@ -238,7 +238,7 @@ function BeneficiaryDashboard({ user }) {
           label="Expired"
           value={stats.expired}
           icon={UserX}
-          color="red"
+          color={roleColor}
           loading={loading}
           sub="ID past validity"
         />
@@ -774,28 +774,28 @@ function EstablishmentDashboard({ user }) {
           label="Total Establishments"
           value={stats.total}
           icon={Store}
-          color="teal"
+          color="gov"
           loading={loading}
         />
         <StatCard
           label="Pending Approval"
           value={stats.pending}
           icon={Clock}
-          color="warm"
+          color="gov"
           loading={loading}
         />
         <StatCard
           label="Approved"
           value={stats.approved}
           icon={CheckCircle2}
-          color="green"
+          color="gov"
           loading={loading}
         />
         <StatCard
           label="Suspended"
           value={stats.suspended}
           icon={XCircle}
-          color="red"
+          color="gov"
           loading={loading}
         />
       </div>
