@@ -81,7 +81,7 @@
   }
   /* Disability type tags (PDAO) */
   .dtype-tag {
-    @apply inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-gov-50 text-gov-700;
+    @apply inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-pdao-50 text-pdao-700;
   }
 }
 
@@ -89,28 +89,28 @@
 .sidebar-active {
   background: linear-gradient(
     90deg,
-    rgba(0, 56, 245, 0.1) 0%,
+    rgba(22, 35, 63, 0.1) 0%,
     transparent 100%
   );
 }
 .sidebar-active-osca {
   background: linear-gradient(
     90deg,
-    rgba(5, 150, 105, 0.14) 0%,
+    rgba(107, 78, 15, 0.14) 0%,
     transparent 100%
   );
 }
 .sidebar-active-pdao {
   background: linear-gradient(
     90deg,
-    rgba(13, 148, 136, 0.14) 0%,
+    rgba(68, 60, 158, 0.14) 0%,
     transparent 100%
   );
 }
 .sidebar-item-active {
   background: linear-gradient(
     90deg,
-    rgba(0, 56, 245, 0.08) 0%,
+    rgba(22, 35, 63, 0.08) 0%,
     transparent 100%
   );
 }
