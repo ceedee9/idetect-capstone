@@ -9,7 +9,7 @@ export function CivicStripe({ className = "" }) {
   return (
     <div
       aria-hidden="true"
-      className={`h-[3px] w-full shrink-0 ${className}`}
+      className={`h-[1.5px] w-full shrink-0 opacity-60 ${className}`}
       style={{
         background:
           "linear-gradient(90deg, #0038A8 0%, #0038A8 33%, #CE1126 33%, #CE1126 66%, #FCD116 66%, #FCD116 100%)",
@@ -34,7 +34,14 @@ export function CivicSealBadge({ label = "Verified · Valenzuela City" }) {
           strokeWidth="1"
           strokeDasharray="2.2 2"
         />
-        <circle cx="10" cy="10" r="6" fill="none" stroke="#8f7400" strokeWidth="1" />
+        <circle
+          cx="10"
+          cy="10"
+          r="6"
+          fill="none"
+          stroke="#8f7400"
+          strokeWidth="1"
+        />
         <path
           d="M6.5 10.2l2.3 2.3 4.7-4.7"
           fill="none"
