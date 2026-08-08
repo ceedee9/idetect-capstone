@@ -1,6 +1,8 @@
 // src/app.js
 // Reusable Express app for local dev and Vercel serverless deployment.
 
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
