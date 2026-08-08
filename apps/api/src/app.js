@@ -1,9 +1,10 @@
 // src/app.js
 // Reusable Express app for local dev and Vercel serverless deployment.
 
-const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first");
-const path = require("path");
+const net = require("net");
+const dnsSync = require("dns");
+const dns = require("dns").promises;
+dnsSync.setDefaultResultOrder("ipv4first");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -117,20 +118,72 @@ app.get("/api/uploads/*", authenticate, (req, res) => {
 
 // ── Health check ───────────────────────────────────────────────
 app.get("/api/health", async (req, res) => {
-  let dbStatus = "ok";
+  const result = { status: "checking", steps: {} };
+
+  // Step 1: DNS resolution of the DB host
+  let host, port;
   try {
-    await pool.query("SELECT 1");
-  } catch {
-    dbStatus = "error";
+    const url = new URL(process.env.DATABASE_URL);
+    host = url.hostname;
+    port = url.port || 5432;
+    const addresses = await Promise.race([
+      dns.lookup(host, { all: true }),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("DNS lookup timed out after 3s")),
+          3000,
+        ),
+      ),
+    ]);
+    result.steps.dns = { ok: true, host, port, addresses };
+  } catch (err) {
+    result.steps.dns = { ok: false, error: err.message };
+    return res.status(500).json(result);
   }
-  const overall = dbStatus === "ok" ? "ok" : "degraded";
-  res.status(overall === "ok" ? 200 : 503).json({
-    status: overall,
-    service: "iDetect API",
-    version: "1.0.0",
-    database: dbStatus,
-    timestamp: new Date().toISOString(),
-  });
+
+  // Step 2: Raw TCP connection (no SSL, no postgres protocol — just "can we open a socket")
+  try {
+    await new Promise((resolve, reject) => {
+      const socket = net.createConnection({ host, port: Number(port) });
+      const timer = setTimeout(() => {
+        socket.destroy();
+        reject(new Error("Raw TCP connect timed out after 4s"));
+      }, 4000);
+      socket.on("connect", () => {
+        clearTimeout(timer);
+        socket.destroy();
+        resolve();
+      });
+      socket.on("error", (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+    result.steps.tcp = { ok: true };
+  } catch (err) {
+    result.steps.tcp = { ok: false, error: err.message };
+    return res.status(500).json(result);
+  }
+
+  // Step 3: Actual pg query, with its own short timeout
+  try {
+    await Promise.race([
+      pool.query("SELECT 1"),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("pg query timed out after 6s")),
+          6000,
+        ),
+      ),
+    ]);
+    result.steps.query = { ok: true };
+    result.status = "ok";
+  } catch (err) {
+    result.steps.query = { ok: false, error: err.message };
+    result.status = "degraded";
+  }
+
+  res.status(result.status === "ok" ? 200 : 500).json(result);
 });
 
 // ── Routes ────────────────────────────────────────────────────
