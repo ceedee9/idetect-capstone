@@ -11,21 +11,22 @@
 
 Your app has **three parts** that all need to be live:
 
-| Part           | What it is                      | Recommended Host   |
-| -------------- | ------------------------------- | ------------------ |
-| **API**        | Node.js / Express (`apps/api/`) | Railway            |
-| **Database**   | PostgreSQL                      | Railway (built-in) |
-| **Web Portal** | React / Vite (`apps/web/`)      | Vercel             |
-| **Domain**     | e.g. `idetect.com.ph`           | Namecheap          |
+| Part           | What it is                      | Recommended Host |
+| -------------- | ------------------------------- | ---------------- |
+| **API**        | Node.js / Express (`apps/api/`) | Vercel           |
+| **Database**   | PostgreSQL                      | Supabase         |
+| **Web Portal** | React / Vite (`apps/web/`)      | Vercel           |
+| **Domain**     | e.g. `idetect.com.ph`           | Namecheap        |
 
 ```
 User → idetect.com.ph         → Vercel (React app)
-                                   ↓ API calls
-       idetect.com.ph/api/*   → Railway (Node.js + PostgreSQL)
+                                   ↓ API calls to the deployed Vercel API
+     idetect.com.ph/api/*   → Vercel API functions
+                        ↓
+                      Supabase
 ```
 
-The React app is deployed as a static site on Vercel. All `/api/*` requests are
-proxied to the Railway backend. You only need **one domain** for both.
+The React app and the API both live on Vercel. Supabase provides the database and storage.
 
 ---
 
@@ -45,20 +46,19 @@ Namecheap is a solid registrar. Pros: cheap, no dark patterns, good DNS panel.
 
 ---
 
-### Hosting: Railway (API + DB) + Vercel (Frontend)
+### Hosting: Vercel (API + Frontend) + Supabase (DB + Storage)
 
 **Why not Namecheap hosting?**
 Namecheap's shared hosting runs PHP/Apache. It does not support Node.js.
 Their VPS works but requires Linux sysadmin knowledge (nginx, PM2, etc.) —
 too much overhead for a capstone.
 
-**Why Railway?**
+**Why Vercel for the API?**
 
-- Native Node.js support — zero configuration
-- Built-in PostgreSQL with automatic backups
+- Free tier is enough for a capstone backend
+- Portal and API both deploy through Vercel and stay on the same stack
 - Automatic deploys from GitHub
-- Free trial, then **$5/month** (Hobby plan)
-- Runs 24/7 (unlike Render's free tier which sleeps after 15 min)
+- Works well for request/response APIs
 
 **Why Vercel?**
 
@@ -71,9 +71,9 @@ too much overhead for a capstone.
 | Item | Cost |
 |---|---|
 | Domain (Namecheap, .com.ph) | ~₱800/year |
-| Railway Hobby plan | ~$5/month (~₱280) |
 | Vercel | Free |
-| **Total** | **~₱350/month** |
+| Supabase | Free tier to start |
+| **Total** | **Low-cost / free to start** |
 
 ---
 
@@ -120,7 +120,7 @@ You will need:
 - `JWT_SECRET_ESTABLISHMENT` — a 64-character random string
 - `JWT_SECRET_BENEFICIARY` — a 64-character random string
 
-Save these somewhere secure (a password manager). You'll paste them into Railway.
+Save these somewhere secure (a password manager). You'll paste them into Vercel.
 
 ### 3.3 Prepare the API for Production
 
@@ -150,110 +150,48 @@ If your entry file is named differently (e.g. `server.js`), adjust accordingly.
 
 ---
 
-## 5. Deploy the API on Railway
+## 5. Deploy the API on Vercel
 
 ### 5.1 Sign Up
 
-1. Go to **railway.app** and sign up with your GitHub account.
-2. Click **New Project → Deploy from GitHub repo**.
-3. Select your `idetect` repository.
+1. Go to **vercel.com** and sign up with your GitHub account.
+2. Click **Add New → Project**.
+3. Import your `idetect` repository.
 
-### 5.2 Configure the API Service
+### 5.2 Configure the API Project
 
-Railway will detect your repo. You need to tell it where the API lives:
+Deploy `apps/api` as its own Vercel project:
 
-1. After the project is created, click your service → **Settings**.
-2. Under **Root Directory**, type: `apps/api`
-3. Under **Start Command**, type: `npm start`
-4. Click **Deploy**.
+| Setting              | Value         |
+| -------------------- | ------------- |
+| **Framework Preset** | Other         |
+| **Root Directory**   | `apps/api`    |
+| **Build Command**    | leave default |
+| **Output Directory** | none          |
 
-### 5.3 Add PostgreSQL
+### 5.3 Set Environment Variables on Vercel
 
-1. In your Railway project, click **+ New → Database → Add PostgreSQL**.
-2. Railway creates a database and gives you a `DATABASE_URL` variable automatically.
-3. Click the PostgreSQL service → **Variables** tab — copy the `DATABASE_URL` value.
-   It looks like: `postgresql://postgres:PASSWORD@HOST:PORT/railway`
+Add the API secrets and Supabase settings in the API project:
 
-### 5.4 Update Your API to Use DATABASE_URL
+| Variable                    | Value                           |
+| --------------------------- | ------------------------------- |
+| `NODE_ENV`                  | `production`                    |
+| `DATABASE_URL`              | Your Supabase connection string |
+| `SUPABASE_URL`              | Your Supabase project URL       |
+| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key  |
+| `JWT_SECRET_STAFF`          | _(your 64-char random string)_  |
+| `JWT_SECRET_ESTABLISHMENT`  | _(your 64-char random string)_  |
+| `JWT_SECRET_BENEFICIARY`    | _(your 64-char random string)_  |
+| `JWT_EXPIRES_IN`            | `8h`                            |
+| `OCR_CONFIDENCE_THRESHOLD`  | `75`                            |
+| `SMS_PROVIDER`              | `semaphore`                     |
+| `SMS_API_KEY`               | _(your Semaphore key)_          |
 
-In your `apps/api/` database config, you likely have individual `DB_HOST`, `DB_NAME`,
-etc. variables. Railway provides a single `DATABASE_URL`. Update your database
-connection file to support both:
+### 5.4 Deploy and Test
 
-Open your database connection file (likely `apps/api/src/db.js` or similar) and
-ensure it reads `DATABASE_URL` when present:
-
-```js
-// db.js (or wherever you create your pg Pool)
-const { Pool } = require("pg");
-
-const pool = process.env.DATABASE_URL
-  ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }, // required for Railway
-    })
-  : new Pool({
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-    });
-
-module.exports = pool;
-```
-
-Commit and push this change:
-
-```bash
-git add apps/api/src/db.js
-git commit -m "support DATABASE_URL for Railway"
-git push
-```
-
-### 5.5 Set Environment Variables on Railway
-
-In your Railway project → your API service → **Variables** tab, add:
-
-| Variable                   | Value                          |
-| -------------------------- | ------------------------------ |
-| `NODE_ENV`                 | `production`                   |
-| `PORT`                     | `3000`                         |
-| `JWT_SECRET_STAFF`         | _(your 64-char random string)_ |
-| `JWT_SECRET_ESTABLISHMENT` | _(your 64-char random string)_ |
-| `JWT_SECRET_BENEFICIARY`   | _(your 64-char random string)_ |
-| `JWT_EXPIRES_IN`           | `8h`                           |
-| `OCR_CONFIDENCE_THRESHOLD` | `75`                           |
-| `SMS_PROVIDER`             | `semaphore`                    |
-| `SMS_API_KEY`              | _(your Semaphore key)_         |
-| `CLOUDINARY_CLOUD_NAME`    | _(if configured)_              |
-| `CLOUDINARY_API_KEY`       | _(if configured)_              |
-| `CLOUDINARY_API_SECRET`    | _(if configured)_              |
-
-> **Do NOT add** `DB_HOST`, `DB_NAME`, etc. — Railway's `DATABASE_URL` replaces those.
-
-### 5.6 Run Database Migrations
-
-Once the API service is deployed and the database is connected:
-
-1. In Railway, go to your API service → **Settings → Run a one-off command**.
-2. Run your migration command, e.g.:
-   ```
-   node src/database/migrate.js
-   ```
-   (Use whatever migration command your project uses.)
-3. Verify in the Railway PostgreSQL service → **Data** tab that your tables exist.
-
-### 5.7 Get Your Railway API URL
-
-In Railway → your API service → **Settings** → under **Domains**, click
-**Generate Domain**. You get a URL like:
-
-```
-https://idetect-api-production.up.railway.app
-```
-
-Keep this — you need it in the next step.
+1. Deploy the API project.
+2. Open its `/api/health` endpoint.
+3. Confirm the response shows the database as `ok`.
 
 ---
 
@@ -263,9 +201,9 @@ Keep this — you need it in the next step.
 
 1. Go to **vercel.com** and sign up with your GitHub account.
 2. Click **Add New → Project**.
-3. Import your `idetect` GitHub repository.
+3. Import your `idetect` repository.
 
-### 6.2 Configure the Project
+### 6.2 Configure the Web Project
 
 Vercel will show configuration options:
 
@@ -278,43 +216,11 @@ Vercel will show configuration options:
 
 ### 6.3 Set Environment Variables on Vercel
 
-Click **Environment Variables** and add:
+Set the portal API base URL to the deployed API project:
 
-| Variable       | Value                              |
-| -------------- | ---------------------------------- |
-| `VITE_API_URL` | _(leave blank — proxy handles it)_ |
-
-Actually, check your `apps/web/vite.config.js`. It likely has a proxy like:
-
-```js
-proxy: { '/api': 'http://localhost:3000' }
-```
-
-This proxy only works in development. For production, you need to tell Vercel
-to forward `/api/*` to your Railway URL. Create this file:
-
-**`apps/web/vercel.json`**
-
-```json
-{
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://idetect-api-production.up.railway.app/api/:path*"
-    }
-  ]
-}
-```
-
-Replace `idetect-api-production.up.railway.app` with your actual Railway URL.
-
-Commit this file:
-
-```bash
-git add apps/web/vercel.json
-git commit -m "add Vercel API proxy rewrite"
-git push
-```
+| Variable       | Value                                     |
+| -------------- | ----------------------------------------- |
+| `VITE_API_URL` | `https://your-api-project.vercel.app/api` |
 
 ### 6.4 Deploy
 
@@ -354,7 +260,7 @@ DNS propagation takes **5 minutes to 48 hours** (usually under 30 minutes).
 ### 7.3 Verify
 
 Once propagated, visiting `https://idetect.com.ph` should load your React app
-and all API calls go through Vercel → Railway.
+and API calls should go to the deployed Vercel API project.
 
 You can check propagation status at: **dnschecker.org**
 
@@ -364,7 +270,7 @@ You can check propagation status at: **dnschecker.org**
 
 Now that you have a real domain, update your API's CORS allowed origins.
 
-Open `apps/api/src/index.js` (or wherever you configure CORS) and set:
+Open `apps/api/src/app.js` and set:
 
 ```js
 const cors = require("cors");
@@ -384,17 +290,17 @@ app.use(
 );
 ```
 
-Commit, push — Railway auto-deploys from GitHub.
+Commit and push — Vercel auto-deploys from GitHub.
 
 ---
 
-## 9. Firebase (Push Notifications) on Railway
+## 9. Firebase (Push Notifications)
 
 Your API uses a Firebase service account JSON file (`FIREBASE_KEY_PATH`).
-You cannot upload files to Railway — instead, use an environment variable:
+You should use environment variables for the service account JSON rather than a file path:
 
 1. Open your Firebase `.json` key file. Copy the entire contents.
-2. In Railway → your API service → Variables, add:
+2. In Vercel → your API project → Environment Variables, add:
    ```
    FIREBASE_SERVICE_ACCOUNT_JSON = { "type": "service_account", ... }
    ```
@@ -433,10 +339,10 @@ After everything is live, test each of these:
 
 | Task                        | How                                                            |
 | --------------------------- | -------------------------------------------------------------- |
-| **Deploy a code update**    | `git push` — both Railway and Vercel auto-deploy               |
-| **View API logs**           | Railway → your service → **Logs** tab                          |
-| **View database**           | Railway → PostgreSQL service → **Data** tab                    |
-| **Rollback a bad deploy**   | Vercel/Railway both have one-click rollback in their dashboard |
+| **Deploy a code update**    | `git push` — Vercel auto-deploys both projects                 |
+| **View API logs**           | Vercel → API project → **Functions / Logs**                    |
+| **View database**           | Supabase → Project → **Table Editor / SQL**                    |
+| **Rollback a bad deploy**   | Vercel has one-click rollback in the dashboard                 |
 | **Domain renewal**          | Namecheap sends email reminders — renew before expiry          |
 | **Add a new staff account** | Use the Staff page inside the portal (no server access needed) |
 
@@ -444,12 +350,12 @@ After everything is live, test each of these:
 
 ## Quick Reference — URLs
 
-| Service           | URL                                                   |
-| ----------------- | ----------------------------------------------------- |
-| Your live portal  | `https://idetect.com.ph`                              |
-| Vercel dashboard  | `vercel.com/dashboard`                                |
-| Railway dashboard | `railway.app/dashboard`                               |
-| Namecheap DNS     | `namecheap.com → Domain List → Manage → Advanced DNS` |
+| Service          | URL                                                   |
+| ---------------- | ----------------------------------------------------- |
+| Your live portal | `https://idetect.com.ph`                              |
+| Vercel dashboard | `vercel.com/dashboard`                                |
+| Vercel dashboard | `vercel.com/dashboard`                                |
+| Namecheap DNS    | `namecheap.com → Domain List → Manage → Advanced DNS` |
 
 ---
 

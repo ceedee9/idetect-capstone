@@ -4,7 +4,7 @@
 //
 // Credential priority (first match wins):
 //   1. FIREBASE_SERVICE_ACCOUNT_JSON  — full service-account JSON as a string.
-//      Paste the entire JSON file contents as a Railway/Render env var.
+//      Paste the entire JSON file contents as a backend env var.
 //      This is the recommended production approach (no file on disk needed).
 //   2. FIREBASE_KEY_PATH  — path to a service-account JSON file on disk.
 //      Useful for local development.
@@ -19,7 +19,7 @@ function getAdmin() {
 
   const firebase = require("firebase-admin");
 
-  // ── Priority 1: JSON string in env var (preferred for Railway/Render) ──
+  // ── Priority 1: JSON string in env var (preferred for backend hosts) ──
   const jsonEnv = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (jsonEnv) {
     try {

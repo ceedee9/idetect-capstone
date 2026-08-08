@@ -9,7 +9,6 @@
 //   PATCH /api/disputes/:id/resolve     — OSCA/PDAO resolves a dispute
 
 const path = require("path");
-const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const { body, validationResult } = require("express-validator");
@@ -22,22 +21,18 @@ const {
 const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
 const { sendSms } = require("../services/smsService");
+const {
+  uploadDisputeDocument,
+  buildAbsoluteApiUploadUrl,
+} = require("../services/storageService");
 
 const router = express.Router();
 
 // ── Multer setup for supporting document uploads ───────────────
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, "../../uploads/dispute-docs"),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(
-      null,
-      `dispute-doc-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`,
-    );
-  },
-});
+// Uses memory storage so the file can be validated and uploaded directly to
+// Supabase Storage (no local disk dependency).
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB max
   fileFilter: (req, file, cb) => {
     const allowed = [".jpg", ".jpeg", ".png", ".pdf"];
@@ -65,20 +60,13 @@ const MAGIC_BYTES = {
 function validateFileMagicBytes(req, res, next) {
   if (!req.file) return next();
 
-  const fd = fs.openSync(req.file.path, "r");
-  const buf = Buffer.alloc(8);
-  fs.readSync(fd, buf, 0, 8, 0);
-  fs.closeSync(fd);
+  const buf = req.file.buffer?.subarray(0, 8) || Buffer.alloc(0);
 
   const valid = Object.values(MAGIC_BYTES).some((sig) =>
     sig.every((byte, i) => buf[i] === byte),
   );
 
   if (!valid) {
-    // Delete the file — it has a spoofed extension
-    try {
-      fs.unlinkSync(req.file.path);
-    } catch (_) {}
     return res.status(400).json({
       error:
         "Invalid file type. Only genuine JPG, PNG, and PDF files are accepted.",
@@ -99,9 +87,27 @@ router.post(
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded." });
     }
-    // Return a relative URL path the client includes as supporting_doc_path
-    const docPath = `/api/uploads/dispute-docs/${req.file.filename}`;
-    res.json({ path: docPath });
+
+    uploadDisputeDocument({
+      buffer: req.file.buffer,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+    })
+      .then((uploaded) => {
+        if (!uploaded) {
+          return res
+            .status(500)
+            .json({ error: "Failed to store supporting document." });
+        }
+        // Return an absolute authenticated API URL so existing portal fetches continue working.
+        const docPath = buildAbsoluteApiUploadUrl(
+          req,
+          uploaded.bucket,
+          uploaded.objectPath,
+        );
+        return res.json({ path: docPath });
+      })
+      .catch((err) => next(err));
   },
 );
 

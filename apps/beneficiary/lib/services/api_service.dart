@@ -4,13 +4,20 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
+  // Set with --dart-define=IDETECT_API_BASE_URL=https://your-host/api.
+  // This app intentionally has no hardcoded fallback so the backend target
+  // is always explicit.
   static const String _configuredBaseUrl = String.fromEnvironment(
     'IDETECT_API_BASE_URL',
   );
-  static const String _defaultBaseUrl =
-      'https://idetect-capstone-production.up.railway.app/api';
-  static String get baseUrl =>
-      _configuredBaseUrl.isNotEmpty ? _configuredBaseUrl : _defaultBaseUrl;
+  static String get baseUrl {
+    if (_configuredBaseUrl.isEmpty) {
+      throw StateError(
+        'Missing IDETECT_API_BASE_URL. Pass --dart-define=IDETECT_API_BASE_URL=https://your-host/api when running or building the app.',
+      );
+    }
+    return _configuredBaseUrl;
+  }
 
   static const String _tokenKey = 'beneficiary_auth_token';
   static const String _userKey = 'beneficiary_auth_user';

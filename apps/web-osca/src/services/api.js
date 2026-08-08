@@ -1,6 +1,11 @@
 import axios from "axios";
 
-const configuredApiBaseUrl = (import.meta.env?.VITE_API_URL || "/api").trim();
+const configuredApiBaseUrl = String(import.meta.env?.VITE_API_URL || "").trim();
+if (!configuredApiBaseUrl) {
+  throw new Error(
+    "Missing VITE_API_URL. Set it to your API base URL, for example http://192.168.254.106:3000/api.",
+  );
+}
 const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/$/, "");
 const buildApiPath = (path) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;

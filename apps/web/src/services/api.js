@@ -1,6 +1,13 @@
 import axios from "axios";
 
-const configuredApiBaseUrl = (import.meta.env?.VITE_API_URL || "/api").trim();
+const configuredApiBaseUrl = (
+  import.meta.env?.VITE_API_URL || (import.meta.env?.DEV ? "/api" : "")
+).trim();
+if (!configuredApiBaseUrl) {
+  throw new Error(
+    "Missing VITE_API_URL. Set it in the deployed unified portal to your Vercel API base URL, for example https://your-api-project.vercel.app/api.",
+  );
+}
 const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/$/, "");
 const buildApiPath = (path) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;

@@ -6,14 +6,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/datasources/local/local_database.dart';
 
 class ApiService {
-  // Use --dart-define=IDETECT_API_BASE_URL=http://<YOUR_IP>:3000/api to override.
-  // Do NOT use localhost on a real Android phone: it points to the phone itself.
+  // Set with --dart-define=IDETECT_API_BASE_URL=https://your-host/api.
+  // This app intentionally has no hardcoded fallback so the backend target
+  // is always explicit.
   static const String _configuredBaseUrl =
       String.fromEnvironment('IDETECT_API_BASE_URL');
-  static const String _defaultBaseUrl =
-      'https://idetect-capstone.onrender.com/api';
-  static String get baseUrl =>
-      _configuredBaseUrl.isNotEmpty ? _configuredBaseUrl : _defaultBaseUrl;
+  static String get baseUrl {
+    if (_configuredBaseUrl.isEmpty) {
+      throw StateError(
+        'Missing IDETECT_API_BASE_URL. Pass --dart-define=IDETECT_API_BASE_URL=https://your-host/api when running or building the app.',
+      );
+    }
+    return _configuredBaseUrl;
+  }
 
   // SharedPreferences key for the stored token
   static const String _tokenKey = 'auth_token';

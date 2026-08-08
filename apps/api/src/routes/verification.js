@@ -9,9 +9,6 @@
 //   GET  /api/verification/history
 //     Called by Client Portal to show past scans for this establishment.
 
-const path = require("path");
-const fs = require("fs");
-const { v4: uuidv4 } = require("uuid");
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const pool = require("../config/database");
@@ -19,6 +16,10 @@ const { authenticateEstablishment } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
 const { sendSms } = require("../services/smsService");
+const {
+  uploadIdCaptureBase64,
+  buildAbsoluteApiUploadUrl,
+} = require("../services/storageService");
 const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
@@ -91,29 +92,6 @@ const scanLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const uploadsDir = path.join(__dirname, "..", "..", "uploads");
-
-/**
- * Save a base64-encoded image to the uploads directory.
- * Returns a relative URL like "/uploads/abc123.jpg", or null on failure.
- */
-function saveBase64Image(base64Data) {
-  try {
-    // Strip data URI prefix if present (data:image/jpeg;base64,...)
-    const matches = base64Data.match(/^data:image\/(\w+);base64,(.+)$/);
-    const ext = matches ? matches[1] : "jpg";
-    const raw = matches ? matches[2] : base64Data;
-    const filename = `${uuidv4()}.${ext}`;
-    fs.writeFileSync(
-      path.join(uploadsDir, filename),
-      Buffer.from(raw, "base64"),
-    );
-    return `/uploads/${filename}`;
-  } catch {
-    return null;
-  }
-}
-
 const normalizeIdNumber = (value) =>
   String(value || "")
     .toUpperCase()
@@ -169,15 +147,17 @@ router.post(
         }
       }
 
-      // Decode and save image if provided; build absolute URL for browser access
+      // Upload captured image to Supabase Storage and expose it
+      // through the authenticated /api/uploads route.
       let image_path = null;
       if (image_data) {
-        const relativePath = saveBase64Image(image_data);
-        if (relativePath) {
-          const host = `${req.protocol}://${req.get("host")}`;
-          // Store under /api/uploads/ so the authenticated serving route is used.
-          // Replacing /uploads/ prefix with /api/uploads/ keeps the file path intact.
-          image_path = `${host}/api${relativePath}`;
+        const uploaded = await uploadIdCaptureBase64(image_data);
+        if (uploaded) {
+          image_path = buildAbsoluteApiUploadUrl(
+            req,
+            uploaded.bucket,
+            uploaded.objectPath,
+          );
         }
       }
 
