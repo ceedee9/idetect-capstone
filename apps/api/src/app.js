@@ -118,14 +118,18 @@ app.get("/api/uploads/*", authenticate, (req, res) => {
 
 // ── Health check ───────────────────────────────────────────────
 app.get("/api/health", async (req, res) => {
+  console.log("[HEALTH] Request received");
   const result = { status: "checking", steps: {} };
 
-  // Step 1: DNS resolution of the DB host
   let host, port;
   try {
+    console.log("[HEALTH] Parsing DATABASE_URL...");
     const url = new URL(process.env.DATABASE_URL);
     host = url.hostname;
     port = url.port || 5432;
+    console.log(
+      `[HEALTH] Parsed host=${host} port=${port}. Starting DNS lookup...`,
+    );
     const addresses = await Promise.race([
       dns.lookup(host, { all: true }),
       new Promise((_, reject) =>
@@ -135,14 +139,16 @@ app.get("/api/health", async (req, res) => {
         ),
       ),
     ]);
+    console.log("[HEALTH] DNS ok:", JSON.stringify(addresses));
     result.steps.dns = { ok: true, host, port, addresses };
   } catch (err) {
+    console.log("[HEALTH] DNS failed:", err.message);
     result.steps.dns = { ok: false, error: err.message };
     return res.status(500).json(result);
   }
 
-  // Step 2: Raw TCP connection (no SSL, no postgres protocol — just "can we open a socket")
   try {
+    console.log("[HEALTH] Starting raw TCP connect...");
     await new Promise((resolve, reject) => {
       const socket = net.createConnection({ host, port: Number(port) });
       const timer = setTimeout(() => {
@@ -159,14 +165,16 @@ app.get("/api/health", async (req, res) => {
         reject(err);
       });
     });
+    console.log("[HEALTH] TCP connect ok");
     result.steps.tcp = { ok: true };
   } catch (err) {
+    console.log("[HEALTH] TCP failed:", err.message);
     result.steps.tcp = { ok: false, error: err.message };
     return res.status(500).json(result);
   }
 
-  // Step 3: Actual pg query, with its own short timeout
   try {
+    console.log("[HEALTH] Starting pg query...");
     await Promise.race([
       pool.query("SELECT 1"),
       new Promise((_, reject) =>
@@ -176,13 +184,16 @@ app.get("/api/health", async (req, res) => {
         ),
       ),
     ]);
+    console.log("[HEALTH] pg query ok");
     result.steps.query = { ok: true };
     result.status = "ok";
   } catch (err) {
+    console.log("[HEALTH] pg query failed:", err.message);
     result.steps.query = { ok: false, error: err.message };
     result.status = "degraded";
   }
 
+  console.log("[HEALTH] Sending response:", JSON.stringify(result));
   res.status(result.status === "ok" ? 200 : 500).json(result);
 });
 
