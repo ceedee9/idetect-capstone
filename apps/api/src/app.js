@@ -1,71 +1,43 @@
 // src/app.js
 // Reusable Express app for local dev and Vercel serverless deployment.
 
-console.log("[BOOT] app.js starting to load...");
+// Force IPv4 DNS resolution — some serverless platforms can silently
+// black-hole outbound IPv6 connections to hosts with dual A/AAAA records
+// (like Supabase's pooler), causing hangs instead of clean errors.
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
 
-const net = require("net");
-const dnsSync = require("dns");
-const dns = require("dns").promises;
-dnsSync.setDefaultResultOrder("ipv4first");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-console.log("[BOOT] core + express libs loaded");
 
 const { errorHandler, createError } = require("./middleware/errorHandler");
-console.log("[BOOT] errorHandler loaded");
 const { authenticate } = require("./middleware/auth");
-console.log("[BOOT] auth middleware loaded");
 const pool = require("./config/database");
-console.log("[BOOT] database pool loaded");
 const { sendEmail } = require("./services/emailService");
-console.log("[BOOT] emailService loaded");
 const {
   ID_IMAGES_BUCKET,
   DISPUTE_DOCS_BUCKET,
   downloadStorageObject,
 } = require("./services/storageService");
-console.log("[BOOT] storageService loaded");
 
 // Route imports
 const authRoutes = require("./routes/auth");
-console.log("[BOOT] routes/auth loaded");
 const verificationRoutes = require("./routes/verification");
-console.log("[BOOT] routes/verification loaded");
 const fraudFlagRoutes = require("./routes/fraudFlags");
-console.log("[BOOT] routes/fraudFlags loaded");
 const beneficiaryRoutes = require("./routes/beneficiaries");
-console.log("[BOOT] routes/beneficiaries loaded");
 const establishmentRoutes = require("./routes/establishments");
-console.log("[BOOT] routes/establishments loaded");
 const notificationRoutes = require("./routes/notifications");
-console.log("[BOOT] routes/notifications loaded");
 const disputeRoutes = require("./routes/disputes");
-console.log("[BOOT] routes/disputes loaded");
 const beneficiaryPortalRoutes = require("./routes/beneficiaryPortal");
-console.log("[BOOT] routes/beneficiaryPortal loaded");
 const dashboardRoutes = require("./routes/dashboard");
-console.log("[BOOT] routes/dashboard loaded");
 const auditLogRoutes = require("./routes/auditLogs");
-console.log("[BOOT] routes/auditLogs loaded");
 const reportRoutes = require("./routes/reports");
-console.log("[BOOT] routes/reports loaded");
 const staffRoutes = require("./routes/staff");
-console.log("[BOOT] routes/staff loaded");
 
-console.log("[BOOT] all requires complete — creating Express app...");
 const app = express();
-console.log("[BOOT] Express app created successfully");
-
-// Bare minimum test route — no middleware, no async, no dependencies.
-// If this hangs too, the problem isn't in our health-check logic at all.
-app.get("/api/ping", (req, res) => {
-  console.log("[PING] Route hit — responding now");
-  res.status(200).json({ pong: true, time: new Date().toISOString() });
-});
-console.log("[BOOT] /api/ping route registered");
 
 // ── Trust proxy ────────────────────────────────────────────────
 app.set("trust proxy", 1);
@@ -108,6 +80,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 
 // ── Authenticated file serving ────────────────────────────────
+// All uploaded files (ID captures, dispute docs) live in Supabase Storage —
+// nothing is written to local disk. Vercel's serverless filesystem is
+// read-only outside of /tmp, so this route only ever proxies from Supabase.
 app.get("/api/uploads/*", authenticate, (req, res) => {
   const requestedFile = req.params[0];
 
@@ -145,83 +120,20 @@ app.get("/api/uploads/*", authenticate, (req, res) => {
 
 // ── Health check ───────────────────────────────────────────────
 app.get("/api/health", async (req, res) => {
-  console.log("[HEALTH] Request received");
-  const result = { status: "checking", steps: {} };
-
-  let host, port;
+  let dbStatus = "ok";
   try {
-    console.log("[HEALTH] Parsing DATABASE_URL...");
-    const url = new URL(process.env.DATABASE_URL);
-    host = url.hostname;
-    port = url.port || 5432;
-    console.log(
-      `[HEALTH] Parsed host=${host} port=${port}. Starting DNS lookup...`,
-    );
-    const addresses = await Promise.race([
-      dns.lookup(host, { all: true }),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("DNS lookup timed out after 3s")),
-          3000,
-        ),
-      ),
-    ]);
-    console.log("[HEALTH] DNS ok:", JSON.stringify(addresses));
-    result.steps.dns = { ok: true, host, port, addresses };
-  } catch (err) {
-    console.log("[HEALTH] DNS failed:", err.message);
-    result.steps.dns = { ok: false, error: err.message };
-    return res.status(500).json(result);
+    await pool.query("SELECT 1");
+  } catch {
+    dbStatus = "error";
   }
-
-  try {
-    console.log("[HEALTH] Starting raw TCP connect...");
-    await new Promise((resolve, reject) => {
-      const socket = net.createConnection({ host, port: Number(port) });
-      const timer = setTimeout(() => {
-        socket.destroy();
-        reject(new Error("Raw TCP connect timed out after 4s"));
-      }, 4000);
-      socket.on("connect", () => {
-        clearTimeout(timer);
-        socket.destroy();
-        resolve();
-      });
-      socket.on("error", (err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
-    });
-    console.log("[HEALTH] TCP connect ok");
-    result.steps.tcp = { ok: true };
-  } catch (err) {
-    console.log("[HEALTH] TCP failed:", err.message);
-    result.steps.tcp = { ok: false, error: err.message };
-    return res.status(500).json(result);
-  }
-
-  try {
-    console.log("[HEALTH] Starting pg query...");
-    await Promise.race([
-      pool.query("SELECT 1"),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("pg query timed out after 6s")),
-          6000,
-        ),
-      ),
-    ]);
-    console.log("[HEALTH] pg query ok");
-    result.steps.query = { ok: true };
-    result.status = "ok";
-  } catch (err) {
-    console.log("[HEALTH] pg query failed:", err.message);
-    result.steps.query = { ok: false, error: err.message };
-    result.status = "degraded";
-  }
-
-  console.log("[HEALTH] Sending response:", JSON.stringify(result));
-  res.status(result.status === "ok" ? 200 : 500).json(result);
+  const overall = dbStatus === "ok" ? "ok" : "degraded";
+  res.status(overall === "ok" ? 200 : 503).json({
+    status: overall,
+    service: "iDetect API",
+    version: "1.0.0",
+    database: dbStatus,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // ── Routes ────────────────────────────────────────────────────
