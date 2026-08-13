@@ -59,6 +59,14 @@ console.log("[BOOT] all requires complete — creating Express app...");
 const app = express();
 console.log("[BOOT] Express app created successfully");
 
+// Bare minimum test route — no middleware, no async, no dependencies.
+// If this hangs too, the problem isn't in our health-check logic at all.
+app.get("/api/ping", (req, res) => {
+  console.log("[PING] Route hit — responding now");
+  res.status(200).json({ pong: true, time: new Date().toISOString() });
+});
+console.log("[BOOT] /api/ping route registered");
+
 // ── Trust proxy ────────────────────────────────────────────────
 app.set("trust proxy", 1);
 
