@@ -1,6 +1,8 @@
 // src/app.js
 // Reusable Express app for local dev and Vercel serverless deployment.
 
+console.log("[BOOT] app.js starting to load...");
+
 const net = require("net");
 const dnsSync = require("dns");
 const dns = require("dns").promises;
@@ -10,32 +12,52 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
+console.log("[BOOT] core + express libs loaded");
 
 const { errorHandler, createError } = require("./middleware/errorHandler");
+console.log("[BOOT] errorHandler loaded");
 const { authenticate } = require("./middleware/auth");
+console.log("[BOOT] auth middleware loaded");
 const pool = require("./config/database");
+console.log("[BOOT] database pool loaded");
 const { sendEmail } = require("./services/emailService");
+console.log("[BOOT] emailService loaded");
 const {
   ID_IMAGES_BUCKET,
   DISPUTE_DOCS_BUCKET,
   downloadStorageObject,
 } = require("./services/storageService");
+console.log("[BOOT] storageService loaded");
 
 // Route imports
 const authRoutes = require("./routes/auth");
+console.log("[BOOT] routes/auth loaded");
 const verificationRoutes = require("./routes/verification");
+console.log("[BOOT] routes/verification loaded");
 const fraudFlagRoutes = require("./routes/fraudFlags");
+console.log("[BOOT] routes/fraudFlags loaded");
 const beneficiaryRoutes = require("./routes/beneficiaries");
+console.log("[BOOT] routes/beneficiaries loaded");
 const establishmentRoutes = require("./routes/establishments");
+console.log("[BOOT] routes/establishments loaded");
 const notificationRoutes = require("./routes/notifications");
+console.log("[BOOT] routes/notifications loaded");
 const disputeRoutes = require("./routes/disputes");
+console.log("[BOOT] routes/disputes loaded");
 const beneficiaryPortalRoutes = require("./routes/beneficiaryPortal");
+console.log("[BOOT] routes/beneficiaryPortal loaded");
 const dashboardRoutes = require("./routes/dashboard");
+console.log("[BOOT] routes/dashboard loaded");
 const auditLogRoutes = require("./routes/auditLogs");
+console.log("[BOOT] routes/auditLogs loaded");
 const reportRoutes = require("./routes/reports");
+console.log("[BOOT] routes/reports loaded");
 const staffRoutes = require("./routes/staff");
+console.log("[BOOT] routes/staff loaded");
 
+console.log("[BOOT] all requires complete — creating Express app...");
 const app = express();
+console.log("[BOOT] Express app created successfully");
 
 // ── Trust proxy ────────────────────────────────────────────────
 app.set("trust proxy", 1);
@@ -78,9 +100,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 
 // ── Authenticated file serving ────────────────────────────────
-// All uploaded files (ID captures, dispute docs) live in Supabase Storage —
-// nothing is written to local disk. Vercel's serverless filesystem is
-// read-only outside of /tmp, so this route only ever proxies from Supabase.
 app.get("/api/uploads/*", authenticate, (req, res) => {
   const requestedFile = req.params[0];
 
