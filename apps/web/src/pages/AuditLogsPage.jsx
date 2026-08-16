@@ -73,7 +73,11 @@ const ACTION_GROUPS = [
   {
     value: "verification",
     label: "Verifications",
-    actions: ["verification_manual"],
+    actions: [
+      "verification_performed",
+      "verification_manual",
+      "verification_action_taken",
+    ],
   },
 ];
 
