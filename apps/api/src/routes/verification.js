@@ -337,6 +337,26 @@ router.post(
 
       const log = logResult.rows[0];
 
+      // Log every verification attempt to the audit trail, so staff can see
+      // full scan activity under Audit Logs > Verifications (not just
+      // manual entries or cross-database conflicts).
+      await pool.query(
+        `INSERT INTO audit_logs
+         (establishment_id, action, target_table, target_id, metadata)
+         VALUES ($1, 'verification_performed', 'verification_logs', $2, $3)`,
+        [
+          establishment_id,
+          log.id,
+          JSON.stringify({
+            result,
+            beneficiary_type,
+            id_number,
+            manually_entered,
+            beneficiary_id,
+          }),
+        ],
+      );
+
       // REQ-2.5.5: Auto-generate discrepancy alert on cross-database conflict
       // Inserts a fraud_flag for BOTH portal types so OSCA and PDAO see it
       if (
@@ -376,24 +396,6 @@ router.post(
             id_number,
             actualType,
             conflictNote,
-          ],
-        );
-
-        // Log conflict details in audit trail
-        await pool.query(
-          `INSERT INTO audit_logs
-           (establishment_id, action, target_table, target_id, metadata)
-         VALUES ($1, 'verification_performed', 'verification_logs', $2, $3)`,
-          [
-            establishment_id,
-            log.id,
-            JSON.stringify({
-              conflict: true,
-              scanned_type: beneficiary_type,
-              actual_type: actualType,
-              id_number,
-              beneficiary_id,
-            }),
           ],
         );
       }
