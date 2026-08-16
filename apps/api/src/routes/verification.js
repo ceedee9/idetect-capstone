@@ -568,11 +568,11 @@ router.get(
 
       const result = await pool.query(
         `SELECT id_number, status, updated_at
-         FROM beneficiaries
-         WHERE updated_at > $1
-           AND ($2::text IS NULL OR beneficiary_type = $2)
-         ORDER BY updated_at DESC
-         LIMIT 1000`,
+        FROM beneficiaries
+        WHERE updated_at > $1
+          AND ($2::text IS NULL OR beneficiary_type = $2::beneficiary_type)
+        ORDER BY updated_at DESC
+        LIMIT 1000`,
         [since, beneficiary_type || null],
       );
 

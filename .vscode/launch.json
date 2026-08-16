@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "iDetect (Northflank API)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=IDETECT_API_BASE_URL=https://site--idetect--lr4dgpy2rvkq.code.run/api"
+      ]
+    }
+  ]
+}

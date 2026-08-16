@@ -21,6 +21,12 @@ async function runStartupMigrations() {
     await pool.query(`
       ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'dispute_escalated';
     `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_manual';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_action_taken';
+    `);
     console.log("✅ Startup migrations applied.");
   } catch (err) {
     // Non-fatal: log and continue. The ENUM values may already exist.
