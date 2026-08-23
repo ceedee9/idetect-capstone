@@ -27,9 +27,14 @@ async function runStartupMigrations() {
     await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_action_taken';
     `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'breach_incident_report_generated';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'sla_ack_escalation';
+    `);
     console.log("✅ Startup migrations applied.");
   } catch (err) {
-    // Non-fatal: log and continue. The ENUM values may already exist.
     console.warn("⚠️  Startup migration warning:", err.message);
   }
 }
