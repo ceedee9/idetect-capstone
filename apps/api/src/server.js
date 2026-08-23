@@ -22,16 +22,121 @@ async function runStartupMigrations() {
       ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'dispute_escalated';
     `);
     await pool.query(`
-      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_manual';
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'account_locked';
     `);
     await pool.query(`
-      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_action_taken';
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'account_unlocked';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_bulk_import';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_created';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_renewed';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_status_changed';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_updated';
     `);
     await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'breach_incident_report_generated';
     `);
     await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'data_export';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'dispute_acknowledged';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'dispute_resolved';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'dispute_submitted';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_approved';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_bulk_import';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_created';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_deleted';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_revoked';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_self_registered';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_suspended';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_updated';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'flag_confirmed';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'flag_dismissed';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'flag_restored';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'fraud_report_submitted';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'login';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'password_changed';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'password_reset';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'password_reset_by_admin';
+    `);
+    await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'sla_ack_escalation';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'sla_resolve_escalation';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'staff_activated';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'staff_created';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'staff_deactivated';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'staff_password_reset';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'staff_updated';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'unauthorized_use_reported';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_action_taken';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_manual';
+    `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_performed';
     `);
     console.log("✅ Startup migrations applied.");
   } catch (err) {
