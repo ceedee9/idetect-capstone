@@ -482,10 +482,9 @@ router.post(
 
       // Log the breach event in audit_logs for accountability
       await pool.query(
-        `INSERT INTO audit_logs (action, performed_by, details, created_at)
-         VALUES ($1, $2, $3, NOW())`,
+        `INSERT INTO audit_logs (user_id, action, metadata)
+         VALUES ($1, 'breach_incident_report_generated', $2)`,
         [
-          "breach_incident_report_generated",
           req.user.id,
           JSON.stringify({
             report_id: reportId,

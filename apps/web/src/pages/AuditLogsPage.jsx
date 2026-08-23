@@ -25,6 +25,10 @@ const ACTION_GROUPS = [
       "password_changed",
       "otp_requested",
       "otp_verified",
+      "account_locked",
+      "account_unlocked",
+      "password_reset",
+      "password_reset_by_admin",
     ],
   },
   {
@@ -34,6 +38,9 @@ const ACTION_GROUPS = [
       "beneficiary_created",
       "beneficiary_updated",
       "beneficiary_status_changed",
+      "beneficiary_bulk_import",
+      "beneficiary_renewed",
+      "fraud_report_submitted",
     ],
   },
   {
@@ -43,6 +50,11 @@ const ACTION_GROUPS = [
       "establishment_approved",
       "establishment_suspended",
       "establishment_revoked",
+      "establishment_self_registered",
+      "establishment_created",
+      "establishment_bulk_import",
+      "establishment_updated",
+      "establishment_deleted",
     ],
   },
   {
@@ -53,6 +65,8 @@ const ACTION_GROUPS = [
       "flag_reviewed",
       "flag_confirmed",
       "flag_dismissed",
+      "flag_restored",
+      "unauthorized_use_reported",
     ],
   },
   {
@@ -68,7 +82,11 @@ const ACTION_GROUPS = [
   {
     value: "system",
     label: "System",
-    actions: ["data_export", "report_generated"],
+    actions: [
+      "data_export",
+      "report_generated",
+      "breach_incident_report_generated",
+    ],
   },
   {
     value: "verification",
@@ -77,6 +95,17 @@ const ACTION_GROUPS = [
       "verification_performed",
       "verification_manual",
       "verification_action_taken",
+    ],
+  },
+  {
+    value: "staff",
+    label: "Staff",
+    actions: [
+      "staff_created",
+      "staff_updated",
+      "staff_activated",
+      "staff_deactivated",
+      "staff_password_reset",
     ],
   },
 ];
@@ -90,11 +119,17 @@ function actionLabel(action) {
 function actionColor(action) {
   if (!action) return "bg-slate-100 text-slate-600";
   if (action === "verification_manual") return "bg-amber-100 text-amber-800";
-  if (action.startsWith("flag_") || action.startsWith("dispute_"))
+  if (
+    action.startsWith("flag_") ||
+    action.startsWith("dispute_") ||
+    action === "unauthorized_use_reported"
+  )
     return "bg-accent-50 text-accent-700";
-  if (action.startsWith("beneficiary_")) return "bg-gov-50 text-gov-700";
+  if (action.startsWith("beneficiary_") || action === "fraud_report_submitted")
+    return "bg-gov-50 text-gov-700";
   if (action.startsWith("establishment_"))
     return "bg-purple-50 text-purple-700";
+  if (action.startsWith("staff_")) return "bg-indigo-50 text-indigo-700";
   if (
     [
       "login",
@@ -102,6 +137,10 @@ function actionColor(action) {
       "password_changed",
       "otp_requested",
       "otp_verified",
+      "account_locked",
+      "account_unlocked",
+      "password_reset",
+      "password_reset_by_admin",
     ].includes(action)
   )
     return "bg-blue-50 text-blue-700";
