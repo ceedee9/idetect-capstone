@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { auditLogsAPI } from "../services/api";
 import { fmtDateTime } from "../utils/date";
+import { humanizeAuditLog } from "../utils/auditLog";
+import AuditLogDetailDrawer from "../components/AuditLogDetailDrawer";
 
 const ACTION_GROUPS = [
   { value: "", label: "All Actions" },
@@ -176,6 +178,7 @@ export default function AuditLogsPage() {
   const [page, setPage] = useState(1);
 
   const [exporting, setExporting] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
 
   const activeActions = useMemo(() => {
     const grp = ACTION_GROUPS.find((g) => g.value === actionGroup);
@@ -395,7 +398,8 @@ export default function AuditLogsPage() {
                 filtered.map((log) => (
                   <tr
                     key={log.id}
-                    className={`hover:bg-slate-50/50 transition-colors ${
+                    onClick={() => setSelectedLog(log)}
+                    className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${
                       log.action === "verification_manual" ? "bg-amber-50" : ""
                     }`}
                   >
@@ -428,10 +432,8 @@ export default function AuditLogsPage() {
                         ""
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400 max-w-xs truncate">
-                      {log.metadata
-                        ? JSON.stringify(log.metadata).slice(0, 80)
-                        : "—"}
+                    <td className="px-4 py-3 text-xs text-slate-500 max-w-xs truncate">
+                      {humanizeAuditLog(log)}
                     </td>
                   </tr>
                 ))
@@ -470,6 +472,11 @@ export default function AuditLogsPage() {
           </div>
         )}
       </div>
+
+      <AuditLogDetailDrawer
+        log={selectedLog}
+        onClose={() => setSelectedLog(null)}
+      />
     </div>
   );
 }
