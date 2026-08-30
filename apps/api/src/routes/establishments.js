@@ -545,19 +545,23 @@ router.post(
         client.release();
       }
 
-      // Send credentials to establishment email (fire-and-forget — never block the response)
-      sendEstablishmentCredentials({
+      // Send credentials to establishment email — now awaited so a delivery
+      // failure is reflected in the response instead of silently reporting
+      // success while nothing was actually sent.
+      const emailResult = await sendEstablishmentCredentials({
         business_name,
         email,
         plain_password,
-      }).catch((err) =>
+      }).catch((err) => {
         console.error(
           `[EMAIL] Failed to send credentials to ${email}:`,
           err.message,
-        ),
-      );
+        );
+        return { success: false, error: err.message };
+      });
 
-      // Also notify via SMS if contact number provided (fire-and-forget)
+      // Also notify via SMS if contact number provided (fire-and-forget —
+      // SMS delivery isn't the primary channel here, so we don't block on it)
       if (contact_number) {
         sendSms(
           contact_number,
@@ -566,9 +570,12 @@ router.post(
       }
 
       res.status(201).json({
-        message: `Establishment "${business_name}" created and approved successfully. Credentials have been sent to ${email}.`,
+        message: emailResult?.success
+          ? `Establishment "${business_name}" created and approved successfully. Credentials have been sent to ${email}.`
+          : `Establishment "${business_name}" created and approved successfully, but the credentials email to ${email} could not be sent. Please share the password below with the establishment manually.`,
         establishment: result.rows[0],
         plain_password,
+        email_sent: !!emailResult?.success,
       });
     } catch (err) {
       next(err);
