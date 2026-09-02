@@ -13,7 +13,11 @@ import {
 } from "lucide-react";
 import { auditLogsAPI } from "../services/api";
 import { fmtDateTime } from "../utils/date";
-import { humanizeAuditLog } from "../utils/auditLog";
+import {
+  humanizeAuditLog,
+  actionLabel,
+  formatTargetLabel,
+} from "../utils/auditLog";
 import AuditLogDetailDrawer from "../components/AuditLogDetailDrawer";
 
 const ACTION_GROUPS = [
@@ -92,7 +96,7 @@ const ACTION_GROUPS = [
   },
   {
     value: "verification",
-    label: "Verifications",
+    label: "Validations",
     actions: [
       "verification_performed",
       "verification_manual",
@@ -111,12 +115,6 @@ const ACTION_GROUPS = [
     ],
   },
 ];
-
-function actionLabel(action) {
-  return (action ?? "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 function actionColor(action) {
   if (!action) return "bg-slate-100 text-slate-600";
@@ -361,9 +359,6 @@ export default function AuditLogsPage() {
                   User
                 </th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
-                  Establishment
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
                   Target
                 </th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
@@ -375,7 +370,7 @@ export default function AuditLogsPage() {
               {loading ? (
                 [...Array(8)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(6)].map((__, j) => (
+                    {[...Array(5)].map((__, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="skeleton h-4 w-full rounded" />
                       </td>
@@ -384,7 +379,7 @@ export default function AuditLogsPage() {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-14">
+                  <td colSpan={5} className="text-center py-14">
                     <ScrollText className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                     <p className="text-sm font-semibold text-slate-500">
                       No audit logs found
@@ -419,17 +414,16 @@ export default function AuditLogsPage() {
                     <td className="px-4 py-3 text-xs font-medium text-slate-700">
                       {log.user_name || "—"}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      {log.establishment_name || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-500 font-mono">
-                      {log.target_table ? `${log.target_table}` : "—"}
-                      {log.target_id ? (
-                        <span className="text-slate-400 ml-1">
-                          #{log.target_id.slice(0, 8)}
-                        </span>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      {log.target_table ? (
+                        <>
+                          {formatTargetLabel(log.target_table)}
+                          <span className="text-slate-400 font-mono ml-1.5">
+                            #{log.target_id ? log.target_id.slice(0, 8) : "—"}
+                          </span>
+                        </>
                       ) : (
-                        ""
+                        "—"
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-xs truncate">

@@ -28,6 +28,48 @@ function fmtResult(result) {
   return map[result] || result;
 }
 
+const TABLE_LABELS = {
+  establishments: "Establishment",
+  beneficiaries: "Beneficiary",
+  disputes: "Dispute",
+  fraud_flags: "Fraud Flag",
+  audit_logs: "Audit Log",
+  users: "Staff Account",
+  staff_alerts: "Staff Alert",
+  verification_logs: "Validation Log",
+  notifications: "Notification",
+};
+
+/**
+ * Turns a raw target_table value into a readable singular label,
+ * e.g. "establishments" -> "Establishment".
+ */
+export function formatTargetLabel(targetTable) {
+  if (!targetTable) return null;
+  if (TABLE_LABELS[targetTable]) return TABLE_LABELS[targetTable];
+  // Fallback: underscores -> spaces, title case, naive de-pluralize
+  const spaced = targetTable.replace(/_/g, " ");
+  const singular = spaced.endsWith("s") ? spaced.slice(0, -1) : spaced;
+  return singular.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const ACTION_LABEL_OVERRIDES = {
+  verification_performed: "Validation Performed",
+  verification_manual: "Manual Validation",
+  verification_action_taken: "Validation Action Taken",
+};
+
+/**
+ * Human-readable badge label for an action, e.g. "beneficiary_created"
+ * -> "Beneficiary Created". A few actions get an explicit override
+ * (the verification_* family reads as "Validation" per project terminology).
+ */
+export function actionLabel(action) {
+  if (!action) return "";
+  if (ACTION_LABEL_OVERRIDES[action]) return ACTION_LABEL_OVERRIDES[action];
+  return action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 /**
  * Returns a single plain-language sentence describing the log entry.
  * Falls back to a generic best-effort sentence for unmapped actions.
@@ -123,9 +165,9 @@ export function humanizeAuditLog(log) {
 
     // ── Verifications ──────────────────────────────────────────
     case "verification_performed":
-      return `Scanned ID ${m.id_number || "—"} — result: ${fmtResult(m.result) || "—"}`;
+      return `Validated ID ${m.id_number || "—"} — result: ${fmtResult(m.result) || "—"}`;
     case "verification_manual":
-      return `Manually entered and verified ID ${m.id_number || "—"} — result: ${fmtResult(m.result) || "—"}`;
+      return `Manually entered and validated ID ${m.id_number || "—"} — result: ${fmtResult(m.result) || "—"}`;
     case "verification_action_taken":
       return `Cashier action recorded: ${fmtFieldName(m.cashier_action || "—")}`;
 

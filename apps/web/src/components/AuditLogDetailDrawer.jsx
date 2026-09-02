@@ -6,13 +6,12 @@
 import { useEffect } from "react";
 import { X, Calendar, User, Building2, Tag } from "lucide-react";
 import { fmtDateTime } from "../utils/date";
-import { humanizeAuditLog, formatMetadataEntries } from "../utils/auditLog";
-
-function actionLabel(action) {
-  return (action ?? "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+import {
+  humanizeAuditLog,
+  formatMetadataEntries,
+  actionLabel,
+  formatTargetLabel,
+} from "../utils/auditLog";
 
 export default function AuditLogDetailDrawer({ log, onClose }) {
   const isOpen = !!log;
@@ -116,9 +115,11 @@ export default function AuditLogDetailDrawer({ log, onClose }) {
                       <p className="text-xs text-slate-400 font-medium">
                         Target
                       </p>
-                      <p className="text-slate-700 font-mono text-xs">
-                        {log.target_table}
-                        {log.target_id ? ` #${log.target_id.slice(0, 8)}` : ""}
+                      <p className="text-slate-700 text-xs">
+                        {formatTargetLabel(log.target_table)}
+                        <span className="text-slate-400 font-mono ml-1.5">
+                          #{log.target_id ? log.target_id.slice(0, 8) : "—"}
+                        </span>
                       </p>
                     </div>
                   </div>
