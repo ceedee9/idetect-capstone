@@ -106,6 +106,9 @@ async function runStartupMigrations() {
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'password_reset_by_admin';
     `);
     await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'seal_not_detected';
+    `);
+    await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'sla_ack_escalation';
     `);
     await pool.query(`
