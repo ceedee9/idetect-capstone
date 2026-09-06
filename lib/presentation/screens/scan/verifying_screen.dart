@@ -10,12 +10,15 @@ class VerifyingScreen extends StatefulWidget {
   final ParsedIDData parsedData;
   final String imagePath;
   final String idType;
+  final String
+      idFormat; // 'old' or 'new' — available here, not yet sent to the API
 
   const VerifyingScreen({
     super.key,
     required this.parsedData,
     required this.imagePath,
     required this.idType,
+    this.idFormat = 'old',
   });
 
   @override
@@ -56,6 +59,7 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
         manuallyEntered: false,
         extractedName: widget.parsedData.fullName,
         extractedDob: widget.parsedData.dateOfBirth,
+        idFormat: widget.idFormat,
       );
     }
 

@@ -129,7 +129,10 @@ class ApiService {
     bool manuallyEntered = true,
     String? extractedName,
     String? extractedDob,
+    String idFormat =
+        'old', // 'old' or 'new' — only meaningful for senior_citizen
   }) async {
+    debugPrint('[TRACE] ApiService.verifyId received: idFormat=$idFormat');
     try {
       if (_token == null) {
         return VerificationResult.error(
@@ -198,6 +201,7 @@ class ApiService {
               'beneficiary_type': beneficiaryType,
               'ocr_confidence_score': normalizedConfidence,
               'manually_entered': manuallyEntered,
+              'id_format': idFormat,
               if (imageData != null) 'image_data': imageData,
               // Cross-validation fields: sent to the server so it can compare
               // the OCR-extracted name and DOB against the stored record.

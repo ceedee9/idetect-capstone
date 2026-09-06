@@ -15,9 +15,10 @@ import 'processing_screen.dart';
 /// Camera screen with clear capture button and ID framing
 class CameraScreen extends StatefulWidget {
   final String idType; // 'senior' or 'pwd'
+  final String
+      idFormat; // 'old' or 'new' — only meaningful when idType == 'senior'
 
-  const CameraScreen({super.key, required this.idType});
-
+  const CameraScreen({super.key, required this.idType, this.idFormat = 'old'});
   @override
   State<CameraScreen> createState() => _CameraScreenState();
 }
@@ -148,12 +149,15 @@ class _CameraScreenState extends State<CameraScreen> {
       );
 
       if (mounted) {
+        debugPrint(
+            '[TRACE] CameraScreen -> ProcessingScreen: idFormat=${widget.idFormat}');
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ProcessingScreen(
               imagePath: processedPath,
               idType: widget.idType,
+              idFormat: widget.idFormat,
             ),
           ),
         );

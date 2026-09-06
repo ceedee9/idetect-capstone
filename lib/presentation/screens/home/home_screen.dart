@@ -60,13 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const CameraScreen(idType: 'senior'),
-                    ),
-                  );
+                  _showSeniorFormatDialog();
                 },
                 icon: const Icon(Icons.elderly, size: 32),
                 label: const Padding(
@@ -147,6 +141,90 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Cancel'),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Ask which Senior ID format was presented — old, or new (with holographic seal).
+  /// Only shown for the Senior Citizen path; PWD and Auto-detect are unaffected.
+  void _showSeniorFormatDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(
+          'Which ID format?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Check for a round holographic seal near the signature.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Has seal, labeled "ID No." → New\nNo seal, labeled "Control No." → Old',
+              style: TextStyle(
+                  fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _onSeniorFormatSelected('old');
+                },
+                icon: const Icon(Icons.badge_outlined, size: 28),
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Text('Old format', style: TextStyle(fontSize: 16)),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF002E6B),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _onSeniorFormatSelected('new');
+                },
+                icon: const Icon(Icons.verified_outlined, size: 28),
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Text('New format (with seal)',
+                      style: TextStyle(fontSize: 16)),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF002E6B),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onSeniorFormatSelected(String format) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CameraScreen(idType: 'senior', idFormat: format),
       ),
     );
   }

@@ -16,11 +16,13 @@ import 'verifying_screen.dart';
 class ProcessingScreen extends StatefulWidget {
   final String imagePath;
   final String idType; // 'senior' or 'pwd'
+  final String idFormat; // 'old' or 'new'
 
   const ProcessingScreen({
     super.key,
     required this.imagePath,
     required this.idType,
+    this.idFormat = 'old',
   });
 
   @override
@@ -426,6 +428,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       rawText: _ocrResult?.rawText ?? _parsedData?.rawText ?? '',
     );
 
+    debugPrint(
+        '[TRACE] ProcessingScreen -> VerifyingScreen: idFormat=${widget.idFormat}');
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -433,6 +438,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           parsedData: updatedData,
           imagePath: widget.imagePath,
           idType: _resolvedIdType,
+          idFormat: widget.idFormat,
         ),
       ),
     );

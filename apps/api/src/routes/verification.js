@@ -112,6 +112,7 @@ router.post(
     body("manually_entered").optional().isBoolean(),
     body("extracted_name").optional().isString().trim(),
     body("extracted_dob").optional().isString().trim(),
+    body("id_format").optional().isIn(["old", "new"]),
   ],
   async (req, res, next) => {
     try {
@@ -129,6 +130,7 @@ router.post(
         manually_entered = false,
         extracted_name = null,
         extracted_dob = null,
+        id_format = "old",
       } = req.body;
 
       // Cross-validation state — populated below when result is VALID.
@@ -315,8 +317,8 @@ router.post(
          (establishment_id, beneficiary_id, id_number_scanned,
           beneficiary_type_detected, result, ocr_confidence_score,
           ocr_raw_text, image_path, manually_entered,
-          extracted_name, extracted_dob, name_match_score, fields_matched)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+          extracted_name, extracted_dob, name_match_score, fields_matched,id_format)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING id, verified_at`,
         [
           establishment_id,
@@ -332,6 +334,7 @@ router.post(
           safeExtractedDob,
           crossNameMatchScore,
           crossFieldsMatched,
+          id_format,
         ],
       );
 
@@ -353,6 +356,7 @@ router.post(
             id_number,
             manually_entered,
             beneficiary_id,
+            id_format,
           }),
         ],
       );
