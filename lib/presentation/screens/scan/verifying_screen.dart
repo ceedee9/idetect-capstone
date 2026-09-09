@@ -12,6 +12,7 @@ class VerifyingScreen extends StatefulWidget {
   final String idType;
   final String
       idFormat; // 'old' or 'new' — available here, not yet sent to the API
+  final bool? sealDetected;
 
   const VerifyingScreen({
     super.key,
@@ -19,6 +20,7 @@ class VerifyingScreen extends StatefulWidget {
     required this.imagePath,
     required this.idType,
     this.idFormat = 'old',
+    this.sealDetected,
   });
 
   @override
@@ -60,6 +62,7 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
         extractedName: widget.parsedData.fullName,
         extractedDob: widget.parsedData.dateOfBirth,
         idFormat: widget.idFormat,
+        sealDetected: widget.sealDetected,
       );
     }
 

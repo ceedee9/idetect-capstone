@@ -17,12 +17,14 @@ class ProcessingScreen extends StatefulWidget {
   final String imagePath;
   final String idType; // 'senior' or 'pwd'
   final String idFormat; // 'old' or 'new'
+  final bool? sealDetected;
 
   const ProcessingScreen({
     super.key,
     required this.imagePath,
     required this.idType,
     this.idFormat = 'old',
+    this.sealDetected,
   });
 
   @override
@@ -440,6 +442,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           imagePath: widget.imagePath,
           idType: _resolvedIdType,
           idFormat: widget.idFormat,
+          sealDetected: widget.sealDetected,
         ),
       ),
     );

@@ -185,6 +185,7 @@ class _CameraScreenState extends State<CameraScreen> {
               imagePath: processedPath,
               idType: widget.idType,
               idFormat: widget.idFormat,
+              sealDetected: sealResult.sealDetected,
             ),
           ),
         );
