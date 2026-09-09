@@ -706,20 +706,18 @@ function EstablishmentDashboard({ user }) {
     [establishments],
   );
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-5 sm:space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-2xl text-gray-900">
-            {greeting}, {user?.first_name ?? "Admin"} 👋
+            Business Permit Overview
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Here's what's happening with your registered establishments.
+            {loading
+              ? "Loading your establishment activity..."
+              : `${stats.total} registered establishment${stats.total === 1 ? "" : "s"}. ${stats.pending > 0 ? `${stats.pending} awaiting approval.` : "No approvals are waiting for review."}`}
           </p>
         </div>
         <ExportDropdown />
@@ -801,7 +799,7 @@ function EstablishmentDashboard({ user }) {
       </div>
 
       {/* ── Analytics Overview ─────────────────────────────────────── */}
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid lg:grid-cols-3 items-start gap-4 sm:gap-6">
         {/* Registration Trend */}
         <div className="lg:col-span-2 card space-y-4">
           <div className="flex items-center gap-3">
