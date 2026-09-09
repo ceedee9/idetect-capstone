@@ -122,7 +122,10 @@ export default function EstablishmentTrendChart({ establishments }) {
           {insight}
         </p>
       )}
-      <ChartContainer config={chartConfig} className="h-40 sm:h-44 aspect-auto">
+      <ChartContainer
+        config={chartConfig}
+        className="w-full min-w-0 h-40 sm:h-44 aspect-auto"
+      >
         <AreaChart
           data={data}
           margin={{ top: 4, right: 4, left: -28, bottom: 0 }}
