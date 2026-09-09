@@ -225,6 +225,36 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
+  Future<void> _confirmExitWithoutSaving() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Exit without saving?'),
+        content: const Text(
+          'This scan result will not be recorded, and no audit entry will be '
+          'created. Are you sure you want to exit?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Exit Without Saving'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _deleteTempImageFiles(widget.imagePath);
+      if (!mounted) return;
+      Navigator.popUntil(context, (route) => route.isFirst);
+    }
+  }
+
   /// Gap 4: Delete the captured image and all intermediate OCR temp files.
   /// Uses a fire-and-forget approach (non-fatal on any I/O error) so a cleanup
   /// failure never blocks the user from finishing a scan.
@@ -420,6 +450,15 @@ class _ResultScreenState extends State<ResultScreen> {
                   onPressed:
                       _isSaving ? null : () => _saveToDatabase(flagged: false),
                 ),
+              const SizedBox(height: 10),
+              TextButton.icon(
+                onPressed: _isSaving ? null : _confirmExitWithoutSaving,
+                icon: const Icon(Icons.close_rounded, size: 18),
+                label: const Text('Exit Without Saving'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppDesignSystem.textSecondary,
+                ),
+              ),
             ],
           ),
         ),

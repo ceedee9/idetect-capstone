@@ -15,7 +15,7 @@ dependencies:
 
   # Camera & Images
   camera: ^0.11.3
-  image_picker: ^1.0.7
+  image_picker: ^1.1.2
   image: ^4.1.7
 
   # OCR - Multiple engines for best accuracy
@@ -44,6 +44,7 @@ dependencies:
   permission_handler: ^11.3.0 # Camera permissions
   uuid: ^4.3.3 # Generate unique IDs
   connectivity_plus: ^5.0.2 # Network connectivity detection
+  url_launcher: ^6.3.1
 
   # UI Enhancement
   lottie: ^3.0.0 # Animations
@@ -74,6 +75,8 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/tessdata_config.json
+    - assets/tessdata/
     # - assets/fonts/
 
   # Fonts (uncomment if you add custom fonts)

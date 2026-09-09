@@ -125,17 +125,24 @@ class HybridParserService {
     }
   }
 
-  /// Parse ID with hybrid approach
   Future<ParsedIDData> parseIDWithHybridApproach({
     required File imageFile,
     required String idType,
-    String? rawOcrText, // Optional: if OCR already done
+    String? rawOcrText,
+    String idFormat = 'old',
   }) async {
     debugPrint('🔀 ============================================');
     debugPrint('🔀 HYBRID PARSER - Layout + Fuzzy Fallback');
     debugPrint('🔀 ============================================');
 
     try {
+      // NEW: redesigned (2025+) Senior Citizen ID — different field layout,
+      // handled by its own dedicated zone extractor rather than the
+      // old-format anchor/fuzzy pipeline below (which stays fully untouched).
+      if (idType.toLowerCase() == 'senior' && idFormat == 'new') {
+        return await _parseSeniorNewFormat(imageFile);
+      }
+
       // PWD flow: use layout-aware extractor with fuzzy fallback for robustness.
       if (idType.toLowerCase() == 'pwd') {
         return await _parsePWDWithLayoutAndFallback(
@@ -319,6 +326,61 @@ class HybridParserService {
       // Last resort: try fuzzy-only
       debugPrint('🔄 Attempting fuzzy-only as last resort...');
       return await _fallbackToFuzzyOnly(imageFile, idType, rawOcrText);
+    }
+  }
+
+  /// Dedicated path for the redesigned (2025+) Senior Citizen ID. Skips the
+  /// OpenCV preprocessing / ML-Kit-position / fuzzy-fallback machinery the
+  /// old format needs, since this layout's zones already return clean,
+  /// single-value text directly.
+  Future<ParsedIDData> _parseSeniorNewFormat(File imageFile) async {
+    debugPrint('🆕 Using NEW-FORMAT Senior ID extraction path');
+    try {
+      final dimensions = await _ocrService.getImageDimensions(imageFile);
+      if (dimensions == null) {
+        return ParsedIDData(
+          success: false,
+          errorMessage:
+              'Could not read image dimensions for new-format extraction.',
+        );
+      }
+      final imageWidth = dimensions['width']!;
+      final imageHeight = dimensions['height']!;
+
+      final layoutResult =
+          await LayoutBasedFieldExtractor.extractFieldsNewFormat(
+        imagePath: imageFile.path,
+        imageWidth: imageWidth,
+        imageHeight: imageHeight,
+      );
+
+      final fieldConfidences =
+          layoutResult['fieldConfidences'] as Map<String, double>;
+
+      return ParsedIDData(
+        success: true,
+        idType: IDType.seniorCitizen,
+        fullName: layoutResult['fullName'] as String,
+        dateOfBirth: layoutResult['dateOfBirth'] as String,
+        sex: layoutResult['sex'] as String,
+        dateIssued: layoutResult['dateIssued'] as String,
+        controlNumber: layoutResult['controlNumber'] as String,
+        age: _extractAge(layoutResult['dateOfBirth'] as String),
+        confidence: layoutResult['confidence'] as double,
+        rawText: '',
+        nameConfidence: fieldConfidences['fullName'] ?? 0.0,
+        sexConfidence: fieldConfidences['sex'] ?? 0.0,
+        dateIssuedConfidence: fieldConfidences['dateIssued'] ?? 0.0,
+        controlNumberConfidence: fieldConfidences['controlNumber'] ?? 0.0,
+        extractionMethod: layoutResult['extractionMethod'] as String,
+        templateMatched: layoutResult['templateMatched'] as bool,
+      );
+    } catch (e) {
+      debugPrint('❌ New-format extraction failed: $e');
+      return ParsedIDData(
+        success: false,
+        errorMessage: 'New-format extraction failed: $e',
+      );
     }
   }
 

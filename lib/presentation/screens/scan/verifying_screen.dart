@@ -99,32 +99,34 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
             child: Container(color: Colors.black.withOpacity(0.55)),
           ),
           SafeArea(
-            child: Column(
-              children: [
-                _buildTopBar(),
-                const SizedBox(height: 12),
-                _buildVerifyingBanner(),
-                const SizedBox(height: 12),
-                _buildIDPreviewCard(),
-                const SizedBox(height: 16),
-                _buildExtractedDetailsCard(),
-                const SizedBox(height: 16),
-                _buildVerifyButton(),
-                const Spacer(),
-                Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: 24, left: 24, right: 24),
-                  child: Text(
-                    _statusText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildTopBar(),
+                  const SizedBox(height: 12),
+                  _buildVerifyingBanner(),
+                  const SizedBox(height: 12),
+                  _buildIDPreviewCard(),
+                  const SizedBox(height: 16),
+                  _buildExtractedDetailsCard(),
+                  const SizedBox(height: 16),
+                  _buildVerifyButton(),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: 24, left: 24, right: 24),
+                    child: Text(
+                      _statusText,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

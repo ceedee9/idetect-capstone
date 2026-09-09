@@ -113,6 +113,7 @@ router.post(
     body("extracted_name").optional().isString().trim(),
     body("extracted_dob").optional().isString().trim(),
     body("id_format").optional().isIn(["old", "new"]),
+    body("seal_detected").optional().isBoolean(),
   ],
   async (req, res, next) => {
     try {
@@ -131,6 +132,7 @@ router.post(
         extracted_name = null,
         extracted_dob = null,
         id_format = "old",
+        seal_detected = null,
       } = req.body;
 
       // Cross-validation state — populated below when result is VALID.
@@ -177,6 +179,12 @@ router.post(
         !manually_entered &&
         ocr_confidence_score !== null &&
         ocr_confidence_score < threshold;
+
+      // New-format Senior/PWD IDs carry a holographic seal; a heuristic
+      // check runs client-side before this request. seal_detected === false
+      // means the check ran and did NOT find the seal. (null means the
+      // check wasn't run or was inconclusive — not treated as a flag.)
+      const sealFlagged = id_format === "new" && seal_detected === false;
 
       // Query the database for this ID
       const bResult = await pool.query(
@@ -308,6 +316,20 @@ router.post(
           message = `Low extraction quality score (${ocr_confidence_score?.toFixed(0)}%). Please inspect the physical ID carefully before approving the discount.`;
         } else {
           message = `(Low extraction quality: ${ocr_confidence_score?.toFixed(0)}%) ${message}`;
+        }
+      }
+
+      // If the new-format ID's seal wasn't detected on an otherwise-valid
+      // result, downgrade to manual_review — same treatment as low OCR
+      // confidence. This is a heuristic flag, not proof of a fake ID, so
+      // we ask a human to check rather than auto-rejecting.
+      if (sealFlagged) {
+        if (result === "valid") {
+          result = "manual_review";
+          message =
+            "Holographic seal not detected on this new-format ID. Please inspect the physical ID carefully before approving the discount.";
+        } else {
+          message = `(Seal not detected) ${message}`;
         }
       }
 
@@ -510,6 +532,26 @@ router.post(
             log.id,
             JSON.stringify({
               manually_entered: true,
+              id_number,
+              beneficiary_type,
+              result,
+            }),
+          ],
+        );
+      }
+
+      // Supplementary audit entry when a new-format scan's seal check came
+      // back negative — lets OSCA/BPLO filter these separately from
+      // ordinary verifications, same pattern as the block above.
+      if (sealFlagged) {
+        await pool.query(
+          `INSERT INTO audit_logs
+           (establishment_id, action, target_table, target_id, metadata)
+           VALUES ($1, 'seal_not_detected', 'verification_logs', $2, $3)`,
+          [
+            establishment_id,
+            log.id,
+            JSON.stringify({
               id_number,
               beneficiary_type,
               result,

@@ -464,6 +464,144 @@ class LayoutBasedFieldExtractor {
     };
   }
 
+  // Month-name lookup for the redesigned ID's "Month Day, Year" date format
+  static final Map<String, int> _monthNames = {
+    'jan': 1,
+    'january': 1,
+    'feb': 2,
+    'february': 2,
+    'mar': 3,
+    'march': 3,
+    'apr': 4,
+    'april': 4,
+    'may': 5,
+    'jun': 6,
+    'june': 6,
+    'jul': 7,
+    'july': 7,
+    'aug': 8,
+    'august': 8,
+    'sep': 9,
+    'sept': 9,
+    'september': 9,
+    'oct': 10,
+    'october': 10,
+    'nov': 11,
+    'november': 11,
+    'dec': 12,
+    'december': 12,
+  };
+
+  /// Converts "July 15, 1965" → "07/15/1965" so it matches the numeric
+  /// format the rest of the app (age calculation, display, etc.) already
+  /// expects from the old-format ID's dates. Returns the original text
+  /// unchanged if it doesn't match the expected pattern.
+  static String _normalizeMonthNameDate(String raw) {
+    final match =
+        RegExp(r'([A-Za-z]+)\.?\s+(\d{1,2}),?\s+(\d{4})').firstMatch(raw);
+    if (match == null) return raw;
+    final month = _monthNames[match.group(1)!.toLowerCase()];
+    if (month == null) return raw;
+    final day = int.parse(match.group(2)!);
+    final year = match.group(3)!;
+    return '${month.toString().padLeft(2, '0')}/'
+        '${day.toString().padLeft(2, '0')}/$year';
+  }
+
+  /// Extract fields for the REDESIGNED (2025+) Senior Citizen ID format.
+  /// Unlike [extractFieldsWithLayout] (the pre-2025 layout, kept fully
+  /// untouched), this format's zones already return clean, single-value
+  /// text directly — no anchor/line-search or fuzzy fallback needed, since
+  /// this layout doesn't share the old format's quirks (e.g. the name
+  /// appearing above its own label).
+  static Future<Map<String, dynamic>> extractFieldsNewFormat({
+    required String imagePath,
+    required int imageWidth,
+    required int imageHeight,
+  }) async {
+    debugPrint('🗺️  Starting LAYOUT-BASED extraction (NEW FORMAT)...');
+
+    Map<String, String> zoneResults;
+    try {
+      zoneResults = await ZoneOptimizedOCR.extractAllZonesNewFormat(
+        imagePath: imagePath,
+        imageWidth: imageWidth,
+        imageHeight: imageHeight,
+      );
+    } catch (e) {
+      debugPrint('❌ New-format zone OCR failed: $e');
+      zoneResults = {};
+    }
+
+    final fullName = (zoneResults['name'] ?? '')
+        .replaceAll(RegExp(r'^Name\s*:?\s*', caseSensitive: false), '')
+        .trim();
+
+    final addressLine = (zoneResults['address'] ?? '')
+        .replaceAll(RegExp(r'^Address\s*:?\s*', caseSensitive: false), '')
+        .trim();
+    final barangay = (zoneResults['barangay'] ?? '').trim();
+    final fullAddress =
+        [addressLine, barangay].where((s) => s.isNotEmpty).join(', ');
+
+    // This layout prints the full word ("Female"/"Male") rather than a
+    // single letter — normalize to 'F'/'M' to match everything downstream.
+    final rawSex = (zoneResults['sex'] ?? '')
+        .replaceAll(RegExp(r'^Sex\s*:?\s*', caseSensitive: false), '')
+        .trim()
+        .toUpperCase();
+    String sex = '';
+    if (rawSex.startsWith('F')) sex = 'F';
+    if (rawSex.startsWith('M')) sex = 'M';
+
+    final dateOfBirth =
+        _normalizeMonthNameDate((zoneResults['dob'] ?? '').trim());
+    final dateIssued =
+        _normalizeMonthNameDate((zoneResults['dateIssued'] ?? '').trim());
+    // "ID No." on this layout — kept under 'controlNumber' so every
+    // downstream consumer (VerifyingScreen, API payload) works unchanged.
+    final controlNumber = (zoneResults['idNo'] ?? '').trim();
+
+    final fields = <String, String>{
+      'fullName': fullName,
+      'dateOfBirth': dateOfBirth,
+      'sex': sex,
+      'dateIssued': dateIssued,
+      'controlNumber': controlNumber,
+    };
+    final fieldConfidences = <String, double>{};
+    int fieldsExtracted = 0;
+    double totalConfidence = 0.0;
+    for (final entry in fields.entries) {
+      final conf = entry.value.isNotEmpty ? 0.95 : 0.0;
+      fieldConfidences[entry.key] = conf;
+      if (conf > 0) {
+        totalConfidence += conf;
+        fieldsExtracted++;
+      }
+    }
+    final overallConfidence =
+        fieldsExtracted > 0 ? totalConfidence / fieldsExtracted : 0.0;
+
+    debugPrint(
+        '📊 Overall confidence (new format): ${(overallConfidence * 100).toInt()}%');
+    debugPrint('✅ Layout-based extraction (NEW FORMAT) complete!');
+
+    return {
+      'fullName': fullName,
+      'fullAddress': fullAddress,
+      'dateOfBirth': dateOfBirth,
+      'sex': sex,
+      'dateIssued': dateIssued,
+      'controlNumber': controlNumber,
+      'confidence': overallConfidence,
+      'templateMatched': fieldsExtracted >= 4,
+      'keywordsFound': fieldsExtracted,
+      'extractionMethod': 'layout-based-new-format',
+      'fieldConfidences': fieldConfidences,
+    };
+  }
+
   // ===========================================================================
   // ZONE EXTRACTION
   // ===========================================================================

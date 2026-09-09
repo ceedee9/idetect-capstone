@@ -8,9 +8,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_design_system.dart';
 import 'processing_screen.dart';
+import '../../../services/seal_presence_detector.dart';
+import '../../../services/zone_optimized_ocr.dart';
+import '../../../services/layout_based_field_extractor.dart';
 
 /// Camera screen with clear capture button and ID framing
 class CameraScreen extends StatefulWidget {
@@ -127,6 +131,20 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
+  Future<void> _pickFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked == null) return; // user cancelled the picker
+
+      setState(() => _isCapturing = true);
+      await _processImage(File(picked.path));
+    } catch (e) {
+      _showError('Could not load image: $e');
+      setState(() => _isCapturing = false);
+    }
+  }
+
   Future<void> _processImage(File imageFile) async {
     try {
       final bytes = await imageFile.readAsBytes();
@@ -147,6 +165,15 @@ class _CameraScreenState extends State<CameraScreen> {
       await processedFile.writeAsBytes(
         img.encodeJpg(croppedImage, quality: 95),
       );
+
+      final sealResult = await SealPresenceDetector.checkSeal(
+        imagePath: processedPath,
+        imageWidth: croppedImage.width,
+        imageHeight: croppedImage.height,
+      );
+      debugPrint('[SEAL TEST] detected=${sealResult.sealDetected}, '
+          'blueness=${sealResult.blueness}, '
+          'stdDev=${sealResult.stdDevLuminance}');
 
       if (mounted) {
         debugPrint(
@@ -386,6 +413,16 @@ class _CameraScreenState extends State<CameraScreen> {
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
+                ),
+              ),
+              SizedBox(height: AppDesignSystem.spaceSM),
+              TextButton.icon(
+                onPressed: _isCapturing ? null : _pickFromGallery,
+                icon: const Icon(Icons.photo_library_outlined,
+                    color: Colors.white70, size: 20),
+                label: const Text(
+                  'Choose from gallery',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ),
             ],

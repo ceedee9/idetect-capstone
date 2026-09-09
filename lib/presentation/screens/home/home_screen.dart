@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import '../../widgets/account_profile_drawer.dart';
+import 'info_detail_screen.dart';
 import '../scan/camera_screen.dart';
 import '../history/history_screen.dart';
 import '../../../services/session_timeout_service.dart';
@@ -369,7 +370,7 @@ class _HomePage extends StatelessWidget {
             _buildBannerSection(),
             _buildContentSection(),
             _buildCampaignImageSection(),
-            _buildInfoCards(),
+            _buildInfoCards(context),
             const SizedBox(height: 20),
           ],
         ),
@@ -629,7 +630,7 @@ class _HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCards() {
+  Widget _buildInfoCards(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -637,24 +638,87 @@ class _HomePage extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                  child: _buildInfoCard('assets/images/poster_senior_pwd.jpg',
-                      'New Senior Citizen & PWD ID Design')),
+                child: _buildInfoCard(
+                  'assets/images/poster_senior_pwd.jpg',
+                  'New Senior Citizen & PWD ID Design',
+                  () => _openInfoDetail(
+                    context,
+                    imagePath: 'assets/images/poster_senior_pwd.jpg',
+                    title: 'New Senior Citizen & PWD ID Design',
+                    body:
+                        'Starting 2025, the City of Valenzuela began issuing a '
+                        'redesigned Senior Citizen ID featuring a round '
+                        'holographic seal near the signature/thumbmark, and a '
+                        'field labeled "ID No." instead of "Control No."\n\n'
+                        'IDs issued before the redesign remain fully valid — '
+                        'the absence of a seal does not mean an ID is fake. '
+                        'When scanning, check for the seal: its presence '
+                        'indicates the new format, its absence simply means '
+                        'an older, still-valid design.',
+                  ),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
-                  child: _buildInfoCard('assets/images/counter_display.jpg',
-                      'VAL ID Validation at Establishments')),
+                child: _buildInfoCard(
+                  'assets/images/counter_display.jpg',
+                  'VAL ID Validation at Establishments',
+                  () => _openInfoDetail(
+                    context,
+                    imagePath: 'assets/images/counter_display.jpg',
+                    title: 'VAL ID Validation at Establishments',
+                    body: 'The City of Valenzuela operates the VAL ID portal, '
+                        'letting establishment staff manually confirm a Senior '
+                        'Citizen or PWD ID number against official records. '
+                        'iDetect complements this by automating ID capture and '
+                        'verification directly within your establishment\'s '
+                        'workflow, while keeping a full audit trail of every '
+                        'scan.',
+                    externalUrl: 'https://valid.valenzuela.gov.ph',
+                    externalUrlLabel: 'Visit VAL ID portal',
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                  child: _buildInfoCard('assets/images/poster_person1.jpg',
-                      'Verify Senior & PWD IDs Online')),
+                child: _buildInfoCard(
+                  'assets/images/poster_person1.jpg',
+                  'Verify Senior & PWD IDs Online',
+                  () => _openInfoDetail(
+                    context,
+                    imagePath: 'assets/images/poster_person1.jpg',
+                    title: 'Verify Senior & PWD IDs Online',
+                    body: 'Senior citizens, PWD cardholders, and the general '
+                        'public can look up an ID\'s status through the '
+                        'city\'s official VAL ID portal — helping confirm '
+                        'legitimacy before a discount or benefit is granted.',
+                    externalUrl: 'https://valid.valenzuela.gov.ph',
+                    externalUrlLabel: 'Visit VAL ID portal',
+                  ),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
-                  child: _buildInfoCard('assets/images/poster_person2.jpg',
-                      'Establishments Display Validation Info')),
+                child: _buildInfoCard(
+                  'assets/images/poster_person2.jpg',
+                  'Establishments Display Validation Info',
+                  () => _openInfoDetail(
+                    context,
+                    imagePath: 'assets/images/poster_person2.jpg',
+                    title: 'Establishments Display Validation Info',
+                    body: 'Establishments are encouraged to display validation '
+                        'reference materials — such as the current and '
+                        'previous Senior Citizen and PWD ID formats — at the '
+                        'counter, so staff and customers can quickly recognize '
+                        'a valid ID on sight, alongside using iDetect for '
+                        'scan-based verification.',
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -662,81 +726,109 @@ class _HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String imagePath, String title) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+  void _openInfoDetail(
+    BuildContext context, {
+    required String imagePath,
+    required String title,
+    required String body,
+    String? externalUrl,
+    String? externalUrlLabel,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InfoDetailScreen(
+          imagePath: imagePath,
+          title: title,
+          body: body,
+          externalUrl: externalUrl,
+          externalUrlLabel: externalUrlLabel,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: Container(
-              height: 100,
-              width: double.infinity,
-              color: Colors.grey.shade200,
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: const Color(0xFF002E6B).withOpacity(0.1),
-                    child: const Icon(Icons.image, color: Colors.grey),
-                  );
-                },
+    );
+  }
+
+  Widget _buildInfoCard(String imagePath, String title, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              child: Container(
+                height: 100,
+                width: double.infinity,
+                color: Colors.grey.shade200,
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: const Color(0xFF002E6B).withOpacity(0.1),
+                      child: const Icon(Icons.image, color: Colors.grey),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Color(0xFF002E6B),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE94444),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'Read More →',
-                    style: TextStyle(
-                      fontSize: 10,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Color(0xFF002E6B),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(12)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 12,
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE94444),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Read More →',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

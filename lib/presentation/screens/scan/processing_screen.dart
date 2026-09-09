@@ -153,6 +153,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             .parseIDWithHybridApproach(
           imageFile: imageFile,
           idType: _resolvedIdType,
+          idFormat: widget.idFormat,
         )
             .timeout(
           const Duration(seconds: 20),

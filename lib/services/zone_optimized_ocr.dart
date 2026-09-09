@@ -125,6 +125,153 @@ class ZoneOptimizedOCR {
     return results;
   }
 
+  /// Extract zones for the REDESIGNED (2025+) Senior Citizen ID format — has
+  /// a holographic seal and different field positions than the pre-2025
+  /// layout (see extractAllZones for that one). Zone percentages calibrated
+  /// against a real sample new-format ID (Sept 2026).
+  static Future<Map<String, String>> extractAllZonesNewFormat({
+    required String imagePath,
+    required int imageWidth,
+    required int imageHeight,
+  }) async {
+    debugPrint('🎯 Zone-optimized OCR (NEW FORMAT) starting...');
+    debugPrint('📐 Image: ${imageWidth}x$imageHeight px');
+
+    final results = <String, String>{};
+
+    try {
+      // Name — includes the "Name:" label; same line as the value on this
+      // layout, unlike the old format where the name sits above its label.
+      results['name'] = await _extractZone(
+        imagePath,
+        imageWidth,
+        imageHeight,
+        ZoneConfig(
+          top: 0.30,
+          bottom: 0.40,
+          left: 0.30,
+          right: 0.95,
+          psm: 7,
+          whitelist:
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz -ñÑ.',
+          fieldName: 'Name_New',
+        ),
+      );
+
+      // Address line 1 — includes the "Address:" label
+      results['address'] = await _extractZone(
+        imagePath,
+        imageWidth,
+        imageHeight,
+        ZoneConfig(
+          top: 0.40,
+          bottom: 0.50,
+          left: 0.30,
+          right: 0.95,
+          psm: 7,
+          whitelist:
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -.,',
+          fieldName: 'Address_New',
+        ),
+      );
+
+      // Barangay — continuation line under Address, no explicit label
+      results['barangay'] = await _extractZone(
+        imagePath,
+        imageWidth,
+        imageHeight,
+        ZoneConfig(
+          top: 0.49,
+          bottom: 0.575,
+          left: 0.30,
+          right: 0.58,
+          psm: 7,
+          whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz -',
+          fieldName: 'Barangay_New',
+        ),
+      );
+
+      // Sex — full word ("Female"/"Male"), not a single character like the
+      // old format
+      results['sex'] = await _extractZone(
+        imagePath,
+        imageWidth,
+        imageHeight,
+        ZoneConfig(
+          top: 0.49,
+          bottom: 0.585,
+          left: 0.62,
+          right: 0.82,
+          psm: 7,
+          whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz:',
+          fieldName: 'Sex_New',
+        ),
+      );
+
+      // Date of Birth — narrowed to the value line only; the fuller zone
+      // was pulling in the "Date of Birth" label line beneath it, which
+      // PSM 7 (single-line mode) was blending into one garbled read
+      results['dob'] = await _extractZone(
+        imagePath,
+        imageWidth,
+        imageHeight,
+        ZoneConfig(
+          top: 0.565,
+          bottom: 0.615,
+          left: 0.30,
+          right: 0.53,
+          psm: 7,
+          whitelist:
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789, ',
+          fieldName: 'DOB_New',
+        ),
+      );
+
+      // Date Issued — same fix, narrowed to exclude the "Date Issued" label
+      results['dateIssued'] = await _extractZone(
+        imagePath,
+        imageWidth,
+        imageHeight,
+        ZoneConfig(
+          top: 0.565,
+          bottom: 0.615,
+          left: 0.55,
+          right: 0.75,
+          psm: 7,
+          whitelist:
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789, ',
+          fieldName: 'DateIssued_New',
+        ),
+      );
+
+      // ID No. — narrowed to the number line only; the fuller zone was
+      // pulling in the "ID No." label line beneath it, and with a
+      // digits-only whitelist, Tesseract couldn't reconcile the letters
+      // in the label against a single numeric line, so it returned nothing
+      results['idNo'] = await _extractZone(
+        imagePath,
+        imageWidth,
+        imageHeight,
+        ZoneConfig(
+          top: 0.78,
+          bottom: 0.855,
+          left: 0.0,
+          right: 0.30,
+          psm: 7,
+          whitelist: '0123456789',
+          fieldName: 'ID_No_New',
+        ),
+      );
+
+      debugPrint('✅ Zone-optimized OCR (NEW FORMAT) complete!');
+      debugPrint('   📊 Extracted ${results.length} fields');
+    } catch (e) {
+      debugPrint('❌ Zone-optimized OCR (NEW FORMAT) error: $e');
+    }
+
+    return results;
+  }
+
   // ===========================================================================
   // ZONE EXTRACTION
   // ===========================================================================
