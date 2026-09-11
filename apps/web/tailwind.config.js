@@ -32,20 +32,18 @@ export default {
           800: "#8a430b",
           900: "#73380f",
         },
-        // OSCA portal identity — civic gold/mustard
-        // (reworked from session: replaces the old green ramp)
-        // Intentionally shifted away from `warn`'s hue to avoid collision.
+        // OSCA portal identity — calm teal/eucalyptus
         osca: {
-          50: "#F7F4EA",
-          100: "#EEE8D5",
-          200: "#DCD0AA",
-          300: "#C4B477",
-          400: "#A69555",
-          500: "#8C793C",
-          600: "#75652E",
-          700: "#5B4F24",
-          800: "#433A1C",
-          900: "#2D2815",
+          50: "#E8F3F1",
+          100: "#CBE5E0",
+          200: "#A4D0C8",
+          300: "#76B5AA",
+          400: "#4A968B",
+          500: "#317D73",
+          600: "#28665F",
+          700: "#20534F",
+          800: "#183F3C",
+          900: "#102D2B",
         },
         // PDAO portal identity — advocacy violet
         // (reworked from session: replaces the old teal ramp)
