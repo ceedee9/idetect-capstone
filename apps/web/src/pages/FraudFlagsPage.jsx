@@ -502,7 +502,7 @@ export default function FraudFlagsPage() {
 
       {/* REQ-2.6.2: Flag Detail Drawer */}
       {selectedFlag && (
-        <div className="fixed inset-0 z-[60] flex h-screen w-screen items-center justify-center p-3 sm:p-6">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden p-3 sm:p-6">
           <div
             className="absolute inset-0 bg-slate-950/35"
             onClick={() => {
@@ -510,7 +510,7 @@ export default function FraudFlagsPage() {
               setSelectedFlag(null);
             }}
           />
-          <div className="relative z-10 flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-registry-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+          <div className="relative z-10 flex min-h-0 max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-registry-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
             {/* Drawer Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -538,7 +538,7 @@ export default function FraudFlagsPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+            <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto p-5 sm:p-6">
               {/* Tier 1: evidence */}
               <section>
                 <div className="flex items-center justify-between mb-2">
@@ -561,7 +561,7 @@ export default function FraudFlagsPage() {
                     <img
                       src={flagImageUrl ?? ""}
                       alt="Captured ID"
-                      className="w-full max-h-[25rem] min-h-[17rem] object-contain"
+                      className="block h-auto max-h-[25rem] min-h-[17rem] max-w-full object-contain"
                     />
                     <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-registry-lg bg-slate-900/75 px-2.5 py-1.5 text-xs font-semibold text-white opacity-90 transition-opacity group-hover:bg-slate-900">
                       <Maximize2 className="w-3.5 h-3.5" />
@@ -621,14 +621,14 @@ export default function FraudFlagsPage() {
               {/* Tier 3: supporting context */}
               <section className="space-y-4">
                 {selectedFlag.notes && (
-                  <blockquote className="border-l-2 border-slate-400 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">
+                  <blockquote className="min-w-0 break-words border-l-2 border-slate-400 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Flagged reason
                     </p>
                     <p className="italic">“{selectedFlag.notes}”</p>
                   </blockquote>
                 )}
-                <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                <div className="grid min-w-0 grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-3">
                   <div>
                     <p className="uppercase tracking-wider text-[10px] text-slate-400">
                       Establishment
