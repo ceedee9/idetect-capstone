@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   ShieldAlert,
   Store,
+  Landmark,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -59,14 +60,15 @@ const THEME = {
     portalLabel: "OSCA Portal",
     scopeText: "Senior Citizen records only. PWD data is in the PDAO Portal.",
     headerLabel: "Office of Senior Citizens Affairs",
-    sidebarActive: "sidebar-active-osca text-osca-700",
+    sidebarActive: "sidebar-active-osca text-osca-700 border-l-2 border-osca-600",
     sidebarIcon: "text-osca-600",
     sidebarChevron: "text-osca-400",
     avatarBg: "bg-osca-100",
     avatarText: "text-osca-700",
-    scopeBg: "bg-osca-50 border-osca-100",
+    scopeBg: "bg-white border-osca-300 border-l-2",
     scopeTitle: "text-osca-700",
-    scopeBody: "text-osca-600",
+    scopeBody: "text-slate-600",
+    scopeMarker: "text-osca-600",
     stayBtn: "bg-osca-600 hover:bg-osca-700",
     alertBg: "bg-osca-50",
     viewBtn: "text-osca-600 hover:text-osca-700",
@@ -77,14 +79,15 @@ const THEME = {
     portalLabel: "PDAO Portal",
     scopeText: "PWD records only. Senior Citizen data is in the OSCA Portal.",
     headerLabel: "Persons with Disability Affairs Office",
-    sidebarActive: "sidebar-active-pdao text-pdao-700",
+    sidebarActive: "sidebar-active-pdao text-pdao-700 border-l-2 border-pdao-600",
     sidebarIcon: "text-pdao-600",
     sidebarChevron: "text-pdao-400",
     avatarBg: "bg-pdao-100",
     avatarText: "text-pdao-700",
-    scopeBg: "bg-pdao-50 border-pdao-100",
+    scopeBg: "bg-white border-pdao-300 border-l-2",
     scopeTitle: "text-pdao-700",
-    scopeBody: "text-pdao-600",
+    scopeBody: "text-slate-600",
+    scopeMarker: "text-pdao-600",
     stayBtn: "bg-pdao-600 hover:bg-pdao-700",
     alertBg: "bg-pdao-50",
     viewBtn: "text-pdao-600 hover:text-pdao-700",
@@ -95,14 +98,15 @@ const THEME = {
     portalLabel: "BPLO Portal",
     scopeText: "Business Permit & Licensing Office management.",
     headerLabel: "Business Permit & Licensing Office",
-    sidebarActive: "sidebar-item-active text-gov-700",
+    sidebarActive: "sidebar-item-active text-gov-700 border-l-2 border-gov-600",
     sidebarIcon: "text-gov-600",
     sidebarChevron: "text-gov-400",
     avatarBg: "bg-gov-100",
     avatarText: "text-gov-700",
-    scopeBg: "bg-gov-50 border-gov-100",
+    scopeBg: "bg-white border-gov-300 border-l-2",
     scopeTitle: "text-gov-700",
-    scopeBody: "text-gov-600",
+    scopeBody: "text-slate-600",
+    scopeMarker: "text-gov-600",
     stayBtn: "bg-gov-600 hover:bg-gov-700",
     alertBg: "bg-gov-50",
     viewBtn: "text-gov-600 hover:text-gov-700",
@@ -226,11 +230,11 @@ export default function AppShell() {
                 end={end}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-100 group
+                  `flex items-center gap-3 px-3 py-2.5 rounded-registry-lg border-l-2 text-sm font-semibold transition-all duration-100 group
                  ${
                    isActive
                      ? `${theme.sidebarActive}`
-                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                     : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                  }`
                 }
               >
@@ -242,6 +246,7 @@ export default function AppShell() {
                           ? theme.sidebarIcon
                           : "text-slate-400 group-hover:text-slate-600"
                       }`}
+                      strokeWidth={isActive ? 2.5 : 1.7}
                     />
                     <span className="flex-1">{label}</span>
                     {isActive && (
@@ -257,16 +262,25 @@ export default function AppShell() {
 
           {/* Scope note */}
           <div
-            className={`mx-3 mb-3 px-3 py-2.5 rounded-xl border ${theme.scopeBg}`}
+            className={`mx-3 mb-3 px-3 py-2.5 rounded-registry border ${theme.scopeBg}`}
           >
-            <p
-              className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${theme.scopeTitle}`}
-            >
-              Scope
-            </p>
-            <p className={`text-xs leading-relaxed ${theme.scopeBody}`}>
-              {theme.scopeText}
-            </p>
+            <div className="flex items-start gap-2">
+              <Landmark
+                className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${theme.scopeMarker}`}
+                strokeWidth={1.8}
+                aria-hidden="true"
+              />
+              <div className="min-w-0">
+                <p
+                  className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${theme.scopeTitle}`}
+                >
+                  Scope
+                </p>
+                <p className={`text-[11px] leading-snug ${theme.scopeBody}`}>
+                  {theme.scopeText}
+                </p>
+              </div>
+            </div>
             <button
               onClick={() => setShowBreachModal(true)}
               className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-red-600 hover:text-red-700 transition-colors"
