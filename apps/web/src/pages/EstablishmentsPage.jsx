@@ -327,7 +327,7 @@ export default function EstablishmentsPage() {
                             onClick={() =>
                               setActionTarget({ est, type: "suspend" })
                             }
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-danger-50 text-danger-700 text-xs font-medium rounded-lg hover:bg-danger-100 transition-colors"
+                            className="btn-action-danger"
                           >
                             <Ban className="w-3.5 h-3.5" />
                             Suspend
@@ -335,7 +335,7 @@ export default function EstablishmentsPage() {
                         )}
                         <Link
                           to={`/establishments/${est.id}`}
-                          className="btn-ghost text-xs px-2.5 py-1.5"
+                          className="btn-row-view"
                         >
                           View <ArrowRight className="w-3.5 h-3.5" />
                         </Link>

@@ -423,7 +423,7 @@ export default function BeneficiariesPage() {
                               onClick={() =>
                                 setModal({ beneficiary: b, action: "suspend" })
                               }
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warn-50 text-warn-700 text-xs font-semibold rounded-xl hover:bg-warn-100 transition-colors"
+                              className="btn-action-danger"
                             >
                               <UserX className="w-3.5 h-3.5" />
                               Suspend
@@ -431,7 +431,7 @@ export default function BeneficiariesPage() {
                           )}
                           <Link
                             to={`/beneficiaries/${b.id}`}
-                            className="btn-ghost text-xs px-2.5 py-1.5"
+                            className="btn-row-view"
                           >
                             View <ArrowRight className="w-3.5 h-3.5" />
                           </Link>
