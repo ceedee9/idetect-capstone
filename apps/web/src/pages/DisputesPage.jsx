@@ -295,7 +295,7 @@ export default function DisputesPage() {
               <button
                 key={d.id}
                 onClick={() => setSelected(d)}
-                className={`w-full text-left p-4 rounded-xl border transition-all ${
+                className={`w-full text-left p-3 rounded-registry-lg border transition-colors ${
                   selected?.id === d.id
                     ? "bg-purple-50 border-purple-200 shadow-sm"
                     : "bg-white border-slate-200 hover:border-slate-300"
@@ -330,7 +330,7 @@ export default function DisputesPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5 sticky top-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs text-slate-400 font-mono">
+                  <p className="text-xs text-slate-400 font-mono tabular-nums">
                     Ref: {selected.id.slice(0, 8).toUpperCase()}
                   </p>
                   <h2 className="text-lg font-bold text-slate-800 mt-1">
@@ -346,7 +346,7 @@ export default function DisputesPage() {
                   <p className="font-medium">
                     {selected.beneficiary_name || "—"}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 font-mono">
                     {selected.beneficiary_id_number}
                   </p>
                 </div>
@@ -358,7 +358,7 @@ export default function DisputesPage() {
                 </div>
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Submitted</p>
-                  <p className="font-medium">
+                  <p className="font-medium font-mono">
                     {fmtDateTime(selected.submitted_at)}
                   </p>
                 </div>
@@ -373,7 +373,7 @@ export default function DisputesPage() {
                 {selected.acknowledged_at && (
                   <div>
                     <p className="text-slate-400 text-xs mb-1">Acknowledged</p>
-                    <p className="font-medium">
+                    <p className="font-medium font-mono">
                       {fmtDateTime(selected.acknowledged_at)}
                     </p>
                   </div>
@@ -381,7 +381,7 @@ export default function DisputesPage() {
                 {selected.resolved_at && (
                   <div>
                     <p className="text-slate-400 text-xs mb-1">Resolved</p>
-                    <p className="font-medium">
+                    <p className="font-medium font-mono">
                       {fmtDateTime(selected.resolved_at)}
                     </p>
                   </div>

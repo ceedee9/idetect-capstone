@@ -289,7 +289,7 @@ export default function BeneficiariesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/60">
+              <tr className="border-b border-slate-200 bg-paper">
                 {[
                   ["Beneficiary", ""],
                   ["ID Number", ""],
@@ -302,19 +302,19 @@ export default function BeneficiariesPage() {
                 ].map(([h, cls]) => (
                   <th
                     key={h}
-                    className={`text-left text-xs font-bold text-slate-400 uppercase tracking-wider px-5 py-3.5 ${cls}`}
+                    className={`text-left text-xs font-bold text-slate-400 uppercase tracking-wider px-5 py-2.5 ${cls}`}
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-200">
               {loading ? (
                 [...Array(6)].map((_, i) => (
                   <tr key={i}>
                     {[...Array(isPDAO ? 6 : 5)].map((_, j) => (
-                      <td key={j} className="px-5 py-4">
+                      <td key={j} className="px-5 py-2.5">
                         <div className="skeleton h-4 w-full max-w-[120px]" />
                       </td>
                     ))}
@@ -356,10 +356,10 @@ export default function BeneficiariesPage() {
                   return (
                     <tr
                       key={b.id}
-                      className="hover:bg-slate-50/80 transition-colors"
+                      className="transition-colors"
                     >
                       {/* Name */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-2.5">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 bg-gov-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <span className="text-xs font-bold text-gov-700">
@@ -370,21 +370,21 @@ export default function BeneficiariesPage() {
                             <p className="font-semibold text-slate-900">
                               {displayName}
                             </p>
-                            <p className="text-xs text-slate-400 font-medium mt-0.5 lg:hidden">
+                            <p className="font-mono text-xs text-slate-400 font-medium mt-0.5 lg:hidden">
                               {b.id_number}
                             </p>
                           </div>
                         </div>
                       </td>
                       {/* ID */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-2.5">
                         <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">
                           {b.id_number}
                         </span>
                       </td>
                       {/* Disability type — PDAO only */}
                       {isPDAO && (
-                        <td className="px-5 py-4 hidden lg:table-cell">
+                        <td className="px-5 py-2.5 hidden lg:table-cell">
                           {b.disability_type ? (
                             <span className="dtype-tag capitalize">
                               {b.disability_type}
@@ -395,20 +395,20 @@ export default function BeneficiariesPage() {
                         </td>
                       )}
                       {/* Age */}
-                      <td className="px-5 py-4 hidden lg:table-cell">
+                      <td className="px-5 py-2.5 hidden lg:table-cell">
                         <p className="text-slate-700 font-medium">
                           {age ? `${age} yrs` : "—"}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="font-mono text-xs text-slate-400">
                           {fmtDate(b.date_of_birth)}
                         </p>
                       </td>
                       {/* Status */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-2.5">
                         <StatusBadge status={b.status} />
                       </td>
                       {/* Actions */}
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-5 py-2.5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {b.status === "suspended" && (
                             <button

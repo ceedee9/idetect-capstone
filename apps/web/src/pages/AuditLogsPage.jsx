@@ -348,7 +348,7 @@ export default function AuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/60">
+              <tr className="border-b border-slate-200 bg-paper">
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
                   Date
                 </th>
@@ -366,12 +366,12 @@ export default function AuditLogsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-200">
               {loading ? (
                 [...Array(8)].map((_, i) => (
                   <tr key={i}>
                     {[...Array(5)].map((__, j) => (
-                      <td key={j} className="px-4 py-3">
+                      <td key={j} className="px-4 py-2.5">
                         <div className="skeleton h-4 w-full rounded" />
                       </td>
                     ))}
@@ -394,14 +394,14 @@ export default function AuditLogsPage() {
                   <tr
                     key={log.id}
                     onClick={() => setSelectedLog(log)}
-                    className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${
+                    className={`transition-colors cursor-pointer ${
                       log.action === "verification_manual" ? "bg-amber-50" : ""
                     }`}
                   >
-                    <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                    <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap font-mono">
                       {fmtDateTime(log.created_at)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${actionColor(log.action)}`}
                       >
@@ -411,10 +411,10 @@ export default function AuditLogsPage() {
                         {actionLabel(log.action)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs font-medium text-slate-700">
+                    <td className="px-4 py-2.5 text-xs font-medium text-slate-700">
                       {log.user_name || "—"}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-2.5 text-xs text-slate-600">
                       {log.target_table ? (
                         <>
                           {formatTargetLabel(log.target_table)}
@@ -426,7 +426,7 @@ export default function AuditLogsPage() {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500 max-w-xs truncate">
+                    <td className="px-4 py-2.5 text-xs text-slate-500 max-w-xs truncate">
                       {humanizeAuditLog(log)}
                     </td>
                   </tr>

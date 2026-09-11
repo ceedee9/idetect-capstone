@@ -162,7 +162,7 @@ export default function StaffPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/60">
+              <tr className="border-b border-slate-200 bg-paper">
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
                   Name
                 </th>
@@ -180,12 +180,12 @@ export default function StaffPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-200">
               {loading ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i}>
                     {[...Array(5)].map((__, j) => (
-                      <td key={j} className="px-4 py-3">
+                      <td key={j} className="px-4 py-2.5">
                         <div className="skeleton h-4 w-full rounded" />
                       </td>
                     ))}
@@ -204,13 +204,13 @@ export default function StaffPage() {
                 staff.map((m) => (
                   <tr
                     key={m.id}
-                    className="hover:bg-slate-50/50 transition-colors"
+                    className="transition-colors"
                   >
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-2.5 font-medium text-slate-900">
                       {m.full_name}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{m.email}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{m.email}</td>
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1.5">
                         <StatusBadge active={m.is_active} />
                         {m.locked_until &&
@@ -221,10 +221,10 @@ export default function StaffPage() {
                           )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-400">
                       {fmtDateTime(m.created_at)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           title="Edit"

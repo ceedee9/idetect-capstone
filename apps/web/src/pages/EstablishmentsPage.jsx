@@ -215,33 +215,33 @@ export default function EstablishmentsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60">
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3.5">
+              <tr className="border-b border-slate-200 bg-paper">
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-2.5">
                   Business
                 </th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3.5 hidden md:table-cell">
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-2.5 hidden md:table-cell">
                   Type
                 </th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3.5 hidden lg:table-cell">
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-2.5 hidden lg:table-cell">
                   Contact
                 </th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3.5 hidden lg:table-cell">
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-2.5 hidden lg:table-cell">
                   Registered
                 </th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3.5">
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-2.5">
                   Status
                 </th>
-                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3.5">
+                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-2.5">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-slate-200">
               {loading ? (
                 [...Array(6)].map((_, i) => (
                   <tr key={i}>
                     {[...Array(6)].map((_, j) => (
-                      <td key={j} className="px-4 py-4">
+                      <td key={j} className="px-4 py-2.5">
                         <div className="skeleton h-4 w-full max-w-[120px]" />
                       </td>
                     ))}
@@ -263,9 +263,9 @@ export default function EstablishmentsPage() {
                 </tr>
               ) : (
                 filtered.map((est) => (
-                  <tr key={est.id} className="table-row-hover">
+                  <tr key={est.id}>
                     {/* Business name */}
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-2.5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gov-50 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Store className="w-4 h-4 text-gov-500" />
@@ -282,32 +282,32 @@ export default function EstablishmentsPage() {
                     </td>
 
                     {/* Type */}
-                    <td className="px-4 py-4 hidden md:table-cell">
+                    <td className="px-4 py-2.5 hidden md:table-cell">
                       <span className="text-gray-600 capitalize">
                         {est.business_type?.replace(/_/g, " ") ?? "—"}
                       </span>
                     </td>
 
                     {/* Contact */}
-                    <td className="px-4 py-4 hidden lg:table-cell">
-                      <p className="text-gray-700">{est.contact_email}</p>
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                      <p className="font-mono text-xs text-gray-700">{est.contact_email}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {est.contact_phone}
                       </p>
                     </td>
 
                     {/* Registered */}
-                    <td className="px-4 py-4 hidden lg:table-cell text-gray-600">
+                    <td className="px-4 py-2.5 hidden lg:table-cell text-gray-600 font-mono text-xs">
                       {fmtDate(est.created_at)}
                     </td>
 
                     {/* Status */}
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-2.5">
                       <StatusBadge status={est.status} />
                     </td>
 
                     {/* Actions */}
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-5 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {est.status === "pending" && (
                           <button
