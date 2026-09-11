@@ -147,9 +147,12 @@ function BeneficiaryDashboard({ user }) {
     [beneficiaries],
   );
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const overviewTitle = isOsca
+    ? "Senior Citizen Records Overview"
+    : "PWD Records Overview";
+  const overviewSummary = loading
+    ? "Loading beneficiary records..."
+    : `${stats.total} ${isOsca ? "senior citizen" : "PWD"} record${stats.total === 1 ? "" : "s"}. ${stats.suspended > 0 ? `${stats.suspended} need attention.` : "No records are currently suspended."}`;
 
   // Role-aware color classes (must be complete strings for Tailwind purge)
   const colors = isOsca
@@ -194,10 +197,10 @@ function BeneficiaryDashboard({ user }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-2xl text-slate-900">
-            {greeting}, {user?.first_name ?? "Admin"} 👋
+            {overviewTitle}
           </h1>
           <p className="text-slate-500 text-sm mt-1 font-medium">
-            {scopeLabel}
+            {overviewSummary}
           </p>
         </div>
         <div className="flex items-center gap-2">
