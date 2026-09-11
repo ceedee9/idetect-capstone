@@ -135,13 +135,13 @@ export default function EstablishmentStatusDonut({ stats }) {
         {/* Center reading — the ring itself is the seal, this is just the face */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <CenterCheck />
-          <p className="font-heading font-semibold text-2xl text-slate-900 leading-none mt-1 tabular-nums">
+          <p className="font-display font-semibold text-3xl text-slate-900 leading-none mt-1 tabular-nums">
             {compliance}%
           </p>
           <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">
             Compliant
           </p>
-          <p className="text-[10px] text-slate-300 mt-0.5">
+          <p className="font-mono text-[10px] text-slate-300 mt-0.5 tabular-nums">
             {stats.total} total
           </p>
         </div>
@@ -160,10 +160,12 @@ export default function EstablishmentStatusDonut({ stats }) {
               <span className="text-xs text-slate-500 font-medium">
                 {d.name}
               </span>
-              <span className="text-xs font-bold text-slate-800">
+              <span className="font-mono text-xs font-bold text-slate-800 tabular-nums">
                 {d.value}
               </span>
-              <span className="text-[10px] text-slate-400">({pct}%)</span>
+              <span className="font-mono text-[10px] text-slate-400 tabular-nums">
+                ({pct}%)
+              </span>
             </div>
           );
         })}

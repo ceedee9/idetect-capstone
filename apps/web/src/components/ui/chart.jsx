@@ -98,7 +98,7 @@ function ChartTooltipContent({
 
   return (
     <div
-      className={`grid min-w-[10rem] items-start gap-1.5 rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs shadow-card ${className}`}
+      className={`grid min-w-[10rem] items-start gap-1.5 rounded-registry-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-float ${className}`}
     >
       {!hideLabel && label != null && (
         <div className="font-semibold text-slate-700">

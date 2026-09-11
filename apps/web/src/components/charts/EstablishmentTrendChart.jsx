@@ -8,10 +8,10 @@ import {
   startOfMonth,
   endOfMonth,
 } from "date-fns";
-import { STATUS_TONES } from "../../constants/statusTheme";
+import { PORTAL_TONES } from "../../constants/statusTheme";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"; // adjust path if your ui/ folder lives elsewhere
 
-const INK = STATUS_TONES.gov.hex; // #16233F — swap here to retint the whole chart
+const INK = PORTAL_TONES.bplo.hex;
 
 const chartConfig = {
   count: { label: "Registrations", color: INK },
@@ -144,15 +144,27 @@ export default function EstablishmentTrendChart({ establishments }) {
               />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#f1f5f9" vertical={false} />
+          <CartesianGrid
+            stroke="#E8E6E2"
+            strokeWidth={0.75}
+            vertical={false}
+          />
           <XAxis
             dataKey="month"
-            tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "DM Sans" }}
+            tick={{
+              fontSize: 10,
+              fill: "#77736D",
+              fontFamily: "IBM Plex Mono",
+            }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "DM Sans" }}
+            tick={{
+              fontSize: 10,
+              fill: "#77736D",
+              fontFamily: "IBM Plex Mono",
+            }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}

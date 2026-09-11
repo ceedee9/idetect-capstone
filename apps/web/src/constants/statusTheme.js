@@ -30,3 +30,15 @@ export const STATUS_TONES = {
     hex: "#16233F",
   },
 };
+
+export const PORTAL_TONES = {
+  bplo: {
+    hex: "#1F4370",
+  },
+  osca: {
+    hex: "#28665F",
+  },
+  pdao: {
+    hex: "#534AB7",
+  },
+};
