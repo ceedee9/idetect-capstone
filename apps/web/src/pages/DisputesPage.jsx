@@ -193,26 +193,21 @@ export default function DisputesPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-purple-100 rounded-xl">
-            <Scale className="w-6 h-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">
-              Dispute Resolution
-            </h1>
-            <p className="text-sm text-slate-500">
-              Review and resolve beneficiary disputes ({disputeScope})
-            </p>
-          </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-heading text-2xl font-bold leading-tight text-slate-800">
+            Dispute Resolution
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+            Review and resolve beneficiary disputes ({disputeScope})
+          </p>
         </div>
         <button
           onClick={refetch}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+          className="btn-secondary self-start"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />{" "}
           Refresh
