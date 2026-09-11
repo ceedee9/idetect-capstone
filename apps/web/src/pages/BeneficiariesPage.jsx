@@ -20,6 +20,7 @@ import { beneficiariesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
+import EmptyState from "../components/EmptyState";
 import { fmtDate, calcAge } from "../utils/date";
 import { PDAO_DISABILITY_FILTER_OPTIONS } from "../constants/disabilityTypes";
 
@@ -322,16 +323,25 @@ export default function BeneficiariesPage() {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={isPDAO ? 6 : 5} className="text-center py-14">
-                    <Accessibility className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-slate-500">
-                      No records found
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {search || (isPDAO && disabilityFilter)
-                        ? "Try adjusting your filters."
-                        : "No beneficiaries match this status."}
-                    </p>
+                  <td colSpan={isPDAO ? 6 : 5}>
+                    <EmptyState
+                      icon={Accessibility}
+                      tone={isPDAO ? "pdao" : "osca"}
+                      title="No records found"
+                      description={
+                        search || (isPDAO && disabilityFilter)
+                          ? "Try adjusting your filters."
+                          : "No beneficiaries match this status."
+                      }
+                      action={
+                        !search && !(isPDAO && disabilityFilter)
+                          ? {
+                              to: "/beneficiaries/add",
+                              label: `Add a ${entityLabel.toLowerCase()}`,
+                            }
+                          : undefined
+                      }
+                    />
                   </td>
                 </tr>
               ) : (

@@ -12,6 +12,7 @@ import { disputesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import StatusBadge from "../components/StatusBadge";
+import EmptyState from "../components/EmptyState";
 import { fmtDateTime, fmtRelative } from "../utils/date";
 
 // Open a protected document by fetching it with the staff JWT and creating
@@ -255,9 +256,19 @@ export default function DisputesPage() {
               Loading disputes…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <Scale className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              No disputes found.
+            <div className="bg-white border border-slate-200 rounded-registry-lg">
+              <EmptyState
+                icon={Scale}
+                tone={
+                  user?.role === "pdao_admin"
+                    ? "pdao"
+                    : user?.role === "osca_admin"
+                      ? "osca"
+                      : "gov"
+                }
+                title="No disputes found"
+                description="There are no disputes matching this filter."
+              />
             </div>
           ) : (
             filtered.map((d) => (

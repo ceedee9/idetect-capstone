@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
+import { TrendingUp } from "lucide-react";
 import {
   format,
   parseISO,
@@ -10,6 +11,7 @@ import {
 } from "date-fns";
 import { PORTAL_TONES } from "../../constants/statusTheme";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"; // adjust path if your ui/ folder lives elsewhere
+import EmptyState from "../EmptyState";
 
 const INK = PORTAL_TONES.bplo.hex;
 
@@ -99,16 +101,16 @@ export default function EstablishmentTrendChart({ establishments }) {
 
   if (!hasData) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 text-center px-6">
-        <EmptyLedger />
-        <p className="text-sm font-semibold text-slate-600">
-          No registrations yet
-        </p>
-        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-          New establishments will show up here as they're registered, month by
-          month.
-        </p>
-      </div>
+      <EmptyState
+        icon={TrendingUp}
+        tone="gov"
+        title="No registrations yet"
+        description="New establishments will appear here month by month."
+        action={{
+          to: "/establishments/create",
+          label: "Create an establishment",
+        }}
+      />
     );
   }
 

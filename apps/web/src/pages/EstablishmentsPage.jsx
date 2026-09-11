@@ -18,6 +18,7 @@ import { establishmentsAPI } from "../services/api";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
 import BulkImportEstablishmentsModal from "../components/BulkImportEstablishmentsModal";
+import EmptyState from "../components/EmptyState";
 import { fmtDate } from "../utils/date";
 
 const STATUS_TABS = [
@@ -249,16 +250,25 @@ export default function EstablishmentsPage() {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-14">
-                    <Store className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-gray-500">
-                      No establishments found
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {search
-                        ? "Try a different search term."
-                        : "No establishments match this filter."}
-                    </p>
+                  <td colSpan={6}>
+                    <EmptyState
+                      icon={Store}
+                      tone="gov"
+                      title="No establishments found"
+                      description={
+                        search
+                          ? "Try a different search term."
+                          : "No establishments match this filter."
+                      }
+                      action={
+                        !search
+                          ? {
+                              to: "/establishments/create",
+                              label: "Create an establishment",
+                            }
+                          : undefined
+                      }
+                    />
                   </td>
                 </tr>
               ) : (

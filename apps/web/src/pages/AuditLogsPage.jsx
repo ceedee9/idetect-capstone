@@ -19,6 +19,7 @@ import {
   formatTargetLabel,
 } from "../utils/auditLog";
 import AuditLogDetailDrawer from "../components/AuditLogDetailDrawer";
+import EmptyState from "../components/EmptyState";
 
 const ACTION_GROUPS = [
   { value: "", label: "All Actions" },
@@ -400,14 +401,13 @@ export default function AuditLogsPage() {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-14">
-                    <ScrollText className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-slate-500">
-                      No audit logs found
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Try adjusting your filters or date range.
-                    </p>
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={ScrollText}
+                      tone="gov"
+                      title="No audit logs found"
+                      description="Try adjusting your filters or date range."
+                    />
                   </td>
                 </tr>
               ) : (

@@ -27,6 +27,7 @@ import { useAuth } from "../context/AuthContext";
 import { reportsAPI } from "../services/api";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
+import EmptyState from "../components/EmptyState";
 import { fmtRelative, fmtDate, calcAge } from "../utils/date";
 import EstablishmentStatusDonut from "../components/charts/EstablishmentStatusDonut";
 import EstablishmentTrendChart from "../components/charts/EstablishmentTrendChart";
@@ -296,19 +297,13 @@ function BeneficiaryDashboard({ user }) {
               ))}
             </div>
           ) : recentlyAdded.length === 0 ? (
-            <div className="text-center py-10">
-              <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 ${colors.emptyBg}`}
-              >
-                <Users className={`w-6 h-6 ${colors.emptyIcon}`} />
-              </div>
-              <p className={`text-sm font-medium ${colors.emptyText}`}>
-                No records yet
-              </p>
-              <p className={`text-xs mt-1 ${colors.emptyBody}`}>
-                Add your first {recordLabel} beneficiary.
-              </p>
-            </div>
+            <EmptyState
+              icon={Users}
+              tone={isOsca ? "osca" : "pdao"}
+              title="No records yet"
+              description={`Add your first ${recordLabel} beneficiary.`}
+              action={{ to: "/beneficiaries/add", label: `Add ${recordLabel}` }}
+            />
           ) : (
             <div className="divide-y divide-slate-50">
               {recentlyAdded.map((b) => {
@@ -383,11 +378,12 @@ function BeneficiaryDashboard({ user }) {
                 ))}
               </div>
             ) : suspended.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-xs text-slate-400 font-medium">
-                  No suspended records
-                </p>
-              </div>
+              <EmptyState
+                icon={AlertTriangle}
+                tone={isOsca ? "osca" : "pdao"}
+                title="No suspended records"
+                description="No beneficiary records currently need attention."
+              />
             ) : (
               <div className="space-y-2">
                 {suspended.map((b) => (
@@ -894,15 +890,13 @@ function EstablishmentDashboard({ user }) {
               ))}
             </div>
           ) : pendingList.length === 0 ? (
-            <div className="text-center py-8">
-              <CheckCircle2 className="w-10 h-10 text-success-500 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">
-                All caught up!
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                No establishments pending approval.
-              </p>
-            </div>
+            <EmptyState
+              icon={CheckCircle2}
+              tone="gov"
+              title="All caught up"
+              description="No establishments are pending approval."
+              action={{ to: "/establishments", label: "View establishments" }}
+            />
           ) : (
             <div className="divide-y divide-gray-50">
               {pendingList.map((est) => (

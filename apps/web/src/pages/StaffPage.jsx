@@ -18,6 +18,7 @@ import {
 import { staffAPI } from "../services/api";
 import { fmtDateTime } from "../utils/date";
 import StatusBadge from "../components/StatusBadge";
+import EmptyState from "../components/EmptyState";
 
 export default function StaffPage() {
   const [staff, setStaff] = useState([]);
@@ -180,11 +181,13 @@ export default function StaffPage() {
                 ))
               ) : staff.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-14">
-                    <Users className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-slate-500">
-                      No staff accounts found
-                    </p>
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={Users}
+                      tone="gov"
+                      title="No staff accounts found"
+                      description="Add an authorized staff account to manage this portal."
+                    />
                   </td>
                 </tr>
               ) : (

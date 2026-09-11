@@ -10,6 +10,7 @@ import {
 import { disputesAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
 import StatusBadge from "../components/StatusBadge";
+import EmptyState from "../components/EmptyState";
 import { fmtDateTime, fmtRelative } from "../utils/date";
 
 function useDisputes() {
@@ -162,9 +163,13 @@ export default function BusinessRefusalsPage() {
               Loading reports…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <Scale className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              No business refusal reports.
+            <div className="bg-white border border-slate-200 rounded-registry-lg">
+              <EmptyState
+                icon={Scale}
+                tone="gov"
+                title="No refusal reports found"
+                description="New reports will appear here when submitted by beneficiaries."
+              />
             </div>
           ) : (
             filtered.map((d) => (

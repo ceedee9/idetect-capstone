@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell } from "recharts";
+import { BarChart3 } from "lucide-react";
 import { STATUS_TONES } from "../../constants/statusTheme";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart";
+import EmptyState from "../EmptyState";
 
 const STATUS_META = {
   Approved: STATUS_TONES.success,
@@ -86,16 +88,16 @@ export default function EstablishmentStatusDonut({ stats }) {
 
   if (!stats.total || data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 text-center px-6">
-        <EmptySeal />
-        <p className="text-sm font-semibold text-slate-600">
-          No establishments yet
-        </p>
-        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-          Approved, pending, and suspended counts will appear here once
-          establishments are registered.
-        </p>
-      </div>
+      <EmptyState
+        icon={BarChart3}
+        tone="gov"
+        title="No establishments yet"
+        description="Status distribution will appear after registration."
+        action={{
+          to: "/establishments/create",
+          label: "Create an establishment",
+        }}
+      />
     );
   }
 
