@@ -81,10 +81,12 @@ export default function StatCard({
   if (loading) {
     return (
       <div
-        className={`card relative overflow-hidden ${primary ? "min-h-[11rem]" : ""}`}
+        className={`card relative overflow-hidden ${primary ? "min-h-[9rem]" : ""}`}
       >
         <div className="skeleton h-3.5 w-24 mb-4" />
-        <div className={`skeleton ${primary ? "h-12 w-20" : "h-9 w-16"} mb-2`} />
+        <div
+          className={`skeleton ${primary ? "h-12 w-20" : "h-9 w-16"} mb-2`}
+        />
         <div className="skeleton h-3 w-20" />
       </div>
     );
@@ -95,7 +97,7 @@ export default function StatCard({
   return (
     <div
       className={`card relative overflow-hidden ${
-        primary ? "min-h-[11rem] p-5 sm:p-6" : ""
+        primary ? "min-h-[9rem] p-5 sm:p-6" : ""
       } hover:shadow-card-md transition-shadow duration-200`}
     >
       <span
