@@ -196,7 +196,7 @@ export default function AppShell() {
                 alt="iDetect"
                 className="h-12 w-auto"
               />
-              <p className={`text-xs font-semibold mt-1 ${theme.brandText}`}>
+              <p className={`font-display text-xs font-semibold mt-1 ${theme.brandText}`}>
                 {theme.portalLabel}
               </p>
             </div>
@@ -372,7 +372,7 @@ export default function AppShell() {
 
           {/* Desktop header */}
           <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-slate-100">
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <p className="font-display text-xs text-slate-400 font-semibold uppercase tracking-wider">
               Pamantasan ng Lungsod ng Valenzuela · {theme.headerLabel}
             </p>
             <div className="flex items-center gap-3">
