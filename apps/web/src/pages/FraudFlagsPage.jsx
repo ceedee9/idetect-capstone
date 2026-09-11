@@ -107,7 +107,7 @@ const STATUS_TABS = [
 function FlagStatusBadge({ status }) {
   const map = {
     pending:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent-50 text-accent-700 border border-accent-100",
+      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-semantic-warning-50 text-semantic-warning-700 border border-semantic-warning-200",
     confirmed:
       "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-danger-50 text-danger-700 border border-danger-100",
     dismissed:
@@ -272,13 +272,15 @@ export default function FraudFlagsPage() {
             .map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800"
+                className="flex items-start gap-3 px-4 py-3 bg-semantic-warning-50 border border-semantic-warning-200 rounded-registry-lg text-sm text-semantic-warning-800"
               >
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-semantic-warning-600" />
                 <div className="flex-1">
                   <p className="font-semibold">{alert.title}</p>
-                  <p className="text-amber-700 mt-0.5">{alert.body}</p>
-                  <p className="text-amber-500 text-xs mt-1">
+                  <p className="text-semantic-warning-700 mt-0.5">
+                    {alert.body}
+                  </p>
+                  <p className="text-semantic-warning-600 text-xs mt-1">
                     {fmtRelative(alert.created_at)}
                   </p>
                 </div>
@@ -286,7 +288,7 @@ export default function FraudFlagsPage() {
             ))}
           <button
             onClick={handleMarkAllRead}
-            className="text-xs text-amber-700 underline hover:text-amber-900"
+            className="text-xs text-semantic-warning-700 underline hover:text-semantic-warning-800"
           >
             Mark all read
           </button>
@@ -299,7 +301,8 @@ export default function FraudFlagsPage() {
           {
             label: "Pending Review",
             value: counts.pending,
-            color: "bg-accent-50 text-accent-700 border border-accent-100",
+            color:
+              "bg-semantic-warning-50 text-semantic-warning-700 border border-semantic-warning-200",
           },
           {
             label: "Confirmed",
@@ -312,7 +315,10 @@ export default function FraudFlagsPage() {
             color: "bg-slate-50 text-slate-500 border border-slate-100",
           },
         ].map(({ label, value, color }) => (
-          <div key={label} className={`rounded-2xl p-4 ${color}`}>
+          <div
+            key={label}
+            className={`rounded-registry-lg border p-4 ${color}`}
+          >
             <p className="text-xs font-bold uppercase tracking-wider opacity-70">
               {label}
             </p>
@@ -324,19 +330,19 @@ export default function FraudFlagsPage() {
       </div>
 
       {/* Status tabs */}
-      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
+      <div className="flex items-center gap-1 border-b border-slate-200 w-fit">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setStatusFilter(tab.value)}
-            className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all duration-150 flex items-center gap-1.5
-              ${statusFilter === tab.value ? "bg-white text-slate-900 shadow-card" : "text-slate-500 hover:text-slate-800"}`}
+            className={`px-4 py-2 border-b-2 text-sm font-semibold transition-colors duration-150 flex items-center gap-1.5
+              ${statusFilter === tab.value ? "border-gov-600 text-gov-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
           >
             {tab.label}
             {counts[tab.value] > 0 && (
               <span
-                className={`text-xs px-1.5 py-0.5 rounded-full font-bold
-                ${statusFilter === tab.value ? "bg-gov-100 text-gov-700" : "bg-slate-200 text-slate-500"}`}
+                className={`font-mono text-[10px] px-1.5 py-0.5 rounded-registry font-bold
+                ${statusFilter === tab.value ? "bg-gov-100 text-gov-700" : "bg-slate-100 text-slate-500"}`}
               >
                 {counts[tab.value]}
               </span>
@@ -377,12 +383,12 @@ export default function FraudFlagsPage() {
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0
-                    ${flag.status === "pending" ? "bg-warn-50" : flag.status === "confirmed" ? "bg-danger-50" : "bg-slate-100"}`}
+                    ${flag.status === "pending" ? "bg-semantic-warning-50" : flag.status === "confirmed" ? "bg-semantic-danger-50" : "bg-slate-100"}`}
                   >
                     <AlertTriangle
                       className={`w-5 h-5 ${
                         flag.status === "pending"
-                          ? "text-warn-600"
+                          ? "text-semantic-warning-600"
                           : flag.status === "confirmed"
                             ? "text-danger-600"
                             : "text-slate-400"
@@ -393,7 +399,7 @@ export default function FraudFlagsPage() {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <FlagStatusBadge status={flag.status} />
                       {flag.manually_entered && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-50 border border-yellow-200 rounded-full text-[10px] font-semibold text-yellow-700">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-semantic-warning-50 border border-semantic-warning-200 rounded-registry text-[10px] font-semibold text-semantic-warning-700">
                           <Keyboard className="w-2.5 h-2.5" />
                           Manual Entry
                         </span>
@@ -535,7 +541,7 @@ export default function FraudFlagsPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
               {/* Tier 1: evidence */}
               <section>
                 <div className="flex items-center justify-between mb-2">
@@ -618,8 +624,8 @@ export default function FraudFlagsPage() {
               {/* Tier 3: supporting context */}
               <section className="space-y-4">
                 {selectedFlag.notes && (
-                  <blockquote className="border-l-2 border-semantic-warning-500 bg-semantic-warning-50/60 px-4 py-3 text-sm leading-relaxed text-slate-700">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-semantic-warning-700 mb-1">
+                  <blockquote className="border-l-2 border-semantic-warning-500 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Flagged reason
                     </p>
                     <p className="italic">“{selectedFlag.notes}”</p>
@@ -661,34 +667,50 @@ export default function FraudFlagsPage() {
 
               {/* OCR Extracted Data */}
               {selectedFlag.ocr_raw_text && (
-                <section>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                    OCR Extracted Data
-                  </h3>
-                  <pre className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
+                <details className="group border-t border-slate-200 pt-3">
+                  <summary className="cursor-pointer list-none text-xs font-semibold text-slate-500 hover:text-slate-700">
+                    <span className="flex items-center justify-between">
+                      OCR extracted data
+                      <span className="text-[10px] uppercase tracking-wider text-slate-400 group-open:hidden">
+                        Show
+                      </span>
+                      <span className="hidden text-[10px] uppercase tracking-wider text-slate-400 group-open:inline">
+                        Hide
+                      </span>
+                    </span>
+                  </summary>
+                  <pre className="mt-2 bg-slate-50 border border-slate-200 rounded-registry-lg p-3 text-xs text-slate-600 whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
                     {selectedFlag.ocr_raw_text}
                   </pre>
-                </section>
+                </details>
               )}
 
               {/* Supplementary notice */}
               {selectedFlag.is_supplementary && (
-                <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700 font-medium">
-                  ℹ This is a supplementary report linked to an existing active
+                <div className="bg-slate-50 border border-slate-200 rounded-registry-lg px-4 py-3 text-xs text-slate-600 font-medium">
+                  This is a supplementary report linked to an existing active
                   investigation.
                 </div>
               )}
 
               {/* Review notes */}
               {selectedFlag.review_notes && (
-                <section>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                    Review Notes
-                  </h3>
-                  <p className="text-sm text-slate-700 bg-slate-50 rounded-xl px-4 py-3">
+                <details className="group border-t border-slate-200 pt-3">
+                  <summary className="cursor-pointer list-none text-xs font-semibold text-slate-500 hover:text-slate-700">
+                    <span className="flex items-center justify-between">
+                      Review notes
+                      <span className="text-[10px] uppercase tracking-wider text-slate-400 group-open:hidden">
+                        Show
+                      </span>
+                      <span className="hidden text-[10px] uppercase tracking-wider text-slate-400 group-open:inline">
+                        Hide
+                      </span>
+                    </span>
+                  </summary>
+                  <p className="mt-2 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-registry-lg px-4 py-3">
                     {selectedFlag.review_notes}
                   </p>
-                </section>
+                </details>
               )}
             </div>
 
