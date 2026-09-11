@@ -502,7 +502,7 @@ export default function FraudFlagsPage() {
 
       {/* REQ-2.6.2: Flag Detail Drawer */}
       {selectedFlag && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden p-3 sm:p-6">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden">
           <div
             className="absolute inset-0 bg-slate-950/35"
             onClick={() => {
@@ -510,9 +510,9 @@ export default function FraudFlagsPage() {
               setSelectedFlag(null);
             }}
           />
-          <div className="relative z-10 flex min-h-0 max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-registry-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+          <div className="relative z-10 flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl">
             {/* Drawer Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <div className="relative flex flex-shrink-0 items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <FlagStatusBadge status={selectedFlag.status} />
                 <div>
@@ -532,7 +532,9 @@ export default function FraudFlagsPage() {
                   setLightboxOpen(false);
                   setSelectedFlag(null);
                 }}
-                className="p-1.5 rounded-xl hover:bg-slate-100"
+                className="inline-flex items-center justify-center rounded-registry-lg border border-slate-200 bg-white p-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-gov-200"
+                aria-label="Close fraud flag details"
+                title="Close"
               >
                 <X className="w-5 h-5 text-slate-500" />
               </button>
@@ -561,7 +563,7 @@ export default function FraudFlagsPage() {
                     <img
                       src={flagImageUrl ?? ""}
                       alt="Captured ID"
-                      className="block h-auto max-h-[25rem] min-h-[17rem] max-w-full object-contain"
+                      className="block aspect-[4/3] h-auto max-h-[32rem] min-h-[17rem] w-full object-cover"
                     />
                     <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-registry-lg bg-slate-900/75 px-2.5 py-1.5 text-xs font-semibold text-white opacity-90 transition-opacity group-hover:bg-slate-900">
                       <Maximize2 className="w-3.5 h-3.5" />
