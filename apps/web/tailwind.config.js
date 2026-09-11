@@ -36,16 +36,16 @@ export default {
         // (reworked from session: replaces the old green ramp)
         // Intentionally shifted away from `warn`'s hue to avoid collision.
         osca: {
-          50: "#FBF3DE",
-          100: "#F5E3AE",
-          200: "#EACB6E",
-          300: "#D9AE3E",
-          400: "#BE9020",
-          500: "#9F7817",
-          600: "#8A6613",
-          700: "#6B4E0F",
-          800: "#4A3609",
-          900: "#2E2205",
+          50: "#F7F4EA",
+          100: "#EEE8D5",
+          200: "#DCD0AA",
+          300: "#C4B477",
+          400: "#A69555",
+          500: "#8C793C",
+          600: "#75652E",
+          700: "#5B4F24",
+          800: "#433A1C",
+          900: "#2D2815",
         },
         // PDAO portal identity — advocacy violet
         // (reworked from session: replaces the old teal ramp)

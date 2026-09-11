@@ -170,6 +170,7 @@ class _CameraScreenState extends State<CameraScreen> {
         imagePath: processedPath,
         imageWidth: croppedImage.width,
         imageHeight: croppedImage.height,
+        beneficiaryType: widget.idType,
       );
       debugPrint('[SEAL TEST] detected=${sealResult.sealDetected}, '
           'blueness=${sealResult.blueness}, '

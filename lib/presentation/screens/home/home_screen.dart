@@ -83,13 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(dialogContext);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CameraScreen(idType: 'pwd'),
-                    ),
-                  );
+                  _showPWDFormatDialog();
                 },
                 icon: const Icon(Icons.accessible, size: 32),
                 label: const Padding(
@@ -226,6 +220,92 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => CameraScreen(idType: 'senior', idFormat: format),
+      ),
+    );
+  }
+
+  /// Ask which PWD ID format was presented — old, or new (with holographic
+  /// seal). Unlike Senior's redesign, PWD's label text didn't change
+  /// ("ID No." is used on both formats) — the seal itself is the only
+  /// visual difference staff need to look for.
+  void _showPWDFormatDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(
+          'Which ID format?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Check for a round holographic seal near the ID number.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Has seal → New\nNo seal → Old (still valid)',
+              style: TextStyle(
+                  fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _onPWDFormatSelected('old');
+                },
+                icon: const Icon(Icons.badge_outlined, size: 28),
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Text('Old format', style: TextStyle(fontSize: 16)),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF002E6B),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _onPWDFormatSelected('new');
+                },
+                icon: const Icon(Icons.verified_outlined, size: 28),
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Text('New format (with seal)',
+                      style: TextStyle(fontSize: 16)),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF002E6B),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onPWDFormatSelected(String format) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CameraScreen(idType: 'pwd', idFormat: format),
       ),
     );
   }
