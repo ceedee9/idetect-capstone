@@ -107,7 +107,7 @@ const STATUS_TABS = [
 function FlagStatusBadge({ status }) {
   const map = {
     pending:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-semantic-warning-50 text-semantic-warning-700 border border-semantic-warning-200",
+      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200",
     confirmed:
       "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-danger-50 text-danger-700 border border-danger-100",
     dismissed:
@@ -143,8 +143,8 @@ function confidenceTone(score) {
   }
   if (score >= 50) {
     return {
-      bar: "bg-semantic-warning-500",
-      text: "text-semantic-warning-700",
+      bar: "bg-slate-500",
+      text: "text-slate-700",
     };
   }
   return {
@@ -272,15 +272,13 @@ export default function FraudFlagsPage() {
             .map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 px-4 py-3 bg-semantic-warning-50 border border-semantic-warning-200 rounded-registry-lg text-sm text-semantic-warning-800"
+                className="flex items-start gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-registry-lg text-sm text-slate-700"
               >
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-semantic-warning-600" />
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-slate-500" />
                 <div className="flex-1">
                   <p className="font-semibold">{alert.title}</p>
-                  <p className="text-semantic-warning-700 mt-0.5">
-                    {alert.body}
-                  </p>
-                  <p className="text-semantic-warning-600 text-xs mt-1">
+                  <p className="text-slate-600 mt-0.5">{alert.body}</p>
+                  <p className="text-slate-500 text-xs mt-1">
                     {fmtRelative(alert.created_at)}
                   </p>
                 </div>
@@ -288,7 +286,7 @@ export default function FraudFlagsPage() {
             ))}
           <button
             onClick={handleMarkAllRead}
-            className="text-xs text-semantic-warning-700 underline hover:text-semantic-warning-800"
+            className="text-xs text-slate-600 underline hover:text-slate-800"
           >
             Mark all read
           </button>
@@ -301,8 +299,7 @@ export default function FraudFlagsPage() {
           {
             label: "Pending Review",
             value: counts.pending,
-            color:
-              "bg-semantic-warning-50 text-semantic-warning-700 border border-semantic-warning-200",
+            color: "bg-slate-50 text-slate-600 border border-slate-200",
           },
           {
             label: "Confirmed",
@@ -383,12 +380,12 @@ export default function FraudFlagsPage() {
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0
-                    ${flag.status === "pending" ? "bg-semantic-warning-50" : flag.status === "confirmed" ? "bg-semantic-danger-50" : "bg-slate-100"}`}
+                    ${flag.status === "pending" ? "bg-slate-100" : flag.status === "confirmed" ? "bg-semantic-danger-50" : "bg-slate-100"}`}
                   >
                     <AlertTriangle
                       className={`w-5 h-5 ${
                         flag.status === "pending"
-                          ? "text-semantic-warning-600"
+                          ? "text-slate-500"
                           : flag.status === "confirmed"
                             ? "text-danger-600"
                             : "text-slate-400"
@@ -505,15 +502,15 @@ export default function FraudFlagsPage() {
 
       {/* REQ-2.6.2: Flag Detail Drawer */}
       {selectedFlag && (
-        <div className="fixed inset-0 z-40 flex justify-end">
+        <div className="fixed inset-0 z-[60] flex h-screen w-screen justify-end">
           <div
-            className="flex-1 bg-black/30"
+            className="absolute inset-0 bg-slate-950/35"
             onClick={() => {
               setLightboxOpen(false);
               setSelectedFlag(null);
             }}
           />
-          <div className="w-full max-w-xl bg-white shadow-2xl flex flex-col overflow-hidden">
+          <div className="relative z-10 flex h-full w-full max-w-xl flex-col overflow-hidden bg-white shadow-2xl">
             {/* Drawer Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -615,7 +612,7 @@ export default function FraudFlagsPage() {
                   </div>
                 </div>
                 {selectedFlag.manually_entered && (
-                  <p className="mt-3 text-xs font-semibold text-semantic-warning-700">
+                  <p className="mt-3 text-xs font-semibold text-slate-600">
                     ID number was manually entered rather than scanned.
                   </p>
                 )}
@@ -624,7 +621,7 @@ export default function FraudFlagsPage() {
               {/* Tier 3: supporting context */}
               <section className="space-y-4">
                 {selectedFlag.notes && (
-                  <blockquote className="border-l-2 border-semantic-warning-500 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">
+                  <blockquote className="border-l-2 border-slate-400 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Flagged reason
                     </p>
