@@ -17,20 +17,7 @@ import {
 } from "lucide-react";
 import { staffAPI } from "../services/api";
 import { fmtDateTime } from "../utils/date";
-
-function StatusBadge({ active }) {
-  return active ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-success-50 text-success-700 border border-success-100">
-      <UserCheck className="w-3 h-3" />
-      Active
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">
-      <UserX className="w-3 h-3" />
-      Inactive
-    </span>
-  );
-}
+import StatusBadge from "../components/StatusBadge";
 
 export default function StaffPage() {
   const [staff, setStaff] = useState([]);
@@ -211,7 +198,9 @@ export default function StaffPage() {
                     </td>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1.5">
-                        <StatusBadge active={m.is_active} />
+                        <StatusBadge
+                          status={m.is_active ? "active" : "inactive"}
+                        />
                         {m.locked_until &&
                           new Date() < new Date(m.locked_until) && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">

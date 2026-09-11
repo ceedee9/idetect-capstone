@@ -1,11 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   Scale,
-  Clock,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
-  Eye,
   RefreshCw,
   MessageSquare,
   User,
@@ -13,6 +9,7 @@ import {
 } from "lucide-react";
 import { disputesAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
+import StatusBadge from "../components/StatusBadge";
 import { fmtDateTime, fmtRelative } from "../utils/date";
 
 function useDisputes() {
@@ -50,33 +47,6 @@ const STATUS_TABS = [
   { value: "resolved", label: "Resolved" },
   { value: "rejected", label: "Rejected" },
 ];
-
-function StatusBadge({ status }) {
-  const map = {
-    submitted:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100",
-    acknowledged:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100",
-    under_review:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-100",
-    resolved:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100",
-    rejected:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100",
-  };
-  const icons = {
-    submitted: <Clock className="w-3.5 h-3.5" />,
-    acknowledged: <Eye className="w-3.5 h-3.5" />,
-    under_review: <AlertCircle className="w-3.5 h-3.5" />,
-    resolved: <CheckCircle2 className="w-3.5 h-3.5" />,
-    rejected: <XCircle className="w-3.5 h-3.5" />,
-  };
-  return (
-    <span className={map[status] ?? map.submitted}>
-      {icons[status]} {status?.replace("_", " ") ?? "—"}
-    </span>
-  );
-}
 
 export default function BusinessRefusalsPage() {
   const { data: disputes, loading, error, refetch } = useDisputes();
@@ -166,19 +136,19 @@ export default function BusinessRefusalsPage() {
         </div>
       )}
 
-      <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit">
+      <div className="flex gap-1 border-b border-slate-200 w-fit overflow-x-auto">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setStatusFilter(tab.value)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            className={`px-3 py-2 border-b-2 text-sm font-medium transition-colors ${
               statusFilter === tab.value
-                ? "bg-white text-slate-800 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "border-gov-600 text-gov-700"
+                : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             {tab.label}{" "}
-            <span className="ml-1 text-xs opacity-60">
+            <span className="ml-1 font-mono text-[10px] px-1.5 py-0.5 rounded-registry bg-slate-100 text-slate-500">
               ({counts[tab.value] ?? 0})
             </span>
           </button>

@@ -70,6 +70,9 @@ const MAP = {
   suspended: { tone: "danger", variant: "x", label: "Suspended" },
   revoked: { tone: "danger", variant: "x", label: "Revoked" },
   pending: { tone: "warn", variant: "dot", label: "Pending" },
+  submitted: { tone: "warn", variant: "dot", label: "Pending" },
+  acknowledged: { tone: "slate", variant: "dot", label: "Acknowledged" },
+  under_review: { tone: "warn", variant: "dot", label: "Under review" },
 };
 
 // If your Tailwind config doesn't have a 100-shade ring color for one of

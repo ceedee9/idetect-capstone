@@ -183,24 +183,24 @@ export default function EstablishmentsPage() {
       </div>
 
       {/* Status tabs (desktop) */}
-      <div className="hidden sm:flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="hidden sm:flex items-center gap-1 border-b border-slate-200 w-fit">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setStatusFilter(tab.value)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 flex items-center gap-1.5 ${
+            className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors duration-150 flex items-center gap-1.5 ${
               statusFilter === tab.value
-                ? "bg-white text-gray-900 shadow-card"
-                : "text-gray-600 hover:text-gray-900"
+                ? "border-gov-600 text-gov-700"
+                : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
             {tab.label}
-            {counts[tab.value] > 0 && (
+            {counts[tab.value] !== undefined && (
               <span
-                className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                className={`font-mono text-[10px] px-1.5 py-0.5 rounded-registry font-medium ${
                   statusFilter === tab.value
                     ? "bg-gov-100 text-gov-700"
-                    : "bg-gray-200 text-gray-600"
+                    : "bg-slate-100 text-gray-600"
                 }`}
               >
                 {counts[tab.value]}

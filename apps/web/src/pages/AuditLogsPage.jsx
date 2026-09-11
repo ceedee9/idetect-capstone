@@ -214,6 +214,18 @@ export default function AuditLogsPage() {
     return logs.filter((l) => activeActions.includes(l.action));
   }, [logs, activeActions]);
 
+  const actionCounts = useMemo(() => {
+    const counts = { "": logs.length };
+    ACTION_GROUPS.forEach((group) => {
+      if (group.value) {
+        counts[group.value] = logs.filter((log) =>
+          group.actions.includes(log.action),
+        ).length;
+      }
+    });
+    return counts;
+  }, [logs]);
+
   async function handleExport() {
     setExporting(true);
     try {
@@ -321,7 +333,7 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Action group tabs */}
-        <div className="flex items-center gap-1 mt-3 flex-wrap">
+        <div className="flex items-center gap-1 mt-3 border-b border-slate-200 flex-wrap">
           <Filter className="w-4 h-4 text-slate-400 mr-1" />
           {ACTION_GROUPS.map((grp) => (
             <button
@@ -330,14 +342,23 @@ export default function AuditLogsPage() {
                 setActionGroup(grp.value);
                 setPage(1);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all
+              className={`px-3 py-2 border-b-2 text-xs font-semibold transition-colors
                 ${
                   actionGroup === grp.value
-                    ? "bg-gov-100 text-gov-700 shadow-sm"
-                    : "bg-slate-100 text-slate-500 hover:text-slate-700"
+                    ? "border-gov-600 text-gov-700"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
                 }`}
             >
               {grp.label}
+              <span
+                className={`font-mono text-[10px] px-1.5 py-0.5 rounded-registry ${
+                  actionGroup === grp.value
+                    ? "bg-gov-100 text-gov-700"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {actionCounts[grp.value] ?? 0}
+              </span>
             </button>
           ))}
         </div>
