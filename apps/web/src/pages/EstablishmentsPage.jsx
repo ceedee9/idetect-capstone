@@ -215,7 +215,7 @@ export default function EstablishmentsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-paper">
+              <tr className="border-b border-slate-200 bg-tableHeader">
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-2.5">
                   Business
                 </th>
@@ -290,7 +290,9 @@ export default function EstablishmentsPage() {
 
                     {/* Contact */}
                     <td className="px-4 py-2.5 hidden lg:table-cell">
-                      <p className="font-mono text-xs text-gray-700">{est.contact_email}</p>
+                      <p className="font-mono text-xs text-gray-700">
+                        {est.contact_email}
+                      </p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {est.contact_phone}
                       </p>

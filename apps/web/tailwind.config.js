@@ -4,7 +4,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        paper: "#FAF8F5",
+        paper: "#FDFCFA",
+        tableHeader: "#EEF3F8",
 
         // Portal identity tokens — structural chrome only.
         portal: {

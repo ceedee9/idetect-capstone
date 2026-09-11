@@ -289,7 +289,7 @@ export default function BeneficiariesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-paper">
+              <tr className="border-b border-slate-200 bg-tableHeader">
                 {[
                   ["Beneficiary", ""],
                   ["ID Number", ""],
@@ -354,10 +354,7 @@ export default function BeneficiariesPage() {
                       .join("")
                       .toUpperCase();
                   return (
-                    <tr
-                      key={b.id}
-                      className="transition-colors"
-                    >
+                    <tr key={b.id} className="transition-colors">
                       {/* Name */}
                       <td className="px-5 py-2.5">
                         <div className="flex items-center gap-3">

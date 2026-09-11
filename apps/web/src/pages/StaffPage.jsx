@@ -162,7 +162,7 @@ export default function StaffPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-paper">
+              <tr className="border-b border-slate-200 bg-tableHeader">
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
                   Name
                 </th>
@@ -202,14 +202,13 @@ export default function StaffPage() {
                 </tr>
               ) : (
                 staff.map((m) => (
-                  <tr
-                    key={m.id}
-                    className="transition-colors"
-                  >
+                  <tr key={m.id} className="transition-colors">
                     <td className="px-4 py-2.5 font-medium text-slate-900">
                       {m.full_name}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{m.email}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
+                      {m.email}
+                    </td>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1.5">
                         <StatusBadge active={m.is_active} />

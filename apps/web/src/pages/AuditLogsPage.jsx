@@ -348,7 +348,7 @@ export default function AuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-paper">
+              <tr className="border-b border-slate-200 bg-tableHeader">
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
                   Date
                 </th>
