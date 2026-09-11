@@ -144,11 +144,7 @@ export default function EstablishmentTrendChart({ establishments }) {
               />
             </linearGradient>
           </defs>
-          <CartesianGrid
-            stroke="#E8E6E2"
-            strokeWidth={0.75}
-            vertical={false}
-          />
+          <CartesianGrid stroke="#E8E6E2" strokeWidth={0.75} vertical={false} />
           <XAxis
             dataKey="month"
             tick={{

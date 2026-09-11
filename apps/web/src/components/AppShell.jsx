@@ -60,7 +60,8 @@ const THEME = {
     portalLabel: "OSCA Portal",
     scopeText: "Senior Citizen records only. PWD data is in the PDAO Portal.",
     headerLabel: "Office of Senior Citizens Affairs",
-    sidebarActive: "sidebar-active-osca text-osca-700 border-l-2 border-osca-600",
+    sidebarActive:
+      "sidebar-active-osca text-osca-700 border-l-2 border-osca-600",
     sidebarIcon: "text-osca-600",
     sidebarChevron: "text-osca-400",
     avatarBg: "bg-osca-100",
@@ -79,7 +80,8 @@ const THEME = {
     portalLabel: "PDAO Portal",
     scopeText: "PWD records only. Senior Citizen data is in the OSCA Portal.",
     headerLabel: "Persons with Disability Affairs Office",
-    sidebarActive: "sidebar-active-pdao text-pdao-700 border-l-2 border-pdao-600",
+    sidebarActive:
+      "sidebar-active-pdao text-pdao-700 border-l-2 border-pdao-600",
     sidebarIcon: "text-pdao-600",
     sidebarChevron: "text-pdao-400",
     avatarBg: "bg-pdao-100",
@@ -193,8 +195,8 @@ export default function AppShell() {
         `}
         >
           {/* Brand */}
-          <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
-            <div className="min-w-0">
+          <div className="relative flex items-center justify-center px-5 py-5 border-b border-slate-100">
+            <div className="flex min-w-0 flex-col items-center">
               <img
                 src="/idetect-logo.png"
                 alt="iDetect"
@@ -208,7 +210,7 @@ export default function AppShell() {
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="ml-auto text-slate-400 hover:text-slate-600 lg:hidden"
+              className="absolute right-4 top-5 text-slate-400 hover:text-slate-600 lg:hidden"
             >
               <X className="w-5 h-5" />
             </button>
