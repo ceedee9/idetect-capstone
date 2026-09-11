@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
-  UserCheck,
   UserX,
   AlertTriangle,
   ArrowRight,
@@ -217,7 +216,6 @@ function BeneficiaryDashboard({ user }) {
         <StatCard
           label="Total Records"
           value={stats.total}
-          icon={Users}
           color={roleColor}
           loading={loading}
           primary
@@ -226,7 +224,6 @@ function BeneficiaryDashboard({ user }) {
           <StatCard
             label="Active"
             value={stats.active}
-            icon={UserCheck}
             color={roleColor}
             loading={loading}
             sub="Verified & eligible"
@@ -238,6 +235,7 @@ function BeneficiaryDashboard({ user }) {
             color={roleColor}
             loading={loading}
             sub="Flagged or on hold"
+            attentionTone="danger"
           />
           <StatCard
             label="Expired"
@@ -246,6 +244,7 @@ function BeneficiaryDashboard({ user }) {
             color={roleColor}
             loading={loading}
             sub="ID past validity"
+            attentionTone="danger"
           />
         </div>
       </div>
@@ -777,7 +776,6 @@ function EstablishmentDashboard({ user }) {
         <StatCard
           label="Total Establishments"
           value={stats.total}
-          icon={Store}
           color="gov"
           loading={loading}
           primary
@@ -789,11 +787,11 @@ function EstablishmentDashboard({ user }) {
             icon={Clock}
             color="gov"
             loading={loading}
+            attentionTone="warning"
           />
           <StatCard
             label="Approved"
             value={stats.approved}
-            icon={CheckCircle2}
             color="gov"
             loading={loading}
           />
@@ -803,6 +801,7 @@ function EstablishmentDashboard({ user }) {
             icon={XCircle}
             color="gov"
             loading={loading}
+            attentionTone="danger"
           />
         </div>
       </div>

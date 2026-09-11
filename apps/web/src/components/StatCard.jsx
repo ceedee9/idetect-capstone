@@ -53,6 +53,17 @@ const PALETTE = {
   },
 };
 
+const ATTENTION_PALETTE = {
+  warning: {
+    bar: "bg-semantic-warning-500",
+    iconText: "text-semantic-warning-700",
+  },
+  danger: {
+    bar: "bg-semantic-danger-500",
+    iconText: "text-semantic-danger-700",
+  },
+};
+
 function toSparklinePoints(values) {
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -75,8 +86,10 @@ export default function StatCard({
   trend, // optional: number[] — e.g. last 7-14 days, renders a sparkline
   loading,
   primary = false,
+  attentionTone,
 }) {
   const c = PALETTE[color] ?? PALETTE.gov;
+  const attention = ATTENTION_PALETTE[attentionTone];
 
   if (loading) {
     return (
@@ -100,10 +113,12 @@ export default function StatCard({
         primary ? "min-h-[9rem] p-5 sm:p-6" : ""
       } hover:shadow-card-md transition-shadow duration-200`}
     >
-      <span
-        className={`absolute left-0 top-0 h-full w-[3px] ${c.bar}`}
-        aria-hidden="true"
-      />
+      {attention && (
+        <span
+          className={`absolute left-0 top-0 h-full w-[3px] ${attention.bar}`}
+          aria-hidden="true"
+        />
+      )}
       <div className="flex items-start justify-between pl-2">
         <div className="min-w-0">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -121,11 +136,12 @@ export default function StatCard({
           )}
         </div>
         {Icon && (
-          <div
-            className={`w-10 h-10 rounded-lg border flex items-center justify-center flex-shrink-0 ${c.iconBg} ${c.iconBorder}`}
-          >
-            <Icon className={`w-4.5 h-4.5 ${c.iconText}`} />
-          </div>
+          <Icon
+            className={`w-5 h-5 flex-shrink-0 ${
+              attention ? attention.iconText : "text-slate-400"
+            }`}
+            aria-hidden="true"
+          />
         )}
       </div>
       {points && (
