@@ -214,11 +214,11 @@ export default {
         card: "none",
         "card-hover": "none",
         nav: "none",
-        "card-md":
-          "none",
+        "card-md": "none",
         "card-lg":
           "0 16px 40px 0 rgba(20, 31, 45, 0.16), 0 4px 12px 0 rgba(20, 31, 45, 0.08)",
-        float: "0 12px 32px 0 rgba(20, 31, 45, 0.14), 0 2px 8px 0 rgba(20, 31, 45, 0.08)",
+        float:
+          "0 12px 32px 0 rgba(20, 31, 45, 0.14), 0 2px 8px 0 rgba(20, 31, 45, 0.08)",
       },
     },
   },

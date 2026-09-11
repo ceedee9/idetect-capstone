@@ -74,14 +74,17 @@ export default function StatCard({
   sub,
   trend, // optional: number[] — e.g. last 7-14 days, renders a sparkline
   loading,
+  primary = false,
 }) {
   const c = PALETTE[color] ?? PALETTE.gov;
 
   if (loading) {
     return (
-      <div className="card relative overflow-hidden">
+      <div
+        className={`card relative overflow-hidden ${primary ? "min-h-[11rem]" : ""}`}
+      >
         <div className="skeleton h-3.5 w-24 mb-4" />
-        <div className="skeleton h-9 w-16 mb-2" />
+        <div className={`skeleton ${primary ? "h-12 w-20" : "h-9 w-16"} mb-2`} />
         <div className="skeleton h-3 w-20" />
       </div>
     );
@@ -90,7 +93,11 @@ export default function StatCard({
   const points = trend && trend.length > 1 ? toSparklinePoints(trend) : null;
 
   return (
-    <div className="card relative overflow-hidden hover:shadow-card-md transition-shadow duration-200">
+    <div
+      className={`card relative overflow-hidden ${
+        primary ? "min-h-[11rem] p-5 sm:p-6" : ""
+      } hover:shadow-card-md transition-shadow duration-200`}
+    >
       <span
         className={`absolute left-0 top-0 h-full w-[3px] ${c.bar}`}
         aria-hidden="true"
@@ -100,7 +107,11 @@ export default function StatCard({
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             {label}
           </p>
-          <p className="font-heading font-semibold text-3xl text-slate-900 mt-1.5 tabular-nums">
+          <p
+            className={`font-display font-semibold text-slate-900 mt-1.5 tabular-nums ${
+              primary ? "text-5xl leading-none" : "text-3xl"
+            }`}
+          >
             {value ?? "—"}
           </p>
           {sub && (

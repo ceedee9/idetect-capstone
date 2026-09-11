@@ -212,39 +212,42 @@ function BeneficiaryDashboard({ user }) {
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stat hierarchy: the record total leads, status counts stay compact. */}
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <StatCard
           label="Total Records"
           value={stats.total}
           icon={Users}
           color={roleColor}
           loading={loading}
+          primary
         />
-        <StatCard
-          label="Active"
-          value={stats.active}
-          icon={UserCheck}
-          color={roleColor}
-          loading={loading}
-          sub="Verified & eligible"
-        />
-        <StatCard
-          label="Suspended"
-          value={stats.suspended}
-          icon={AlertTriangle}
-          color={roleColor}
-          loading={loading}
-          sub="Flagged or on hold"
-        />
-        <StatCard
-          label="Expired"
-          value={stats.expired}
-          icon={UserX}
-          color={roleColor}
-          loading={loading}
-          sub="ID past validity"
-        />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:col-span-2 gap-3 sm:gap-4">
+          <StatCard
+            label="Active"
+            value={stats.active}
+            icon={UserCheck}
+            color={roleColor}
+            loading={loading}
+            sub="Verified & eligible"
+          />
+          <StatCard
+            label="Suspended"
+            value={stats.suspended}
+            icon={AlertTriangle}
+            color={roleColor}
+            loading={loading}
+            sub="Flagged or on hold"
+          />
+          <StatCard
+            label="Expired"
+            value={stats.expired}
+            icon={UserX}
+            color={roleColor}
+            loading={loading}
+            sub="ID past validity"
+          />
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
@@ -770,35 +773,38 @@ function EstablishmentDashboard({ user }) {
       )}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <StatCard
           label="Total Establishments"
           value={stats.total}
           icon={Store}
           color="gov"
           loading={loading}
+          primary
         />
-        <StatCard
-          label="Pending Approval"
-          value={stats.pending}
-          icon={Clock}
-          color="gov"
-          loading={loading}
-        />
-        <StatCard
-          label="Approved"
-          value={stats.approved}
-          icon={CheckCircle2}
-          color="gov"
-          loading={loading}
-        />
-        <StatCard
-          label="Suspended"
-          value={stats.suspended}
-          icon={XCircle}
-          color="gov"
-          loading={loading}
-        />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:col-span-2 gap-3 sm:gap-4">
+          <StatCard
+            label="Pending Approval"
+            value={stats.pending}
+            icon={Clock}
+            color="gov"
+            loading={loading}
+          />
+          <StatCard
+            label="Approved"
+            value={stats.approved}
+            icon={CheckCircle2}
+            color="gov"
+            loading={loading}
+          />
+          <StatCard
+            label="Suspended"
+            value={stats.suspended}
+            icon={XCircle}
+            color="gov"
+            loading={loading}
+          />
+        </div>
       </div>
 
       {/* ── Analytics Overview ─────────────────────────────────────── */}
