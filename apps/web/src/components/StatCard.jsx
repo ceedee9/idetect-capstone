@@ -113,12 +113,12 @@ export default function StatCard({
         primary ? "min-h-[9rem] p-5 sm:p-6" : ""
       } hover:shadow-card-md transition-shadow duration-200`}
     >
-      {attention && (
-        <span
-          className={`absolute left-0 top-0 h-full w-[3px] ${attention.bar}`}
-          aria-hidden="true"
-        />
-      )}
+      <span
+        className={`absolute left-0 top-0 h-full w-[3px] ${
+          attention?.bar ?? c.bar
+        }`}
+        aria-hidden="true"
+      />
       <div className="flex items-start justify-between pl-2">
         <div className="min-w-0">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -138,7 +138,7 @@ export default function StatCard({
         {Icon && (
           <Icon
             className={`w-5 h-5 flex-shrink-0 ${
-              attention ? attention.iconText : "text-slate-400"
+              attention ? attention.iconText : c.iconText
             }`}
             aria-hidden="true"
           />

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
+  UserCheck,
   UserX,
   AlertTriangle,
   ArrowRight,
@@ -216,6 +217,7 @@ function BeneficiaryDashboard({ user }) {
         <StatCard
           label="Total Records"
           value={stats.total}
+          icon={Users}
           color={roleColor}
           loading={loading}
           primary
@@ -224,6 +226,7 @@ function BeneficiaryDashboard({ user }) {
           <StatCard
             label="Active"
             value={stats.active}
+            icon={UserCheck}
             color={roleColor}
             loading={loading}
             sub="Verified & eligible"
@@ -776,6 +779,7 @@ function EstablishmentDashboard({ user }) {
         <StatCard
           label="Total Establishments"
           value={stats.total}
+          icon={Store}
           color="gov"
           loading={loading}
           primary
@@ -792,6 +796,7 @@ function EstablishmentDashboard({ user }) {
           <StatCard
             label="Approved"
             value={stats.approved}
+            icon={CheckCircle2}
             color="gov"
             loading={loading}
           />
