@@ -73,6 +73,20 @@
            focus:outline-none focus:ring-2 focus:ring-gov-400 focus:border-gov-400
            disabled:bg-slate-50 disabled:text-slate-400 transition-all duration-150;
   }
+  .input-search {
+    @apply input pl-10;
+  }
+  .input-date {
+    @apply input min-w-[9.5rem] pl-9 pr-2 font-mono text-xs tabular-nums;
+    color-scheme: light;
+  }
+  .input-date::-webkit-calendar-picker-indicator {
+    opacity: 0.55;
+    cursor: pointer;
+  }
+  .input-date::-webkit-datetime-edit {
+    color: #625e58;
+  }
   .label {
     @apply block text-sm font-semibold text-slate-600 mb-1.5;
   }

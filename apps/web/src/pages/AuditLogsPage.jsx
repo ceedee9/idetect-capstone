@@ -296,11 +296,15 @@ export default function AuditLogsPage() {
         <div className="flex flex-col lg:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
             <input
               type="text"
               placeholder="Search by user, action, or details…"
-              className="input pl-9 text-sm w-full"
+              className="input-search text-sm w-full"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -310,26 +314,41 @@ export default function AuditLogsPage() {
           </div>
           {/* Date range */}
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
-            <input
-              type="date"
-              className="input text-sm"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPage(1);
-              }}
-            />
+            <div className="relative">
+              <Calendar
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              />
+              <input
+                type="date"
+                aria-label="Start date"
+                className="input-date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
             <span className="text-slate-400 text-xs">to</span>
-            <input
-              type="date"
-              className="input text-sm"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPage(1);
-              }}
-            />
+            <div className="relative">
+              <Calendar
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              />
+              <input
+                type="date"
+                aria-label="End date"
+                className="input-date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
           </div>
         </div>
 

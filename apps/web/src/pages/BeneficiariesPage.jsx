@@ -240,7 +240,7 @@ export default function BeneficiariesPage() {
           <input
             type="search"
             placeholder="Search by name or ID number…"
-            className="input pl-10"
+            className="input-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

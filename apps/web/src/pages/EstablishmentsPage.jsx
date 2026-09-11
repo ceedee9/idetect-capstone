@@ -161,7 +161,7 @@ export default function EstablishmentsPage() {
           <input
             type="search"
             placeholder="Search by name, address, contact…"
-            className="input pl-9"
+            className="input-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
