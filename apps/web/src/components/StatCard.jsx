@@ -53,17 +53,6 @@ const PALETTE = {
   },
 };
 
-const ATTENTION_PALETTE = {
-  warning: {
-    bar: "bg-semantic-warning-500",
-    iconText: "text-semantic-warning-700",
-  },
-  danger: {
-    bar: "bg-semantic-danger-500",
-    iconText: "text-semantic-danger-700",
-  },
-};
-
 function toSparklinePoints(values) {
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -89,7 +78,6 @@ export default function StatCard({
   attentionTone,
 }) {
   const c = PALETTE[color] ?? PALETTE.gov;
-  const attention = ATTENTION_PALETTE[attentionTone];
 
   if (loading) {
     return (
@@ -114,9 +102,7 @@ export default function StatCard({
       } hover:shadow-card-md transition-shadow duration-200`}
     >
       <span
-        className={`absolute left-0 top-0 h-full w-[3px] ${
-          attention?.bar ?? c.bar
-        }`}
+        className={`absolute left-0 top-0 h-full w-[3px] ${c.bar}`}
         aria-hidden="true"
       />
       <div className="flex items-start justify-between pl-2">
@@ -137,9 +123,7 @@ export default function StatCard({
         </div>
         {Icon && (
           <Icon
-            className={`w-5 h-5 flex-shrink-0 ${
-              attention ? attention.iconText : c.iconText
-            }`}
+            className={`w-5 h-5 flex-shrink-0 ${c.iconText}`}
             aria-hidden="true"
           />
         )}
