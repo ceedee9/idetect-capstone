@@ -76,10 +76,13 @@ const MAP = {
 // these tokens, swap that entry's ring-*-100 for ring-*-200 — same idea,
 // just needs a shade that exists in your palette.
 const TONE_CLS = {
-  success: "text-semantic-success-700 bg-semantic-success-50 ring-semantic-success-100",
+  success:
+    "text-semantic-success-700 bg-semantic-success-50 ring-semantic-success-100",
   warn: "text-semantic-warning-700 bg-semantic-warning-50 ring-semantic-warning-100",
-  danger: "text-semantic-danger-700 bg-semantic-danger-50 ring-semantic-danger-100",
-  slate: "text-semantic-neutral-600 bg-semantic-neutral-50 ring-semantic-neutral-200",
+  danger:
+    "text-semantic-danger-700 bg-semantic-danger-50 ring-semantic-danger-100",
+  slate:
+    "text-semantic-neutral-600 bg-semantic-neutral-50 ring-semantic-neutral-200",
 };
 
 export default function StatusBadge({ status }) {

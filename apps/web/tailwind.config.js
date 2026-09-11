@@ -200,15 +200,25 @@ export default {
         "3xl": ["1.875rem", { lineHeight: "2.25rem", letterSpacing: "0" }],
         "4xl": ["2.25rem", { lineHeight: "2.5rem", letterSpacing: "0" }],
       },
+      borderRadius: {
+        registry: "0.375rem",
+        "registry-lg": "0.5rem",
+        floating: "0.75rem",
+      },
+      spacing: {
+        registry: "0.75rem",
+        "registry-lg": "1rem",
+      },
       boxShadow: {
-        card: "0 2px 8px 0 rgba(0,0,0,0.06), 0 1px 2px 0 rgba(0,0,0,0.04)",
-        "card-hover":
-          "0 8px 24px 0 rgba(0,0,0,0.10), 0 2px 4px 0 rgba(0,0,0,0.06)",
-        nav: "0 1px 0 0 rgba(0,0,0,0.08)",
+        // Static registry surfaces use borders; these remain for floating UI.
+        card: "none",
+        "card-hover": "none",
+        nav: "none",
         "card-md":
-          "0 8px 24px 0 rgba(0,0,0,0.10), 0 2px 4px 0 rgba(0,0,0,0.06)",
+          "none",
         "card-lg":
-          "0 8px 24px 0 rgba(0,0,0,0.10), 0 2px 4px 0 rgba(0,0,0,0.06)",
+          "0 16px 40px 0 rgba(20, 31, 45, 0.16), 0 4px 12px 0 rgba(20, 31, 45, 0.08)",
+        float: "0 12px 32px 0 rgba(20, 31, 45, 0.14), 0 2px 8px 0 rgba(20, 31, 45, 0.08)",
       },
     },
   },
