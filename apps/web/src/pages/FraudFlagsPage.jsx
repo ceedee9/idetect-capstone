@@ -107,7 +107,7 @@ const STATUS_TABS = [
 function FlagStatusBadge({ status }) {
   const map = {
     pending:
-      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200",
+      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-tableHeader text-gov-700 border border-slate-200",
     confirmed:
       "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-danger-50 text-danger-700 border border-danger-100",
     dismissed:
@@ -299,7 +299,7 @@ export default function FraudFlagsPage() {
           {
             label: "Pending Review",
             value: counts.pending,
-            color: "bg-slate-50 text-slate-600 border border-slate-200",
+            color: "bg-tableHeader text-gov-700 border border-slate-200",
           },
           {
             label: "Confirmed",
@@ -380,12 +380,12 @@ export default function FraudFlagsPage() {
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0
-                    ${flag.status === "pending" ? "bg-slate-100" : flag.status === "confirmed" ? "bg-semantic-danger-50" : "bg-slate-100"}`}
+                    ${flag.status === "pending" ? "bg-tableHeader" : flag.status === "confirmed" ? "bg-semantic-danger-50" : "bg-slate-100"}`}
                   >
                     <AlertTriangle
                       className={`w-5 h-5 ${
                         flag.status === "pending"
-                          ? "text-slate-500"
+                          ? "text-gov-600"
                           : flag.status === "confirmed"
                             ? "text-danger-600"
                             : "text-slate-400"
@@ -502,7 +502,7 @@ export default function FraudFlagsPage() {
 
       {/* REQ-2.6.2: Flag Detail Drawer */}
       {selectedFlag && (
-        <div className="fixed inset-0 z-[60] flex h-screen w-screen justify-end">
+        <div className="fixed inset-0 z-[60] flex h-screen w-screen items-center justify-center p-3 sm:p-6">
           <div
             className="absolute inset-0 bg-slate-950/35"
             onClick={() => {
@@ -510,7 +510,7 @@ export default function FraudFlagsPage() {
               setSelectedFlag(null);
             }}
           />
-          <div className="relative z-10 flex h-full w-full max-w-xl flex-col overflow-hidden bg-white shadow-2xl">
+          <div className="relative z-10 flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-registry-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
             {/* Drawer Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -751,7 +751,7 @@ export default function FraudFlagsPage() {
 
       {lightboxOpen && selectedFlag && flagImageUrl && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 sm:p-8"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-4 sm:p-8"
           onClick={() => setLightboxOpen(false)}
           role="dialog"
           aria-modal="true"
