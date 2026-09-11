@@ -14,6 +14,7 @@ import {
   Eye,
   RotateCcw,
   Keyboard,
+  Maximize2,
 } from "lucide-react";
 import { fraudFlagsAPI, staffAlertsAPI } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -115,6 +116,43 @@ function FlagStatusBadge({ status }) {
   return <span className={map[status] ?? map.dismissed}>{status ?? "—"}</span>;
 }
 
+function OutcomeBadge({ outcome }) {
+  const value = outcome?.toLowerCase();
+  const tone =
+    value === "valid"
+      ? "text-semantic-success-700 bg-semantic-success-50 border-semantic-success-200"
+      : value === "invalid"
+        ? "text-semantic-danger-700 bg-semantic-danger-50 border-semantic-danger-200"
+        : "text-semantic-warning-700 bg-semantic-warning-50 border-semantic-warning-200";
+
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-1 rounded-registry-lg border text-xs font-semibold capitalize ${tone}`}
+    >
+      {outcome ?? "Unknown"}
+    </span>
+  );
+}
+
+function confidenceTone(score) {
+  if (score >= 80) {
+    return {
+      bar: "bg-semantic-success-500",
+      text: "text-semantic-success-700",
+    };
+  }
+  if (score >= 50) {
+    return {
+      bar: "bg-semantic-warning-500",
+      text: "text-semantic-warning-700",
+    };
+  }
+  return {
+    bar: "bg-semantic-danger-500",
+    text: "text-semantic-danger-700",
+  };
+}
+
 export default function FraudFlagsPage() {
   const { data: flags, loading, error, refetch } = useFraudFlags();
   const [statusFilter, setStatusFilter] = useState("");
@@ -124,6 +162,7 @@ export default function FraudFlagsPage() {
   const [actionError, setActionError] = useState("");
   const [toast, setToast] = useState(null);
   const [selectedFlag, setSelectedFlag] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Staff alerts (auto-suspend notifications)
   const [alerts, setAlerts] = useState([]);
@@ -133,6 +172,15 @@ export default function FraudFlagsPage() {
       .then((res) => setAlerts(res.data?.alerts ?? []))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setLightboxOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen]);
 
   async function handleMarkAllRead() {
     await staffAlertsAPI.markAllRead().catch(() => {});
@@ -454,9 +502,12 @@ export default function FraudFlagsPage() {
         <div className="fixed inset-0 z-40 flex justify-end">
           <div
             className="flex-1 bg-black/30"
-            onClick={() => setSelectedFlag(null)}
+            onClick={() => {
+              setLightboxOpen(false);
+              setSelectedFlag(null);
+            }}
           />
-          <div className="w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden">
+          <div className="w-full max-w-xl bg-white shadow-2xl flex flex-col overflow-hidden">
             {/* Drawer Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -474,66 +525,137 @@ export default function FraudFlagsPage() {
                 </div>
               </div>
               <button
-                onClick={() => setSelectedFlag(null)}
+                onClick={() => {
+                  setLightboxOpen(false);
+                  setSelectedFlag(null);
+                }}
                 className="p-1.5 rounded-xl hover:bg-slate-100"
               >
                 <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              {/* Captured ID Image */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+              {/* Tier 1: evidence */}
               <section>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Captured ID Image
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Evidence
+                  </h3>
+                  {selectedFlag.image_path && (
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Click image to inspect
+                    </span>
+                  )}
+                </div>
                 {selectedFlag.image_path ? (
-                  <img
-                    src={flagImageUrl ?? ""}
-                    alt="Captured ID"
-                    className="w-full rounded-xl border border-slate-200 object-contain max-h-52"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setLightboxOpen(true)}
+                    className="group relative block w-full overflow-hidden rounded-registry-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-gov-300"
+                    aria-label="Expand captured ID image"
+                  >
+                    <img
+                      src={flagImageUrl ?? ""}
+                      alt="Captured ID"
+                      className="w-full max-h-[25rem] min-h-[17rem] object-contain"
+                    />
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-registry-lg bg-slate-900/75 px-2.5 py-1.5 text-xs font-semibold text-white opacity-90 transition-opacity group-hover:bg-slate-900">
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      Expand
+                    </span>
+                  </button>
                 ) : (
-                  <div className="w-full h-28 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-xs gap-2">
+                  <div className="w-full h-40 rounded-registry-lg border border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-xs gap-2">
                     <Eye className="w-4 h-4" /> No image captured
                   </div>
                 )}
               </section>
 
-              {/* Verification Outcome & Timestamp */}
-              <section>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Verification Details
-                </h3>
-                <div className="bg-slate-50 rounded-xl p-4 space-y-2.5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Outcome</span>
-                    <span className="font-semibold capitalize">
-                      {selectedFlag.verification_outcome ?? "—"}
-                    </span>
+              {/* Tier 2: verdict */}
+              <section className="border-y border-slate-200 py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Outcome
+                    </p>
+                    <div className="mt-1">
+                      <OutcomeBadge
+                        outcome={selectedFlag.verification_outcome}
+                      />
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Transaction Time</span>
-                    <span className="font-semibold">
+                  <div className="min-w-0 flex-1 max-w-[16rem]">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Extraction quality
+                      </p>
+                      {selectedFlag.ocr_confidence_score != null && (
+                        <span
+                          className={`font-mono text-sm font-semibold tabular-nums ${confidenceTone(selectedFlag.ocr_confidence_score).text}`}
+                        >
+                          {selectedFlag.ocr_confidence_score}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={`h-full rounded-full transition-all ${confidenceTone(selectedFlag.ocr_confidence_score ?? 0).bar}`}
+                        style={{
+                          width: `${Math.min(Math.max(selectedFlag.ocr_confidence_score ?? 0, 0), 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {selectedFlag.manually_entered && (
+                  <p className="mt-3 text-xs font-semibold text-semantic-warning-700">
+                    ID number was manually entered rather than scanned.
+                  </p>
+                )}
+              </section>
+
+              {/* Tier 3: supporting context */}
+              <section className="space-y-4">
+                {selectedFlag.notes && (
+                  <blockquote className="border-l-2 border-semantic-warning-500 bg-semantic-warning-50/60 px-4 py-3 text-sm leading-relaxed text-slate-700">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-semantic-warning-700 mb-1">
+                      Flagged reason
+                    </p>
+                    <p className="italic">“{selectedFlag.notes}”</p>
+                  </blockquote>
+                )}
+                <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                  <div>
+                    <p className="uppercase tracking-wider text-[10px] text-slate-400">
+                      Establishment
+                    </p>
+                    <p className="mt-1 font-medium text-slate-700 truncate">
+                      {selectedFlag.establishment?.business_name ?? "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="uppercase tracking-wider text-[10px] text-slate-400">
+                      Transaction time
+                    </p>
+                    <p className="mt-1 font-mono text-[11px] text-slate-700 tabular-nums">
                       {fmtDateTime(
                         selectedFlag.transaction_timestamp ??
                           selectedFlag.flagged_at,
                       )}
-                    </span>
-                  </div>
-                  {selectedFlag.ocr_confidence_score != null && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Extraction Quality</span>
-                      <span className="font-semibold">
-                        {selectedFlag.ocr_confidence_score}%
-                      </span>
-                    </div>
-                  )}
-                  {selectedFlag.manually_entered && (
-                    <p className="text-xs text-warn-600 font-semibold pt-1">
-                      ⚠ ID number was manually entered (not scanned)
                     </p>
-                  )}
+                  </div>
+                  <div>
+                    <p className="uppercase tracking-wider text-[10px] text-slate-400">
+                      Reference code
+                    </p>
+                    <p className="mt-1 font-mono text-[11px] text-slate-700 tabular-nums truncate">
+                      {selectedFlag.id
+                        .replace(/-/g, "")
+                        .slice(0, 12)
+                        .toUpperCase()}
+                    </p>
+                  </div>
                 </div>
               </section>
 
@@ -546,39 +668,6 @@ export default function FraudFlagsPage() {
                   <pre className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
                     {selectedFlag.ocr_raw_text}
                   </pre>
-                </section>
-              )}
-
-              {/* Establishment Identifier */}
-              <section>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Establishment
-                </h3>
-                <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Name</span>
-                    <span className="font-semibold">
-                      {selectedFlag.establishment?.business_name ?? "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-500 flex-shrink-0">ID</span>
-                    <span className="font-mono text-xs text-slate-500 truncate">
-                      {selectedFlag.establishment_id}
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Reason for Flagging */}
-              {selectedFlag.notes && (
-                <section>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                    Reason for Flagging
-                  </h3>
-                  <p className="text-sm text-slate-700 bg-warn-50 border border-warn-100 rounded-xl px-4 py-3 italic">
-                    "{selectedFlag.notes}"
-                  </p>
                 </section>
               )}
 
@@ -638,6 +727,31 @@ export default function FraudFlagsPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {lightboxOpen && selectedFlag && flagImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 sm:p-8"
+          onClick={() => setLightboxOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Expanded captured ID image"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="absolute right-4 top-4 inline-flex items-center justify-center rounded-registry-lg border border-white/20 bg-white/10 p-2 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+            aria-label="Close expanded image"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={flagImageUrl}
+            alt="Expanded captured ID"
+            className="max-h-full max-w-full object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
         </div>
       )}
 
