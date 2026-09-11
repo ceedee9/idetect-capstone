@@ -4,6 +4,54 @@ export default {
   theme: {
     extend: {
       colors: {
+        paper: "#FAF8F5",
+
+        // Portal identity tokens — structural chrome only.
+        portal: {
+          bplo: "#1F4370",
+          osca: "#28665F",
+          pdao: "#534AB7",
+        },
+
+        // Semantic tokens — status meaning only, shared by every portal.
+        semantic: {
+          success: {
+            50: "#EDF7F0",
+            100: "#D7EBDD",
+            200: "#B2D5BD",
+            500: "#2F8F5B",
+            600: "#267747",
+            700: "#1F6039",
+            800: "#17482B",
+          },
+          warning: {
+            50: "#FFF7E8",
+            100: "#FDEBC2",
+            200: "#F9D48A",
+            500: "#D88A16",
+            600: "#B9700D",
+            700: "#92560A",
+            800: "#6E3F08",
+          },
+          danger: {
+            50: "#FFF1F0",
+            100: "#FBD9D6",
+            200: "#F5AAA4",
+            500: "#D94A42",
+            600: "#B83B35",
+            700: "#922F2A",
+            800: "#6E2421",
+          },
+          neutral: {
+            50: "#F4F3F1",
+            100: "#E8E6E2",
+            200: "#D5D2CC",
+            500: "#77736D",
+            600: "#625E58",
+            700: "#4B4843",
+          },
+        },
+
         // Valenzuela City / government palette — BPLO portal identity
         // Ink navy (reworked from session: replaces the old bright blue #0038f5)
         gov: {
@@ -102,23 +150,37 @@ export default {
         },
 
         danger: {
-          50: "#fff1f2",
-          100: "#ffe4e6",
-          400: "#f87171",
-          500: "#ef4444",
-          600: "#dc2626",
-          700: "#b91c1c",
+          50: "#FFF1F0",
+          100: "#FBD9D6",
+          400: "#E8756D",
+          500: "#D94A42",
+          600: "#B83B35",
+          700: "#922F2A",
+          800: "#6E2421",
         },
         success: {
-          50: "#f0fdf4",
-          500: "#22c55e",
-          700: "#15803d",
+          50: "#EDF7F0",
+          100: "#D7EBDD",
+          500: "#2F8F5B",
+          600: "#267747",
+          700: "#1F6039",
+          800: "#17482B",
         },
         warn: {
-          50: "#fffbeb",
-          100: "#fef3c7",
-          500: "#f59e0b",
-          700: "#b45309",
+          50: "#FFF7E8",
+          100: "#FDEBC2",
+          500: "#D88A16",
+          600: "#B9700D",
+          700: "#92560A",
+          800: "#6E3F08",
+        },
+        warning: {
+          50: "#FFF7E8",
+          100: "#FDEBC2",
+          500: "#D88A16",
+          600: "#B9700D",
+          700: "#92560A",
+          800: "#6E3F08",
         },
       },
       fontFamily: {

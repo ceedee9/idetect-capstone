@@ -6,23 +6,23 @@
 export const STATUS_TONES = {
   success: {
     label: "Approved",
-    tw: "text-success-700 bg-success-50 ring-success-100",
-    hex: "#3b6d11",
+    tw: "text-semantic-success-700 bg-semantic-success-50 ring-semantic-success-100",
+    hex: "#2F8F5B",
   },
   warn: {
     label: "Pending",
-    tw: "text-warn-700 bg-warn-50 ring-warn-100",
-    hex: "#a5680b",
+    tw: "text-semantic-warning-700 bg-semantic-warning-50 ring-semantic-warning-100",
+    hex: "#92560A",
   },
   danger: {
     label: "Suspended",
-    tw: "text-danger-700 bg-danger-50 ring-danger-100",
-    hex: "#a32d2d",
+    tw: "text-semantic-danger-700 bg-semantic-danger-50 ring-semantic-danger-100",
+    hex: "#922F2A",
   },
   slate: {
     label: "Inactive",
-    tw: "text-slate-600 bg-slate-50 ring-slate-200",
-    hex: "#5f5e5a",
+    tw: "text-semantic-neutral-600 bg-semantic-neutral-50 ring-semantic-neutral-200",
+    hex: "#625E58",
   },
   gov: {
     label: "Gov",

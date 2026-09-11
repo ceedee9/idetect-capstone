@@ -168,7 +168,7 @@ export default function AppShell() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-paper overflow-hidden">
       <CivicStripe />
       <div className="flex flex-1 min-h-0">
         {/* Mobile overlay */}
@@ -196,7 +196,9 @@ export default function AppShell() {
                 alt="iDetect"
                 className="h-12 w-auto"
               />
-              <p className={`font-display text-xs font-semibold mt-1 ${theme.brandText}`}>
+              <p
+                className={`font-display text-xs font-semibold mt-1 ${theme.brandText}`}
+              >
                 {theme.portalLabel}
               </p>
             </div>
