@@ -1,0 +1,88 @@
+{
+  "@@locale": "en",
+
+  "appBeneficiaryFallback": "Beneficiary",
+  "@appBeneficiaryFallback": {"description": "Fallback name shown in the home app bar when no full_name is available"},
+
+  "commonCancel": "Cancel",
+  "commonBack": "← Back",
+
+  "loginBeneficiaryPortal": "Beneficiary Portal",
+  "loginErrorMissingIdBirthdate": "Please enter your ID number and birthdate.",
+  "loginErrorMissingMobile": "Please enter your mobile number.",
+  "loginErrorInvalidMobile": "Please enter a valid PH mobile number\n(e.g. 09171234567)",
+  "loginBiometricReasonSignIn": "Sign in with your fingerprint or face",
+  "loginBiometricReasonEnable": "Enable quick sign-in for next time",
+  "loginWelcomeBack": "Welcome back,",
+  "loginSignInFingerprint": "Sign In with Fingerprint",
+  "loginOrSignInOtp": "— or sign in with OTP —",
+  "loginSignInPin": "Sign In with PIN",
+  "loginSendOtp": "Send OTP to My Phone",
+  "loginNotYou": "Not you? Use a different ID",
+  "loginIdNumberHint": "Enter your ID Number",
+  "loginBirthdateHint": "Select your Birthdate",
+  "loginContinue": "Continue",
+
+  "loginHelloName": "Hello, {name}!",
+  "@loginHelloName": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+
+  "loginMobileExplanation": "We need your mobile number to send you a verification code. You only need to do this once.",
+  "loginMobileHintFormat": "Philippine mobile number (e.g. 09171234567)",
+  "loginRegisterSendOtp": "Register & Send OTP",
+
+  "loginOtpSentInstruction": "A 6-digit code was sent to your phone.\nEnter it below.",
+  "loginResendOtp": "Resend OTP",
+
+  "loginCreatePin": "Create Your 4-Digit PIN",
+  "loginEnterPin": "Enter Your PIN",
+  "loginPinSetupHint": "This PIN lets you sign in without a text message.",
+  "loginPinLoginHint": "Enter your 4-digit PIN to sign in.",
+
+  "loginSetPinDialogTitle": "Set a PIN",
+  "loginSetPinDialogContent": "Set a 4-digit PIN so you can sign in without waiting for a text message next time.",
+  "loginNotNow": "Not Now",
+  "loginSetPinNow": "Set PIN Now",
+
+  "loginQuickSignInTitle": "Quick Sign-In",
+  "loginQuickSignInContent": "Would you like to use your fingerprint or face to sign in next time?\n\nThis makes it easier — no need to type your OTP again.",
+  "loginYesEnable": "Yes, Enable",
+
+  "homeSignOut": "Sign Out",
+  "homeSignOutConfirm": "Are you sure you want to sign out?",
+
+  "beneficiaryTypeSenior": "Senior Citizen",
+  "beneficiaryTypePwd": "PWD",
+  "languageToggleTooltip": "Change language",
+
+  "statusErrorLoadProfile": "Could not load your profile. Pull to refresh.",
+  "statusIdDetailsTitle": "ID Details",
+  "statusIssuingOffice": "Issuing Office",
+  "statusValidFrom": "Valid From",
+  "statusValidUntil": "Valid Until",
+  "statusBirthdate": "Birthdate",
+  "statusMobile": "Mobile",
+  "statusActivitySummaryTitle": "Activity Summary",
+  "statusTotalVerifications": "Total Verifications",
+  "statusPendingFlags": "Pending Flags",
+  "statusActiveDisputes": "Active Disputes",
+  "statusReportFraudSemantics": "Report fraud on my ID",
+  "statusReportFraudButton": "Report Fraud on My ID",
+  "statusExpiresToday": "Your ID expires today!",
+  "statusExpiresTomorrow": "Your ID expires tomorrow!",
+
+  "statusExpiresInDays": "Your ID expires in {days} days",
+  "@statusExpiresInDays": {
+    "placeholders": {"days": {"type": "int"}}
+  },
+
+  "statusRenewInstruction": "Please visit your issuing office to renew your ID.",
+
+  "navStatus": "Status",
+  "navHistory": "History",
+  "navDisputes": "Disputes",
+  "navAlerts": "Alerts",
+
+  "notificationFallbackTitle": "Notification"
+}

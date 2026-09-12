@@ -18,6 +18,17 @@ const LOGIN_LOCKOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 const router = express.Router();
 
+// Normalizes an id_number the same way beneficiaries.js does at storage
+// time (uppercase, strip everything except A-Z0-9). Every beneficiary
+// auth route below must run incoming id_number through this before
+// querying, or a beneficiary ID entered with dashes/spaces (e.g. the
+// PWD format 13-7504-000-000001) will never match the stored row.
+const normalizeIdNumber = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
 // ── Staff Login (BPLO / OSCA / PDAO) ──────────────────────────
 router.post(
   "/staff/login",
@@ -328,7 +339,8 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { id_number, birthdate } = req.body;
+      const id_number = normalizeIdNumber(req.body.id_number);
+      const { birthdate } = req.body;
 
       // Find matching beneficiary
       const bResult = await pool.query(
@@ -406,7 +418,8 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { id_number, otp } = req.body;
+      const id_number = normalizeIdNumber(req.body.id_number);
+      const { otp } = req.body;
 
       const result = await pool.query(
         `SELECT b.id AS beneficiary_id, b.full_name, b.beneficiary_type,
@@ -439,11 +452,14 @@ router.post(
         throw createError(401, "Invalid OTP");
       }
 
-      // Clear OTP after successful use
+      // Clear OTP after successful use, and mark the account active —
+      // this is the first-ever successful login, and login-pin's query
+      // requires is_active = TRUE to find the row at all.
       await pool.query(
         `UPDATE beneficiary_accounts
-       SET otp_hash = NULL, otp_expires_at = NULL, otp_attempts = 0, last_login = NOW()
-       WHERE id = $1`,
+   SET otp_hash = NULL, otp_expires_at = NULL, otp_attempts = 0,
+       last_login = NOW(), is_active = TRUE
+   WHERE id = $1`,
         [record.account_id],
       );
 
@@ -490,7 +506,8 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { id_number, birthdate, mobile_number } = req.body;
+      const id_number = normalizeIdNumber(req.body.id_number);
+      const { birthdate, mobile_number } = req.body;
 
       // Verify identity first
       const bResult = await pool.query(
@@ -617,7 +634,8 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { id_number, pin } = req.body;
+      const id_number = normalizeIdNumber(req.body.id_number);
+      const { pin } = req.body;
 
       const result = await pool.query(
         `SELECT b.id AS beneficiary_id, b.full_name, b.beneficiary_type,

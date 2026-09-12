@@ -1,7 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:provider/provider.dart';
 import '../core/constants/app_design_system.dart';
+import '../core/locale_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
 import '../services/session_timeout_service.dart';
@@ -39,7 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onForegroundMessage(RemoteMessage message) {
-    final title = message.notification?.title ?? 'Notification';
+    final loc = AppLocalizations.of(context)!;
+    final title = message.notification?.title ?? loc.notificationFallbackTitle;
     final body = message.notification?.body ?? '';
     if (!mounted) return;
     setState(() => _unreadCount++);
@@ -80,21 +84,36 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  /// Maps the raw API beneficiary_type value ('senior_citizen' | 'pwd')
+  /// to its localized display label. Falls back to an empty string for
+  /// any unrecognized/null value, matching the previous behavior.
+  String _beneficiaryTypeLabel(dynamic rawType, AppLocalizations loc) {
+    switch (rawType?.toString()) {
+      case 'senior_citizen':
+        return loc.beneficiaryTypeSenior;
+      case 'pwd':
+        return loc.beneficiaryTypePwd;
+      default:
+        return '';
+    }
+  }
+
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
     if (index == 3) _fetchUnreadCount();
   }
 
   void _logout() {
+    final loc = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+        title: Text(loc.homeSignOut),
+        content: Text(loc.homeSignOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(loc.commonCancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -109,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
               );
             },
-            child: const Text('Sign Out'),
+            child: Text(loc.homeSignOut),
           ),
         ],
       ),
@@ -118,8 +137,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
+    final isEnglish = localeProvider.locale.languageCode == 'en';
     final user = ApiService.currentUser;
-    final fullName = user?['full_name'] ?? 'Beneficiary';
+    final fullName = user?['full_name'] ?? loc.appBeneficiaryFallback;
 
     return SessionActivityWrapper(
       child: Scaffold(
@@ -140,14 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                user?['beneficiary_type']
-                        ?.toString()
-                        .replaceAll('_', ' ')
-                        .replaceFirstMapped(
-                          RegExp(r'^\w'),
-                          (m) => m[0]!.toUpperCase(),
-                        ) ??
-                    '',
+                _beneficiaryTypeLabel(user?['beneficiary_type'], loc),
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.white70,
@@ -158,7 +173,36 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           actions: [
             Semantics(
-              label: 'Sign out',
+              label: loc.languageToggleTooltip,
+              button: true,
+              child: Tooltip(
+                message: loc.languageToggleTooltip,
+                child: TextButton(
+                  onPressed: () {
+                    context.read<LocaleProvider>().setLocale(
+                      isEnglish ? const Locale('fil') : const Locale('en'),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(56, 48),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ),
+                  child: Text(
+                    // Shows the language you'll SWITCH TO, not the current one —
+                    // matches how language toggles conventionally read (e.g. "中文" on an English UI).
+                    isEnglish ? 'FIL' : 'EN',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Semantics(
+              label: loc.homeSignOut,
               child: IconButton(
                 icon: const Icon(
                   Icons.logout_rounded,
@@ -166,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   size: 26,
                 ),
                 onPressed: _logout,
-                tooltip: 'Sign Out',
+                tooltip: loc.homeSignOut,
                 padding: const EdgeInsets.all(12),
               ),
             ),
@@ -193,25 +237,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildNavItem(
                     icon: Icons.badge_outlined,
                     activeIcon: Icons.badge_rounded,
-                    label: 'Status',
+                    label: loc.navStatus,
                     index: 0,
                   ),
                   _buildNavItem(
                     icon: Icons.receipt_long_outlined,
                     activeIcon: Icons.receipt_long_rounded,
-                    label: 'History',
+                    label: loc.navHistory,
                     index: 1,
                   ),
                   _buildNavItem(
                     icon: Icons.gavel_outlined,
                     activeIcon: Icons.gavel_rounded,
-                    label: 'Disputes',
+                    label: loc.navDisputes,
                     index: 2,
                   ),
                   _buildNavItem(
                     icon: Icons.notifications_outlined,
                     activeIcon: Icons.notifications_rounded,
-                    label: 'Alerts',
+                    label: loc.navAlerts,
                     index: 3,
                     badgeCount: _unreadCount,
                   ),

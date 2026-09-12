@@ -13,18 +13,17 @@ import { CivicStripe } from "../components/CivicChrome";
 // statusTheme.js earlier this session. If those ramps change, update
 // this object too — inline styles can't read Tailwind classes directly.
 const C = {
-  blue600: "#0038A8",
-  blue300: "#5680cb",
-  blue100: "#c0d0ec",
+  institutional: "#00225F",
+  institutionalHover: "#001739",
+  institutionalMuted: "#8FA9DD",
   danger50: "#fff1f2",
   danger100: "#ffe4e6",
   danger600: "#dc2626",
   warn50: "#fffbeb",
   warn100: "#fef3c7",
-  warn700: "#b45309",
+  warn700: "#92560A",
 };
 
-const BG_IMAGE = "/idBackground.png";
 const LOGO_SRC = "/IDETECT.png";
 
 function ForgotPasswordModal({ onClose }) {
@@ -56,7 +55,7 @@ function ForgotPasswordModal({ onClose }) {
       style={{ background: "rgba(0,0,0,0.55)" }}
     >
       <div
-        className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4"
+        className="bg-white rounded-registry-lg shadow-xl p-6 w-full max-w-sm mx-4"
         style={{ border: "1px solid #e5e7eb" }}
       >
         <h3 className="font-bold text-lg text-gray-900 mb-1">Reset Password</h3>
@@ -68,8 +67,8 @@ function ForgotPasswordModal({ onClose }) {
             </p>
             <button
               onClick={onClose}
-              className="w-full rounded-md py-2.5 text-sm font-semibold text-white"
-              style={{ background: C.blue600 }}
+              className="w-full rounded-registry-lg py-2.5 text-sm font-semibold text-white"
+              style={{ background: C.institutional }}
             >
               Done
             </button>
@@ -101,34 +100,23 @@ function ForgotPasswordModal({ onClose }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="w-full rounded-md px-3.5 py-2.5 text-sm text-gray-900 outline-none"
-                style={{
-                  background: "#f3f4f6",
-                  border: "1px solid transparent",
-                }}
-                onFocus={(e) =>
-                  (e.target.style.border = `1px solid ${C.blue600}`)
-                }
-                onBlur={(e) =>
-                  (e.target.style.border = "1px solid transparent")
-                }
+                className="input"
               />
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={loading}
-                  className="flex-1 rounded-md py-2.5 text-sm font-medium text-gray-600"
-                  style={{ background: "#f3f4f6" }}
+                  className="flex-1 rounded-registry-lg py-2.5 text-sm font-medium text-slate-600 border border-slate-200 bg-paper"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading || !email}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-semibold text-white"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-registry-lg py-2.5 text-sm font-semibold text-white"
                   style={{
-                    background: loading || !email ? C.blue300 : C.blue600,
+                    background: loading || !email ? C.institutionalMuted : C.institutional,
                     cursor: loading || !email ? "not-allowed" : "pointer",
                   }}
                 >
@@ -193,14 +181,22 @@ export default function LoginPage() {
       ════════════════════════════════════ */}
           <div
             className="hidden lg:flex lg:w-1/2 relative flex-col items-start justify-between p-10 overflow-hidden"
-            style={{
-              backgroundImage: `url(${BG_IMAGE})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
+            style={{ backgroundColor: C.institutional }}
           >
-            {/* Dark overlay */}
-            <div className="absolute inset-0 bg-black/70" />
+            <svg
+              className="absolute inset-0 h-full w-full opacity-15"
+              viewBox="0 0 800 1000"
+              preserveAspectRatio="xMidYMid slice"
+              aria-hidden="true"
+            >
+              <defs>
+                <pattern id="guilloche" width="96" height="96" patternUnits="userSpaceOnUse">
+                  <path d="M-48 48C-12-16 36-16 72 48s84 64 120 0M-48 72C-12 8 36 8 72 72s84 64 120 0M-48 24C-12 88 36 88 72 24s84-64 120 0" fill="none" stroke="#8FA9DD" strokeWidth="0.8" />
+                  <path d="M48-48C112-12 112 36 48 72S-16 156 48 192M72-48C136-12 136 36 72 72S8 156 72 192" fill="none" stroke="#5680CB" strokeWidth="0.45" />
+                </pattern>
+              </defs>
+              <rect width="800" height="1000" fill="url(#guilloche)" />
+            </svg>
 
             {/* Logo — centered vertically in the panel */}
             <div className="relative z-10 flex items-center justify-center w-full flex-1">
@@ -232,16 +228,16 @@ export default function LoginPage() {
 
             {/* Bottom text */}
             <div className="relative z-10">
-              <h2 className="font-heading font-bold text-white text-xl leading-snug">
+              <h2 className="font-display font-semibold text-white text-2xl leading-snug">
                 Unified Staff Portal
               </h2>
-              <p className="text-white/50 text-xs mt-1.5 leading-relaxed max-w-xs">
+              <p className="font-sans text-white/65 text-sm mt-2 leading-relaxed max-w-sm">
                 One platform for OSCA, PDAO, and BPLO staff. Manage Senior
                 Citizen and PWD beneficiary records, oversee registered
                 establishments, and maintain the integrity of the iDetect ID
                 verification network.
               </p>
-              <p className="text-white/25 text-xs mt-4">
+              <p className="font-mono text-white/45 text-[10px] mt-5 leading-relaxed">
                 Pamantasan ng Lungsod ng Valenzuela · CEIT Capstone 2026
                 <br />
                 De los Reyes · Enoria · Mercado · Santiago
@@ -252,7 +248,7 @@ export default function LoginPage() {
           {/* ════════════════════════════════════
           RIGHT PANEL — login form
       ════════════════════════════════════ */}
-          <div className="flex-1 flex flex-col justify-between bg-white px-8 py-10 sm:px-16">
+          <div className="flex-1 flex flex-col justify-between bg-paper px-8 py-10 sm:px-16">
             <div /> {/* top spacer */}
             <div className="w-full max-w-sm mx-auto">
               {/* Mobile logo */}
@@ -282,13 +278,10 @@ export default function LoginPage() {
 
               {/* Heading */}
               <div className="mb-7">
-                <h1
-                  className="font-heading font-bold text-3xl text-gray-900"
-                  style={{ letterSpacing: "-0.5px" }}
-                >
+                  <h1 className="font-display font-semibold text-4xl leading-tight text-slate-900">
                   Sign In
                 </h1>
-                <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mt-2">
+                <p className="font-sans text-sm font-medium text-slate-500 mt-2">
                   OSCA · PDAO · BPLO Staff Portal
                 </p>
               </div>
@@ -345,17 +338,7 @@ export default function LoginPage() {
                       setForm((f) => ({ ...f, email: e.target.value }))
                     }
                     disabled={loading}
-                    className="w-full rounded-md px-3.5 py-2.5 text-sm text-gray-900 outline-none transition-all"
-                    style={{
-                      background: "#f3f4f6",
-                      border: "1px solid transparent",
-                    }}
-                    onFocus={(e) =>
-                      (e.target.style.border = `1px solid ${C.blue600}`)
-                    }
-                    onBlur={(e) =>
-                      (e.target.style.border = "1px solid transparent")
-                    }
+                    className="input"
                   />
                 </div>
 
@@ -379,17 +362,7 @@ export default function LoginPage() {
                         setForm((f) => ({ ...f, password: e.target.value }))
                       }
                       disabled={loading}
-                      className="w-full rounded-md px-3.5 py-2.5 pr-10 text-sm text-gray-900 outline-none transition-all"
-                      style={{
-                        background: "#f3f4f6",
-                        border: "1px solid transparent",
-                      }}
-                      onFocus={(e) =>
-                        (e.target.style.border = `1px solid ${C.blue600}`)
-                      }
-                      onBlur={(e) =>
-                        (e.target.style.border = "1px solid transparent")
-                      }
+                      className="input pr-10"
                     />
                     <button
                       type="button"
@@ -415,7 +388,7 @@ export default function LoginPage() {
                       aria-checked={remember}
                       onClick={() => setRemember((v) => !v)}
                       className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
-                      style={{ background: remember ? C.blue600 : "#d1d5db" }}
+                      style={{ background: remember ? C.institutional : "#CBD0D6" }}
                     >
                       <span
                         className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
@@ -433,7 +406,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowForgotPw(true)}
                     className="text-xs font-medium hover:underline"
-                    style={{ color: C.blue600 }}
+                    className="font-sans text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline"
                   >
                     Forgot password?
                   </button>
@@ -443,12 +416,12 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading || !form.email || !form.password}
-                  className="w-full flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-semibold text-white transition-all"
+                  className="w-full flex items-center justify-center gap-2 rounded-registry-lg py-2.5 text-sm font-semibold text-white transition-all"
                   style={{
                     background:
                       loading || !form.email || !form.password
-                        ? C.blue300
-                        : C.blue600,
+                        ? C.institutionalMuted
+                        : C.institutional,
                     cursor:
                       loading || !form.email || !form.password
                         ? "not-allowed"
@@ -467,7 +440,7 @@ export default function LoginPage() {
               </form>
             </div>
             {/* Footer */}
-            <p className="text-center text-xs text-gray-400">
+            <p className="font-mono text-center text-[10px] text-slate-400">
               © Valenzuela City
             </p>
           </div>

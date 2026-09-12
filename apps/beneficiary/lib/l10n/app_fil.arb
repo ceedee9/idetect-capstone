@@ -1,0 +1,81 @@
+{
+  "@@locale": "fil",
+
+  "appBeneficiaryFallback": "Benepisyaryo",
+
+  "commonCancel": "Kanselahin",
+  "commonBack": "← Bumalik",
+
+  "loginBeneficiaryPortal": "Portal ng Benepisyaryo",
+  "loginErrorMissingIdBirthdate": "Pakilagay ang iyong ID number at petsa ng kapanganakan.",
+  "loginErrorMissingMobile": "Pakilagay ang iyong numero ng cellphone.",
+  "loginErrorInvalidMobile": "Pakilagay ang wastong numero ng cellphone sa Pilipinas\n(hal. 09171234567)",
+  "loginBiometricReasonSignIn": "Mag-sign in gamit ang iyong fingerprint o mukha",
+  "loginBiometricReasonEnable": "I-enable ang mabilisang pag-sign in sa susunod",
+  "loginWelcomeBack": "Maligayang pagbabalik,",
+  "loginSignInFingerprint": "Mag-sign In gamit ang Fingerprint",
+  "loginOrSignInOtp": "— o mag-sign in gamit ang OTP —",
+  "loginSignInPin": "Mag-sign In gamit ang PIN",
+  "loginSendOtp": "Ipadala ang OTP sa Aking Telepono",
+  "loginNotYou": "Hindi ikaw? Gumamit ng ibang ID",
+  "loginIdNumberHint": "Ilagay ang iyong ID Number",
+  "loginBirthdateHint": "Piliin ang iyong Petsa ng Kapanganakan",
+  "loginContinue": "Magpatuloy",
+
+  "loginHelloName": "Kumusta, {name}!",
+
+  "loginMobileExplanation": "Kailangan namin ang iyong numero ng cellphone para makapagpadala ng verification code. Isang beses lang ito gagawin.",
+  "loginMobileHintFormat": "Numero ng cellphone sa Pilipinas (hal. 09171234567)",
+  "loginRegisterSendOtp": "Magrehistro at Ipadala ang OTP",
+
+  "loginOtpSentInstruction": "May 6-digit na code na ipinadala sa iyong telepono.\nIlagay ito sa ibaba.",
+  "loginResendOtp": "Ipadalang Muli ang OTP",
+
+  "loginCreatePin": "Gumawa ng 4-Digit na PIN",
+  "loginEnterPin": "Ilagay ang Iyong PIN",
+  "loginPinSetupHint": "Ang PIN na ito ay nagbibigay-daan sa iyong mag-sign in nang walang text message.",
+  "loginPinLoginHint": "Ilagay ang iyong 4-digit na PIN para mag-sign in.",
+
+  "loginSetPinDialogTitle": "Magtakda ng PIN",
+  "loginSetPinDialogContent": "Magtakda ng 4-digit na PIN upang makapag-sign in ka nang hindi na naghihintay ng text message sa susunod.",
+  "loginNotNow": "Huwag Muna",
+  "loginSetPinNow": "Itakda ang PIN Ngayon",
+
+  "loginQuickSignInTitle": "Mabilisang Pag-sign In",
+  "loginQuickSignInContent": "Nais mo bang gamitin ang iyong fingerprint o mukha para mag-sign in sa susunod?\n\nMas madali ito — hindi mo na kailangang i-type ang iyong OTP muli.",
+  "loginYesEnable": "Oo, I-enable",
+
+  "homeSignOut": "Mag-sign Out",
+  "homeSignOutConfirm": "Sigurado ka bang gusto mong mag-sign out?",
+
+  "beneficiaryTypeSenior": "Senior Citizen",
+  "beneficiaryTypePwd": "PWD",
+  "languageToggleTooltip": "Baguhin ang wika",
+
+  "statusErrorLoadProfile": "Hindi ma-load ang iyong profile. I-pull para i-refresh.",
+  "statusIdDetailsTitle": "Mga Detalye ng ID",
+  "statusIssuingOffice": "Opisina ng Pag-isyu",
+  "statusValidFrom": "Simula ng Bisa",
+  "statusValidUntil": "Hanggang sa Bisa",
+  "statusBirthdate": "Petsa ng Kapanganakan",
+  "statusMobile": "Numero ng Cellphone",
+  "statusActivitySummaryTitle": "Buod ng Aktibidad",
+  "statusTotalVerifications": "Kabuuang Beripikasyon",
+  "statusPendingFlags": "Nakabinbing Flags",
+  "statusActiveDisputes": "Aktibong Reklamo",
+  "statusReportFraudSemantics": "Mag-ulat ng panloloko sa aking ID",
+  "statusReportFraudButton": "Iulat ang Panloloko sa Aking ID",
+  "statusExpiresToday": "Mag-e-expire ang iyong ID ngayon!",
+  "statusExpiresTomorrow": "Mag-e-expire ang iyong ID bukas!",
+
+  "statusExpiresInDays": "Mag-e-expire ang iyong ID sa loob ng {days} na araw",
+
+  "statusRenewInstruction": "Mangyaring bumisita sa iyong opisina ng pag-isyu upang i-renew ang iyong ID.",
+
+  "navStatus": "Katayuan",
+  "navHistory": "Kasaysayan",
+  "navDisputes": "Reklamo",
+  "navAlerts": "Mga Alerto",
+
+  "notificationFallbackTitle": "Abiso"
+}

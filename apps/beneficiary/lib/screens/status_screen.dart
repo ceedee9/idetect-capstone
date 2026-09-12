@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_design_system.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import 'fraud_report_screen.dart';
 
@@ -29,12 +30,11 @@ class _StatusScreenState extends State<StatusScreen> {
 
     final profile = await ApiService.getProfile();
     if (mounted) {
+      final loc = AppLocalizations.of(context)!;
       setState(() {
         _profile = profile;
         _isLoading = profile == null;
-        _error = profile == null
-            ? 'Could not load your profile. Pull to refresh.'
-            : null;
+        _error = profile == null ? loc.statusErrorLoadProfile : null;
       });
     }
   }
@@ -45,6 +45,19 @@ class _StatusScreenState extends State<StatusScreen> {
 
   IconData _statusIcon(String status) {
     return AppDesignSystem.getStatusIcon(status);
+  }
+
+  // Maps the raw beneficiary_type API value to its localized, uppercased
+  // display label used in the type badge (e.g. "SENIOR CITIZEN", "PWD").
+  String _beneficiaryTypeBadge(String rawType, AppLocalizations loc) {
+    switch (rawType) {
+      case 'senior_citizen':
+        return loc.beneficiaryTypeSenior.toUpperCase();
+      case 'pwd':
+        return loc.beneficiaryTypePwd.toUpperCase();
+      default:
+        return rawType.replaceAll('_', ' ').toUpperCase();
+    }
   }
 
   @override
@@ -93,6 +106,7 @@ class _StatusScreenState extends State<StatusScreen> {
   }
 
   Widget _buildContent() {
+    final loc = AppLocalizations.of(context)!;
     final p = _profile!;
     final color = _statusColor(p.status);
 
@@ -119,6 +133,8 @@ class _StatusScreenState extends State<StatusScreen> {
           child: Column(
             children: [
               // Status indicator — large, prominent (Von Restorff Effect)
+              // NOTE: AppDesignSystem.getStatusLabel(p.status) is NOT localized here —
+              // it lives in app_design_system.dart, which hasn't been reviewed yet.
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -186,7 +202,7 @@ class _StatusScreenState extends State<StatusScreen> {
                   ),
                 ),
                 child: Text(
-                  p.beneficiaryType.replaceAll('_', ' ').toUpperCase(),
+                  _beneficiaryTypeBadge(p.beneficiaryType, loc),
                   style: const TextStyle(
                     fontSize: 15,
                     color: Colors.white,
@@ -216,6 +232,7 @@ class _StatusScreenState extends State<StatusScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
+                          // Server-supplied text (a staff-entered reason) — not localized here.
                           p.statusReason!,
                           style: const TextStyle(
                             fontSize: 15,
@@ -235,30 +252,30 @@ class _StatusScreenState extends State<StatusScreen> {
 
         // ── Expiry Warning Banner ──
         if (p.isActive && p.daysUntilExpiry != null && p.daysUntilExpiry! <= 30)
-          _buildExpiryBanner(p.daysUntilExpiry!),
+          _buildExpiryBanner(p.daysUntilExpiry!, loc),
 
         // ── ID Details ──
-        _buildSection('ID Details', [
-          _buildDetailRow('Issuing Office', p.issuingOffice),
-          _buildDetailRow('Valid From', p.validityStart),
-          _buildDetailRow('Valid Until', p.validityEnd),
-          _buildDetailRow('Birthdate', p.birthdate),
+        _buildSection(loc.statusIdDetailsTitle, [
+          _buildDetailRow(loc.statusIssuingOffice, p.issuingOffice),
+          _buildDetailRow(loc.statusValidFrom, p.validityStart),
+          _buildDetailRow(loc.statusValidUntil, p.validityEnd),
+          _buildDetailRow(loc.statusBirthdate, p.birthdate),
           if (p.registeredMobile != null)
-            _buildDetailRow('Mobile', p.registeredMobile!),
+            _buildDetailRow(loc.statusMobile, p.registeredMobile!),
         ]),
         const SizedBox(height: AppDesignSystem.spaceSM),
 
         // ── Quick Stats ──
-        _buildSection('Activity Summary', [
+        _buildSection(loc.statusActivitySummaryTitle, [
           _buildStatRow(
             Icons.verified_rounded,
-            'Total Verifications',
+            loc.statusTotalVerifications,
             '${p.totalVerifications}',
             AppDesignSystem.interactiveBlue,
           ),
           _buildStatRow(
             Icons.flag_rounded,
-            'Pending Flags',
+            loc.statusPendingFlags,
             '${p.pendingFlags}',
             p.pendingFlags > 0
                 ? AppDesignSystem.statusFlagged
@@ -266,7 +283,7 @@ class _StatusScreenState extends State<StatusScreen> {
           ),
           _buildStatRow(
             Icons.gavel_rounded,
-            'Active Disputes',
+            loc.statusActiveDisputes,
             '${p.activeDisputes}',
             p.activeDisputes > 0
                 ? AppDesignSystem.statusWarning
@@ -277,7 +294,7 @@ class _StatusScreenState extends State<StatusScreen> {
 
         // ── Report Fraud Button ──
         Semantics(
-          label: 'Report fraud on my ID',
+          label: loc.statusReportFraudSemantics,
           child: SizedBox(
             width: double.infinity,
             height: AppDesignSystem.touchTargetPrimary,
@@ -293,9 +310,9 @@ class _StatusScreenState extends State<StatusScreen> {
                 color: AppDesignSystem.accentRed,
                 size: 24,
               ),
-              label: const Text(
-                'Report Fraud on My ID',
-                style: TextStyle(
+              label: Text(
+                loc.statusReportFraudButton,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppDesignSystem.accentRed,
@@ -319,7 +336,7 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
-  Widget _buildExpiryBanner(int daysLeft) {
+  Widget _buildExpiryBanner(int daysLeft, AppLocalizations loc) {
     final isUrgent = daysLeft <= 7;
     final color = daysLeft <= 1
         ? AppDesignSystem.statusInvalid
@@ -332,10 +349,10 @@ class _StatusScreenState extends State<StatusScreen> {
         ? Colors.orange.shade50
         : Colors.amber.shade50;
     final label = daysLeft == 0
-        ? 'Your ID expires today!'
+        ? loc.statusExpiresToday
         : daysLeft == 1
-        ? 'Your ID expires tomorrow!'
-        : 'Your ID expires in $daysLeft days';
+        ? loc.statusExpiresTomorrow
+        : loc.statusExpiresInDays(daysLeft);
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppDesignSystem.spaceMD),
@@ -366,7 +383,7 @@ class _StatusScreenState extends State<StatusScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Please visit your issuing office to renew your ID.',
+                  loc.statusRenewInstruction,
                   style: AppDesignSystem.bodySmall.copyWith(
                     color: color.withOpacity(0.8),
                   ),

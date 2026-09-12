@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 import 'core/constants/app_design_system.dart';
+import 'core/locale_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'services/api_service.dart';
 import 'services/fcm_service.dart';
 import 'screens/login_screen.dart';
@@ -28,7 +32,17 @@ void main() async {
   // Initialize FCM — requests permission, registers token
   await FcmService.initialize();
 
-  runApp(const IDetectBeneficiaryApp());
+  // REQ-2.18.2: Load the beneficiary's saved language preference (EN/FIL)
+  // before the app renders, so the first frame is already in the right language.
+  final localeProvider = LocaleProvider();
+  await localeProvider.loadSavedLocale();
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: localeProvider,
+      child: const IDetectBeneficiaryApp(),
+    ),
+  );
 }
 
 class IDetectBeneficiaryApp extends StatelessWidget {
@@ -36,9 +50,24 @@ class IDetectBeneficiaryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // REQ-2.18.2: watch() so switching language rebuilds MaterialApp
+    // immediately, with no session restart required.
+    final localeProvider = context.watch<LocaleProvider>();
+
     return MaterialApp(
       title: 'iDetect Beneficiary',
       debugShowCheckedModeBanner: false,
+
+      // ── Localization wiring ────────────────────────────────────────────
+      locale: localeProvider.locale,
+      supportedLocales: const [Locale('en'), Locale('fil')],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
       theme: ThemeData(
         useMaterial3: true,
         primaryColor: AppDesignSystem.primaryBlue,
