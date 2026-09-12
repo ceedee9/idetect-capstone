@@ -232,7 +232,7 @@ export default function LoginPage() {
           <div
             className="w-full bg-white overflow-hidden"
             style={{
-              maxWidth: 560,
+              maxWidth: 620,
               borderRadius: 18,
               boxShadow:
                 "0 24px 60px -18px rgba(0,34,95,0.35), 0 4px 14px rgba(0,0,0,0.08)",
