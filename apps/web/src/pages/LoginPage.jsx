@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, Loader2, Clock, Search } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2, Clock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { CivicStripe } from "../components/CivicChrome";
@@ -22,9 +22,13 @@ const C = {
   photoBoxBg: "#E7EBF2",
   photoBoxBorder: "#C3CCDC",
   hairline: "#D8DCE3",
+  fieldBg: "#F6F8FB",
 };
 
 const LOGO_SRC = "/IDETECT.png";
+// Served from apps/web/public/photobox.png — reference it as a root-relative
+// path here since that's how Vite serves files from /public.
+const PHOTOBOX_SRC = "/photobox.png";
 
 // Purely decorative barcode flourish for the footer strip — no data encoded.
 // Nods to the "scannable document" theme. Safe to delete if unwanted.
@@ -278,37 +282,19 @@ export default function LoginPage() {
               {/* Photo box + title/office block */}
               <div className="flex gap-4 mb-5">
                 <div
-                  className="relative flex items-center justify-center flex-shrink-0"
+                  className="flex items-center justify-center flex-shrink-0"
                   style={{
-                    width: 92,
-                    height: 100,
+                    width: 96,
+                    height: 96,
                     borderRadius: 8,
                     background: C.photoBoxBg,
                     border: `1px solid ${C.photoBoxBorder}`,
                   }}
                 >
-                  {/* Scan-focus reticle — decorative ring behind the icon */}
-                  <svg
-                    className="absolute"
-                    width="52"
-                    height="52"
-                    viewBox="0 0 52 52"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      cx="26"
-                      cy="26"
-                      r="23"
-                      fill="none"
-                      stroke={C.photoBoxBorder}
-                      strokeWidth="1"
-                      strokeDasharray="3 4"
-                    />
-                  </svg>
-                  <Search
-                    className="relative w-7 h-7"
-                    style={{ color: C.institutionalMuted }}
-                    strokeWidth={1.75}
+                  <img
+                    src={PHOTOBOX_SRC}
+                    alt="iDetect"
+                    className="w-full h-full object-contain p-4"
                   />
                 </div>
                 <div className="flex-1 pt-1">
@@ -366,7 +352,7 @@ export default function LoginPage() {
                   <div>
                     <label
                       htmlFor="email"
-                      className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
+                      className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1.5"
                     >
                       Email
                     </label>
@@ -375,24 +361,26 @@ export default function LoginPage() {
                       type="email"
                       autoComplete="email"
                       required
-                      placeholder="staff@valenzuela.gov.ph"
+                      placeholder="you@valenzuela.gov.ph"
                       value={form.email}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, email: e.target.value }))
                       }
                       disabled={loading}
-                      className="w-full bg-transparent border-0 border-b pb-1.5 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                      className="w-full text-sm font-sans text-slate-900 placeholder:text-slate-400 focus:outline-none"
                       style={{
-                        borderBottomWidth: 1,
-                        borderBottomColor: C.hairline,
+                        background: C.fieldBg,
+                        border: `1px solid ${C.hairline}`,
+                        borderRadius: 6,
+                        padding: "9px 12px",
                       }}
                       onFocus={(e) => {
-                        e.target.style.borderBottomWidth = "2px";
-                        e.target.style.borderBottomColor = C.institutional;
+                        e.target.style.borderColor = C.institutional;
+                        e.target.style.borderWidth = "1.5px";
                       }}
                       onBlur={(e) => {
-                        e.target.style.borderBottomWidth = "1px";
-                        e.target.style.borderBottomColor = C.hairline;
+                        e.target.style.borderColor = C.hairline;
+                        e.target.style.borderWidth = "1px";
                       }}
                     />
                   </div>
@@ -400,7 +388,7 @@ export default function LoginPage() {
                   <div>
                     <label
                       htmlFor="password"
-                      className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
+                      className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1.5"
                     >
                       Password
                     </label>
@@ -416,25 +404,27 @@ export default function LoginPage() {
                           setForm((f) => ({ ...f, password: e.target.value }))
                         }
                         disabled={loading}
-                        className="w-full bg-transparent border-0 border-b pb-1.5 pr-8 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                        className="w-full text-sm font-sans text-slate-900 placeholder:text-slate-400 focus:outline-none"
                         style={{
-                          borderBottomWidth: 1,
-                          borderBottomColor: C.hairline,
+                          background: C.fieldBg,
+                          border: `1px solid ${C.hairline}`,
+                          borderRadius: 6,
+                          padding: "9px 36px 9px 12px",
                         }}
                         onFocus={(e) => {
-                          e.target.style.borderBottomWidth = "2px";
-                          e.target.style.borderBottomColor = C.institutional;
+                          e.target.style.borderColor = C.institutional;
+                          e.target.style.borderWidth = "1.5px";
                         }}
                         onBlur={(e) => {
-                          e.target.style.borderBottomWidth = "1px";
-                          e.target.style.borderBottomColor = C.hairline;
+                          e.target.style.borderColor = C.hairline;
+                          e.target.style.borderWidth = "1px";
                         }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPw((v) => !v)}
                         tabIndex={-1}
-                        className="absolute right-0 bottom-1.5 text-slate-400 hover:text-slate-600"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                       >
                         {showPw ? (
                           <EyeOff className="w-4 h-4" />
