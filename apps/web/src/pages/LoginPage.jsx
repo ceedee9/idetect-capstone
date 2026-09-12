@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, Loader2, Clock } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2, Clock, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { CivicStripe } from "../components/CivicChrome";
 
-// NOTE: this screen predates the shared design-system tokens and used
-// ad-hoc inline hex colors throughout (#3b82f6 etc.) instead of Tailwind
-// classes. Rewired below to reference the same hex values as the
-// `civicBlue`/`danger`/`warn` ramps in tailwind.config.js so this screen
-// doesn't drift from the rest of the app — same category of fix as
-// statusTheme.js earlier this session. If those ramps change, update
-// this object too — inline styles can't read Tailwind classes directly.
+// Design tokens — mirrors civicBlue/danger/warn ramps in tailwind.config.js.
+// Added pageBg / photoBox* / hairline for the ID-card login redesign.
+// If the Tailwind ramps change, update this object too.
 const C = {
   institutional: "#00225F",
   institutionalHover: "#001739",
@@ -22,9 +18,49 @@ const C = {
   warn50: "#fffbeb",
   warn100: "#fef3c7",
   warn700: "#92560A",
+  pageBg: "#D7DFEC", // slate-blue neutral the ID card sits on
+  photoBoxBg: "#E7EBF2",
+  photoBoxBorder: "#C3CCDC",
+  hairline: "#D8DCE3",
 };
 
 const LOGO_SRC = "/IDETECT.png";
+
+// Purely decorative barcode flourish for the footer strip — no data encoded.
+// Nods to the "scannable document" theme. Safe to delete if unwanted.
+function IDBarcode() {
+  const bars = [
+    2, 1, 3, 1, 1, 2, 1, 4, 1, 2, 1, 1, 3, 1, 2, 1, 1, 2, 1, 3, 1, 1, 2, 1,
+  ];
+  let x = 0;
+  return (
+    <svg
+      width="100%"
+      height="22"
+      viewBox="0 0 240 22"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      {bars.map((w, i) => {
+        const barWidth = w * 2;
+        const el =
+          i % 2 === 0 ? (
+            <rect
+              key={i}
+              x={x}
+              y="0"
+              width={barWidth - 1}
+              height="22"
+              fill={C.institutional}
+              opacity={0.55}
+            />
+          ) : null;
+        x += barWidth;
+        return el;
+      })}
+    </svg>
+  );
+}
 
 function ForgotPasswordModal({ onClose }) {
   const [email, setEmail] = useState("");
@@ -116,7 +152,10 @@ function ForgotPasswordModal({ onClose }) {
                   disabled={loading || !email}
                   className="flex-1 flex items-center justify-center gap-2 rounded-registry-lg py-2.5 text-sm font-semibold text-white"
                   style={{
-                    background: loading || !email ? C.institutionalMuted : C.institutional,
+                    background:
+                      loading || !email
+                        ? C.institutionalMuted
+                        : C.institutional,
                     cursor: loading || !email ? "not-allowed" : "pointer",
                   }}
                 >
@@ -175,155 +214,140 @@ export default function LoginPage() {
     <>
       <div className="min-h-screen flex flex-col">
         <CivicStripe />
-        <div className="flex-1 flex">
-          {/* ════════════════════════════════════
-          LEFT PANEL — background + logo
-      ════════════════════════════════════ */}
-          <div
-            className="hidden lg:flex lg:w-1/2 relative flex-col items-start justify-between p-10 overflow-hidden"
-            style={{ backgroundColor: C.institutional }}
-          >
-            <svg
-              className="absolute inset-0 h-full w-full opacity-15"
-              viewBox="0 0 800 1000"
-              preserveAspectRatio="xMidYMid slice"
-              aria-hidden="true"
-            >
-              <defs>
-                <pattern id="guilloche" width="96" height="96" patternUnits="userSpaceOnUse">
-                  <path d="M-48 48C-12-16 36-16 72 48s84 64 120 0M-48 72C-12 8 36 8 72 72s84 64 120 0M-48 24C-12 88 36 88 72 24s84-64 120 0" fill="none" stroke="#8FA9DD" strokeWidth="0.8" />
-                  <path d="M48-48C112-12 112 36 48 72S-16 156 48 192M72-48C136-12 136 36 72 72S8 156 72 192" fill="none" stroke="#5680CB" strokeWidth="0.45" />
-                </pattern>
-              </defs>
-              <rect width="800" height="1000" fill="url(#guilloche)" />
-            </svg>
 
-            {/* Logo — centered vertically in the panel */}
-            <div className="relative z-10 flex items-center justify-center w-full flex-1">
-              {LOGO_SRC === "/your-logo.png" ? (
-                /* Placeholder shown until real logo is provided */
+        {/* Page surface the ID card sits on */}
+        <div
+          className="flex-1 flex items-center justify-center px-4 py-10"
+          style={{ background: C.pageBg }}
+        >
+          {/* ═══════════════════════════════════════
+              THE ID CARD — login form fused into an
+              actual ID layout: masthead, photo box,
+              data fields, control-number footer.
+          ═══════════════════════════════════════ */}
+          <div
+            className="w-full bg-white overflow-hidden"
+            style={{
+              maxWidth: 420,
+              borderRadius: 18,
+              boxShadow:
+                "0 24px 60px -18px rgba(0,34,95,0.35), 0 4px 14px rgba(0,0,0,0.08)",
+              border: "1px solid rgba(0,34,95,0.08)",
+            }}
+          >
+            {/* ── Header band / masthead — issuer identity ── */}
+            <div
+              className="relative overflow-hidden px-6 pt-5 pb-4 flex items-center justify-between"
+              style={{ backgroundColor: C.institutional }}
+            >
+              <svg
+                className="absolute inset-0 h-full w-full opacity-10"
+                viewBox="0 0 400 100"
+                preserveAspectRatio="xMidYMid slice"
+                aria-hidden="true"
+              >
+                <defs>
+                  <pattern
+                    id="guillocheHeader"
+                    width="48"
+                    height="48"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <path
+                      d="M-24 24C-6-8 18-8 36 24s42 32 60 0M-24 36C-6 4 18 4 36 36s42 32 60 0"
+                      fill="none"
+                      stroke="#8FA9DD"
+                      strokeWidth="0.6"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="400" height="100" fill="url(#guillocheHeader)" />
+              </svg>
+              <img
+                src={LOGO_SRC}
+                alt="iDetect"
+                className="relative z-10 h-7 object-contain"
+              />
+              <span className="relative z-10 font-mono text-[9px] tracking-widest text-white/60 uppercase">
+                Staff Access Card
+              </span>
+            </div>
+
+            {/* ── Body ── */}
+            <div className="px-6 pt-6 pb-5">
+              {/* Photo box + title/office block */}
+              <div className="flex gap-4 mb-5">
                 <div
-                  className="flex items-center justify-center rounded-2xl"
+                  className="flex items-center justify-center flex-shrink-0"
                   style={{
-                    width: 360,
-                    height: 140,
-                    border: "2px dashed rgba(255,255,255,0.30)",
-                    background: "rgba(255,255,255,0.06)",
+                    width: 76,
+                    height: 92,
+                    borderRadius: 8,
+                    background: C.photoBoxBg,
+                    border: `1px solid ${C.photoBoxBorder}`,
                   }}
                 >
-                  <span
-                    style={{ color: "rgba(255,255,255,0.40)", fontSize: 13 }}
-                  >
-                    [ Your Logo Here ]
+                  <User
+                    className="w-9 h-9"
+                    style={{ color: C.institutionalMuted }}
+                    strokeWidth={1.5}
+                  />
+                </div>
+                <div className="flex-1 pt-1">
+                  <h1 className="font-display font-semibold text-2xl leading-tight text-slate-900">
+                    Sign In
+                  </h1>
+                  <p className="font-mono text-[10px] tracking-wide text-slate-400 uppercase mt-2">
+                    Issuing Office
+                  </p>
+                  <p className="font-sans text-sm font-medium text-slate-600">
+                    OSCA · PDAO · BPLO Staff Portal
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className="h-px w-full mb-5"
+                style={{ background: C.hairline }}
+              />
+
+              {/* Notices */}
+              {idleExpired && !error && (
+                <div
+                  className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-xs mb-4"
+                  style={{
+                    background: C.warn50,
+                    border: `1px solid ${C.warn100}`,
+                    color: C.warn700,
+                  }}
+                >
+                  <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Your session expired due to inactivity. Please sign in
+                    again.
                   </span>
                 </div>
-              ) : (
-                <img
-                  src={LOGO_SRC}
-                  alt="iDetect Logo"
-                  className="max-w-md w-full object-contain drop-shadow-2xl"
-                />
               )}
-            </div>
-
-            {/* Bottom text */}
-            <div className="relative z-10">
-              <h2 className="font-display font-semibold text-white text-2xl leading-snug">
-                Unified Staff Portal
-              </h2>
-              <p className="font-sans text-white/65 text-sm mt-2 leading-relaxed max-w-sm">
-                One platform for OSCA, PDAO, and BPLO staff. Manage Senior
-                Citizen and PWD beneficiary records, oversee registered
-                establishments, and maintain the integrity of the iDetect ID
-                verification network.
-              </p>
-              <p className="font-mono text-white/45 text-[10px] mt-5 leading-relaxed">
-                Pamantasan ng Lungsod ng Valenzuela · CEIT Capstone 2026
-                <br />
-                De los Reyes · Enoria · Mercado · Santiago
-              </p>
-            </div>
-          </div>
-
-          {/* ════════════════════════════════════
-          RIGHT PANEL — login form
-      ════════════════════════════════════ */}
-          <div className="flex-1 flex flex-col justify-between bg-paper px-8 py-10 sm:px-16">
-            <div /> {/* top spacer */}
-            <div className="w-full max-w-sm mx-auto">
-              {/* Mobile logo */}
-              <div className="lg:hidden mb-8">
-                {LOGO_SRC === "/your-logo.png" ? (
-                  <div
-                    className="flex items-center justify-center rounded-xl mx-auto"
-                    style={{
-                      width: 160,
-                      height: 60,
-                      border: "2px dashed #d1d5db",
-                      background: "#f9fafb",
-                    }}
-                  >
-                    <span style={{ color: "#9ca3af", fontSize: 12 }}>
-                      [ Logo ]
-                    </span>
-                  </div>
-                ) : (
-                  <img
-                    src={LOGO_SRC}
-                    alt="iDetect Logo"
-                    className="h-14 object-contain mx-auto"
-                  />
-                )}
-              </div>
-
-              {/* Heading */}
-              <div className="mb-7">
-                  <h1 className="font-display font-semibold text-4xl leading-tight text-slate-900">
-                  Sign In
-                </h1>
-                <p className="font-sans text-sm font-medium text-slate-500 mt-2">
-                  OSCA · PDAO · BPLO Staff Portal
-                </p>
-              </div>
+              {error && (
+                <div
+                  className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-xs mb-4"
+                  style={{
+                    background: C.danger50,
+                    border: `1px solid ${C.danger100}`,
+                    color: C.danger600,
+                  }}
+                >
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Idle session expiry notice */}
-                {idleExpired && !error && (
-                  <div
-                    className="flex items-start gap-2.5 px-4 py-3 rounded-lg text-sm"
-                    style={{
-                      background: C.warn50,
-                      border: `1px solid ${C.warn100}`,
-                      color: C.warn700,
-                    }}
-                  >
-                    <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span>
-                      Your session expired due to inactivity. Please sign in
-                      again.
-                    </span>
-                  </div>
-                )}
-                {/* Error banner */}
-                {error && (
-                  <div
-                    className="flex items-start gap-2.5 px-4 py-3 rounded-lg text-sm"
-                    style={{
-                      background: C.danger50,
-                      border: `1px solid ${C.danger100}`,
-                      color: C.danger600,
-                    }}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                {/* Email */}
+                {/* Email — styled as an ID data field */}
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-xs font-medium text-gray-500 mb-1"
+                    className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
                   >
                     Email
                   </label>
@@ -332,21 +356,33 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     required
-                    placeholder="Email"
+                    placeholder="staff@valenzuela.gov.ph"
                     value={form.email}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, email: e.target.value }))
                     }
                     disabled={loading}
-                    className="input"
+                    className="w-full bg-transparent border-0 border-b pb-1.5 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                    style={{
+                      borderBottomWidth: 1,
+                      borderBottomColor: C.hairline,
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderBottomWidth = "2px";
+                      e.target.style.borderBottomColor = C.institutional;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderBottomWidth = "1px";
+                      e.target.style.borderBottomColor = C.hairline;
+                    }}
                   />
                 </div>
 
-                {/* Password */}
+                {/* Password — styled as an ID data field */}
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-xs font-medium text-gray-500 mb-1"
+                    className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
                   >
                     Password
                   </label>
@@ -356,19 +392,31 @@ export default function LoginPage() {
                       type={showPw ? "text" : "password"}
                       autoComplete="current-password"
                       required
-                      placeholder="Enter password"
+                      placeholder="••••••••"
                       value={form.password}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, password: e.target.value }))
                       }
                       disabled={loading}
-                      className="input pr-10"
+                      className="w-full bg-transparent border-0 border-b pb-1.5 pr-8 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                      style={{
+                        borderBottomWidth: 1,
+                        borderBottomColor: C.hairline,
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderBottomWidth = "2px";
+                        e.target.style.borderBottomColor = C.institutional;
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderBottomWidth = "1px";
+                        e.target.style.borderBottomColor = C.hairline;
+                      }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPw((v) => !v)}
                       tabIndex={-1}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-0 bottom-1.5 text-slate-400 hover:text-slate-600"
                     >
                       {showPw ? (
                         <EyeOff className="w-4 h-4" />
@@ -380,32 +428,39 @@ export default function LoginPage() {
                 </div>
 
                 {/* Remember me + Forgot password */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pt-1">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <button
                       type="button"
                       role="switch"
                       aria-checked={remember}
                       onClick={() => setRemember((v) => !v)}
-                      className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
-                      style={{ background: remember ? C.institutional : "#CBD0D6" }}
+                      className="relative inline-flex items-center rounded-full transition-colors focus:outline-none"
+                      style={{
+                        height: 18,
+                        width: 32,
+                        background: remember ? C.institutional : "#CBD0D6",
+                      }}
                     >
                       <span
-                        className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
+                        className="inline-block rounded-full bg-white shadow transition-transform"
                         style={{
+                          height: 13,
+                          width: 13,
                           transform: remember
-                            ? "translateX(18px)"
+                            ? "translateX(16px)"
                             : "translateX(2px)",
                         }}
                       />
                     </button>
-                    <span className="text-xs text-gray-500">Remember me</span>
+                    <span className="font-sans text-xs text-slate-500">
+                      Remember me
+                    </span>
                   </label>
 
                   <button
                     type="button"
                     onClick={() => setShowForgotPw(true)}
-                    className="text-xs font-medium hover:underline"
                     className="font-sans text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline"
                   >
                     Forgot password?
@@ -416,8 +471,9 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading || !form.email || !form.password}
-                  className="w-full flex items-center justify-center gap-2 rounded-registry-lg py-2.5 text-sm font-semibold text-white transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white transition-all"
                   style={{
+                    borderRadius: 8,
                     background:
                       loading || !form.email || !form.password
                         ? C.institutionalMuted
@@ -439,13 +495,27 @@ export default function LoginPage() {
                 </button>
               </form>
             </div>
-            {/* Footer */}
-            <p className="font-mono text-center text-[10px] text-slate-400">
-              © Valenzuela City
-            </p>
+
+            {/* ── Footer strip — reads like a control-number line ── */}
+            <div
+              className="px-6 py-3 flex items-center justify-between gap-4"
+              style={{
+                borderTop: `1px solid ${C.hairline}`,
+                background: "#FAFBFC",
+              }}
+            >
+              <span className="font-mono text-[9px] text-slate-400 leading-tight">
+                PLV · CEIT Capstone 2026
+                <br />© Valenzuela City
+              </span>
+              <div style={{ width: 90, flexShrink: 0 }}>
+                <IDBarcode />
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
       {showForgotPw && (
         <ForgotPasswordModal onClose={() => setShowForgotPw(false)} />
       )}
