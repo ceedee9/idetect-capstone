@@ -514,8 +514,7 @@ export default function LoginPage() {
               }}
             >
               <span className="font-mono text-[9px] text-slate-400 leading-tight">
-                PLV · CEIT Capstone 2026
-                <br />© Valenzuela City
+                PLV · CEIT Capstone 2026 © Valenzuela City
               </span>
               <div style={{ width: 90, flexShrink: 0 }}>
                 <IDBarcode />
