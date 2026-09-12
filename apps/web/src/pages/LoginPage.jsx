@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, Loader2, Clock, User } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2, Clock, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { CivicStripe } from "../components/CivicChrome";
@@ -228,7 +228,7 @@ export default function LoginPage() {
           <div
             className="w-full bg-white overflow-hidden"
             style={{
-              maxWidth: 420,
+              maxWidth: 560,
               borderRadius: 18,
               boxShadow:
                 "0 24px 60px -18px rgba(0,34,95,0.35), 0 4px 14px rgba(0,0,0,0.08)",
@@ -278,19 +278,37 @@ export default function LoginPage() {
               {/* Photo box + title/office block */}
               <div className="flex gap-4 mb-5">
                 <div
-                  className="flex items-center justify-center flex-shrink-0"
+                  className="relative flex items-center justify-center flex-shrink-0"
                   style={{
-                    width: 76,
-                    height: 92,
+                    width: 92,
+                    height: 100,
                     borderRadius: 8,
                     background: C.photoBoxBg,
                     border: `1px solid ${C.photoBoxBorder}`,
                   }}
                 >
-                  <User
-                    className="w-9 h-9"
+                  {/* Scan-focus reticle — decorative ring behind the icon */}
+                  <svg
+                    className="absolute"
+                    width="52"
+                    height="52"
+                    viewBox="0 0 52 52"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="26"
+                      cy="26"
+                      r="23"
+                      fill="none"
+                      stroke={C.photoBoxBorder}
+                      strokeWidth="1"
+                      strokeDasharray="3 4"
+                    />
+                  </svg>
+                  <Search
+                    className="relative w-7 h-7"
                     style={{ color: C.institutionalMuted }}
-                    strokeWidth={1.5}
+                    strokeWidth={1.75}
                   />
                 </div>
                 <div className="flex-1 pt-1">
@@ -343,62 +361,27 @@ export default function LoginPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Email — styled as an ID data field */}
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
-                  >
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    placeholder="staff@valenzuela.gov.ph"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, email: e.target.value }))
-                    }
-                    disabled={loading}
-                    className="w-full bg-transparent border-0 border-b pb-1.5 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
-                    style={{
-                      borderBottomWidth: 1,
-                      borderBottomColor: C.hairline,
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderBottomWidth = "2px";
-                      e.target.style.borderBottomColor = C.institutional;
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderBottomWidth = "1px";
-                      e.target.style.borderBottomColor = C.hairline;
-                    }}
-                  />
-                </div>
-
-                {/* Password — styled as an ID data field */}
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
-                  >
-                    Password
-                  </label>
-                  <div className="relative">
+                {/* Email + Password — laid out as a two-column ID data-field row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
+                    >
+                      Email
+                    </label>
                     <input
-                      id="password"
-                      type={showPw ? "text" : "password"}
-                      autoComplete="current-password"
+                      id="email"
+                      type="email"
+                      autoComplete="email"
                       required
-                      placeholder="••••••••"
-                      value={form.password}
+                      placeholder="staff@valenzuela.gov.ph"
+                      value={form.email}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, password: e.target.value }))
+                        setForm((f) => ({ ...f, email: e.target.value }))
                       }
                       disabled={loading}
-                      className="w-full bg-transparent border-0 border-b pb-1.5 pr-8 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                      className="w-full bg-transparent border-0 border-b pb-1.5 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
                       style={{
                         borderBottomWidth: 1,
                         borderBottomColor: C.hairline,
@@ -412,18 +395,54 @@ export default function LoginPage() {
                         e.target.style.borderBottomColor = C.hairline;
                       }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((v) => !v)}
-                      tabIndex={-1}
-                      className="absolute right-0 bottom-1.5 text-slate-400 hover:text-slate-600"
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block font-mono text-[10px] tracking-wide text-slate-400 uppercase mb-1"
                     >
-                      {showPw ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPw ? "text" : "password"}
+                        autoComplete="current-password"
+                        required
+                        placeholder="••••••••"
+                        value={form.password}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, password: e.target.value }))
+                        }
+                        disabled={loading}
+                        className="w-full bg-transparent border-0 border-b pb-1.5 pr-8 text-sm font-sans text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                        style={{
+                          borderBottomWidth: 1,
+                          borderBottomColor: C.hairline,
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderBottomWidth = "2px";
+                          e.target.style.borderBottomColor = C.institutional;
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderBottomWidth = "1px";
+                          e.target.style.borderBottomColor = C.hairline;
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPw((v) => !v)}
+                        tabIndex={-1}
+                        className="absolute right-0 bottom-1.5 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPw ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
