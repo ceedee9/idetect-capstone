@@ -583,6 +583,33 @@ router.post(
   },
 );
 
+// ── GET /api/establishments/expiring-permits ──────────────────
+// REQ-2.2.5: Returns establishments whose permit expires within :days (default 30)
+router.get(
+  "/expiring-permits",
+  authenticate,
+  requireRole("bplo_admin"),
+  async (req, res, next) => {
+    try {
+      const days = parseInt(req.query.days) || 30;
+      const result = await pool.query(
+        `SELECT id, business_name, business_permit_no, owner_name,
+                contact_number, status, business_permit_expiry,
+                (business_permit_expiry - CURRENT_DATE) AS days_until_expiry
+         FROM establishments
+         WHERE business_permit_expiry IS NOT NULL
+           AND status = 'approved'
+           AND business_permit_expiry <= CURRENT_DATE + $1::int
+         ORDER BY business_permit_expiry ASC`,
+        [days],
+      );
+      res.json({ data: result.rows });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ── GET /api/establishments/:id ────────────────────────────────
 router.get("/:id", async (req, res, next) => {
   try {
@@ -811,33 +838,6 @@ router.patch(
       res.json({
         message: `${result.rows[0].business_name} has been unlocked.`,
       });
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// ── GET /api/establishments/expiring-permits ──────────────────
-// REQ-2.2.5: Returns establishments whose permit expires within :days (default 30)
-router.get(
-  "/expiring-permits",
-  authenticate,
-  requireRole("bplo_admin"),
-  async (req, res, next) => {
-    try {
-      const days = parseInt(req.query.days) || 30;
-      const result = await pool.query(
-        `SELECT id, business_name, business_permit_no, owner_name,
-                contact_number, status, business_permit_expiry,
-                (business_permit_expiry - CURRENT_DATE) AS days_until_expiry
-         FROM establishments
-         WHERE business_permit_expiry IS NOT NULL
-           AND status = 'approved'
-           AND business_permit_expiry <= CURRENT_DATE + $1::int
-         ORDER BY business_permit_expiry ASC`,
-        [days],
-      );
-      res.json({ data: result.rows });
     } catch (err) {
       next(err);
     }

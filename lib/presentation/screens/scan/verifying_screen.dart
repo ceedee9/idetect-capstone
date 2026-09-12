@@ -10,8 +10,7 @@ class VerifyingScreen extends StatefulWidget {
   final ParsedIDData parsedData;
   final String imagePath;
   final String idType;
-  final String
-      idFormat; // 'old' or 'new' — available here, not yet sent to the API
+  final String idFormat;
   final bool? sealDetected;
 
   const VerifyingScreen({
