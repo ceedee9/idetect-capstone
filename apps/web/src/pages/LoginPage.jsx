@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, Loader2, Clock } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  Clock,
+  WifiOff,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { CivicStripe } from "../components/CivicChrome";
@@ -29,6 +36,56 @@ const LOGO_SRC = "/IDETECT.png";
 // Served from apps/web/public/photobox.png — reference it as a root-relative
 // path here since that's how Vite serves files from /public.
 const PHOTOBOX_SRC = "/photobox.png";
+
+// Shared notice styling — left-border accent + mono uppercase label,
+// same visual idiom as the fraud-flag detail panel's quoted-reason
+// callout, so these read as part of the same system rather than
+// generic rounded alert boxes.
+const NOTICE_STYLES = {
+  idle: {
+    accent: "#92560A",
+    bg: "#fffbeb",
+    icon: Clock,
+    label: "Session Expired",
+  },
+  credentials: {
+    accent: "#dc2626",
+    bg: "#fff1f2",
+    icon: AlertCircle,
+    label: "Sign-In Failed",
+  },
+  network: {
+    accent: "#00225F",
+    bg: "#EEF2FA",
+    icon: WifiOff,
+    label: "Connection Issue",
+  },
+};
+
+function Notice({ type, message }) {
+  const s = NOTICE_STYLES[type];
+  const Icon = s.icon;
+  return (
+    <div
+      className="flex items-start gap-3 pl-3 pr-4 py-3 mb-4"
+      style={{ borderLeft: `3px solid ${s.accent}`, background: s.bg }}
+    >
+      <Icon
+        className="w-4 h-4 flex-shrink-0 mt-0.5"
+        style={{ color: s.accent }}
+      />
+      <div>
+        <p
+          className="font-mono text-[9px] tracking-widest uppercase"
+          style={{ color: s.accent }}
+        >
+          {s.label}
+        </p>
+        <p className="text-xs mt-1 text-slate-700 leading-relaxed">{message}</p>
+      </div>
+    </div>
+  );
+}
 
 // Purely decorative barcode flourish for the footer strip — no data encoded.
 // Nods to the "scannable document" theme. Safe to delete if unwanted.
@@ -192,6 +249,14 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // 'credentials' (server responded, rejected) vs 'network' (no response at
+  // all — request never completed, e.g. a timeout or the API still
+  // cold-starting). These need different messages: a cold-start failure
+  // was previously mislabeled as "Invalid email or password" because the
+  // old logic only checked err.message for "Access denied" and otherwise
+  // always assumed a credentials failure, even when err.response was
+  // undefined (i.e. no response was ever received).
+  const [errorType, setErrorType] = useState("credentials");
   const [showForgotPw, setShowForgotPw] = useState(false);
 
   async function handleSubmit(e) {
@@ -202,13 +267,25 @@ export default function LoginPage() {
       await login(form.email, form.password);
       navigate("/");
     } catch (err) {
-      const msg =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        (err.message?.includes("Access denied")
-          ? err.message
-          : "Invalid email or password.");
-      setError(msg);
+      if (!err.response) {
+        // No response object at all — the request never completed. This
+        // covers network drops, timeouts, and (most likely here) the API
+        // still spinning up after a period of inactivity. Do NOT call
+        // this a credentials error.
+        setErrorType("network");
+        setError(
+          "Can't reach the server right now — this can happen briefly if the API is still starting up. Please wait a few seconds and try again.",
+        );
+      } else {
+        setErrorType("credentials");
+        const msg =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          (err.message?.includes("Access denied")
+            ? err.message
+            : "Invalid email or password.");
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -220,14 +297,11 @@ export default function LoginPage() {
         <CivicStripe />
 
         {/* Page surface the ID card sits on — Valenzuela City Hall photo,
-            with a navy tint for brand-color consistency. The source image
-            already has a built-in left-side wash (light/legible on the
-            left, full color + signage visible on the right), so the card
-            sits left on desktop to use that zone and keep "THE CITY HALL"
-            signage visible on the right. Centers on mobile instead, where
-            there's no room to show the building beside the card, with a
-            stronger tint for legibility since the full width is covered. */}
-        <div className="flex-1 relative flex items-center justify-center lg:justify-start px-4 lg:pl-20 py-10 overflow-hidden">
+            with a navy tint for brand-color consistency. Card is centered;
+            a single consistent tint opacity is used across breakpoints
+            since the centered card can sit across both the photo's washed
+            and full-color zones, unlike the earlier left-aligned layout. */}
+        <div className="flex-1 relative flex items-center justify-center px-4 py-10 overflow-hidden">
           <div
             className="absolute inset-0"
             style={{
@@ -237,9 +311,7 @@ export default function LoginPage() {
               backgroundPosition: "center",
             }}
           />
-          {/* Navy tint — stronger on mobile (full-width coverage needed),
-              lighter on desktop (relies on the photo's own left-side wash) */}
-          <div className="absolute inset-0 bg-[#00225F] opacity-60 lg:opacity-30" />
+          <div className="absolute inset-0 bg-[#00225F] opacity-45" />
 
           {/* ═══════════════════════════════════════
               THE ID CARD — login form fused into an
@@ -249,7 +321,7 @@ export default function LoginPage() {
           <div
             className="relative z-10 w-full bg-white overflow-hidden"
             style={{
-              maxWidth: 620,
+              maxWidth: 680,
               borderRadius: 18,
               boxShadow:
                 "0 24px 60px -18px rgba(0,34,95,0.35), 0 4px 14px rgba(0,0,0,0.08)",
@@ -334,34 +406,12 @@ export default function LoginPage() {
 
               {/* Notices */}
               {idleExpired && !error && (
-                <div
-                  className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-xs mb-4"
-                  style={{
-                    background: C.warn50,
-                    border: `1px solid ${C.warn100}`,
-                    color: C.warn700,
-                  }}
-                >
-                  <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>
-                    Your session expired due to inactivity. Please sign in
-                    again.
-                  </span>
-                </div>
+                <Notice
+                  type="idle"
+                  message="Your session expired due to inactivity. Please sign in again."
+                />
               )}
-              {error && (
-                <div
-                  className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-xs mb-4"
-                  style={{
-                    background: C.danger50,
-                    border: `1px solid ${C.danger100}`,
-                    color: C.danger600,
-                  }}
-                >
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </div>
-              )}
+              {error && <Notice type={errorType} message={error} />}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email + Password — laid out as a two-column ID data-field row */}
