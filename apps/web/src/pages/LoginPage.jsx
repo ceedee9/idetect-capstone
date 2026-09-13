@@ -219,18 +219,35 @@ export default function LoginPage() {
       <div className="min-h-screen flex flex-col">
         <CivicStripe />
 
-        {/* Page surface the ID card sits on */}
-        <div
-          className="flex-1 flex items-center justify-center px-4 py-10"
-          style={{ background: C.pageBg }}
-        >
+        {/* Page surface the ID card sits on — Valenzuela City Hall photo,
+            with a navy tint for brand-color consistency. The source image
+            already has a built-in left-side wash (light/legible on the
+            left, full color + signage visible on the right), so the card
+            sits left on desktop to use that zone and keep "THE CITY HALL"
+            signage visible on the right. Centers on mobile instead, where
+            there's no room to show the building beside the card, with a
+            stronger tint for legibility since the full width is covered. */}
+        <div className="flex-1 relative flex items-center justify-center lg:justify-start px-4 lg:pl-20 py-10 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundColor: C.pageBg,
+              backgroundImage: "url('/CITY%20HALL%20BG.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+          {/* Navy tint — stronger on mobile (full-width coverage needed),
+              lighter on desktop (relies on the photo's own left-side wash) */}
+          <div className="absolute inset-0 bg-[#00225F] opacity-60 lg:opacity-30" />
+
           {/* ═══════════════════════════════════════
               THE ID CARD — login form fused into an
               actual ID layout: masthead, photo box,
               data fields, control-number footer.
           ═══════════════════════════════════════ */}
           <div
-            className="w-full bg-white overflow-hidden"
+            className="relative z-10 w-full bg-white overflow-hidden"
             style={{
               maxWidth: 620,
               borderRadius: 18,
@@ -514,7 +531,8 @@ export default function LoginPage() {
               }}
             >
               <span className="font-mono text-[9px] text-slate-400 leading-tight">
-                PLV · CEIT Capstone 2026 © Valenzuela City
+                PLV · CEIT Capstone 2026
+                <br />© Valenzuela City
               </span>
               <div style={{ width: 90, flexShrink: 0 }}>
                 <IDBarcode />

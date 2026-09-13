@@ -1,4 +1,17 @@
-﻿import 'package:flutter/material.dart';
+﻿// NOTE: this screen now depends on google_fonts, which the project does
+// not currently have installed. Before this compiles, run:
+//   flutter pub add google_fonts
+//
+// Font choices deliberately mirror the web admin portals' type system so
+// the establishment app reads as the same product family:
+//   - display/headline: Source Serif 4 (web's serif token)
+//   - small-caps labels / mono accents: IBM Plex Mono (web's mono token)
+// If/when AppDesignSystem gets a font-token section of its own, these
+// GoogleFonts calls should move there so every screen shares one source
+// of truth instead of each screen importing google_fonts individually.
+
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 import '../home/home_screen.dart';
@@ -17,11 +30,20 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   bool _showPassword = false;
 
+  // Flattened, registry-style tokens for this screen. These deviate
+  // slightly from AppDesignSystem's existing cardRadius/inputRadius/
+  // shadowLG (which read as fairly rounded + heavily elevated,
+  // matching the "generic app template" look we moved away from on
+  // web) — worth eventually promoting into AppDesignSystem proper if
+  // other screens adopt the same flatter direction.
+  static const _cardRadius = 14.0;
+  static const _fieldRadius = 8.0;
+  static const _fieldFill = Color(0xFFF6F8FB);
+  static const _fieldBorder = Color(0xFFE3E7EE);
+
   @override
   void initState() {
     super.initState();
-    // If a valid token was restored from storage on app startup,
-    // skip the login form and go straight to HomeScreen.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (ApiService.isLoggedIn) {
         Navigator.pushReplacement(
@@ -74,244 +96,343 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _fieldLabel(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.ibmPlexMono(
+        color: AppDesignSystem.textTertiary,
+        fontSize: 10,
+        letterSpacing: 1.2,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration({
+    required String hintText,
+    required Widget prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: AppDesignSystem.textTertiary),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: _fieldFill,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_fieldRadius),
+        borderSide: const BorderSide(color: _fieldBorder),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_fieldRadius),
+        borderSide: const BorderSide(color: _fieldBorder, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_fieldRadius),
+        borderSide: const BorderSide(
+          color: AppDesignSystem.secondaryBlue,
+          width: 1.5,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppDesignSystem.backgroundDarkBlue,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo
-                Image.asset(
-                  'assets/images/idetect_logo.png',
-                  width: 180,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'ESTABLISHMENT PORTAL',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 11,
-                    letterSpacing: 2.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 48),
-
-                // Login Card
-                Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: AppDesignSystem.backgroundWhite,
-                    borderRadius: AppDesignSystem.cardRadius,
-                    boxShadow: AppDesignSystem.shadowLG,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: AppDesignSystem.textPrimary,
-                          letterSpacing: -0.3,
-                        ),
+      body: Stack(
+        children: [
+          // Guilloché-style security-pattern texture, same motif used
+          // on the web login's header band — kept very low-opacity so
+          // it reads as document texture, not decoration competing
+          // with the logo/form.
+          Positioned.fill(
+            child: CustomPaint(painter: _GuillochePainter()),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo
+                    Image.asset(
+                      'assets/images/idetect_logo.png',
+                      width: 180,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'ESTABLISHMENT PORTAL',
+                      style: GoogleFonts.ibmPlexMono(
+                        color: Colors.white54,
+                        fontSize: 11,
+                        letterSpacing: 2.5,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Use your establishment credentials',
-                        style: AppDesignSystem.bodySmall,
+                    ),
+
+                    const SizedBox(height: 48),
+
+                    // Login Card — flattened: smaller radius, thin
+                    // hairline border, lighter shadow than the
+                    // previous shadowLG treatment.
+                    Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: AppDesignSystem.backgroundWhite,
+                        borderRadius: BorderRadius.circular(_cardRadius),
+                        border: Border.all(color: _fieldBorder, width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.10),
+                            blurRadius: 28,
+                            offset: const Offset(0, 14),
+                          ),
+                        ],
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // Error message
-                      if (_errorMessage != null) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF2F2),
-                            borderRadius: AppDesignSystem.inputRadius,
-                            border: Border.all(
-                              color: AppDesignSystem.statusInvalid.withOpacity(0.4),
-                              width: 1.5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Sign In',
+                            style: GoogleFonts.sourceSerif4(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: AppDesignSystem.textPrimary,
+                              letterSpacing: -0.3,
                             ),
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(
-                                Icons.error_outline_rounded,
-                                color: AppDesignSystem.statusInvalid,
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Use your establishment credentials',
+                            style: AppDesignSystem.bodySmall,
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Error message
+                          if (_errorMessage != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF2F2),
+                                borderRadius:
+                                    BorderRadius.circular(_fieldRadius),
+                                border: Border.all(
+                                  color: AppDesignSystem.statusInvalid
+                                      .withOpacity(0.4),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline_rounded,
+                                    color: AppDesignSystem.statusInvalid,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: const TextStyle(
+                                        color: AppDesignSystem.statusInvalid,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+
+                          // Email field — label sits above the field
+                          // (mono, small-caps) instead of Material's
+                          // floating inline label, matching the web
+                          // ID-data-field pattern.
+                          _fieldLabel('Email'),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autocorrect: false,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppDesignSystem.textPrimary,
+                            ),
+                            decoration: _fieldDecoration(
+                              hintText: 'you@example.com',
+                              prefixIcon: const Icon(
+                                Icons.email_outlined,
+                                color: AppDesignSystem.iconLight,
                                 size: 20,
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                    color: AppDesignSystem.statusInvalid,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.4,
-                                  ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Password field
+                          _fieldLabel('Password'),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: !_showPassword,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppDesignSystem.textPrimary,
+                            ),
+                            decoration: _fieldDecoration(
+                              hintText: 'Your password',
+                              prefixIcon: const Icon(
+                                Icons.lock_outline_rounded,
+                                color: AppDesignSystem.iconLight,
+                                size: 20,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showPassword
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  color: AppDesignSystem.iconLight,
+                                  size: 20,
+                                ),
+                                tooltip: _showPassword
+                                    ? 'Hide password'
+                                    : 'Show password',
+                                onPressed: () => setState(
+                                    () => _showPassword = !_showPassword),
+                              ),
+                            ),
+                            onSubmitted: (_) => _login(),
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // Sign In button — flattened elevation to
+                          // match the flatter web button treatment.
+                          SizedBox(
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppDesignSystem.primaryBlue,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(_fieldRadius),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // Email field
-                      TextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autocorrect: false,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppDesignSystem.textPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          labelStyle: const TextStyle(
-                            color: AppDesignSystem.textSecondary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          hintText: 'you@example.com',
-                          hintStyle: const TextStyle(
-                            color: AppDesignSystem.textTertiary,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.email_outlined,
-                            color: AppDesignSystem.iconLight,
-                            size: 22,
-                          ),
-                          filled: true,
-                          fillColor: AppDesignSystem.backgroundLightBlue,
-                          border: OutlineInputBorder(
-                            borderRadius: AppDesignSystem.inputRadius,
-                            borderSide: const BorderSide(color: AppDesignSystem.borderLight),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: AppDesignSystem.inputRadius,
-                            borderSide: const BorderSide(color: AppDesignSystem.borderLight, width: 1.5),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: AppDesignSystem.inputRadius,
-                            borderSide: const BorderSide(color: AppDesignSystem.secondaryBlue, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Password field
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: !_showPassword,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppDesignSystem.textPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: const TextStyle(
-                            color: AppDesignSystem.textSecondary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          hintText: 'Your password',
-                          hintStyle: const TextStyle(
-                            color: AppDesignSystem.textTertiary,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.lock_outline_rounded,
-                            color: AppDesignSystem.iconLight,
-                            size: 22,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _showPassword
-                                  ? Icons.visibility_off_rounded
-                                  : Icons.visibility_rounded,
-                              color: AppDesignSystem.iconLight,
-                              size: 22,
-                            ),
-                            tooltip: _showPassword ? 'Hide password' : 'Show password',
-                            onPressed: () => setState(() => _showPassword = !_showPassword),
-                          ),
-                          filled: true,
-                          fillColor: AppDesignSystem.backgroundLightBlue,
-                          border: OutlineInputBorder(
-                            borderRadius: AppDesignSystem.inputRadius,
-                            borderSide: const BorderSide(color: AppDesignSystem.borderLight),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: AppDesignSystem.inputRadius,
-                            borderSide: const BorderSide(color: AppDesignSystem.borderLight, width: 1.5),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: AppDesignSystem.inputRadius,
-                            borderSide: const BorderSide(color: AppDesignSystem.secondaryBlue, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                        ),
-                        onSubmitted: (_) => _login(),
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // Sign In button
-                      SizedBox(
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppDesignSystem.primaryBlue,
-                            foregroundColor: Colors.white,
-                            elevation: 3,
-                            shadowColor: AppDesignSystem.primaryBlue.withOpacity(0.4),
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: AppDesignSystem.buttonRadius,
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Sign In',
+                                      style: GoogleFonts.ibmPlexMono(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 1.0,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Text(
-                                  'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+/// Subtle interlocking-wave "security document" texture — the same
+/// guilloché motif used behind the header band on the web login,
+/// reimplemented as a CustomPainter since Flutter has no built-in
+/// inline-SVG rendering without adding flutter_svg as a dependency.
+/// Two overlapping wave layers at very low opacity, matching the
+/// two-tone treatment used on web.
+class _GuillochePainter extends CustomPainter {
+  const _GuillochePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _drawLayer(
+      canvas,
+      size,
+      wavelength: 96,
+      amplitude: 22,
+      rowSpacing: 40,
+      phaseShift: 0,
+      color: const Color(0xFF8FA9DD).withOpacity(0.07),
+      strokeWidth: 0.8,
+    );
+    _drawLayer(
+      canvas,
+      size,
+      wavelength: 96,
+      amplitude: 22,
+      rowSpacing: 40,
+      phaseShift: 20,
+      color: const Color(0xFF5680CB).withOpacity(0.05),
+      strokeWidth: 0.6,
+    );
+  }
+
+  void _drawLayer(
+    Canvas canvas,
+    Size size, {
+    required double wavelength,
+    required double amplitude,
+    required double rowSpacing,
+    required double phaseShift,
+    required Color color,
+    required double strokeWidth,
+  }) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    for (double rowY = phaseShift - amplitude;
+        rowY < size.height + amplitude;
+        rowY += rowSpacing) {
+      final path = Path()..moveTo(-wavelength, rowY);
+      for (double x = -wavelength;
+          x < size.width + wavelength;
+          x += wavelength) {
+        path.relativeQuadraticBezierTo(
+            wavelength / 2, -amplitude, wavelength, 0);
+        path.relativeQuadraticBezierTo(
+            wavelength / 2, amplitude, wavelength, 0);
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GuillochePainter oldDelegate) => false;
 }
