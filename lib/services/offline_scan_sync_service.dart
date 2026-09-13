@@ -123,8 +123,7 @@ class OfflineScanSyncService {
               idNumber.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
           final normalizedConfidence = ocrConfidence == null
               ? null
-              : (ocrConfidence <= 1.0 ? ocrConfidence * 100.0 : ocrConfidence)
-                  .clamp(0.0, 100.0);
+              : ApiService.normalizeConfidenceScore(ocrConfidence);
 
           String? imageData;
           if (imagePath != null) {

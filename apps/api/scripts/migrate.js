@@ -61,7 +61,10 @@ const MIGRATIONS = [
   "023_unique_person_index.sql",
   "024_add_beneficiary_contact_fields.sql",
   "025_partial_unique_person_index.sql",
+  "026_verification_logs_immutability.sql",
+  "027_staff_password_reset.sql",
   "028_add_id_format_to_verification_logs.sql",
+  "029_add_synced_from_offline_to_verification_logs.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

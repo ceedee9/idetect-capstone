@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/datasources/local/local_database.dart';
 
 class ApiService {
   // Set with --dart-define=IDETECT_API_BASE_URL=https://your-host/api.
@@ -60,6 +63,10 @@ class ApiService {
   }
 
   static bool get isLoggedIn => _token != null;
+
+  /// Raw token string, for callers (e.g. status_sync_service.dart) that need
+  /// to build their own Authorization header outside of _authHeaders().
+  static String? get token => _token;
   static Map<String, dynamic>? get currentUser => _currentUser;
 
   static Future<void> _persistToken(String token) async {
@@ -434,6 +441,276 @@ class ApiService {
     }
   }
 
+  // ── ID Verification (scan) ─────────────────────────────────────────────────
+  //
+  // Calls POST /verification/scan. The image is sent as base64 in the JSON
+  // body (image_data), matching verification.js — not multipart, unlike
+  // uploadDisputeDoc. Failure to read/encode the image is non-fatal; the scan
+  // still proceeds without image_data (backend just skips the upload step).
+
+  static Future<VerificationResult> verifyId({
+    required String idNumber,
+    required String beneficiaryType,
+    num? ocrConfidence,
+    required String imagePath,
+    bool manuallyEntered = false,
+    String? extractedName,
+    String? extractedDob,
+    String idFormat = 'old',
+    bool? sealDetected,
+  }) async {
+    // ── Fast local block (REQ-2.9.1) ────────────────────────────────────────
+    // If the last status sync already flagged this ID as revoked/suspended,
+    // reject instantly without waiting on the network. This is a FAST BLOCK
+    // ONLY, never a fast approve: a cache miss (null) or 'active' always
+    // falls through to the real server call below. That asymmetry matters —
+    // staleness can only ever make a block arrive a few seconds late, never
+    // make an approval arrive early on stale data.
+    //
+    // The instant result is returned to the cashier immediately, but the
+    // real server call still happens in the background (fire-and-forget) so
+    // this attempt still lands in verification_logs for establishment
+    // history/analytics — just without making the cashier wait for it.
+    final cachedStatus = await LocalDatabase.getCachedStatus(idNumber);
+    if (cachedStatus == 'revoked' || cachedStatus == 'suspended') {
+      final instant = VerificationResult(
+        status: cachedStatus == 'revoked'
+            ? VerificationStatus.invalid
+            : VerificationStatus.suspicious,
+        message: cachedStatus == 'revoked'
+            ? 'This ID has been reported and confirmed fraudulent.'
+            : 'This ID is currently under investigation.',
+      );
+
+      unawaited(_callVerifyEndpoint(
+        idNumber: idNumber,
+        beneficiaryType: beneficiaryType,
+        ocrConfidence: ocrConfidence,
+        imagePath: imagePath,
+        manuallyEntered: manuallyEntered,
+        extractedName: extractedName,
+        extractedDob: extractedDob,
+        idFormat: idFormat,
+        sealDetected: sealDetected,
+      ));
+
+      return instant;
+    }
+
+    return _callVerifyEndpoint(
+      idNumber: idNumber,
+      beneficiaryType: beneficiaryType,
+      ocrConfidence: ocrConfidence,
+      imagePath: imagePath,
+      manuallyEntered: manuallyEntered,
+      extractedName: extractedName,
+      extractedDob: extractedDob,
+      idFormat: idFormat,
+      sealDetected: sealDetected,
+    );
+  }
+
+  /// The actual network call to POST /verification/scan. Called normally
+  /// (awaited) for a fresh scan, or fire-and-forget after an instant local
+  /// block above — in that second case its return value is discarded; it
+  /// only exists to make sure the attempt still gets logged server-side.
+  static Future<VerificationResult> _callVerifyEndpoint({
+    required String idNumber,
+    required String beneficiaryType,
+    num? ocrConfidence,
+    required String imagePath,
+    bool manuallyEntered = false,
+    String? extractedName,
+    String? extractedDob,
+    String idFormat = 'old',
+    bool? sealDetected,
+  }) async {
+    String? imageBase64;
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      imageBase64 = base64Encode(bytes);
+    } catch (e) {
+      debugPrint('⚠️ Could not read ID image for upload: $e');
+    }
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/verification/scan'),
+            headers: _authHeaders(),
+            body: jsonEncode({
+              'id_number': idNumber,
+              'beneficiary_type': beneficiaryType,
+              if (ocrConfidence != null)
+                'ocr_confidence_score': normalizeConfidenceScore(ocrConfidence),
+              if (imageBase64 != null) 'image_data': imageBase64,
+              'manually_entered': manuallyEntered,
+              if (extractedName != null && extractedName.isNotEmpty)
+                'extracted_name': extractedName,
+              if (extractedDob != null && extractedDob.isNotEmpty)
+                'extracted_dob': extractedDob,
+              'id_format': idFormat,
+              if (sealDetected != null) 'seal_detected': sealDetected,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['result'] != null) {
+        return VerificationResult(
+          status: _statusFromString(data['result']),
+          message: data['message'],
+          verificationId: data['verification_id'],
+          beneficiaryName: data['beneficiary']?['full_name'],
+        );
+      }
+
+      final errors = data['errors'];
+      String message;
+      if (errors is List && errors.isNotEmpty) {
+        message = errors.first['msg']?.toString() ?? 'Invalid input.';
+      } else {
+        message = data['message'] ?? data['error'] ?? 'Verification failed.';
+      }
+      return VerificationResult(
+        status: VerificationStatus.error,
+        errorMessage: message,
+      );
+    } on TimeoutException catch (_) {
+      return _unreachableResult();
+    } on SocketException catch (_) {
+      return _unreachableResult();
+    } on http.ClientException catch (_) {
+      return _unreachableResult();
+    } catch (e) {
+      return VerificationResult(
+        status: VerificationStatus.error,
+        errorMessage: 'Cannot reach server: $e',
+      );
+    }
+  }
+
+  /// Built when the server genuinely can't be reached (timeout, no socket,
+  /// connection refused) — distinct from a reachable server returning an
+  /// error. isOffline:true is what result_screen.dart checks to decide
+  /// whether to call OfflineScanSyncService.queueOfflineScan.
+  static VerificationResult _unreachableResult() {
+    return VerificationResult(
+      status: VerificationStatus.manualReview,
+      message:
+          'No internet connection. This scan has been saved and will be verified automatically once you\'re back online.',
+      isOffline: true,
+    );
+  }
+
+  /// Converts a 0.0-1.0 OCR confidence fraction (how ParsedIDData.confidence
+  /// is stored) into the 0-100 scale verification.js expects
+  /// (isFloat({min:0,max:100}) plus its "< threshold%" low-confidence check).
+  /// Public and shared: offline_scan_sync_service.dart calls this too, so the
+  /// live-scan path and the offline-replay path can never drift apart again
+  /// the way they did before (live scans were sending unscaled 0.0-1.0
+  /// values, which the server read as ~0-1% confidence and flagged as low
+  /// quality on nearly every scan).
+  static double normalizeConfidenceScore(num raw) {
+    final value = raw.toDouble();
+    return (value <= 1.0 ? value * 100.0 : value).clamp(0.0, 100.0);
+  }
+
+  static VerificationStatus _statusFromString(String value) {
+    switch (value) {
+      case 'valid':
+        return VerificationStatus.valid;
+      case 'suspicious':
+        return VerificationStatus.suspicious;
+      case 'invalid':
+        return VerificationStatus.invalid;
+      case 'manual_review':
+        return VerificationStatus.manualReview;
+      default:
+        return VerificationStatus.error;
+    }
+  }
+
+  // ── Cashier Action Logging (Gap 8) ─────────────────────────────────────────
+  //
+  // Calls POST /verification/:id/cashier-action. Fire-and-forget from the
+  // caller's side (result_screen.dart chains .catchError((_) {})), so this
+  // just returns a bool rather than throwing.
+
+  static Future<bool> logCashierAction({
+    required String verificationId,
+    required String action,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/verification/$verificationId/cashier-action'),
+            headers: _authHeaders(),
+            body: jsonEncode({'action': action}),
+          )
+          .timeout(const Duration(seconds: 10));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── Fraud Flags (REQ-2.6.4) ─────────────────────────────────────────────────
+  //
+  // Calls POST /fraud-flags. Returns a raw Map rather than a typed result,
+  // matching the pattern fraud_flag_sync_service.dart already expects:
+  // success → the response fields as-is; failure → {'error': message}, which
+  // is what submitFlagNow()/syncPendingFlags() check to decide whether to
+  // queue the flag offline instead.
+
+  static Future<Map<String, dynamic>> reportFraudFlag({
+    required String verificationLogId,
+    required String idNumberFlagged,
+    required String beneficiaryType,
+    String? notes,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/fraud-flags'),
+            headers: _authHeaders(),
+            body: jsonEncode({
+              'verification_log_id': verificationLogId,
+              'id_number_flagged': idNumberFlagged,
+              'beneficiary_type': beneficiaryType,
+              if (notes != null && notes.isNotEmpty)
+                'establishment_notes': notes,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        return {
+          'message': data['message'],
+          'flag_id': data['flag_id'],
+          'is_supplementary': data['is_supplementary'],
+          'parent_flag_id': data['parent_flag_id'],
+          'auto_suspended': data['auto_suspended'],
+        };
+      }
+
+      final errors = data['errors'];
+      String message;
+      if (errors is List && errors.isNotEmpty) {
+        message = errors.first['msg']?.toString() ?? 'Invalid input.';
+      } else {
+        message =
+            data['message'] ?? data['error'] ?? 'Failed to submit fraud flag.';
+      }
+      return {'error': message};
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
   // ── Profile / ID Status (REQ-2.12) ────────────────────────────────────────
 
   static Future<BeneficiaryProfile?> getProfile() async {
@@ -775,6 +1052,43 @@ class LoginResult {
   final String? errorMessage;
 
   LoginResult({required this.success, this.errorMessage});
+}
+
+enum VerificationStatus { valid, suspicious, invalid, manualReview, error }
+
+class VerificationResult {
+  final VerificationStatus status;
+  final String? message;
+  final String? verificationId;
+  final String? beneficiaryName;
+  final String? errorMessage;
+  final bool isOffline;
+  final DateTime? offlineSyncedAt;
+
+  VerificationResult({
+    required this.status,
+    this.message,
+    this.verificationId,
+    this.beneficiaryName,
+    this.errorMessage,
+    this.isOffline = false,
+    this.offlineSyncedAt,
+  });
+
+  String get displayStatus {
+    switch (status) {
+      case VerificationStatus.valid:
+        return 'VALID';
+      case VerificationStatus.suspicious:
+        return 'SUSPICIOUS';
+      case VerificationStatus.invalid:
+        return 'INVALID';
+      case VerificationStatus.manualReview:
+        return 'MANUAL REVIEW';
+      case VerificationStatus.error:
+        return 'ERROR';
+    }
+  }
 }
 
 class ChangePasswordResult {
