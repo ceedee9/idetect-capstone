@@ -20,6 +20,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../services/api_service.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/change_password_screen.dart';
 
 class AccountProfileDrawer extends StatefulWidget {
   const AccountProfileDrawer({super.key, this.user});
@@ -86,11 +87,9 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
   }
 
   void _openChangePassword(BuildContext context) {
-    // Placeholder route — replace with the real Change Password screen.
     Navigator.push(
       context,
-      MaterialPageRoute(
-          builder: (_) => const _ChangePasswordPlaceholderScreen()),
+      MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
     );
   }
 
@@ -315,30 +314,6 @@ class _ActionRow extends StatelessWidget {
             const Icon(Icons.chevron_right_rounded,
                 size: 20, color: Colors.black26),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Placeholder destination for "Change Password" until the real
-/// screen exists — replace this whole class with the actual screen
-/// and update _openChangePassword's route above.
-class _ChangePasswordPlaceholderScreen extends StatelessWidget {
-  const _ChangePasswordPlaceholderScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Change Password')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Change Password screen not yet built — replace '
-            '_ChangePasswordPlaceholderScreen with the real screen.',
-            textAlign: TextAlign.center,
-          ),
         ),
       ),
     );

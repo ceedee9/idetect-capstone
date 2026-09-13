@@ -1000,4 +1000,101 @@ router.post(
   },
 );
 
+// ── Establishment: Change Password (in-session, current password
+// required) ─────────────────────────────────────────────────────
+// "Option A" from the design discussion: authenticated establishment
+// re-enters their current password to set a new one — no OTP wait.
+// The existing forgot-password/reset-password OTP pair above is
+// unchanged and still serves the "I'm locked out, not logged in" case;
+// this route is for the logged-in "change my password" case only.
+router.post(
+  "/establishment/change-password",
+  [
+    body("current_password").notEmpty(),
+    body("new_password")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters"),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      // Same bearer-token pattern as staff/refresh above.
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+      const token = authHeader.slice(7);
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET_ESTABLISHMENT);
+      } catch {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
+
+      const { current_password, new_password } = req.body;
+
+      const result = await pool.query(
+        "SELECT id, password_hash, business_name FROM establishments WHERE id = $1 AND status = 'approved'",
+        [decoded.id],
+      );
+      const establishment = result.rows[0];
+      if (!establishment) {
+        return res.status(404).json({ error: "Account not found." });
+      }
+
+      const currentMatch = await bcrypt.compare(
+        current_password,
+        establishment.password_hash,
+      );
+      if (!currentMatch) {
+        throw createError(401, "Current password is incorrect.");
+      }
+
+      if (current_password === new_password) {
+        return res.status(400).json({
+          error: "New password must be different from your current password.",
+        });
+      }
+
+      const password_hash = await bcrypt.hash(new_password, 12);
+
+      await pool.query(
+        `UPDATE establishments
+         SET password_hash = $1, updated_at = NOW()
+         WHERE id = $2`,
+        [password_hash, establishment.id],
+      );
+
+      // NOTE: this file uses two different audit_logs shapes elsewhere
+      // (login/lockout use establishment_id + ip_address; the OTP-based
+      // reset-password route above uses user_id + target_table/target_id
+      // instead). Followed the establishment_id + ip_address shape here
+      // since it matches this route's own login-adjacent context — worth
+      // reconciling into one convention if audit_logs' actual schema
+      // only supports one of these shapes.
+      await pool.query(
+        `INSERT INTO audit_logs (establishment_id, action, metadata, ip_address)
+         VALUES ($1, 'password_changed', $2, $3)`,
+        [
+          establishment.id,
+          JSON.stringify({
+            business_name: establishment.business_name,
+            via: "authenticated_change_password",
+          }),
+          req.ip,
+        ],
+      );
+
+      res.json({ message: "Password updated successfully." });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 module.exports = router;

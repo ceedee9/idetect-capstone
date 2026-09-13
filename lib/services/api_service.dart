@@ -1,16 +1,15 @@
 import 'dart:convert';
-import 'dart:io' as dart_io;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../data/datasources/local/local_database.dart';
 
 class ApiService {
   // Set with --dart-define=IDETECT_API_BASE_URL=https://your-host/api.
   // This app intentionally has no hardcoded fallback so the backend target
   // is always explicit.
-  static const String _configuredBaseUrl =
-      String.fromEnvironment('IDETECT_API_BASE_URL');
+  static const String _configuredBaseUrl = String.fromEnvironment(
+    'IDETECT_API_BASE_URL',
+  );
   static String get baseUrl {
     if (_configuredBaseUrl.isEmpty) {
       throw StateError(
@@ -20,21 +19,14 @@ class ApiService {
     return _configuredBaseUrl;
   }
 
-  // SharedPreferences key for the stored token
-  static const String _tokenKey = 'auth_token';
-  static const String _userKey = 'auth_user';
+  static const String _tokenKey = 'idetect_auth_token';
+  static const String _userKey = 'idetect_auth_user';
 
   static String? _token;
   static Map<String, dynamic>? _currentUser;
 
-  static String _normalizeIdNumberForApi(String value) {
-    return value.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '').trim();
-  }
-
   // ── Token persistence ──────────────────────────────────────────────────────
 
-  /// Load the saved token from SharedPreferences on app startup.
-  /// Call this once in main() before runApp().
   static Future<void> loadToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -44,17 +36,13 @@ class ApiService {
         _currentUser = Map<String, dynamic>.from(jsonDecode(userJson));
       }
       if (_token != null) {
-        debugPrint('🔑 Token restored from storage.');
-      } else {
-        debugPrint('🔑 No saved token found — user must log in.');
+        debugPrint('🔑 Beneficiary token restored.');
       }
     } catch (e) {
-      debugPrint('⚠️ Could not load token from storage: $e');
+      debugPrint('⚠️ Could not load token: $e');
     }
   }
 
-  /// Save the token in memory AND persist it to SharedPreferences.
-  /// Stays synchronous for backward compatibility; persistence is fire-and-forget.
   static void setToken(String token, {Map<String, dynamic>? user}) {
     _token = token;
     _persistToken(token);
@@ -64,7 +52,6 @@ class ApiService {
     }
   }
 
-  /// Remove the token from memory AND from SharedPreferences.
   static void clearToken() {
     _token = null;
     _currentUser = null;
@@ -72,18 +59,13 @@ class ApiService {
     _removeUser();
   }
 
-  /// Returns true if a token is currently loaded (user is logged in).
   static bool get isLoggedIn => _token != null;
   static Map<String, dynamic>? get currentUser => _currentUser;
-  // Exposed for StatusSyncService to attach to polling requests
-  static String? get token => _token;
 
-  // Private helpers — never throws, failures are logged only.
   static Future<void> _persistToken(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, token);
-      debugPrint('💾 Token saved to storage.');
     } catch (e) {
       debugPrint('⚠️ Could not persist token: $e');
     }
@@ -93,299 +75,46 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_tokenKey);
-      debugPrint('🗑️ Token removed from storage.');
-    } catch (e) {
-      debugPrint('⚠️ Could not remove token from storage: $e');
-    }
+    } catch (_) {}
   }
 
   static Future<void> _persistUser(Map<String, dynamic> user) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_userKey, jsonEncode(user));
-    } catch (e) {
-      debugPrint('⚠️ Could not persist user: $e');
-    }
+    } catch (_) {}
   }
 
   static Future<void> _removeUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_userKey);
-    } catch (e) {
-      debugPrint('⚠️ Could not remove user from storage: $e');
-    }
+    } catch (_) {}
   }
 
-  // ── Core verification call ─────────────────────────────────────────────────
-
-  /// Send the OCR-extracted ID number to the API for verification.
-  /// Returns a VerificationResult with status: VALID, SUSPICIOUS, INVALID, or MANUAL_REVIEW
-  static Future<VerificationResult> verifyId({
-    required String idNumber,
-    required String beneficiaryType, // 'senior_citizen' or 'pwd'
-    double? ocrConfidence,
-    String? imagePath,
-    bool manuallyEntered = true,
-    String? extractedName,
-    String? extractedDob,
-    String idFormat =
-        'old', // 'old' or 'new' — only meaningful for senior_citizen
-    bool? sealDetected,
-  }) async {
-    debugPrint('[TRACE] ApiService.verifyId received: idFormat=$idFormat');
-    try {
-      if (_token == null) {
-        return VerificationResult.error(
-            'Not authenticated. Please log in first.');
-      }
-
-      // REQ-2.9.1 / REQ-2.9.3: Check local blocked-IDs cache first.
-      // If the ID is locally known to be revoked, return INVALID immediately
-      // without a network round-trip — even if the server is unreachable.
-      final cachedStatus = await LocalDatabase.getCachedStatus(idNumber);
-      if (cachedStatus == 'revoked') {
-        return VerificationResult(
-          status: VerificationStatus.invalid,
-          idNumber: idNumber,
-          beneficiaryType: beneficiaryType,
-          message:
-              'This ID has been confirmed fraudulent and is permanently blocked.',
-        );
-      }
-      if (cachedStatus == 'suspended') {
-        return VerificationResult(
-          status: VerificationStatus.suspicious,
-          idNumber: idNumber,
-          beneficiaryType: beneficiaryType,
-          message: 'ID is currently under investigation.',
-        );
-      }
-
-      debugPrint('🔍 Calling API: POST /verification/scan');
-      debugPrint('   ID: $idNumber');
-      debugPrint('   Type: $beneficiaryType');
-
-      final normalizedIdNumber = _normalizeIdNumberForApi(idNumber);
-      if (normalizedIdNumber.isEmpty) {
-        return VerificationResult.error(
-            'ID number is empty after normalization.');
-      }
-
-      // Backend expects confidence in 0-100 range.
-      // Our OCR pipeline often uses 0.0-1.0, so normalize before sending.
-      final normalizedConfidence = ocrConfidence == null
-          ? null
-          : (ocrConfidence <= 1.0 ? ocrConfidence * 100.0 : ocrConfidence)
-              .clamp(0.0, 100.0);
-
-      // Encode image as base64 so the server can save it for fraud investigations.
-      String? imageData;
-      if (imagePath != null) {
-        try {
-          final bytes = await dart_io.File(imagePath).readAsBytes();
-          imageData = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-        } catch (_) {
-          // Non-fatal — proceed without image
-        }
-      }
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/verification/scan'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $_token',
-            },
-            body: jsonEncode({
-              'id_number': normalizedIdNumber,
-              'beneficiary_type': beneficiaryType,
-              'ocr_confidence_score': normalizedConfidence,
-              'manually_entered': manuallyEntered,
-              'id_format': idFormat,
-              if (sealDetected != null) 'seal_detected': sealDetected,
-              if (imageData != null) 'image_data': imageData,
-              // Cross-validation fields: sent to the server so it can compare
-              // the OCR-extracted name and DOB against the stored record.
-              // If they don't match, the server downgrades result to SUSPICIOUS.
-              if (extractedName != null && extractedName.isNotEmpty)
-                'extracted_name': extractedName,
-              if (extractedDob != null && extractedDob.isNotEmpty)
-                'extracted_dob': extractedDob,
-            }),
-          )
-          .timeout(const Duration(seconds: 30));
-
-      debugPrint('📡 API response: ${response.statusCode}');
-      debugPrint('   Body: ${response.body}');
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return VerificationResult.fromJson(data);
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        // Token rejected by server — clear it so the user is sent back to login
-        clearToken();
-        return VerificationResult.error(
-            'Session expired. Please log in again.');
-      } else {
-        final data = jsonDecode(response.body);
-        return VerificationResult.error(
-          data['message'] ??
-              data['error'] ??
-              'Server error (${response.statusCode})',
-        );
-      }
-    } on http.ClientException catch (e) {
-      debugPrint('❌ Network error: $e');
-      // REQ-2.5.6: Check local cache for recently verified matching records
-      return _tryOfflineCache(idNumber, beneficiaryType, 'Network error');
-    } catch (e) {
-      debugPrint('❌ Unexpected error: $e');
-      if (e.toString().contains('SocketException') ||
-          e.toString().contains('TimeoutException') ||
-          e.toString().contains('Connection refused')) {
-        return _tryOfflineCache(idNumber, beneficiaryType, e.toString());
-      }
-      return VerificationResult.error('Verification failed: $e');
-    }
+  static Map<String, String> _authHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      if (_token != null) 'Authorization': 'Bearer $_token',
+    };
   }
 
-  /// REQ-2.5.6: Attempt to return a cached verification result when offline.
-  /// Cache entries older than [_cacheTtl] are rejected — a beneficiary's status
-  /// may have changed (e.g., suspended) since the last successful sync.
-  static const Duration _cacheTtl = Duration(hours: 6);
+  // ── Establishment Login (email + password) ────────────────────────────────
+  //
+  // Calls POST /auth/establishment/login. auth.js sends every failure case
+  // here (bad credentials, pending/suspended/revoked status, lockout)
+  // through createError(), which errorHandler.js always serializes as
+  // {error: '...'} — so unlike change-password, there's no second shape to
+  // branch on for the route's own failures. The only exception is
+  // express-validator rejecting a malformed email before the route body
+  // runs, which comes back as {errors: [{msg: '...'}]} instead.
+  //
+  // On success the response is {token, establishment: {...}, user: {id,
+  // name, full_name, email, role}} — the `user` object already matches
+  // what AccountProfileDrawer reads (name/full_name, email, role), so it's
+  // stored as-is.
 
-  static Future<VerificationResult> _tryOfflineCache(
-    String idNumber,
-    String beneficiaryType,
-    String reason,
-  ) async {
-    try {
-      final db = LocalDatabase();
-      final cached = await db.findCachedVerification(idNumber);
-      if (cached != null) {
-        final ts = cached['timestamp'] as int? ?? 0;
-        final cachedDate = DateTime.fromMillisecondsSinceEpoch(ts);
-        final age = DateTime.now().difference(cachedDate);
-
-        // Reject stale cache — status may be outdated (suspended, revoked)
-        if (age > _cacheTtl) {
-          final hoursAgo = age.inHours;
-          return VerificationResult.error(
-            'Cannot reach server. Cached result is $hoursAgo hour(s) old '
-            'and may be outdated. Please try when online.',
-          );
-        }
-
-        final formatted =
-            '${cachedDate.month}/${cachedDate.day}/${cachedDate.year} '
-            '${cachedDate.hour.toString().padLeft(2, '0')}:${cachedDate.minute.toString().padLeft(2, '0')}';
-
-        final statusStr =
-            (cached['verificationStatus'] ?? 'manualReview').toString();
-        VerificationStatus status;
-        switch (statusStr) {
-          case 'valid':
-            status = VerificationStatus.valid;
-            break;
-          case 'suspicious':
-            status = VerificationStatus.suspicious;
-            break;
-          case 'invalid':
-            status = VerificationStatus.invalid;
-            break;
-          default:
-            status = VerificationStatus.manualReview;
-        }
-
-        return VerificationResult(
-          status: status,
-          beneficiaryName: cached['fullName'],
-          idNumber: cached['idNumber'],
-          beneficiaryType: cached['idType'],
-          message: 'Last verified: $formatted',
-          isOffline: true,
-          offlineSyncedAt: cachedDate,
-        );
-      }
-    } catch (e) {
-      debugPrint('⚠️ Cache lookup failed: $e');
-    }
-    return VerificationResult.error(
-      'Cannot reach server. No cached result found for this ID.',
-    );
-  }
-
-  /// Submit a fraud flag for INVALID/SUSPICIOUS scans.
-  /// Returns Map with 'flag_id' on success, or Map with 'error' on failure.
-  static Future<Map<String, dynamic>> reportFraudFlag({
-    required String verificationLogId,
-    required String idNumberFlagged,
-    required String beneficiaryType,
-    String? notes,
-  }) async {
-    try {
-      if (_token == null) {
-        return {'error': 'Not authenticated. Please log in first.'};
-      }
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/fraud-flags'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $_token',
-            },
-            body: jsonEncode({
-              'verification_log_id': verificationLogId,
-              'id_number_flagged': idNumberFlagged,
-              'beneficiary_type': beneficiaryType,
-              'establishment_notes': notes,
-            }),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return {
-          'flag_id': data['flag_id'],
-          'message': data['message'] ?? 'Flag submitted successfully',
-        };
-      }
-
-      final data = jsonDecode(response.body);
-      return {
-        'error': data['message'] ??
-            'Flag submission failed (${response.statusCode}).'
-      };
-    } catch (e) {
-      return {'error': 'Could not submit flag: $e'};
-    }
-  }
-
-  /// Gap 8: Log the cashier's deliberate action on a SUSPICIOUS or MANUAL_REVIEW
-  /// result. [action] must be 'approved' | 'denied' | 'reported'.
-  /// Call as fire-and-forget: `ApiService.logCashierAction(...).catchError((_) {})`.
-  static Future<void> logCashierAction({
-    required String verificationId,
-    required String action,
-  }) async {
-    if (_token == null) return;
-    await http
-        .post(
-          Uri.parse('$baseUrl/verification/$verificationId/cashier-action'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_token',
-          },
-          body: jsonEncode({'action': action}),
-        )
-        .timeout(const Duration(seconds: 10));
-  }
-
-  // ── Auth ───────────────────────────────────────────────────────────────────
-
-  static Future<AuthResult> login({
+  static Future<LoginResult> login({
     required String email,
     required String password,
   }) async {
@@ -400,39 +129,376 @@ class ApiService {
 
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final token = data['token'] as String;
-        // Prefer 'user' key; fall back to building it from 'establishment'
-        final Map<String, dynamic>? user;
-        if (data['user'] != null) {
-          user = Map<String, dynamic>.from(data['user']);
-        } else if (data['establishment'] != null) {
-          final est = data['establishment'] as Map<String, dynamic>;
-          user = {
-            'id': est['id'],
-            'name': est['business_name'],
-            'full_name': est['owner_name'],
-            'email': est['email'],
-            'role': 'Establishment Account',
-          };
-        } else {
-          user = null;
-        }
-        setToken(token, user: user); // also persists to SharedPreferences
-        return AuthResult.success(token: token, user: user);
-      } else {
-        return AuthResult.failure(data['message'] ?? 'Login failed.');
+      if (response.statusCode == 200 && data['token'] != null) {
+        setToken(
+          data['token'],
+          user: data['user'] != null
+              ? Map<String, dynamic>.from(data['user'])
+              : null,
+        );
+        return LoginResult(success: true);
       }
+
+      final errors = data['errors'];
+      String message;
+      if (errors is List && errors.isNotEmpty) {
+        message = errors.first['msg']?.toString() ?? 'Invalid input.';
+      } else {
+        message = data['error'] ??
+            data['message'] ??
+            'Login failed. Please try again.';
+      }
+      return LoginResult(success: false, errorMessage: message);
     } catch (e) {
-      return AuthResult.failure('Cannot reach server: $e');
+      return LoginResult(
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
     }
   }
 
-  // ── Notifications (Beneficiary) ────────────────────────────────────────────
+  // ── Auth (OTP) ─────────────────────────────────────────────────────────────
 
-  /// Fetch notification history for the authenticated beneficiary.
-  static Future<NotificationListResult> getNotifications(
-      {int page = 1, int limit = 30}) async {
+  static Future<Map<String, dynamic>> requestOtp({
+    required String idNumber,
+    required String birthdate,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/beneficiary/request-otp'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'id_number': idNumber, 'birthdate': birthdate}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
+  /// Register a mobile number for first-time beneficiaries.
+  /// Returns the API response map (may contain mobile_registered: true).
+  static Future<Map<String, dynamic>> registerMobile({
+    required String idNumber,
+    required String birthdate,
+    required String mobileNumber,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/beneficiary/register-mobile'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'id_number': idNumber,
+              'birthdate': birthdate,
+              'mobile_number': mobileNumber,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        return {
+          'error': data['error'] ?? data['message'] ?? 'Registration failed',
+        };
+      }
+      return data;
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
+  static Future<BeneficiaryAuthResult> verifyOtp({
+    required String idNumber,
+    required String otp,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/beneficiary/verify-otp'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'id_number': idNumber, 'otp': otp}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['token'] != null) {
+        setToken(
+          data['token'],
+          user: {...?data['beneficiary'], 'type': 'beneficiary'},
+        );
+        return BeneficiaryAuthResult(
+          success: true,
+          fullName: data['beneficiary']?['full_name'],
+          beneficiaryType: data['beneficiary']?['beneficiary_type'],
+        );
+      }
+      return BeneficiaryAuthResult(
+        success: false,
+        errorMessage:
+            data['error'] ?? data['message'] ?? 'OTP verification failed',
+      );
+    } catch (e) {
+      return BeneficiaryAuthResult(
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
+    }
+  }
+
+  // ── PIN Management ─────────────────────────────────────────────────────────
+
+  /// Set a 4-digit PIN for fallback login (requires auth token).
+  static Future<Map<String, dynamic>> setPin(String pin) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/beneficiary/set-pin'),
+            headers: _authHeaders(),
+            body: jsonEncode({'pin': pin}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        return {
+          'error': data['error'] ?? data['message'] ?? 'Failed to set PIN',
+        };
+      }
+      return data;
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
+  /// Login with ID number + 4-digit PIN.
+  static Future<BeneficiaryAuthResult> loginWithPin({
+    required String idNumber,
+    required String pin,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/beneficiary/login-pin'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'id_number': idNumber, 'pin': pin}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['token'] != null) {
+        setToken(
+          data['token'],
+          user: {...?data['beneficiary'], 'type': 'beneficiary'},
+        );
+        return BeneficiaryAuthResult(
+          success: true,
+          fullName: data['beneficiary']?['full_name'],
+          beneficiaryType: data['beneficiary']?['beneficiary_type'],
+        );
+      }
+      return BeneficiaryAuthResult(
+        success: false,
+        errorMessage: data['error'] ?? data['message'] ?? 'PIN login failed',
+      );
+    } catch (e) {
+      return BeneficiaryAuthResult(
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
+    }
+  }
+
+  // ── Establishment Password Change (authenticated, current-password required) ─
+  //
+  // Calls POST /auth/establishment/change-password. On success the backend
+  // just returns {message: '...'} with a 200 — there's no `success` key on
+  // the wire, so status code 200 IS the success signal here.
+  //
+  // Failure shapes, per errorHandler.js + auth.js:
+  //   - Most failures (wrong current password, same-password check, expired/
+  //     invalid token) go through createError() and land as {error: '...'}.
+  //   - The one exception: express-validator rejecting new_password before
+  //     the route body even runs (e.g. under 8 chars) returns
+  //     {errors: [{msg: '...'}]} instead — a different shape.
+  //
+  // A 401 specifically means the establishment JWT is missing/expired, not
+  // that the current password was wrong (that's handled inside the route
+  // body and comes back as a normal {error: '...'} 401 from createError —
+  // see the note in change_password_screen.dart's _submit() for how the two
+  // are told apart). We clear the stored token here either way, since a 401
+  // means it's no longer valid.
+
+  static Future<ChangePasswordResult> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/establishment/change-password'),
+            headers: _authHeaders(),
+            body: jsonEncode({
+              'current_password': currentPassword,
+              'new_password': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return ChangePasswordResult(success: true);
+      }
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 401) {
+        // Token missing/invalid/expired — establishment needs to log back
+        // in. Clear the stale token so isLoggedIn flips false right away.
+        clearToken();
+        return ChangePasswordResult(
+          success: false,
+          sessionExpired: true,
+          errorMessage: 'Your session has expired. Please log in again.',
+        );
+      }
+
+      final errors = data['errors'];
+      String message;
+      if (errors is List && errors.isNotEmpty) {
+        message = errors.first['msg']?.toString() ?? 'Invalid input.';
+      } else {
+        message = data['error'] ?? 'Could not update password.';
+      }
+      return ChangePasswordResult(success: false, errorMessage: message);
+    } catch (e) {
+      return ChangePasswordResult(
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
+    }
+  }
+
+  // ── Verification History (REQ-2.16.5) ─────────────────────────────────────
+  //
+  // Calls GET /verification/history. The route originally only read `page`
+  // and `limit` — start_date/end_date/result were being sent by
+  // history_screen.dart but silently ignored server-side, so the date-range
+  // and result-type filters in that screen did nothing. verification.js's
+  // /history route now accepts start_date (inclusive), end_date (inclusive,
+  // via < end_date + 1 day), and result (one of valid/suspicious/invalid/
+  // manual_review) — see that file for the SQL. This method just forwards
+  // whichever of those the screen supplies.
+  //
+  // Note the summary-counts caller (_loadSummary in history_screen.dart)
+  // still fetches up to 10,000 rows and counts client-side rather than the
+  // backend returning aggregate counts directly — fine for now, but worth
+  // moving server-side if establishments start accumulating more scans than
+  // that in a filtered range.
+
+  static Future<Map<String, dynamic>> getVerificationHistory({
+    required int page,
+    required int limit,
+    String? startDate,
+    String? endDate,
+    String? resultFilter,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'limit': limit.toString(),
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
+        if (resultFilter != null) 'result': resultFilter,
+      };
+      final uri = Uri.parse('$baseUrl/verification/history')
+          .replace(queryParameters: queryParams);
+
+      final response = await http
+          .get(uri, headers: _authHeaders())
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return data; // {data: [...], pagination: {...}}
+      }
+      return {
+        'error': data['error'] ??
+            data['message'] ??
+            'Failed to load verification history.',
+      };
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
+  // ── Profile / ID Status (REQ-2.12) ────────────────────────────────────────
+
+  static Future<BeneficiaryProfile?> getProfile() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/beneficiary-portal/me'),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return BeneficiaryProfile.fromJson(jsonDecode(response.body));
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Transaction History ────────────────────────────────────────────────────
+
+  static Future<TransactionListResult> getTransactions({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(
+              '$baseUrl/beneficiary-portal/transactions?page=$page&limit=$limit',
+            ),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final items = (data['data'] as List)
+            .map((e) => TransactionRecord.fromJson(e))
+            .toList();
+        return TransactionListResult(
+          success: true,
+          transactions: items,
+          total: data['pagination']?['total'] ?? items.length,
+        );
+      }
+      return TransactionListResult(
+        success: false,
+        errorMessage: data['error'] ?? 'Failed to load transactions.',
+      );
+    } catch (e) {
+      return TransactionListResult(
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
+    }
+  }
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+
+  static Future<NotificationListResult> getNotifications({
+    int page = 1,
+    int limit = 30,
+  }) async {
     try {
       final response = await http
           .get(
@@ -451,18 +517,19 @@ class ApiService {
           notifications: items,
           total: data['pagination']?['total'] ?? items.length,
         );
-      } else {
-        return NotificationListResult(
-            success: false,
-            errorMessage: data['error'] ?? 'Failed to load notifications.');
       }
+      return NotificationListResult(
+        success: false,
+        errorMessage: data['error'] ?? 'Failed to load notifications.',
+      );
     } catch (e) {
       return NotificationListResult(
-          success: false, errorMessage: 'Cannot reach server: $e');
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
     }
   }
 
-  /// Get unread notification count.
   static Future<int> getUnreadCount() async {
     try {
       final response = await http
@@ -482,7 +549,6 @@ class ApiService {
     }
   }
 
-  /// Mark a single notification as read.
   static Future<bool> markNotificationRead(String notificationId) async {
     try {
       final response = await http
@@ -497,7 +563,6 @@ class ApiService {
     }
   }
 
-  /// Mark all notifications as read.
   static Future<bool> markAllNotificationsRead() async {
     try {
       final response = await http
@@ -512,7 +577,6 @@ class ApiService {
     }
   }
 
-  /// Report unauthorized credential use from a notification (REQ-2.11.4).
   static Future<Map<String, dynamic>> reportUnauthorizedUse({
     required String verificationLogId,
     String? statement,
@@ -535,177 +599,317 @@ class ApiService {
     }
   }
 
-  // ── Verification History (REQ-2.16.5) ─────────────────────────────────────
+  // ── Disputes ───────────────────────────────────────────────────────────────
 
-  /// Fetch this establishment's verification transaction history from the API.
-  /// Returns a list of records plus summary counts.
-  static Future<Map<String, dynamic>> getVerificationHistory({
+  static Future<DisputeListResult> getMyDisputes({
     int page = 1,
     int limit = 20,
-    String? startDate, // ISO date string: 'YYYY-MM-DD'
-    String? endDate,
-    String? resultFilter, // 'valid' | 'suspicious' | 'invalid'
   }) async {
     try {
-      if (_token == null) return {'error': 'Not authenticated.'};
-
-      final params = <String, String>{
-        'page': page.toString(),
-        'limit': limit.toString(),
-        if (startDate != null) 'start_date': startDate,
-        if (endDate != null) 'end_date': endDate,
-        if (resultFilter != null) 'result': resultFilter,
-      };
-
-      final uri = Uri.parse('$baseUrl/verification/history')
-          .replace(queryParameters: params);
-
       final response = await http
-          .get(uri, headers: _authHeaders())
-          .timeout(const Duration(seconds: 15));
+          .get(
+            Uri.parse('$baseUrl/disputes/mine?page=$page&limit=$limit'),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
 
+      final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        clearToken();
-        return {'error': 'Session expired. Please log in again.'};
-      } else {
-        final body = jsonDecode(response.body);
-        return {'error': body['message'] ?? 'Failed to load history.'};
+        final items = (data['data'] as List)
+            .map((e) => DisputeRecord.fromJson(e))
+            .toList();
+        return DisputeListResult(
+          success: true,
+          disputes: items,
+          total: data['pagination']?['total'] ?? items.length,
+        );
       }
+      return DisputeListResult(
+        success: false,
+        errorMessage: data['error'] ?? 'Failed to load disputes.',
+      );
+    } catch (e) {
+      return DisputeListResult(
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitDispute({
+    String? verificationLogId,
+    required String disputeType,
+    required String explanation,
+    String? supportingDocPath,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/disputes'),
+            headers: _authHeaders(),
+            body: jsonEncode({
+              if (verificationLogId != null)
+                'verification_log_id': verificationLogId,
+              'dispute_type': disputeType,
+              'explanation': explanation,
+              if (supportingDocPath != null)
+                'supporting_doc_path': supportingDocPath,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 201) {
+        return data;
+      }
+      // Surface the actual error from the API response
+      final errors = data['errors'] as List?;
+      final msg = errors != null && errors.isNotEmpty
+          ? errors.map((e) => e['msg'] ?? e.toString()).join(', ')
+          : data['message'] ??
+              data['error'] ??
+              'Submission failed (${response.statusCode})';
+      return {'error': msg};
     } catch (e) {
       return {'error': 'Cannot reach server: $e'};
     }
   }
 
-  static Map<String, String> _authHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      if (_token != null) 'Authorization': 'Bearer $_token',
-    };
+  /// Upload a supporting document for a dispute.
+  /// Returns `{'path': '/uploads/dispute-docs/...'}` on success,
+  /// or `{'error': '...'}` on failure.
+  static Future<Map<String, dynamic>> uploadDisputeDoc(String filePath) async {
+    try {
+      final uri = Uri.parse('$baseUrl/disputes/upload-doc');
+      final request = http.MultipartRequest('POST', uri);
+      // Auth header (without Content-Type — multipart sets its own)
+      if (_token != null) {
+        request.headers['Authorization'] = 'Bearer $_token';
+      }
+      request.files.add(
+        await http.MultipartFile.fromPath('document', filePath),
+      );
+
+      final streamed = await request.send().timeout(
+            const Duration(seconds: 30),
+          );
+      final body = await streamed.stream.bytesToString();
+      final data = jsonDecode(body);
+
+      if (streamed.statusCode == 200) {
+        return data; // { path: '...' }
+      }
+      return {
+        'error': data['error'] ?? 'Upload failed (${streamed.statusCode})',
+      };
+    } catch (e) {
+      return {'error': 'Cannot upload file: $e'};
+    }
+  }
+
+  // ── Device Token (FCM) ────────────────────────────────────────────────────
+
+  /// Registers or refreshes the FCM device token with the API.
+  /// Called after login and when FCM issues a new token.
+  static Future<void> registerDeviceToken(String token) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse('$baseUrl/beneficiary-portal/device-token'),
+            headers: _authHeaders(),
+            body: jsonEncode({'device_token': token}),
+          )
+          .timeout(const Duration(seconds: 10));
+      debugPrint('🔔 FCM token registered: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('🔔 FCM token register error: $e');
+    }
+  }
+
+  // ── Fraud Report (REQ-2.14) ────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> submitFraudReport({
+    String? verificationLogId,
+    required String reportType,
+    required String description,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/beneficiary-portal/fraud-report'),
+            headers: _authHeaders(),
+            body: jsonEncode({
+              if (verificationLogId != null)
+                'verification_log_id': verificationLogId,
+              'report_type': reportType,
+              'description': description,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
   }
 }
 
 // ── Data models ───────────────────────────────────────────────────────────────
 
-enum VerificationStatus { valid, suspicious, invalid, manualReview, error }
-
-class VerificationResult {
-  final VerificationStatus status;
-  final String? beneficiaryName;
-  final String? idNumber;
+class BeneficiaryAuthResult {
+  final bool success;
+  final String? fullName;
   final String? beneficiaryType;
-  final String? verificationId;
-  final String? message;
   final String? errorMessage;
-  final Map<String, dynamic>? rawData;
-  // true when served from local Hive cache — server was unreachable
-  final bool isOffline;
-  // timestamp of the cached record that was used (for age display in the UI)
-  final DateTime? offlineSyncedAt;
 
-  VerificationResult({
-    required this.status,
-    this.beneficiaryName,
-    this.idNumber,
+  BeneficiaryAuthResult({
+    required this.success,
+    this.fullName,
     this.beneficiaryType,
-    this.verificationId,
-    this.message,
     this.errorMessage,
-    this.rawData,
-    this.isOffline = false,
-    this.offlineSyncedAt,
+  });
+}
+
+class LoginResult {
+  final bool success;
+  final String? errorMessage;
+
+  LoginResult({required this.success, this.errorMessage});
+}
+
+class ChangePasswordResult {
+  final bool success;
+  final String? errorMessage;
+  final bool sessionExpired;
+
+  ChangePasswordResult({
+    required this.success,
+    this.errorMessage,
+    this.sessionExpired = false,
+  });
+}
+
+class BeneficiaryProfile {
+  final String id;
+  final String idNumber;
+  final String fullName;
+  final String birthdate;
+  final String beneficiaryType;
+  final String issuingOffice;
+  final String validityStart;
+  final String validityEnd;
+  final String status;
+  final String? statusReason;
+  final String? registeredMobile;
+  final int totalVerifications;
+  final int pendingFlags;
+  final int activeDisputes;
+
+  BeneficiaryProfile({
+    required this.id,
+    required this.idNumber,
+    required this.fullName,
+    required this.birthdate,
+    required this.beneficiaryType,
+    required this.issuingOffice,
+    required this.validityStart,
+    required this.validityEnd,
+    required this.status,
+    this.statusReason,
+    this.registeredMobile,
+    this.totalVerifications = 0,
+    this.pendingFlags = 0,
+    this.activeDisputes = 0,
   });
 
-  factory VerificationResult.fromJson(Map<String, dynamic> json) {
-    final statusStr =
-        (json['result'] ?? json['status'] ?? '').toString().toUpperCase();
-
-    VerificationStatus status;
-    switch (statusStr) {
-      case 'VALID':
-        status = VerificationStatus.valid;
-        break;
-      case 'SUSPICIOUS':
-      case 'FLAGGED':
-        status = VerificationStatus.suspicious;
-        break;
-      case 'INVALID':
-      case 'NOT_FOUND':
-        status = VerificationStatus.invalid;
-        break;
-      case 'MANUAL_REVIEW':
-      case 'PENDING':
-        status = VerificationStatus.manualReview;
-        break;
-      case 'ERROR':
-        status = VerificationStatus.error;
-        break;
-      default:
-        status = VerificationStatus.error;
-    }
-
-    // The beneficiary details are nested inside a 'beneficiary' object
-    final beneficiary = json['beneficiary'] as Map<String, dynamic>?;
-
-    return VerificationResult(
-      status: status,
-      beneficiaryName: beneficiary?['full_name'],
+  factory BeneficiaryProfile.fromJson(Map<String, dynamic> json) {
+    final stats = json['stats'] as Map<String, dynamic>? ?? {};
+    return BeneficiaryProfile(
+      id: json['id'],
       idNumber: json['id_number'],
-      beneficiaryType: beneficiary?['beneficiary_type'],
-      verificationId: json['verification_id']?.toString(),
-      message: json['message'],
-      rawData: json,
+      fullName: json['full_name'],
+      birthdate: json['birthdate']?.toString().substring(0, 10) ?? '',
+      beneficiaryType: json['beneficiary_type'],
+      issuingOffice: json['issuing_office'],
+      validityStart: json['validity_start']?.toString().substring(0, 10) ?? '',
+      validityEnd: json['validity_end']?.toString().substring(0, 10) ?? '',
+      status: json['status'],
+      statusReason: json['status_reason'],
+      registeredMobile: json['registered_mobile'],
+      totalVerifications: stats['total_verifications'] ?? 0,
+      pendingFlags: stats['pending_flags'] ?? 0,
+      activeDisputes: stats['active_disputes'] ?? 0,
     );
   }
 
-  factory VerificationResult.error(String message) {
-    return VerificationResult(
-      status: VerificationStatus.error,
-      errorMessage: message,
-    );
-  }
+  bool get isActive => status == 'active';
+  bool get isExpired => status == 'expired';
+  bool get isSuspended => status == 'suspended';
+  bool get isRevoked => status == 'revoked';
 
-  bool get isValid => status == VerificationStatus.valid;
-  bool get isSuspicious => status == VerificationStatus.suspicious;
-  bool get isInvalid => status == VerificationStatus.invalid;
-  bool get isError => status == VerificationStatus.error;
-
-  String get displayStatus {
-    switch (status) {
-      case VerificationStatus.valid:
-        return 'VALID';
-      case VerificationStatus.suspicious:
-        return 'SUSPICIOUS';
-      case VerificationStatus.invalid:
-        return 'INVALID';
-      case VerificationStatus.manualReview:
-        return 'MANUAL REVIEW';
-      case VerificationStatus.error:
-        return 'ERROR';
+  /// Days remaining until the ID expires. Negative means already expired.
+  int? get daysUntilExpiry {
+    if (validityEnd.isEmpty) return null;
+    try {
+      final end = DateTime.parse(validityEnd);
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+      return end.difference(todayDate).inDays;
+    } catch (_) {
+      return null;
     }
   }
 }
 
-class AuthResult {
+class TransactionRecord {
+  final String id;
+  final String result;
+  final double? ocrConfidence;
+  final bool manuallyEntered;
+  final DateTime verifiedAt;
+  final String? establishmentName;
+  final String? establishmentAddress;
+
+  TransactionRecord({
+    required this.id,
+    required this.result,
+    this.ocrConfidence,
+    required this.manuallyEntered,
+    required this.verifiedAt,
+    this.establishmentName,
+    this.establishmentAddress,
+  });
+
+  factory TransactionRecord.fromJson(Map<String, dynamic> json) {
+    return TransactionRecord(
+      id: json['id'],
+      result: json['result'] ?? 'unknown',
+      ocrConfidence: json['ocr_confidence_score'] != null
+          ? double.tryParse(json['ocr_confidence_score'].toString())
+          : null,
+      manuallyEntered: json['manually_entered'] ?? false,
+      verifiedAt: DateTime.parse(json['verified_at']),
+      establishmentName: json['establishment_name'],
+      establishmentAddress: json['establishment_address'],
+    );
+  }
+
+  String get displayResult => result.toUpperCase().replaceAll('_', ' ');
+}
+
+class TransactionListResult {
   final bool success;
-  final String? token;
-  final Map<String, dynamic>? user;
+  final List<TransactionRecord> transactions;
+  final int total;
   final String? errorMessage;
 
-  AuthResult({required this.success, this.token, this.user, this.errorMessage});
-
-  factory AuthResult.success(
-      {required String token, Map<String, dynamic>? user}) {
-    return AuthResult(success: true, token: token, user: user);
-  }
-
-  factory AuthResult.failure(String message) {
-    return AuthResult(success: false, errorMessage: message);
-  }
+  TransactionListResult({
+    required this.success,
+    this.transactions = const [],
+    this.total = 0,
+    this.errorMessage,
+  });
 }
-
-// ── Notification models ───────────────────────────────────────────────────────
 
 class AppNotification {
   final String id;
@@ -717,7 +921,6 @@ class AppNotification {
   final String? disputeId;
   final bool isRead;
   final DateTime sentAt;
-  // Joined fields
   final String? verificationResult;
   final DateTime? verificationTime;
   final String? establishmentName;
@@ -755,10 +958,6 @@ class AppNotification {
       establishmentName: json['establishment_name'],
     );
   }
-
-  bool get isApproved => notificationType == 'verification_approved';
-  bool get isDenied => notificationType == 'verification_denied';
-  bool get isVerification => isApproved || isDenied;
 }
 
 class NotificationListResult {
@@ -770,6 +969,68 @@ class NotificationListResult {
   NotificationListResult({
     required this.success,
     this.notifications = const [],
+    this.total = 0,
+    this.errorMessage,
+  });
+}
+
+class DisputeRecord {
+  final String id;
+  final String disputeType;
+  final String explanation;
+  final String status;
+  final String? resolution;
+  final DateTime submittedAt;
+  final DateTime? acknowledgedAt;
+  final DateTime? resolvedAt;
+  final String? verificationResult;
+  final String? establishmentName;
+
+  DisputeRecord({
+    required this.id,
+    required this.disputeType,
+    required this.explanation,
+    required this.status,
+    this.resolution,
+    required this.submittedAt,
+    this.acknowledgedAt,
+    this.resolvedAt,
+    this.verificationResult,
+    this.establishmentName,
+  });
+
+  factory DisputeRecord.fromJson(Map<String, dynamic> json) {
+    return DisputeRecord(
+      id: json['id'],
+      disputeType: json['dispute_type'] ?? '',
+      explanation: json['explanation'] ?? '',
+      status: json['status'] ?? 'submitted',
+      resolution: json['resolution'],
+      submittedAt: DateTime.parse(json['submitted_at'] ?? json['created_at']),
+      acknowledgedAt: json['acknowledged_at'] != null
+          ? DateTime.parse(json['acknowledged_at'])
+          : null,
+      resolvedAt: json['resolved_at'] != null
+          ? DateTime.parse(json['resolved_at'])
+          : null,
+      verificationResult: json['verification_result'],
+      establishmentName: json['establishment_name'],
+    );
+  }
+
+  String get displayType => disputeType.replaceAll('_', ' ').toUpperCase();
+  String get reference => id.substring(0, 8).toUpperCase();
+}
+
+class DisputeListResult {
+  final bool success;
+  final List<DisputeRecord> disputes;
+  final int total;
+  final String? errorMessage;
+
+  DisputeListResult({
+    required this.success,
+    this.disputes = const [],
     this.total = 0,
     this.errorMessage,
   });

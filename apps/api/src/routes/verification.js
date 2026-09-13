@@ -635,33 +635,79 @@ router.get(
 );
 
 // ── GET /api/verification/history ─────────────────────────────
+// REQ-2.16.5: Establishment staff compliance report — date range filter,
+// summary counts (computed client-side by the caller from these rows),
+// paginated log.
+//
+// Query params:
+//   page, limit  — pagination (unchanged)
+//   start_date   — YYYY-MM-DD, inclusive
+//   end_date     — YYYY-MM-DD, inclusive (implemented as < end_date + 1 day
+//                  so the entire end day's timestamps are included, not just
+//                  midnight)
+//   result       — one of valid | suspicious | invalid | manual_review
+//
+// All three filters are optional and additive (AND'd together). Added
+// because the Client Portal's history screen was already sending these
+// three params and silently getting back unfiltered results — the filters
+// are now real instead of decorative.
 router.get("/history", authenticateEstablishment, async (req, res, next) => {
   try {
     const establishment_id = req.establishment.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
+    const { start_date, end_date, result: resultFilter } = req.query;
 
-    const result = await pool.query(
+    const VALID_RESULTS = ["valid", "suspicious", "invalid", "manual_review"];
+    if (resultFilter && !VALID_RESULTS.includes(resultFilter)) {
+      return res.status(400).json({
+        message: `result must be one of: ${VALID_RESULTS.join(", ")}`,
+      });
+    }
+
+    const whereClauses = ["vl.establishment_id = $1"];
+    const filterParams = [establishment_id];
+    let idx = 2;
+
+    if (start_date) {
+      whereClauses.push(`vl.verified_at >= $${idx}::date`);
+      filterParams.push(start_date);
+      idx++;
+    }
+    if (end_date) {
+      whereClauses.push(`vl.verified_at < ($${idx}::date + INTERVAL '1 day')`);
+      filterParams.push(end_date);
+      idx++;
+    }
+    if (resultFilter) {
+      whereClauses.push(`vl.result = $${idx}`);
+      filterParams.push(resultFilter);
+      idx++;
+    }
+
+    const whereSql = whereClauses.join(" AND ");
+
+    const dataResult = await pool.query(
       `SELECT
          vl.id, vl.id_number_scanned, vl.beneficiary_type_detected,
          vl.result, vl.ocr_confidence_score, vl.manually_entered, vl.verified_at,
          b.full_name AS beneficiary_name
        FROM verification_logs vl
        LEFT JOIN beneficiaries b ON b.id = vl.beneficiary_id
-       WHERE vl.establishment_id = $1
+       WHERE ${whereSql}
        ORDER BY vl.verified_at DESC
-       LIMIT $2 OFFSET $3`,
-      [establishment_id, limit, offset],
+       LIMIT $${idx} OFFSET $${idx + 1}`,
+      [...filterParams, limit, offset],
     );
 
     const countResult = await pool.query(
-      "SELECT COUNT(*) FROM verification_logs WHERE establishment_id = $1",
-      [establishment_id],
+      `SELECT COUNT(*) FROM verification_logs vl WHERE ${whereSql}`,
+      filterParams,
     );
 
     res.json({
-      data: result.rows,
+      data: dataResult.rows,
       pagination: {
         page,
         limit,
