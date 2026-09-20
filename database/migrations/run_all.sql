@@ -64,5 +64,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 023: unique person index (full_name + birthdate + type)'
 \i 023_unique_person_index.sql
 
+\echo '>>> Running migration 026: establishment password-setup token'
+\i 026_establishment_password_setup_token.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='

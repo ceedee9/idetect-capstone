@@ -1000,6 +1000,67 @@ router.post(
   },
 );
 
+// ── Establishment: Set Password via one-time setup link ───────
+// Used the first time a BPLO-created account signs in — the token
+// is emailed by POST /api/establishments and is single-use (24h TTL).
+router.post(
+  "/establishment/setup-password",
+  [
+    body("email").isEmail().normalizeEmail(),
+    body("token").notEmpty().trim(),
+    body("new_password")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters"),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty())
+        return res.status(400).json({ errors: errors.array() });
+
+      const { email, token, new_password } = req.body;
+      const crypto = require("crypto");
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+      const result = await pool.query(
+        `SELECT id FROM establishments
+         WHERE email = $1
+           AND password_setup_token = $2
+           AND password_setup_token_expires > NOW()`,
+        [email, tokenHash],
+      );
+
+      if (!result.rows.length) {
+        return res.status(400).json({
+          message:
+            "Invalid or expired setup link. Please contact your BPLO administrator for a new one.",
+        });
+      }
+
+      const est = result.rows[0];
+      const password_hash = await bcrypt.hash(new_password, 12);
+
+      await pool.query(
+        `UPDATE establishments
+         SET password_hash = $1, password_setup_token = NULL,
+             password_setup_token_expires = NULL, updated_at = NOW()
+         WHERE id = $2`,
+        [password_hash, est.id],
+      );
+
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
+         VALUES ($1, 'password_reset', 'establishments', $2, $3)`,
+        [est.id, est.id, JSON.stringify({ email, via: "initial_setup_link" })],
+      );
+
+      res.json({ message: "Password set successfully. You can now log in." });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ── Establishment: Change Password (in-session, current password
 // required) ─────────────────────────────────────────────────────
 // "Option A" from the design discussion: authenticated establishment

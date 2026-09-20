@@ -15,8 +15,6 @@ import {
   Building2,
   Calendar,
   KeyRound,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { establishmentsAPI } from "../services/api";
 
@@ -49,7 +47,6 @@ export default function CreateEstablishmentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   function set(field) {
     return (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -90,7 +87,6 @@ export default function CreateEstablishmentPage() {
         business_permit_expiry: form.business_permit_expiry || undefined,
       });
       setSuccess(data);
-      setShowPassword(false);
       setForm(INITIAL);
     } catch (err) {
       const msg =
@@ -153,28 +149,6 @@ export default function CreateEstablishmentPage() {
               <span className="font-medium text-gray-900">Login Email: </span>
               {success.establishment?.email}
             </p>
-            <div className="flex items-center gap-2">
-              <p className="text-gray-600">
-                <span className="font-medium text-gray-900">
-                  Generated Password:{" "}
-                </span>
-                <code className="bg-gray-100 px-2 py-0.5 rounded text-gray-800 font-mono">
-                  {showPassword ? success.plain_password : "••••••••••••"}
-                </code>
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="text-gray-400 hover:text-gray-600"
-                title={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-              </button>
-            </div>
             <p className="text-gray-600">
               <span className="font-medium text-gray-900">Status: </span>
               <span className="text-success-700 font-medium">
@@ -183,12 +157,12 @@ export default function CreateEstablishmentPage() {
             </p>
           </div>
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            ⚠ The password is shown once here for your reference. It has also
-            been sent to the establishment's email address.
+            A password-setup link has been emailed to the establishment. It
+            expires in 24 hours.
           </p>
           <p className="text-xs text-success-700">
-            The establishment can now log in to the Client Portal and begin
-            scanning IDs immediately.
+            Once they set their password, they can log in to the Client Portal
+            and begin scanning IDs.
           </p>
           <div className="flex gap-2 pt-1">
             <button

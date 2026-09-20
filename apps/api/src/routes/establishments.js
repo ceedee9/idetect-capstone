@@ -18,7 +18,7 @@ const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendSms } = require("../services/smsService");
-const { sendEstablishmentCredentials } = require("../services/emailService");
+const { sendEstablishmentSetupLink } = require("../services/emailService");
 
 const router = express.Router();
 
@@ -494,9 +494,20 @@ router.post(
         });
       }
 
-      // Auto-generate a secure password — returned once to BPLO and emailed to establishment
-      const plain_password = generatePassword(12);
-      const password_hash = await bcrypt.hash(plain_password, 12);
+      // Password is set by the establishment via a one-time link (avoids
+      // emailing a plaintext password, which mail providers often block as
+      // phishing-like content). The stored hash is a random placeholder
+      // that cannot be used to log in until the setup link is completed.
+      const password_hash = await bcrypt.hash(
+        crypto.randomBytes(32).toString("hex"),
+        12,
+      );
+      const setupToken = crypto.randomBytes(32).toString("hex");
+      const setupTokenHash = crypto
+        .createHash("sha256")
+        .update(setupToken)
+        .digest("hex");
+      const setupTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
       const client = await pool.connect();
       let result;
@@ -507,8 +518,9 @@ router.post(
           `INSERT INTO establishments
            (email, password_hash, business_name, business_permit_no,
             owner_name, address, contact_number, business_permit_expiry,
-            status, approved_by, approved_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8, 'approved', $9, NOW())
+            status, approved_by, approved_at,
+            password_setup_token, password_setup_token_expires)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8, 'approved', $9, NOW(), $10, $11)
          RETURNING id, email, business_name, business_permit_no, status, created_at`,
           [
             email,
@@ -520,6 +532,8 @@ router.post(
             contact_number,
             business_permit_expiry || null,
             req.user.id,
+            setupTokenHash,
+            setupTokenExpires,
           ],
         );
 
@@ -545,16 +559,23 @@ router.post(
         client.release();
       }
 
-      // Send credentials to establishment email — now awaited so a delivery
-      // failure is reflected in the response instead of silently reporting
-      // success while nothing was actually sent.
-      const emailResult = await sendEstablishmentCredentials({
+      // Send the password-setup link to the establishment email — awaited
+      // so a delivery failure is reflected in the response instead of
+      // silently reporting success while nothing was actually sent.
+      const allowedOrigins = (process.env.ALLOWED_PORTAL_ORIGINS || "")
+        .split(",")
+        .map((o) => o.trim())
+        .filter(Boolean);
+      const setupOrigin = allowedOrigins[0] || "https://idetect.it.com";
+      const setupUrl = `${setupOrigin}/establishment/setup-password?token=${setupToken}&email=${encodeURIComponent(email)}`;
+
+      const emailResult = await sendEstablishmentSetupLink({
         business_name,
         email,
-        plain_password,
+        setupUrl,
       }).catch((err) => {
         console.error(
-          `[EMAIL] Failed to send credentials to ${email}:`,
+          `[EMAIL] Failed to send setup link to ${email}:`,
           err.message,
         );
         return { success: false, error: err.message };
@@ -565,16 +586,15 @@ router.post(
       if (contact_number) {
         sendSms(
           contact_number,
-          `Welcome to iDetect! Your establishment account (${business_name}) has been created. Check your email (${email}) for your login credentials.`,
+          `Welcome to iDetect! Your establishment account (${business_name}) has been created. Check your email (${email}) to set your password.`,
         ).catch((err) => console.error("[SMS] Failed:", err.message));
       }
 
       res.status(201).json({
         message: emailResult?.success
-          ? `Establishment "${business_name}" created and approved successfully. Credentials have been sent to ${email}.`
-          : `Establishment "${business_name}" created and approved successfully, but the credentials email to ${email} could not be sent. Please share the password below with the establishment manually.`,
+          ? `Establishment "${business_name}" created and approved successfully. A password-setup link has been sent to ${email}.`
+          : `Establishment "${business_name}" created and approved successfully, but the setup-link email to ${email} could not be sent. Please ask the establishment to use "Forgot password" once you resend it, or contact them manually.`,
         establishment: result.rows[0],
-        plain_password,
         email_sent: !!emailResult?.success,
       });
     } catch (err) {

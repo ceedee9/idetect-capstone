@@ -104,6 +104,12 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (email, password) =>
     api.post("/auth/staff/login", { email, password }),
+  establishmentSetupPassword: (email, token, new_password) =>
+    api.post("/auth/establishment/setup-password", {
+      email,
+      token,
+      new_password,
+    }),
 };
 
 // ─── Beneficiaries ────────────────────────────────────────────────────────────
