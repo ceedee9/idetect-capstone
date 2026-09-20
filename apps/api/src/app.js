@@ -159,9 +159,9 @@ app.post("/api/test-email", async (req, res) => {
       .json({ error: "Provide { to: 'email@example.com' }" });
   const result = await sendEmail({
     to,
-    subject: "iDetect SMTP Test",
-    text: "This is a test email from the iDetect API. If you received this, SMTP is working correctly.",
-    html: "<p>This is a test email from the <strong>iDetect API</strong>. If you received this, SMTP is working correctly.</p>",
+    subject: "iDetect test message",
+    text: "This is a test message from the iDetect system. If you received this, please disregard.",
+    html: "<p>This is a test message from the iDetect system. If you received this, please disregard.</p>",
   });
   res.json(result);
 });
