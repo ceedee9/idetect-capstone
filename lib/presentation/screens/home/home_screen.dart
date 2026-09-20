@@ -5,6 +5,8 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_design_system.dart';
 import '../../widgets/account_profile_drawer.dart';
 import 'info_detail_screen.dart';
 import '../scan/camera_screen.dart';
@@ -43,63 +45,52 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text(
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Text(
           'Select ID Type',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: GoogleFonts.sourceSerif4(
+              fontWeight: FontWeight.w700,
+              fontSize: 19,
+              color: AppDesignSystem.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'What type of ID are you scanning?',
-              style: TextStyle(fontSize: 14),
+              style: AppDesignSystem.bodyMedium
+                  .copyWith(color: AppDesignSystem.textSecondary),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: AppDesignSystem.spaceMD),
             // Senior Citizen ID button
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext);
                   _showSeniorFormatDialog();
                 },
-                icon: const Icon(Icons.elderly, size: 32),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    'Senior Citizen ID',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002E6B),
-                  foregroundColor: Colors.white,
-                ),
+                icon: const Icon(Icons.elderly, size: 26),
+                label: const Text('Senior Citizen ID'),
+                style: AppDesignSystem.primaryButton,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: AppDesignSystem.spaceXS),
             // PWD ID button
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton.icon(
                 onPressed: () {
                   _showPWDFormatDialog();
                 },
-                icon: const Icon(Icons.accessible, size: 32),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    'PWD ID',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002E6B),
-                  foregroundColor: Colors.white,
-                ),
+                icon: const Icon(Icons.accessible, size: 26),
+                label: const Text('PWD ID'),
+                style: AppDesignSystem.primaryButton,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: AppDesignSystem.spaceXS),
             // Auto-detect option
             SizedBox(
               width: double.infinity,
@@ -113,9 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 },
-                icon: const Icon(Icons.auto_awesome, size: 28),
+                icon: const Icon(Icons.auto_awesome, size: 24),
+                style: AppDesignSystem.secondaryButton,
                 label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
                       Text('Auto-detect', style: TextStyle(fontSize: 16)),
@@ -133,7 +125,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text('Cancel',
+                style: AppDesignSystem.bodyMedium
+                    .copyWith(color: AppDesignSystem.textSecondary)),
           ),
         ],
       ),
@@ -146,61 +140,55 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text(
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Text(
           'Which ID format?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: GoogleFonts.sourceSerif4(
+              fontWeight: FontWeight.w700,
+              fontSize: 19,
+              color: AppDesignSystem.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Check for a round holographic seal near the signature.',
-              style: TextStyle(fontSize: 13),
+              style: AppDesignSystem.bodyMedium
+                  .copyWith(color: AppDesignSystem.textSecondary),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               'Has seal, labeled "ID No." → New\nNo seal, labeled "Control No." → Old',
-              style: TextStyle(
-                  fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+              style: AppDesignSystem.bodySmall
+                  .copyWith(color: AppDesignSystem.textTertiary, height: 1.4),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: AppDesignSystem.spaceMD),
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext);
                   _onSeniorFormatSelected('old');
                 },
-                icon: const Icon(Icons.badge_outlined, size: 28),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  child: Text('Old format', style: TextStyle(fontSize: 16)),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002E6B),
-                  foregroundColor: Colors.white,
-                ),
+                icon: const Icon(Icons.badge_outlined, size: 24),
+                label: const Text('Old format'),
+                style: AppDesignSystem.primaryButton,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: AppDesignSystem.spaceXS),
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext);
                   _onSeniorFormatSelected('new');
                 },
-                icon: const Icon(Icons.verified_outlined, size: 28),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  child: Text('New format (with seal)',
-                      style: TextStyle(fontSize: 16)),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002E6B),
-                  foregroundColor: Colors.white,
-                ),
+                icon: const Icon(Icons.verified_outlined, size: 24),
+                label: const Text('New format (with seal)'),
+                style: AppDesignSystem.primaryButton,
               ),
             ),
           ],
@@ -208,7 +196,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text('Cancel',
+                style: AppDesignSystem.bodyMedium
+                    .copyWith(color: AppDesignSystem.textSecondary)),
           ),
         ],
       ),
@@ -232,61 +222,55 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text(
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Text(
           'Which ID format?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: GoogleFonts.sourceSerif4(
+              fontWeight: FontWeight.w700,
+              fontSize: 19,
+              color: AppDesignSystem.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Check for a round holographic seal near the ID number.',
-              style: TextStyle(fontSize: 13),
+              style: AppDesignSystem.bodyMedium
+                  .copyWith(color: AppDesignSystem.textSecondary),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               'Has seal → New\nNo seal → Old (still valid)',
-              style: TextStyle(
-                  fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+              style: AppDesignSystem.bodySmall
+                  .copyWith(color: AppDesignSystem.textTertiary, height: 1.4),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: AppDesignSystem.spaceMD),
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext);
                   _onPWDFormatSelected('old');
                 },
-                icon: const Icon(Icons.badge_outlined, size: 28),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  child: Text('Old format', style: TextStyle(fontSize: 16)),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002E6B),
-                  foregroundColor: Colors.white,
-                ),
+                icon: const Icon(Icons.badge_outlined, size: 24),
+                label: const Text('Old format'),
+                style: AppDesignSystem.primaryButton,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: AppDesignSystem.spaceXS),
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext);
                   _onPWDFormatSelected('new');
                 },
-                icon: const Icon(Icons.verified_outlined, size: 28),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  child: Text('New format (with seal)',
-                      style: TextStyle(fontSize: 16)),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002E6B),
-                  foregroundColor: Colors.white,
-                ),
+                icon: const Icon(Icons.verified_outlined, size: 24),
+                label: const Text('New format (with seal)'),
+                style: AppDesignSystem.primaryButton,
               ),
             ),
           ],
@@ -294,7 +278,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text('Cancel',
+                style: AppDesignSystem.bodyMedium
+                    .copyWith(color: AppDesignSystem.textSecondary)),
           ),
         ],
       ),
@@ -321,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return SessionActivityWrapper(
       child: Scaffold(
         key: _scaffoldKey,
-        backgroundColor: Colors.white,
+        backgroundColor: AppDesignSystem.backgroundLight,
         endDrawer: const AccountProfileDrawer(),
         body: _selectedIndex == 1 ? const SizedBox() : pages[_selectedIndex],
         bottomNavigationBar: _buildBottomNavBar(),
@@ -332,18 +318,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNavBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: AppDesignSystem.backgroundWhite,
+        border: const Border(
+          top: BorderSide(color: AppDesignSystem.borderLight),
+        ),
+        boxShadow: AppDesignSystem.shadowSM,
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -354,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               _buildScanButton(),
               _buildNavItem(
-                icon: Icons.history,
+                icon: Icons.history_rounded,
                 label: 'HISTORY',
                 index: 2,
               ),
@@ -371,25 +354,25 @@ class _HomeScreenState extends State<HomeScreen> {
     required int index,
   }) {
     final isSelected = _selectedIndex == index;
+    final color =
+        isSelected ? AppDesignSystem.primaryBlue : AppDesignSystem.textTertiary;
     return InkWell(
       onTap: () => _onItemTapped(index),
+      borderRadius: BorderRadius.circular(AppDesignSystem.radiusSM),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 28,
-              color: isSelected ? const Color(0xFF002E6B) : Colors.grey,
-            ),
+            Icon(icon, size: 26, color: color),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFF002E6B) : Colors.grey,
+              style: GoogleFonts.ibmPlexMono(
+                fontSize: 10,
+                letterSpacing: 1.0,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
               ),
             ),
           ],
@@ -399,31 +382,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildScanButton() {
-    return InkWell(
-      onTap: () => _onItemTapped(1),
-      child: Container(
-        width: 70,
-        height: 70,
-        decoration: const BoxDecoration(
-          color: Color(0xFF002E6B),
-          shape: BoxShape.circle,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.credit_card,
-                color: Color(0xFF002E6B),
-                size: 24,
-              ),
-            ),
-          ],
+    return Transform.translate(
+      offset: const Offset(0, -14),
+      child: InkWell(
+        onTap: () => _onItemTapped(1),
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusFull),
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: AppDesignSystem.primaryBlue,
+            shape: BoxShape.circle,
+            border:
+                Border.all(color: AppDesignSystem.backgroundWhite, width: 3),
+            boxShadow: AppDesignSystem.shadowMD,
+          ),
+          child: const Icon(
+            Icons.credit_card_rounded,
+            color: Colors.white,
+            size: 26,
+          ),
         ),
       ),
     );
@@ -451,7 +429,7 @@ class _HomePage extends StatelessWidget {
             _buildContentSection(),
             _buildCampaignImageSection(),
             _buildInfoCards(context),
-            const SizedBox(height: 20),
+            SizedBox(height: AppDesignSystem.spaceMD),
           ],
         ),
       ),
@@ -460,15 +438,20 @@ class _HomePage extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      color: Colors.white,
+      padding: EdgeInsets.symmetric(
+          horizontal: AppDesignSystem.spaceMD,
+          vertical: AppDesignSystem.spaceSM),
+      decoration: const BoxDecoration(
+        color: AppDesignSystem.backgroundWhite,
+        border: Border(bottom: BorderSide(color: AppDesignSystem.borderLight)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Logo
           Image.asset(
             'assets/images/idetect_logo.png',
-            height: 60,
+            height: 48,
             fit: BoxFit.contain,
           ),
           // Profile icon button
@@ -480,9 +463,12 @@ class _HomePage extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey.shade300, width: 2),
+                color: AppDesignSystem.backgroundLightBlue,
+                border:
+                    Border.all(color: AppDesignSystem.borderLight, width: 1.5),
               ),
-              child: const Icon(Icons.person_outline, color: Colors.grey),
+              child: const Icon(Icons.person_outline_rounded,
+                  color: AppDesignSystem.primaryBlue, size: 20),
             ),
           ),
         ],
@@ -492,34 +478,28 @@ class _HomePage extends StatelessWidget {
 
   Widget _buildBannerSection() {
     return Container(
-      margin: const EdgeInsets.all(20),
+      margin: EdgeInsets.all(AppDesignSystem.spaceMD),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: AppDesignSystem.cardRadius,
+        boxShadow: AppDesignSystem.shadowMD,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppDesignSystem.cardRadius,
         child: Container(
           height: 400,
           width: double.infinity,
-          color: Colors.grey.shade200,
+          color: AppDesignSystem.backgroundLight,
           child: Image.asset(
             'assets/images/campaign_1.jpg',
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: const Color(0xFF002E6B).withOpacity(0.1),
-                child: const Center(
+                color: AppDesignSystem.backgroundLightBlue,
+                child: Center(
                   child: Icon(
-                    Icons.image,
+                    Icons.image_outlined,
                     size: 60,
-                    color: Colors.grey,
+                    color: AppDesignSystem.iconLight,
                   ),
                 ),
               );
@@ -568,32 +548,27 @@ class _HomePage extends StatelessWidget {
   Widget _buildCampaignImageCard(String imagePath) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
+        boxShadow: AppDesignSystem.shadowSM,
+        border: Border.all(color: AppDesignSystem.borderLight),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
         child: Container(
           height: 280,
           width: double.infinity,
-          color: Colors.white,
+          color: AppDesignSystem.backgroundWhite,
           child: Image.asset(
             imagePath,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: const Color(0xFF002E6B).withOpacity(0.1),
-                child: const Center(
+                color: AppDesignSystem.backgroundLightBlue,
+                child: Center(
                   child: Icon(
-                    Icons.image,
+                    Icons.image_outlined,
                     size: 60,
-                    color: Colors.grey,
+                    color: AppDesignSystem.iconLight,
                   ),
                 ),
               );
@@ -606,35 +581,43 @@ class _HomePage extends StatelessWidget {
 
   Widget _buildContentSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: AppDesignSystem.spaceMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Know Your Benefits and Protect Your Community',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+          Text(
+            'OUR MANDATE',
+            style: GoogleFonts.ibmPlexMono(
+              fontSize: 11,
+              letterSpacing: 1.8,
+              fontWeight: FontWeight.w600,
+              color: AppDesignSystem.textTertiary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          Text(
+            'Know Your Benefits and Protect Your Community',
+            style: GoogleFonts.sourceSerif4(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppDesignSystem.textPrimary,
+              letterSpacing: -0.3,
+            ),
+          ),
+          SizedBox(height: AppDesignSystem.spaceSM),
           Text(
             'iDetect supports the City of Valenzuela in promoting legitimate identification, proper benefit access, and respect for the rights of senior citizens and persons with disability (PWD).',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-              height: 1.5,
-            ),
+            style: AppDesignSystem.bodyMedium
+                .copyWith(color: AppDesignSystem.textSecondary),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppDesignSystem.spaceMD),
           _buildPolicyCard(
             title: 'Republic Act 9994',
             subtitle: 'Expanded Senior Citizens Act of 2010',
             description:
                 'Provides additional benefits and privileges for qualified senior citizens, including discounts and social support measures. Proper ID validation helps ensure these benefits reach the rightful recipients.',
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppDesignSystem.spaceXS),
           _buildPolicyCard(
             title: 'Republic Act 10754',
             subtitle:
@@ -642,7 +625,7 @@ class _HomePage extends StatelessWidget {
             description:
                 'Strengthens and expands mandatory privileges for persons with disability, including discounts and VAT exemptions. Accurate PWD ID verification protects both establishments and legitimate beneficiaries.',
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppDesignSystem.spaceXS),
           _buildPolicyCard(
             title: 'Bawal ang Pekeng ID Campaign',
             subtitle: 'City Government of Valenzuela',
@@ -661,49 +644,44 @@ class _HomePage extends StatelessWidget {
     required String description,
     bool isCampaign = false,
   }) {
+    final accent =
+        isCampaign ? AppDesignSystem.accentRed : AppDesignSystem.primaryBlue;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: isCampaign ? const Color(0xFFEAF3FF) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCampaign ? const Color(0xFF5A8DCC) : const Color(0xFFD8DEE9),
-          width: 1.2,
-        ),
+        color: AppDesignSystem.backgroundWhite,
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusSM),
+        border: Border(left: BorderSide(color: accent, width: 3)),
+        boxShadow: AppDesignSystem.shadowSM,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: GoogleFonts.sourceSerif4(
               fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: isCampaign
-                  ? const Color(0xFF003A8C)
-                  : const Color(0xFF002E6B),
+              fontWeight: FontWeight.w700,
+              color: AppDesignSystem.textPrimary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
+            subtitle.toUpperCase(),
+            style: GoogleFonts.ibmPlexMono(
+              fontSize: 10.5,
               fontWeight: FontWeight.w600,
-              color: isCampaign
-                  ? const Color(0xFF2D5F9A)
-                  : const Color(0xFF355C9A),
+              letterSpacing: 0.6,
+              color: accent,
+              height: 1.4,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             description,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade800,
-              height: 1.45,
-            ),
+            style: AppDesignSystem.bodySmall
+                .copyWith(color: AppDesignSystem.textSecondary, fontSize: 13),
           ),
         ],
       ),
@@ -712,9 +690,20 @@ class _HomePage extends StatelessWidget {
 
   Widget _buildInfoCards(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(AppDesignSystem.spaceMD),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'RESOURCES',
+            style: GoogleFonts.ibmPlexMono(
+              fontSize: 11,
+              letterSpacing: 1.8,
+              fontWeight: FontWeight.w600,
+              color: AppDesignSystem.textTertiary,
+            ),
+          ),
+          SizedBox(height: AppDesignSystem.spaceSM),
           Row(
             children: [
               Expanded(
@@ -831,47 +820,43 @@ class _HomePage extends StatelessWidget {
   Widget _buildInfoCard(String imagePath, String title, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppDesignSystem.backgroundWhite,
+          borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
+          border: Border.all(color: AppDesignSystem.borderLight),
+          boxShadow: AppDesignSystem.shadowSM,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppDesignSystem.radiusMD)),
               child: Container(
                 height: 100,
                 width: double.infinity,
-                color: Colors.grey.shade200,
+                color: AppDesignSystem.backgroundLight,
                 child: Image.asset(
                   imagePath,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: const Color(0xFF002E6B).withOpacity(0.1),
-                      child: const Icon(Icons.image, color: Colors.grey),
+                      color: AppDesignSystem.backgroundLightBlue,
+                      child: Icon(Icons.image_outlined,
+                          color: AppDesignSystem.iconLight),
                     );
                   },
                 ),
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(AppDesignSystem.spaceSM),
               decoration: const BoxDecoration(
-                color: Color(0xFF002E6B),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(12)),
+                color: AppDesignSystem.primaryBlue,
+                borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(AppDesignSystem.radiusMD)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -892,15 +877,17 @@ class _HomePage extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE94444),
-                      borderRadius: BorderRadius.circular(4),
+                      color: AppDesignSystem.accentRed,
+                      borderRadius:
+                          BorderRadius.circular(AppDesignSystem.radiusXS),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Read More →',
-                      style: TextStyle(
+                      style: GoogleFonts.ibmPlexMono(
                         fontSize: 10,
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),

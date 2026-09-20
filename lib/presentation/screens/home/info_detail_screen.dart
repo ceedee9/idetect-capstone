@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/constants/app_design_system.dart';
 
 class InfoDetailScreen extends StatelessWidget {
   final String imagePath;
@@ -30,11 +33,16 @@ class InfoDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppDesignSystem.backgroundLight,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF002E6B),
+        backgroundColor: AppDesignSystem.primaryBlue,
         foregroundColor: Colors.white,
-        title: Text(title, style: const TextStyle(fontSize: 16)),
+        elevation: 0,
+        title: Text(
+          'Resource',
+          style: GoogleFonts.sourceSerif4(
+              fontWeight: FontWeight.w700, fontSize: 19),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -47,43 +55,52 @@ class InfoDetailScreen extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 height: 220,
-                color: const Color(0xFF002E6B).withOpacity(0.1),
-                child: const Icon(Icons.image, size: 48, color: Colors.grey),
+                color: AppDesignSystem.backgroundLightBlue,
+                child: Icon(Icons.image_outlined,
+                    size: 48, color: AppDesignSystem.iconLight),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(AppDesignSystem.spaceMD),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF002E6B),
+                    'RESOURCE DETAIL',
+                    style: GoogleFonts.ibmPlexMono(
+                      fontSize: 11,
+                      letterSpacing: 1.8,
+                      fontWeight: FontWeight.w600,
+                      color: AppDesignSystem.textTertiary,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
+                  Text(
+                    title,
+                    style: GoogleFonts.sourceSerif4(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppDesignSystem.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  SizedBox(height: AppDesignSystem.spaceSM),
                   Text(
                     body,
-                    style: TextStyle(
-                        fontSize: 14, color: Colors.grey.shade800, height: 1.5),
+                    style: AppDesignSystem.bodyMedium
+                        .copyWith(color: AppDesignSystem.textSecondary),
                   ),
                   if (externalUrl != null) ...[
-                    const SizedBox(height: 24),
+                    SizedBox(height: AppDesignSystem.spaceLG),
                     SizedBox(
                       width: double.infinity,
+                      height: AppDesignSystem.touchTargetPrimary,
                       child: ElevatedButton.icon(
                         onPressed: () => _openExternalUrl(context),
-                        icon: const Icon(Icons.open_in_new),
+                        icon: const Icon(Icons.open_in_new_rounded, size: 20),
                         label:
                             Text(externalUrlLabel ?? 'Visit official portal'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF002E6B),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
+                        style: AppDesignSystem.primaryButton,
                       ),
                     ),
                   ],

@@ -10,9 +10,9 @@ iDetect checks if a Senior Citizen ID or PWD ID is valid for discounts.
 
 It connects 3 parts:
 
-1. Mobile app used by establishments to scan IDs
-2. OSCA and PDAO portals where government records are managed
-3. API + database where final verification happens
+1. Mobile app used by establishments to scan IDs (calls the production API at `https://idetect.it.com/api`)
+2. One unified staff web portal (`https://idetect.it.com`) where OSCA, PDAO, and BPLO staff each sign in and are routed to their own dashboard by role
+3. API + PostgreSQL database (hosted on Supabase, deployed together with the portal on Northflank) where final verification happens
 
 ## 2. Who does what
 

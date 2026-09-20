@@ -5,6 +5,8 @@
 **System Version Reviewed:** 3.1 (with latest API updates as of May 2026)
 **Review Scope:** Full system — mobile app, API backend, web portals, database schema, dataflow, and documentation
 
+> **Editorial note (Sep 2026):** This is a historical review, kept for reference. The documentation-consistency findings below (Railway/Vercel hosting references, "Backend (Planned)" wording, Supabase described as future-only) have since been corrected across the documentation set as part of a Sep 2026 docs cleanup — the production backend is now documented as Node.js/Express on Northflank with PostgreSQL/Storage on Supabase. The functional/architectural gaps described elsewhere in this report should still be verified against the current codebase before assuming they are resolved.
+
 ---
 
 ## Table of Contents

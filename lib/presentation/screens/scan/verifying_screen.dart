@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 import '../../../services/parser_service.dart';
 import 'result_screen.dart';
@@ -91,42 +93,44 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppDesignSystem.backgroundLight,
+      appBar: AppBar(
+        title: Text(
+          'Verify ID',
+          style: GoogleFonts.sourceSerif4(
+              fontWeight: FontWeight.w700, fontSize: 19),
+        ),
+        centerTitle: true,
+        backgroundColor: AppDesignSystem.primaryBlue,
+        foregroundColor: AppDesignSystem.textOnPrimary,
+      ),
       body: Stack(
         children: [
+          // Captured ID, zoomed to fill the screen — the original
+          // verifying-screen backdrop, kept behind the new card layout.
           Positioned.fill(
-            child: Image.file(File(widget.imagePath), fit: BoxFit.cover),
+            child: Image.file(
+              File(widget.imagePath),
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+            ),
           ),
           Positioned.fill(
             child: Container(color: Colors.black.withOpacity(0.55)),
           ),
           SafeArea(
             child: SingleChildScrollView(
+              padding: EdgeInsets.all(AppDesignSystem.spaceMD),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildTopBar(),
-                  const SizedBox(height: 12),
-                  _buildVerifyingBanner(),
-                  const SizedBox(height: 12),
-                  _buildIDPreviewCard(),
-                  const SizedBox(height: 16),
+                  _buildImagePreview(),
+                  SizedBox(height: AppDesignSystem.spaceMD),
+                  _buildVerifyingStatus(),
+                  SizedBox(height: AppDesignSystem.spaceMD),
                   _buildExtractedDetailsCard(),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppDesignSystem.spaceLG),
                   _buildVerifyButton(),
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: 24, left: 24, right: 24),
-                    child: Text(
-                      _statusText,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -136,74 +140,64 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
     );
   }
 
-  Widget _buildTopBar() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'VERIFYING ID',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ],
+  Widget _buildImagePreview() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: AppDesignSystem.cardRadius,
+        boxShadow: AppDesignSystem.shadowMD,
+      ),
+      child: ClipRRect(
+        borderRadius: AppDesignSystem.cardRadius,
+        child: Image.file(File(widget.imagePath), fit: BoxFit.cover),
       ),
     );
   }
 
-  Widget _buildVerifyingBanner() {
+  Widget _buildVerifyingStatus() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.all(AppDesignSystem.spaceSM),
       decoration: BoxDecoration(
-        color: const Color(0xFF002E6B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF3A6FB3), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        color: AppDesignSystem.backgroundWhite,
+        borderRadius: AppDesignSystem.cardRadius,
+        boxShadow: AppDesignSystem.shadowMD,
+        border: Border.all(
+          color: AppDesignSystem.primaryBlue.withOpacity(0.15),
+        ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _isVerifying
-              ? const SizedBox(
+              ? SizedBox(
                   width: 36,
                   height: 36,
                   child: CircularProgressIndicator(
-                    color: Colors.white,
+                    color: AppDesignSystem.primaryBlue,
                     strokeWidth: 3,
                   ),
                 )
-              : const Icon(Icons.manage_search, color: Colors.white, size: 36),
-          const SizedBox(width: 12),
+              : Icon(Icons.manage_search_rounded,
+                  color: AppDesignSystem.primaryBlue, size: 36),
+          SizedBox(width: AppDesignSystem.spaceSM),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'CHECKING DATABASE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
+                Text(
+                  _isVerifying ? 'CHECKING DATABASE' : 'READY TO VERIFY',
+                  style: GoogleFonts.ibmPlexMono(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: AppDesignSystem.primaryBlue,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
-                  _isVerifying
-                      ? 'Comparing ID against OSCA/PDAO records...'
-                      : 'Verification starts when you tap the button below.',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  _statusText,
+                  style: AppDesignSystem.bodyMedium
+                      .copyWith(color: AppDesignSystem.textSecondary),
                 ),
               ],
             ),
@@ -213,87 +207,67 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
     );
   }
 
-  Widget _buildIDPreviewCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.file(
-          File(widget.imagePath),
-          width: 340,
-          height: 214,
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
-  }
-
   Widget _buildExtractedDetailsCard() {
     final isPWD = widget.idType == 'pwd';
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(AppDesignSystem.spaceMD),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppDesignSystem.backgroundWhite,
+        borderRadius: AppDesignSystem.cardRadius,
+        boxShadow: AppDesignSystem.shadowMD,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'EXTRACTED DETAILS',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF002E6B),
-              letterSpacing: 1.2,
-            ),
+          Row(
+            children: [
+              Icon(Icons.fact_check_outlined,
+                  size: AppDesignSystem.iconMD,
+                  color: AppDesignSystem.primaryBlue),
+              SizedBox(width: AppDesignSystem.spaceXS),
+              Text(
+                'Extracted Details',
+                style: GoogleFonts.sourceSerif4(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 19,
+                  color: AppDesignSystem.primaryBlue,
+                ),
+              ),
+            ],
           ),
-          const Divider(height: 20, thickness: 2),
-          _detailRow('NAME:', widget.parsedData.fullName ?? 'N/A'),
-          const SizedBox(height: 10),
+          SizedBox(height: AppDesignSystem.spaceSM),
+          const Divider(height: 1, color: AppDesignSystem.borderLight),
+          SizedBox(height: AppDesignSystem.spaceSM),
+          _detailRow('Name', widget.parsedData.fullName ?? 'N/A'),
           if (isPWD) ...[
-            _detailRow('TYPE OF DISABILITY:',
+            SizedBox(height: AppDesignSystem.spaceXS),
+            _detailRow('Type of Disability',
                 widget.parsedData.disabilityType ?? 'N/A'),
-            const SizedBox(height: 10),
+            SizedBox(height: AppDesignSystem.spaceXS),
             _detailRow(
-              'ID NO:',
+              'ID No.',
               widget.parsedData.controlNumber ??
                   widget.parsedData.idNumber ??
                   'N/A',
+              monospace: true,
             ),
           ] else ...[
+            SizedBox(height: AppDesignSystem.spaceXS),
             _detailRow(
-              'AGE:',
+              'Age',
               widget.parsedData.age != null
                   ? '${widget.parsedData.age} Years Old'
                   : 'N/A',
             ),
-            const SizedBox(height: 10),
-            _detailRow('SEX:', widget.parsedData.sex ?? 'N/A'),
-            const SizedBox(height: 10),
-            _detailRow('DATE ISSUED:', widget.parsedData.dateIssued ?? 'N/A'),
-            const SizedBox(height: 10),
-            _detailRow('CONTROL ID:', widget.parsedData.controlNumber ?? 'N/A'),
+            SizedBox(height: AppDesignSystem.spaceXS),
+            _detailRow('Sex', widget.parsedData.sex ?? 'N/A'),
+            SizedBox(height: AppDesignSystem.spaceXS),
+            _detailRow('Date Issued', widget.parsedData.dateIssued ?? 'N/A'),
+            SizedBox(height: AppDesignSystem.spaceXS),
+            _detailRow('Control ID', widget.parsedData.controlNumber ?? 'N/A',
+                monospace: true),
           ],
         ],
       ),
@@ -301,57 +275,45 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
   }
 
   Widget _buildVerifyButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: _isVerifying ? null : _startVerification,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF002E6B),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          icon: _isVerifying
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Icon(Icons.verified_user),
-          label: Text(
-            _isVerifying ? 'Verifying...' : 'Verify',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          ),
-        ),
+    return SizedBox(
+      height: AppDesignSystem.touchTargetPrimary,
+      child: ElevatedButton.icon(
+        onPressed: _isVerifying ? null : _startVerification,
+        style: AppDesignSystem.primaryButton,
+        icon: _isVerifying
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Icon(Icons.verified_user_rounded),
+        label: Text(_isVerifying ? 'Verifying...' : 'Verify'),
       ),
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  Widget _detailRow(String label, String value, {bool monospace = false}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 120,
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
+          width: 130,
+          child: Text(label, style: AppDesignSystem.label),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
+            style: monospace
+                ? GoogleFonts.ibmPlexMono(
+                    fontSize: AppDesignSystem.bodyMedium.fontSize,
+                    fontWeight: FontWeight.w600,
+                    color: AppDesignSystem.textPrimary,
+                  )
+                : AppDesignSystem.bodyMedium
+                    .copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ],

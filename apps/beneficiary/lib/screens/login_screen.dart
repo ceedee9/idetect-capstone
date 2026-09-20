@@ -16,6 +16,109 @@ const _kSavedName = 'saved_full_name';
 const _kBiometricEnabled = 'biometric_enabled';
 const _kPinSet = 'pin_set';
 
+/// Notice types for the shared _Notice widget below — replaces three
+/// separately hand-styled boxes (mobile-registration explainer,
+/// OTP-sent instruction, error banner) with one consistent component.
+/// Icon + color + text always together, per this file's own WCAG 1.4.1
+/// commitment (never color alone).
+enum _NoticeType { info, success, error }
+
+class _Notice extends StatelessWidget {
+  const _Notice({required this.type, this.title, required this.message});
+
+  final _NoticeType type;
+  final String? title;
+  final String message;
+
+  static const _config = {
+    _NoticeType.info: (
+      color: AppDesignSystem.interactiveBlue,
+      icon: Icons.info_outline,
+    ),
+    _NoticeType.success: (
+      color: AppDesignSystem.statusValid,
+      icon: Icons.check_circle,
+    ),
+    _NoticeType.error: (
+      color: AppDesignSystem.statusInvalid,
+      icon: Icons.error_outline,
+    ),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _config[type]!;
+    return Semantics(
+      liveRegion: type == _NoticeType.error,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: c.color.withAlpha(20),
+          borderRadius: AppDesignSystem.cardRadius,
+          border: Border.all(color: c.color.withAlpha(60)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(c.icon, color: c.color, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (title != null) ...[
+                    Text(
+                      title!,
+                      style: AppDesignSystem.bodyLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: c.color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  Text(
+                    message,
+                    style: AppDesignSystem.bodyMedium.copyWith(color: c.color),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Thin civic-stripe accent — same motif used across the web admin
+/// portals, so this app reads as part of the same iDetect/Valenzuela
+/// City family. Deliberately minimal: no hero panel, no texture, just
+/// enough presence to signal "official service" at the very top edge.
+class _BrandStripe extends StatelessWidget {
+  const _BrandStripe();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 7,
+          child: Container(height: 5, color: AppDesignSystem.primaryBlue),
+        ),
+        Expanded(
+          flex: 2,
+          child: Container(height: 5, color: AppDesignSystem.accentRed),
+        ),
+        Expanded(
+          flex: 1,
+          child: Container(height: 5, color: AppDesignSystem.statusWarning),
+        ),
+      ],
+    );
+  }
+}
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -507,9 +610,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ── Numpad helpers ──────────────────────────────────────────────────
+  // Haptic feedback on every tap — tactile confirmation matters more
+  // for this audience than a purely visual response, especially for
+  // anyone with reduced vision confirming a digit actually registered.
 
   void _onNumpadTap(String digit) {
     if (_otpDigits.length < 6) {
+      HapticFeedback.lightImpact();
       setState(() => _otpDigits += digit);
       if (_otpDigits.length == 6) {
         _verifyOtp();
@@ -519,6 +626,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onNumpadDelete() {
     if (_otpDigits.isNotEmpty) {
+      HapticFeedback.lightImpact();
       setState(
         () => _otpDigits = _otpDigits.substring(0, _otpDigits.length - 1),
       );
@@ -533,60 +641,77 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: Colors.white,
+      // Warm off-white per this file's own stated intent (reduces eye
+      // strain for elderly users) — was previously plain Colors.white,
+      // which the design system's own background tokens exist to avoid.
+      backgroundColor: AppDesignSystem.backgroundWarm,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLogo(),
-                const SizedBox(height: 8),
-                Text(
-                  loc.loginBeneficiaryPortal,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: AppDesignSystem.textSecondary,
-                    fontWeight: FontWeight.w500,
+        child: Column(
+          children: [
+            const _BrandStripe(),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLogo(),
+                      const SizedBox(height: 8),
+                      Text(
+                        loc.loginBeneficiaryPortal,
+                        style: AppDesignSystem.bodyMedium.copyWith(
+                          color: AppDesignSystem.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      if (_phase == _Phase.idEntry) _buildIdEntry(),
+                      if (_phase == _Phase.registerMobile)
+                        _buildMobileRegistration(),
+                      if (_phase == _Phase.otpEntry) _buildOtpEntry(),
+                      if (_phase == _Phase.pinEntry) _buildPinEntry(),
+
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 16),
+                        _Notice(
+                          type: _NoticeType.error,
+                          title: null,
+                          message: _errorMessage!,
+                        ),
+                      ],
+
+                      // Dev-mode skip login
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 32),
+                        const Divider(),
+                        TextButton.icon(
+                          onPressed: () {
+                            ApiService.setToken(
+                              'dev-skip-token',
+                              user: {
+                                'full_name': 'Dev User',
+                                'beneficiary_type': 'senior_citizen',
+                                'id_number': 'DEV-0001',
+                                'type': 'beneficiary',
+                              },
+                            );
+                            _goHome();
+                          },
+                          icon: const Icon(Icons.developer_mode, size: 20),
+                          label: const Text('Skip Login (Dev Mode)'),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: 32),
-
-                if (_phase == _Phase.idEntry) _buildIdEntry(),
-                if (_phase == _Phase.registerMobile) _buildMobileRegistration(),
-                if (_phase == _Phase.otpEntry) _buildOtpEntry(),
-                if (_phase == _Phase.pinEntry) _buildPinEntry(),
-
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  _buildError(),
-                ],
-
-                // Dev-mode skip login
-                if (kDebugMode) ...[
-                  const SizedBox(height: 32),
-                  const Divider(),
-                  TextButton.icon(
-                    onPressed: () {
-                      ApiService.setToken(
-                        'dev-skip-token',
-                        user: {
-                          'full_name': 'Dev User',
-                          'beneficiary_type': 'senior_citizen',
-                          'id_number': 'DEV-0001',
-                          'type': 'beneficiary',
-                        },
-                      );
-                      _goHome();
-                    },
-                    icon: const Icon(Icons.developer_mode, size: 20),
-                    label: const Text('Skip Login (Dev Mode)'),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -595,17 +720,27 @@ class _LoginScreenState extends State<LoginScreen> {
   // ── Logo ──────────────────────────────────────────────────────────────
 
   Widget _buildLogo() {
-    return Image.asset(
-      'assets/images/idetect_logo.png',
-      width: 180,
-      errorBuilder: (_, __, _) => Container(
-        width: 180,
-        height: 70,
-        alignment: Alignment.center,
-        child: Text(
-          'iDETECT',
-          style: AppDesignSystem.heading1.copyWith(
-            color: AppDesignSystem.primaryBlue,
+    // Soft circular backdrop anchors the logo instead of it floating
+    // bare on the background — a gentle "seal" presence without a full
+    // hero treatment, paired with the brand stripe above.
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppDesignSystem.backgroundInput,
+      ),
+      child: Image.asset(
+        'assets/images/idetect_logo.png',
+        width: 140,
+        errorBuilder: (_, __, _) => Container(
+          width: 140,
+          height: 60,
+          alignment: Alignment.center,
+          child: Text(
+            'iDETECT',
+            style: AppDesignSystem.heading2.copyWith(
+              color: AppDesignSystem.primaryBlue,
+            ),
           ),
         ),
       ),
@@ -633,17 +768,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 Text(
                   loc.loginWelcomeBack,
-                  style: TextStyle(
-                    fontSize: 18,
+                  style: AppDesignSystem.bodyMedium.copyWith(
                     color: AppDesignSystem.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _savedName!,
-                  style: const TextStyle(
+                  style: AppDesignSystem.heading4.copyWith(
                     fontSize: 22,
-                    fontWeight: FontWeight.bold,
                     color: AppDesignSystem.primaryBlue,
                   ),
                   textAlign: TextAlign.center,
@@ -666,30 +799,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   elevation: 2,
                 ),
-                onPressed: _attemptBiometric,
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  _attemptBiometric();
+                },
                 icon: const Icon(
                   Icons.fingerprint,
                   size: 32,
                   color: Colors.white,
                 ),
-                label: Text(
-                  loc.loginSignInFingerprint,
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    loc.loginSignInFingerprint,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              loc.loginOrSignInOtp,
-              style: TextStyle(
-                fontSize: 15,
-                color: AppDesignSystem.textSecondary,
-              ),
-            ),
+            Text(loc.loginOrSignInOtp, style: AppDesignSystem.caption),
             const SizedBox(height: 12),
           ],
 
@@ -708,17 +841,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: AppDesignSystem.buttonRadius,
                   ),
                 ),
-                onPressed: () => setState(() {
-                  _phase = _Phase.pinEntry;
-                  _pinDigits = '';
-                  _errorMessage = null;
-                }),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _phase = _Phase.pinEntry;
+                    _pinDigits = '';
+                    _errorMessage = null;
+                  });
+                },
                 icon: const Icon(Icons.pin, size: 26),
-                label: Text(
-                  loc.loginSignInPin,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    loc.loginSignInPin,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -740,7 +879,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: AppDesignSystem.buttonRadius,
                 ),
               ),
-              onPressed: _isLoading ? null : _requestOtp,
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      _requestOtp();
+                    },
               icon: _isLoading
                   ? const SizedBox(
                       width: 24,
@@ -748,11 +892,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.sms_outlined, size: 26),
-              label: Text(
-                loc.loginSendOtp,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  loc.loginSendOtp,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -792,22 +939,26 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
 
           // Birthdate
-          TextField(
-            controller: _birthdateController,
-            readOnly: true,
-            onTap: _pickBirthdate,
-            style: const TextStyle(fontSize: 20),
-            decoration:
-                AppDesignSystem.inputDecoration(
-                  hintText: loc.loginBirthdateHint,
-                  prefixIcon: Icons.calendar_today_outlined,
-                ).copyWith(
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 20,
-                    horizontal: 16,
+          Semantics(
+            button: true,
+            label: loc.loginBirthdateHint,
+            child: TextField(
+              controller: _birthdateController,
+              readOnly: true,
+              onTap: _pickBirthdate,
+              style: const TextStyle(fontSize: 20),
+              decoration:
+                  AppDesignSystem.inputDecoration(
+                    hintText: loc.loginBirthdateHint,
+                    prefixIcon: Icons.calendar_today_outlined,
+                  ).copyWith(
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 16,
+                    ),
+                    suffixIcon: const Icon(Icons.arrow_drop_down, size: 30),
                   ),
-                  suffixIcon: const Icon(Icons.arrow_drop_down, size: 30),
-                ),
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -824,7 +975,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
                 ),
               ),
-              onPressed: _isLoading ? null : _requestOtp,
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      HapticFeedback.mediumImpact();
+                      _requestOtp();
+                    },
               child: _isLoading
                   ? const SizedBox(
                       width: 28,
@@ -834,12 +990,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : Text(
-                      loc.loginContinue,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        loc.loginContinue,
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
             ),
@@ -855,48 +1014,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final loc = AppLocalizations.of(context)!;
     return Column(
       children: [
-        // Friendly explanation
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppDesignSystem.interactiveBlue.withAlpha(20),
-            borderRadius: AppDesignSystem.cardRadius,
-            border: Border.all(
-              color: AppDesignSystem.interactiveBlue.withAlpha(60),
-            ),
-          ),
-          child: Column(
-            children: [
-              const Icon(
-                Icons.phone_android,
-                size: 48,
-                color: AppDesignSystem.interactiveBlue,
-              ),
-              const SizedBox(height: 12),
-              if (_savedName != null) ...[
-                Text(
-                  loc.loginHelloName(_savedName!),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppDesignSystem.primaryBlue,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-              ],
-              Text(
-                loc.loginMobileExplanation,
-                style: const TextStyle(
-                  fontSize: 17,
-                  height: 1.5,
-                  color: AppDesignSystem.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+        _Notice(
+          type: _NoticeType.info,
+          title: _savedName != null ? loc.loginHelloName(_savedName!) : null,
+          message: loc.loginMobileExplanation,
         ),
         const SizedBox(height: 24),
 
@@ -922,8 +1043,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
+          // Was 14sp — below this file's own stated 15sp caption floor.
           loc.loginMobileHintFormat,
-          style: TextStyle(fontSize: 14, color: AppDesignSystem.textSecondary),
+          style: AppDesignSystem.caption,
         ),
         const SizedBox(height: 24),
 
@@ -937,7 +1059,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: AppDesignSystem.buttonRadius,
               ),
             ),
-            onPressed: _isLoading ? null : _submitMobile,
+            onPressed: _isLoading
+                ? null
+                : () {
+                    HapticFeedback.mediumImpact();
+                    _submitMobile();
+                  },
             icon: _isLoading
                 ? const SizedBox(
                     width: 24,
@@ -948,12 +1075,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   )
                 : const Icon(Icons.send, color: Colors.white, size: 24),
-            label: Text(
-              loc.loginRegisterSendOtp,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                loc.loginRegisterSendOtp,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -983,69 +1113,57 @@ class _LoginScreenState extends State<LoginScreen> {
     final loc = AppLocalizations.of(context)!;
     return Column(
       children: [
-        // Instruction
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppDesignSystem.statusValid.withAlpha(25),
-            borderRadius: AppDesignSystem.cardRadius,
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: AppDesignSystem.statusValid,
-                size: 28,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  loc.loginOtpSentInstruction,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppDesignSystem.statusValid,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        _Notice(
+          type: _NoticeType.success,
+          title: null,
+          message: loc.loginOtpSentInstruction,
         ),
         const SizedBox(height: 24),
 
-        // OTP display boxes
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(6, (i) {
-            final filled = i < _otpDigits.length;
-            return Container(
-              width: 48,
-              height: 60,
-              margin: EdgeInsets.only(left: i > 0 ? 8 : 0),
-              decoration: BoxDecoration(
-                color: filled
-                    ? AppDesignSystem.primaryBlue.withAlpha(25)
-                    : AppDesignSystem.backgroundInput,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: filled
-                      ? AppDesignSystem.primaryBlue
-                      : AppDesignSystem.borderLight,
-                  width: filled ? 2 : 1,
+        // OTP display boxes. Uses Expanded (not fixed widths) so the row
+        // always fits the available width instead of hard-overflowing on
+        // narrower screens — 6 fixed-48px boxes + 5x8px gaps summed to a
+        // rigid 328px, which only fit on ~376px+ wide screens.
+        Semantics(
+          label: 'One-time code, ${_otpDigits.length} of 6 digits entered',
+          child: Row(
+            children: [
+              for (var i = 0; i < 6; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                      final filled = i < _otpDigits.length;
+                      return Container(
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: filled
+                              ? AppDesignSystem.primaryBlue.withAlpha(25)
+                              : AppDesignSystem.backgroundInput,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: filled
+                                ? AppDesignSystem.primaryBlue
+                                : AppDesignSystem.borderLight,
+                            width: filled ? 2 : 1,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          filled ? _otpDigits[i] : '',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppDesignSystem.primaryBlue,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                filled ? _otpDigits[i] : '',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppDesignSystem.primaryBlue,
-                ),
-              ),
-            );
-          }),
+              ],
+            ],
+          ),
         ),
         const SizedBox(height: 8),
 
@@ -1146,32 +1264,35 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 24),
 
         // PIN display (4 dots/circles)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(4, (i) {
-            final filled = i < _pinDigits.length;
-            return Container(
-              width: 56,
-              height: 56,
-              margin: EdgeInsets.only(left: i > 0 ? 16 : 0),
-              decoration: BoxDecoration(
-                color: filled
-                    ? AppDesignSystem.primaryBlue
-                    : AppDesignSystem.backgroundInput,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
+        Semantics(
+          label: 'PIN, ${_pinDigits.length} of 4 digits entered',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(4, (i) {
+              final filled = i < _pinDigits.length;
+              return Container(
+                width: 56,
+                height: 56,
+                margin: EdgeInsets.only(left: i > 0 ? 16 : 0),
+                decoration: BoxDecoration(
                   color: filled
                       ? AppDesignSystem.primaryBlue
-                      : AppDesignSystem.borderLight,
-                  width: 2,
+                      : AppDesignSystem.backgroundInput,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: filled
+                        ? AppDesignSystem.primaryBlue
+                        : AppDesignSystem.borderLight,
+                    width: 2,
+                  ),
                 ),
-              ),
-              alignment: Alignment.center,
-              child: filled
-                  ? const Icon(Icons.circle, size: 18, color: Colors.white)
-                  : null,
-            );
-          }),
+                alignment: Alignment.center,
+                child: filled
+                    ? const Icon(Icons.circle, size: 18, color: Colors.white)
+                    : null,
+              );
+            }),
+          ),
         ),
 
         if (_isLoading) ...[
@@ -1208,6 +1329,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onPinTap(String digit) {
     if (_pinDigits.length < 4) {
+      HapticFeedback.lightImpact();
       setState(() => _pinDigits += digit);
       if (_pinDigits.length == 4) {
         if (_isPinSetup) {
@@ -1221,6 +1343,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onPinDelete() {
     if (_pinDigits.isNotEmpty) {
+      HapticFeedback.lightImpact();
       setState(
         () => _pinDigits = _pinDigits.substring(0, _pinDigits.length - 1),
       );
@@ -1251,36 +1374,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: SizedBox(
                   width: 88,
                   height: 64,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDel
-                          ? AppDesignSystem.backgroundWarm
-                          : Colors.white,
-                      foregroundColor: isDel
-                          ? AppDesignSystem.accentRed
-                          : AppDesignSystem.primaryBlue,
-                      elevation: isDel ? 0 : 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: isDel
-                              ? AppDesignSystem.borderLight
-                              : AppDesignSystem.primaryBlue.withAlpha(50),
+                  child: Semantics(
+                    label: isDel ? 'Delete last digit' : 'Digit $key',
+                    button: true,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDel
+                            ? AppDesignSystem.backgroundWarm
+                            : Colors.white,
+                        foregroundColor: isDel
+                            ? AppDesignSystem.accentRed
+                            : AppDesignSystem.primaryBlue,
+                        elevation: isDel ? 0 : 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isDel
+                                ? AppDesignSystem.borderLight
+                                : AppDesignSystem.primaryBlue.withAlpha(50),
+                          ),
                         ),
                       ),
-                    ),
-                    onPressed: isDel
-                        ? (forPin ? _onPinDelete : _onNumpadDelete)
-                        : () => forPin ? _onPinTap(key) : _onNumpadTap(key),
-                    child: isDel
-                        ? const Icon(Icons.backspace_outlined, size: 26)
-                        : Text(
-                            key,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w600,
+                      onPressed: isDel
+                          ? (forPin ? _onPinDelete : _onNumpadDelete)
+                          : () => forPin ? _onPinTap(key) : _onNumpadTap(key),
+                      child: isDel
+                          ? const Icon(Icons.backspace_outlined, size: 26)
+                          : Text(
+                              key,
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
+                    ),
                   ),
                 ),
               );
@@ -1288,38 +1415,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       }).toList(),
-    );
-  }
-
-  // ── Error banner ──────────────────────────────────────────────────────
-
-  Widget _buildError() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppDesignSystem.statusInvalid.withAlpha(25),
-        borderRadius: AppDesignSystem.buttonRadius,
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.error_outline,
-            color: AppDesignSystem.statusInvalid,
-            size: 24,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              _errorMessage!,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppDesignSystem.statusInvalid,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

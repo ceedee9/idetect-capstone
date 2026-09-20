@@ -6,11 +6,16 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:image/image.dart' as img;
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/enhanced_ocr_service.dart';
 import '../../../services/hybrid_parser_service.dart';
 import '../../../services/parser_service.dart';
+import '../../../services/seal_presence_detector.dart';
+import '../../widgets/app_notice.dart';
+import '../../widgets/ledger_lines_painter.dart';
 import 'verifying_screen.dart';
 
 class ProcessingScreen extends StatefulWidget {
@@ -93,6 +98,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       debugPrint('=== PROCESSING START ===');
 
       final imageFile = File(widget.imagePath);
+      var resolvedIdFormat = widget.idFormat;
       if (!await imageFile.exists()) {
         _handleError('Image file not found: ${widget.imagePath}');
         return;
@@ -134,6 +140,24 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             _resolvedIdType = chosen;
           }
         }
+
+        // Auto mode does not know the beneficiary type when the camera
+        // captures the image, so the camera cannot choose the correct seal
+        // calibration. Recheck it now with the resolved card type and use
+        // the result to select the format-specific parser.
+        final bytes = await imageFile.readAsBytes();
+        final image = img.decodeImage(bytes);
+        if (image != null) {
+          final sealResult = await SealPresenceDetector.checkSeal(
+            imagePath: imageFile.path,
+            imageWidth: image.width,
+            imageHeight: image.height,
+            beneficiaryType: _resolvedIdType,
+          );
+          resolvedIdFormat = sealResult.sealDetected == true ? 'new' : 'old';
+          debugPrint(
+              '✅ Auto-detected $_resolvedIdType ${resolvedIdFormat.toUpperCase()} format');
+        }
       } else {
         await Future.delayed(const Duration(milliseconds: 800));
       }
@@ -155,7 +179,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             .parseIDWithHybridApproach(
           imageFile: imageFile,
           idType: _resolvedIdType,
-          idFormat: widget.idFormat,
+          idFormat: resolvedIdFormat,
         )
             .timeout(
           const Duration(seconds: 20),
@@ -334,32 +358,43 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Row(
           children: [
-            Icon(Icons.face_outlined, color: Color(0xFFE65100)),
-            SizedBox(width: 8),
-            Text('No Face Detected'),
+            const Icon(Icons.face_outlined, color: Color(0xFFE65100)),
+            const SizedBox(width: 8),
+            Text(
+              'No Face Detected',
+              style: GoogleFonts.sourceSerif4(
+                fontWeight: FontWeight.w700,
+                fontSize: 19,
+                color: AppDesignSystem.textPrimary,
+              ),
+            ),
           ],
         ),
-        content: const Text(
+        content: Text(
           'No ID photo was detected in the captured image.\n\n'
           'The card may not be fully in frame, or the photo area '
           'is obscured. Recapturing is strongly recommended.\n\n'
           'A non-ID image should not be used for verification.',
+          style: AppDesignSystem.bodyMedium
+              .copyWith(color: AppDesignSystem.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Continue Anyway'),
+            child: Text(
+              'Continue Anyway',
+              style: AppDesignSystem.bodyMedium
+                  .copyWith(color: AppDesignSystem.textSecondary),
+            ),
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(ctx, false),
+            style: AppDesignSystem.primaryButton,
             icon: const Icon(Icons.camera_alt),
             label: const Text('Recapture'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF002E6B),
-              foregroundColor: Colors.white,
-            ),
           ),
         ],
       ),
@@ -373,23 +408,46 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Select ID Type'),
-        content: const Text(
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Text(
+          'Select ID Type',
+          style: GoogleFonts.sourceSerif4(
+            fontWeight: FontWeight.w700,
+            fontSize: 19,
+            color: AppDesignSystem.textPrimary,
+          ),
+        ),
+        content: Text(
           'The card type could not be detected automatically. '
           'Please select the correct type to continue.',
+          style: AppDesignSystem.bodyMedium
+              .copyWith(color: AppDesignSystem.textSecondary),
         ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, 'senior'),
-            child: const Text('Senior Citizen'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'pwd'),
-            child: const Text('PWD'),
-          ),
-          TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: AppDesignSystem.bodyMedium
+                  .copyWith(color: AppDesignSystem.textSecondary),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton(
+                onPressed: () => Navigator.pop(ctx, 'senior'),
+                style: AppDesignSystem.secondaryButton,
+                child: const Text('Senior Citizen'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, 'pwd'),
+                style: AppDesignSystem.primaryButton,
+                child: const Text('PWD'),
+              ),
+            ],
           ),
         ],
       ),
@@ -459,28 +517,42 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     return Scaffold(
       backgroundColor: AppDesignSystem.backgroundLight,
       appBar: AppBar(
-        title: const Text('Processing ID'),
+        title: Text(
+          'Processing ID',
+          style: GoogleFonts.sourceSerif4(
+              fontWeight: FontWeight.w700, fontSize: 19),
+        ),
         centerTitle: true,
         backgroundColor: AppDesignSystem.primaryBlue,
         foregroundColor: AppDesignSystem.textOnPrimary,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppDesignSystem.spaceMD),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildImagePreview(),
-              SizedBox(height: AppDesignSystem.spaceMD),
-              if (_isProcessing)
-                _buildProcessingStatus()
-              else if (_errorMessage != null)
-                _buildErrorView()
-              else
-                _buildResultsView(),
-            ],
+      body: Stack(
+        children: [
+          // Ledger-ruled texture — distinct from the guilloché motif
+          // used on login/camera/review, since this screen is a
+          // form/data-review moment rather than an ID-capture moment.
+          const Positioned.fill(
+            child: CustomPaint(painter: LedgerLinesPainter()),
           ),
-        ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(AppDesignSystem.spaceMD),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildImagePreview(),
+                  SizedBox(height: AppDesignSystem.spaceMD),
+                  if (_isProcessing)
+                    _buildProcessingStatus()
+                  else if (_errorMessage != null)
+                    _buildErrorView()
+                  else
+                    _buildResultsView(),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -554,49 +626,75 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       ProcessingStep.extracting,
       ProcessingStep.done,
     ];
+    final stepLabels = {
+      ProcessingStep.analyzing: 'ANALYZE',
+      ProcessingStep.extracting: 'EXTRACT',
+      ProcessingStep.done: 'DONE',
+    };
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: steps.map((step) {
         final isCompleted = step.index <= _currentStep.index;
         final isCurrent = step == _currentStep;
         return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: isCompleted
-                    ? AppDesignSystem.primaryBlue
-                    : AppDesignSystem.backgroundLight,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isCurrent
-                      ? AppDesignSystem.primaryBlue
-                      : AppDesignSystem.borderLight,
-                  width: isCurrent ? 2 : 1,
-                ),
-              ),
-              child: isCompleted
-                  ? Icon(Icons.check,
-                      size: AppDesignSystem.iconSM,
-                      color: AppDesignSystem.textOnPrimary)
-                  : Center(
-                      child: Text(
-                        '${step.index + 1}',
-                        style: AppDesignSystem.bodySmall.copyWith(
-                          color: AppDesignSystem.textSecondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+            Column(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isCompleted
+                        ? AppDesignSystem.primaryBlue
+                        : AppDesignSystem.backgroundLight,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isCurrent
+                          ? AppDesignSystem.primaryBlue
+                          : AppDesignSystem.borderLight,
+                      width: isCurrent ? 2 : 1,
                     ),
+                  ),
+                  child: isCompleted
+                      ? Icon(Icons.check,
+                          size: AppDesignSystem.iconSM,
+                          color: AppDesignSystem.textOnPrimary)
+                      : Center(
+                          child: Text(
+                            '${step.index + 1}',
+                            style: AppDesignSystem.bodySmall.copyWith(
+                              color: AppDesignSystem.textSecondary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  stepLabels[step]!,
+                  style: GoogleFonts.ibmPlexMono(
+                    fontSize: 8,
+                    letterSpacing: 0.6,
+                    fontWeight: FontWeight.w600,
+                    color: isCompleted
+                        ? AppDesignSystem.primaryBlue
+                        : AppDesignSystem.textTertiary,
+                  ),
+                ),
+              ],
             ),
             if (step != steps.last)
-              Container(
-                width: 24,
-                height: 2,
-                color: isCompleted
-                    ? AppDesignSystem.primaryBlue
-                    : AppDesignSystem.borderLight,
+              Padding(
+                padding: const EdgeInsets.only(top: 15),
+                child: Container(
+                  width: 24,
+                  height: 2,
+                  color: isCompleted
+                      ? AppDesignSystem.primaryBlue
+                      : AppDesignSystem.borderLight,
+                ),
               ),
           ],
         );
@@ -631,18 +729,41 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: _retake,
-                  style: AppDesignSystem.secondaryButton,
-                  child: const Text('Retake Photo'),
+                child: SizedBox(
+                  height: AppDesignSystem.touchTargetPrimary,
+                  child: OutlinedButton(
+                    onPressed: _retake,
+                    style: AppDesignSystem.secondaryButton.copyWith(
+                      fixedSize: MaterialStateProperty.all(
+                          Size.fromHeight(AppDesignSystem.touchTargetPrimary)),
+                      // Default padding (32/18) is sized for one full-width
+                      // button; halved here so two buttons can share a row
+                      // without the label being squeezed into the icon's space.
+                      padding: MaterialStateProperty.all(
+                        const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                    child: const Text('Retake Photo'),
+                  ),
                 ),
               ),
               SizedBox(width: AppDesignSystem.spaceSM),
               Expanded(
-                child: ElevatedButton(
-                  onPressed: _processWithoutQualityCheck,
-                  style: AppDesignSystem.primaryButton,
-                  child: const Text('Try Anyway'),
+                child: SizedBox(
+                  height: AppDesignSystem.touchTargetPrimary,
+                  child: ElevatedButton(
+                    onPressed: _processWithoutQualityCheck,
+                    style: AppDesignSystem.primaryButton.copyWith(
+                      fixedSize: MaterialStateProperty.all(
+                          Size.fromHeight(AppDesignSystem.touchTargetPrimary)),
+                      padding: MaterialStateProperty.all(
+                        const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                    child: const Text('Try Anyway'),
+                  ),
                 ),
               ),
             ],
@@ -674,75 +795,23 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         _resolvedIdType == 'senior' ? 'Senior Citizen' : 'PWD';
     final originalLabel =
         _originalIdType == 'senior' ? 'Senior Citizen' : 'PWD';
-    return Container(
-      margin: EdgeInsets.only(bottom: AppDesignSystem.spaceMD),
-      padding: EdgeInsets.all(AppDesignSystem.spaceMD),
-      decoration: BoxDecoration(
-        color: Colors.amber.shade50,
-        borderRadius: AppDesignSystem.cardRadius,
-        border: Border.all(color: Colors.amber.shade400),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.auto_fix_high,
-              color: Colors.amber.shade700, size: AppDesignSystem.iconLG),
-          SizedBox(width: AppDesignSystem.spaceSM),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ID Type Auto-Corrected',
-                  style: AppDesignSystem.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber.shade800),
-                ),
-                SizedBox(height: AppDesignSystem.spaceXXS),
-                Text(
-                  'OCR detected a $correctedLabel card '
-                  '(you selected $originalLabel). '
-                  'Verification will use the correct type.',
-                  style: AppDesignSystem.bodyMedium
-                      .copyWith(color: Colors.amber.shade900),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppDesignSystem.spaceMD),
+      child: AppNotice(
+        type: AppNoticeType.warning,
+        label: 'ID Type Auto-Corrected',
+        message: 'OCR detected a $correctedLabel card '
+            '(you selected $originalLabel). '
+            'Verification will use the correct type.',
       ),
     );
   }
 
   Widget _buildReviewBanner() {
-    return Container(
-      padding: EdgeInsets.all(AppDesignSystem.spaceMD),
-      decoration: BoxDecoration(
-        color: AppDesignSystem.primaryBlue.withOpacity(0.05),
-        borderRadius: AppDesignSystem.cardRadius,
-        border: Border.all(color: AppDesignSystem.primaryBlue.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.rate_review_outlined,
-              color: AppDesignSystem.primaryBlue, size: AppDesignSystem.iconLG),
-          SizedBox(width: AppDesignSystem.spaceSM),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Review Extracted Data',
-                    style: AppDesignSystem.bodyLarge.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppDesignSystem.primaryBlue)),
-                SizedBox(height: AppDesignSystem.spaceXXS),
-                Text('Please review and correct any errors before confirming.',
-                    style: AppDesignSystem.bodyMedium
-                        .copyWith(color: AppDesignSystem.textSecondary)),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return const AppNotice(
+      type: AppNoticeType.info,
+      label: 'Review Extracted Data',
+      message: 'Please review and correct any errors before confirming.',
     );
   }
 
@@ -765,8 +834,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                   color: AppDesignSystem.primaryBlue),
               SizedBox(width: AppDesignSystem.spaceXS),
               Text('Extracted Data',
-                  style: AppDesignSystem.heading4
-                      .copyWith(color: AppDesignSystem.primaryBlue)),
+                  style: GoogleFonts.sourceSerif4(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 19,
+                    color: AppDesignSystem.primaryBlue,
+                  )),
             ],
           ),
           SizedBox(height: AppDesignSystem.spaceSM),
@@ -784,7 +856,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                 Icons.accessible_forward),
             SizedBox(height: AppDesignSystem.spaceSM),
             _buildEditableField(
-                'ID No.', 'controlNumber', Icons.confirmation_number),
+                'ID No.', 'controlNumber', Icons.confirmation_number,
+                monospace: true),
             SizedBox(height: AppDesignSystem.spaceXS),
             Text(
               '* PWD ID No. is sent to the database for verification.',
@@ -806,7 +879,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                 'Date Issued', 'dateIssued', Icons.calendar_today),
             SizedBox(height: AppDesignSystem.spaceSM),
             _buildEditableField(
-                'Control Number', 'controlNumber', Icons.confirmation_number),
+                'Control Number', 'controlNumber', Icons.confirmation_number,
+                monospace: true),
             SizedBox(height: AppDesignSystem.spaceXS),
             Text(
               '* Control Number is sent to the database for verification.',
@@ -839,7 +913,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   }
 
   Widget _buildEditableField(String label, String controllerKey, IconData icon,
-      {TextInputType keyboardType = TextInputType.text}) {
+      {TextInputType keyboardType = TextInputType.text,
+      bool monospace = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -848,7 +923,12 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         TextField(
           controller: _controllers[controllerKey],
           keyboardType: keyboardType,
-          style: AppDesignSystem.bodyMedium,
+          style: monospace
+              ? GoogleFonts.ibmPlexMono(
+                  fontSize: AppDesignSystem.bodyMedium.fontSize,
+                  color: AppDesignSystem.bodyMedium.color,
+                )
+              : AppDesignSystem.bodyMedium,
           decoration: AppDesignSystem.inputDecoration(
               hintText: 'Enter $label', prefixIcon: icon),
         ),
@@ -857,43 +937,69 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   }
 
   Widget _buildActionButtons() {
+    // Root cause (confirmed from AppDesignSystem): secondaryButton/
+    // primaryButton use 32px horizontal padding + a 64dp minimumSize,
+    // sized for a single full-width button. Split 1:2 across two
+    // buttons in a row, that fixed padding eats most of the narrower
+    // button's space, leaving no room for the label at this system's
+    // accessibility-sized (18sp) text — that's what caused the
+    // letter-by-letter wrap. Fix: keep the intended 64dp touch target
+    // (don't shrink it — that's WCAG-motivated), just reduce padding
+    // for this two-button context. FittedBox stays as cheap insurance
+    // on top, not the actual fix.
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _retake,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              side: const BorderSide(color: Color(0xFF002E6B), width: 2),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+          child: SizedBox(
+            height: AppDesignSystem.touchTargetPrimary,
+            child: OutlinedButton(
+              onPressed: _retake,
+              style: AppDesignSystem.secondaryButton.copyWith(
+                fixedSize: MaterialStateProperty.all(
+                    Size.fromHeight(AppDesignSystem.touchTargetPrimary)),
+                padding: MaterialStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.camera_alt, size: 18),
+                    SizedBox(width: 8),
+                    Text('Retake'),
+                  ],
+                ),
+              ),
             ),
-            icon: const Icon(Icons.camera_alt, color: Color(0xFF002E6B)),
-            label: const Text('Retake',
-                style: TextStyle(
-                    color: Color(0xFF002E6B),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: AppDesignSystem.spaceSM),
         Expanded(
           flex: 2,
-          child: ElevatedButton.icon(
-            onPressed: _confirm,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF002E6B),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            icon: const Icon(Icons.check_circle, color: Colors.white),
-            label: const Text(
-              'Confirm',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold),
+          child: SizedBox(
+            height: AppDesignSystem.touchTargetPrimary,
+            child: ElevatedButton(
+              onPressed: _confirm,
+              style: AppDesignSystem.primaryButton.copyWith(
+                fixedSize: MaterialStateProperty.all(
+                    Size.fromHeight(AppDesignSystem.touchTargetPrimary)),
+                padding: MaterialStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.check_circle, size: 18),
+                    SizedBox(width: 8),
+                    Text('Confirm'),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

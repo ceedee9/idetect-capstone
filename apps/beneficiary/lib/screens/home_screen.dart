@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
@@ -99,28 +100,42 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onItemTapped(int index) {
+    if (index != _selectedIndex) HapticFeedback.selectionClick();
     setState(() => _selectedIndex = index);
     if (index == 3) _fetchUnreadCount();
   }
 
   void _logout() {
     final loc = AppLocalizations.of(context)!;
+    HapticFeedback.selectionClick();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(loc.homeSignOut),
-        content: Text(loc.homeSignOutConfirm),
+        // Matches the shape/text-sizing convention already established
+        // on the login screen's dialogs, rather than bare AlertDialog
+        // defaults (which are noticeably smaller than this app's
+        // accessibility-sized body text elsewhere).
+        shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
+        title: Text(loc.homeSignOut, style: const TextStyle(fontSize: 20)),
+        content: Text(
+          loc.homeSignOutConfirm,
+          style: const TextStyle(fontSize: 17, height: 1.5),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(loc.commonCancel),
+            child: Text(loc.commonCancel, style: const TextStyle(fontSize: 16)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppDesignSystem.accentRed,
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () {
+              // Heavier than the selection-click above — this is the
+              // consequential, harder-to-undo action in this dialog.
+              HapticFeedback.mediumImpact();
               ApiService.clearToken();
               Navigator.pop(ctx);
               Navigator.pushReplacement(
@@ -128,7 +143,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
               );
             },
-            child: Text(loc.homeSignOut),
+            child: Text(
+              loc.homeSignOut,
+              style: const TextStyle(fontSize: 16, color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -163,8 +181,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Text(
                 _beneficiaryTypeLabel(user?['beneficiary_type'], loc),
+                // Was 14sp — below this design system's own stated 15sp
+                // caption floor (same violation already fixed on the
+                // login screen's mobile-format hint).
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   color: Colors.white70,
                   fontWeight: FontWeight.w400,
                 ),
@@ -179,12 +200,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 message: loc.languageToggleTooltip,
                 child: TextButton(
                   onPressed: () {
+                    HapticFeedback.selectionClick();
                     context.read<LocaleProvider>().setLocale(
                       isEnglish ? const Locale('fil') : const Locale('en'),
                     );
                   },
                   style: TextButton.styleFrom(
-                    minimumSize: const Size(56, 48),
+                    // Height was 48 — under this system's own 56dp
+                    // touchTargetMin. Width already met it.
+                    minimumSize: const Size(56, 56),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                   ),
@@ -203,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Semantics(
               label: loc.homeSignOut,
+              button: true,
               child: IconButton(
                 icon: const Icon(
                   Icons.logout_rounded,
@@ -211,7 +236,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onPressed: _logout,
                 tooltip: loc.homeSignOut,
-                padding: const EdgeInsets.all(12),
+                // 12 gave a ~50dp tap area (12*2 + 26 icon) — under the
+                // 56dp touchTargetMin. 15 brings it to the full 56dp.
+                padding: const EdgeInsets.all(15),
               ),
             ),
           ],
@@ -316,8 +343,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   label,
+                  // Was 13sp — below this design system's own stated
+                  // 15sp caption floor.
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
                         ? AppDesignSystem.primaryBlue

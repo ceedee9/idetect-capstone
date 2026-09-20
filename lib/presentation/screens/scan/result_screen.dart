@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/app_design_system.dart';
 import '../../../data/datasources/local/local_database.dart';
@@ -8,6 +9,7 @@ import '../../../services/api_service.dart';
 import '../../../services/offline_scan_sync_service.dart';
 import '../../../services/parser_service.dart';
 import '../../../services/fraud_flag_sync_service.dart';
+import '../../widgets/ledger_lines_painter.dart';
 
 class ResultScreen extends StatefulWidget {
   final ParsedIDData parsedData;
@@ -84,6 +86,8 @@ class _ResultScreenState extends State<ResultScreen> {
 
       String? flagReferenceNumber;
       bool isQueued = false;
+      bool isSupplementaryFlag = false;
+      bool autoSuspendedFlag = false;
 
       if (flagged) {
         // REQ-2.6.5: Prompt for beneficiary type when INVALID
@@ -139,6 +143,8 @@ class _ResultScreenState extends State<ResultScreen> {
             // Extract first 8 chars of UUID for display
             final fullId = flagResult['flag_id'] as String;
             flagReferenceNumber = fullId.substring(0, 8).toUpperCase();
+            isSupplementaryFlag = flagResult['is_supplementary'] == true;
+            autoSuspendedFlag = flagResult['auto_suspended'] == true;
           }
         }
       }
@@ -179,17 +185,40 @@ class _ResultScreenState extends State<ResultScreen> {
 
       if (!mounted) return;
 
+      // REQ-2.6.6 / auto-suspend: surface is_supplementary (this ID already
+      // has an active investigation — this report was added as
+      // supplementary evidence) and auto_suspended (this flag pushed the
+      // beneficiary over the distinct-establishment threshold) distinctly,
+      // rather than always showing the generic "Flag submitted" message.
+      String flagMessage;
+      if (!flagged) {
+        flagMessage = 'ID saved successfully.';
+      } else if (flagReferenceNumber == null) {
+        flagMessage = 'ID saved and flagged successfully.';
+      } else if (isQueued) {
+        flagMessage =
+            'Flag queued offline. Ref: $flagReferenceNumber (will sync when online)';
+      } else if (isSupplementaryFlag) {
+        flagMessage =
+            'This ID already has an active investigation. Your report was added as supplementary evidence. Ref: $flagReferenceNumber';
+      } else {
+        flagMessage =
+            'Flag submitted successfully. Reference: $flagReferenceNumber';
+      }
+      if (autoSuspendedFlag) {
+        flagMessage +=
+            ' This ID has been automatically suspended due to multiple flags.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(flagged
-              ? (flagReferenceNumber != null
-                  ? (isQueued
-                      ? 'Flag queued offline. Ref: $flagReferenceNumber (will sync when online)'
-                      : 'Flag submitted successfully. Reference: $flagReferenceNumber')
-                  : 'ID saved and flagged successfully.')
-              : 'ID saved successfully.'),
+          content: Text(flagMessage),
           backgroundColor: flagged
-              ? (isQueued ? Colors.blue.shade700 : Colors.orange.shade700)
+              ? (isQueued
+                  ? Colors.blue.shade700
+                  : (autoSuspendedFlag
+                      ? Colors.red.shade700
+                      : Colors.orange.shade700))
               : const Color(0xFF13BB11),
           duration: const Duration(seconds: 5),
         ),
@@ -345,11 +374,13 @@ class _ResultScreenState extends State<ResultScreen> {
       backgroundColor: AppDesignSystem.backgroundLight,
       appBar: AppBar(
         title: _isOffline
-            ? const Column(
+            ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Verification Result'),
-                  Text(
+                  Text('Verification Result',
+                      style: GoogleFonts.sourceSerif4(
+                          fontWeight: FontWeight.w700, fontSize: 18)),
+                  const Text(
                     'OFFLINE MODE',
                     style: TextStyle(
                       fontSize: 11,
@@ -360,7 +391,9 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 ],
               )
-            : const Text('Verification Result'),
+            : Text('Verification Result',
+                style: GoogleFonts.sourceSerif4(
+                    fontWeight: FontWeight.w700, fontSize: 19)),
         centerTitle: true,
         backgroundColor:
             _isOffline ? const Color(0xFFBF360C) : AppDesignSystem.primaryBlue,
@@ -373,95 +406,107 @@ class _ResultScreenState extends State<ResultScreen> {
           letterSpacing: 0.3,
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_isOffline) ...[
-                _buildOfflineBanner(),
-                const SizedBox(height: 10)
-              ],
-              _buildStatusCard(cfg),
-              if (_isLowConfidence) ...[
-                const SizedBox(height: 10),
-                _buildLowConfidenceWarning()
-              ],
-              const SizedBox(height: 14),
-              _buildImagePreview(),
-              const SizedBox(height: 14),
-              _buildSummaryCard(),
-              const SizedBox(height: 20),
-              if (_requiresMandatoryChoice) ...[
-                _buildGuidancePanel(),
-                const SizedBox(height: 12),
-                if (_actionChoice == null) ...[
-                  _buildMandatoryActionPanel(),
-                ] else if (_actionChoice == 'reported') ...[
-                  _buildFlagReasonInput(),
+      body: Stack(
+        children: [
+          // Same ledger-ruled texture as Processing/VerifyingScreen — this
+          // screen is the final step of the same data-review flow.
+          const Positioned.fill(
+            child: CustomPaint(painter: LedgerLinesPainter()),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_isOffline) ...[
+                    _buildOfflineBanner(),
+                    const SizedBox(height: 10)
+                  ],
+                  _buildStatusCard(cfg),
+                  if (_isLowConfidence) ...[
+                    const SizedBox(height: 10),
+                    _buildLowConfidenceWarning()
+                  ],
+                  const SizedBox(height: 14),
+                  _buildImagePreview(),
+                  const SizedBox(height: 14),
+                  _buildSummaryCard(),
+                  const SizedBox(height: 20),
+                  if (_requiresMandatoryChoice) ...[
+                    _buildGuidancePanel(),
+                    const SizedBox(height: 12),
+                    if (_actionChoice == null) ...[
+                      _buildMandatoryActionPanel(),
+                    ] else if (_actionChoice == 'reported') ...[
+                      _buildFlagReasonInput(),
+                      const SizedBox(height: 10),
+                      _buildActionButton(
+                        label: 'Submit Report & Save',
+                        icon: Icons.flag_rounded,
+                        color: AppDesignSystem.statusInvalid,
+                        onPressed: _isSaving
+                            ? null
+                            : () => _saveToDatabase(
+                                  flagged: true,
+                                  cashierAction: 'reported',
+                                ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        onPressed: () => setState(() => _actionChoice = null),
+                        icon: const Icon(Icons.arrow_back_rounded, size: 16),
+                        label: const Text('Change choice'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppDesignSystem.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ] else if (_canFlag) ...[
+                    _buildGuidancePanel(),
+                    const SizedBox(height: 12),
+                    _buildFlagReasonInput(),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
+                      label: 'Flag & Save',
+                      icon: Icons.flag_rounded,
+                      color: AppDesignSystem.statusInvalid,
+                      onPressed: _isSaving
+                          ? null
+                          : () => _saveToDatabase(flagged: true),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildActionButton(
+                      label: 'Save Without Flagging',
+                      icon: Icons.save_rounded,
+                      color: AppDesignSystem.textSecondary,
+                      onPressed: _isSaving
+                          ? null
+                          : () => _saveToDatabase(flagged: false),
+                    ),
+                  ] else
+                    _buildActionButton(
+                      label: 'Save Result',
+                      icon: Icons.save_rounded,
+                      color: AppDesignSystem.primaryBlue,
+                      onPressed: _isSaving
+                          ? null
+                          : () => _saveToDatabase(flagged: false),
+                    ),
                   const SizedBox(height: 10),
-                  _buildActionButton(
-                    label: 'Submit Report & Save',
-                    icon: Icons.flag_rounded,
-                    color: AppDesignSystem.statusInvalid,
-                    onPressed: _isSaving
-                        ? null
-                        : () => _saveToDatabase(
-                              flagged: true,
-                              cashierAction: 'reported',
-                            ),
-                  ),
-                  const SizedBox(height: 6),
                   TextButton.icon(
-                    onPressed: () => setState(() => _actionChoice = null),
-                    icon: const Icon(Icons.arrow_back_rounded, size: 16),
-                    label: const Text('Change choice'),
+                    onPressed: _isSaving ? null : _confirmExitWithoutSaving,
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: const Text('Exit Without Saving'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppDesignSystem.textSecondary,
                     ),
                   ),
                 ],
-              ] else if (_canFlag) ...[
-                _buildGuidancePanel(),
-                const SizedBox(height: 12),
-                _buildFlagReasonInput(),
-                const SizedBox(height: 12),
-                _buildActionButton(
-                  label: 'Flag & Save',
-                  icon: Icons.flag_rounded,
-                  color: AppDesignSystem.statusInvalid,
-                  onPressed:
-                      _isSaving ? null : () => _saveToDatabase(flagged: true),
-                ),
-                const SizedBox(height: 10),
-                _buildActionButton(
-                  label: 'Save Without Flagging',
-                  icon: Icons.save_rounded,
-                  color: AppDesignSystem.textSecondary,
-                  onPressed:
-                      _isSaving ? null : () => _saveToDatabase(flagged: false),
-                ),
-              ] else
-                _buildActionButton(
-                  label: 'Save Result',
-                  icon: Icons.save_rounded,
-                  color: AppDesignSystem.primaryBlue,
-                  onPressed:
-                      _isSaving ? null : () => _saveToDatabase(flagged: false),
-                ),
-              const SizedBox(height: 10),
-              TextButton.icon(
-                onPressed: _isSaving ? null : _confirmExitWithoutSaving,
-                icon: const Icon(Icons.close_rounded, size: 18),
-                label: const Text('Exit Without Saving'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppDesignSystem.textSecondary,
-                ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -894,13 +939,21 @@ class _ResultScreenState extends State<ResultScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Result Summary',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: AppDesignSystem.textPrimary,
-            ),
+          Row(
+            children: [
+              Icon(Icons.summarize_outlined,
+                  size: AppDesignSystem.iconMD,
+                  color: AppDesignSystem.primaryBlue),
+              SizedBox(width: AppDesignSystem.spaceXS),
+              Text(
+                'Result Summary',
+                style: GoogleFonts.sourceSerif4(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 19,
+                  color: AppDesignSystem.primaryBlue,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           const Divider(height: 1, color: AppDesignSystem.borderLight),
@@ -940,23 +993,23 @@ class _ResultScreenState extends State<ResultScreen> {
         children: [
           SizedBox(
             width: 130,
-            child: Text(
-              key,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: AppDesignSystem.textSecondary,
-              ),
-            ),
+            child: Text(key, style: AppDesignSystem.label),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: AppDesignSystem.textPrimary,
-              ),
+              style: key.toLowerCase().contains('number') ||
+                      key.toLowerCase().contains('no.')
+                  ? GoogleFonts.ibmPlexMono(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppDesignSystem.textPrimary,
+                    )
+                  : const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppDesignSystem.textPrimary,
+                    ),
             ),
           ),
         ],

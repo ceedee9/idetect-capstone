@@ -97,9 +97,12 @@ DB_PASSWORD=carlomon
 
 JWT_SECRET_STAFF=any_long_random_string_here_staff
 JWT_SECRET_ESTABLISHMENT=any_long_random_string_here_est
+JWT_SECRET_BENEFICIARY=any_long_random_string_here_ben
 
 OCR_CONFIDENCE_THRESHOLD=75
 ```
+
+> All three JWT secrets must be set independently — staff, establishment, and beneficiary sessions each use their own signing secret so a token from one actor type can't be reused as another.
 
 ### 2.3 Start the API
 
@@ -123,6 +126,8 @@ FOR /F "tokens=5" %a IN ('netstat -ano ^| findstr ":3000" ^| findstr "LISTENING"
 ---
 
 ## 3. Web Portals Setup
+
+> **Production note:** In production, the unified portal (`apps/web`) is the current staff-facing app, built and deployed together with the API on Northflank at `https://idetect.it.com` (role-routed after login). The `apps/web-osca`, `apps/web-pdao`, and `apps/web-bplo` projects below are earlier, per-office portals kept in the repo; use `apps/web` unless you are specifically working on the legacy per-office portals.
 
 Each portal is a separate Vite/React project. Each runs on its own port.
 

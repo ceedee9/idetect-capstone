@@ -339,7 +339,7 @@ Complete set of tracked administrative events.
 | `result`                    | `verification_result` | NOT NULL | —                   | Outcome of this verification attempt.                                                                                                                                 |
 | `ocr_confidence_score`      | `NUMERIC(5,2)`        | NULL     | —                   | Tesseract confidence score from 0.00 to 100.00. Below threshold triggers `manual_review` result.                                                                      |
 | `ocr_raw_text`              | `TEXT`                | NULL     | —                   | Full raw OCR output for debugging and post-hoc analysis.                                                                                                              |
-| `image_path`                | `TEXT`                | NULL     | —                   | Full URL to the stored ID image (Cloudinary). Widened from `VARCHAR(500)` in migration 015.                                                                           |
+| `image_path`                | `TEXT`                | NULL     | —                   | Path/URL to the stored ID image in Supabase Storage (`id-captures` bucket). Widened from `VARCHAR(500)` in migration 015.                                             |
 | `manually_entered`          | `BOOLEAN`             | NOT NULL | `FALSE`             | `TRUE` when the ID number was typed by staff instead of scanned by OCR.                                                                                               |
 | `extracted_name`            | `VARCHAR(255)`        | NULL     | —                   | Full name as read from the card by OCR. Compared against `beneficiaries.full_name` for cross-validation.                                                              |
 | `extracted_dob`             | `DATE`                | NULL     | —                   | Date of birth as read from the card by OCR. Compared against `beneficiaries.birthdate`.                                                                               |
@@ -401,20 +401,20 @@ Complete set of tracked administrative events.
 **Description:** Beneficiary-submitted challenges to incorrect denials or database errors. Submitted via the Beneficiary Mobile App and routed to OSCA or PDAO. SLA: 24 h acknowledgment, 48–72 h resolution.  
 **Source migration:** `007_create_disputes.sql`
 
-| Column                   | Type             | Nullable | Default             | Description                                                                                          |
-| ------------------------ | ---------------- | -------- | ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `id`                     | `UUID`           | NOT NULL | `gen_random_uuid()` | Primary key                                                                                          |
-| `beneficiary_account_id` | `UUID`           | NOT NULL | —                   | FK → `beneficiary_accounts.id`. The app account that submitted this dispute. `RESTRICT` on deletion. |
-| `verification_log_id`    | `UUID`           | NULL     | —                   | FK → `verification_logs.id`. The transaction being disputed. `SET NULL` on log deletion.             |
-| `dispute_type`           | `dispute_type`   | NOT NULL | —                   | Category of the dispute.                                                                             |
-| `explanation`            | `TEXT`           | NOT NULL | —                   | Beneficiary's written explanation of their dispute.                                                  |
-| `supporting_doc_path`    | `VARCHAR(500)`   | NULL     | —                   | Cloudinary URL to an uploaded supporting document (e.g. ID photo, barangay certificate).             |
-| `status`                 | `dispute_status` | NOT NULL | `'submitted'`       | Current resolution state.                                                                            |
-| `staff_response`         | `TEXT`           | NULL     | —                   | Official response written by the handling staff member.                                              |
-| `handled_by`             | `UUID`           | NULL     | —                   | FK → `users.id`. Staff member handling this dispute. `SET NULL` on user deletion.                    |
-| `submitted_at`           | `TIMESTAMPTZ`    | NOT NULL | `NOW()`             | Timestamp of submission.                                                                             |
-| `acknowledged_at`        | `TIMESTAMPTZ`    | NULL     | —                   | Must be filled within 24 hours of submission per SLA.                                                |
-| `resolved_at`            | `TIMESTAMPTZ`    | NULL     | —                   | Target: 48–72 hours from submission for database error disputes.                                     |
+| Column                   | Type             | Nullable | Default             | Description                                                                                                                    |
+| ------------------------ | ---------------- | -------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                     | `UUID`           | NOT NULL | `gen_random_uuid()` | Primary key                                                                                                                    |
+| `beneficiary_account_id` | `UUID`           | NOT NULL | —                   | FK → `beneficiary_accounts.id`. The app account that submitted this dispute. `RESTRICT` on deletion.                           |
+| `verification_log_id`    | `UUID`           | NULL     | —                   | FK → `verification_logs.id`. The transaction being disputed. `SET NULL` on log deletion.                                       |
+| `dispute_type`           | `dispute_type`   | NOT NULL | —                   | Category of the dispute.                                                                                                       |
+| `explanation`            | `TEXT`           | NOT NULL | —                   | Beneficiary's written explanation of their dispute.                                                                            |
+| `supporting_doc_path`    | `VARCHAR(500)`   | NULL     | —                   | Path/URL in Supabase Storage (`dispute-docs` bucket) to an uploaded supporting document (e.g. ID photo, barangay certificate). |
+| `status`                 | `dispute_status` | NOT NULL | `'submitted'`       | Current resolution state.                                                                                                      |
+| `staff_response`         | `TEXT`           | NULL     | —                   | Official response written by the handling staff member.                                                                        |
+| `handled_by`             | `UUID`           | NULL     | —                   | FK → `users.id`. Staff member handling this dispute. `SET NULL` on user deletion.                                              |
+| `submitted_at`           | `TIMESTAMPTZ`    | NOT NULL | `NOW()`             | Timestamp of submission.                                                                                                       |
+| `acknowledged_at`        | `TIMESTAMPTZ`    | NULL     | —                   | Must be filled within 24 hours of submission per SLA.                                                                          |
+| `resolved_at`            | `TIMESTAMPTZ`    | NULL     | —                   | Target: 48–72 hours from submission for database error disputes.                                                               |
 
 **Indexes:**
 

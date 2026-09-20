@@ -1,79 +1,16 @@
+// Calls ApiService.changePassword(currentPassword:, newPassword:), which
+// should POST to /api/auth/establishment/change-password with header
+// Authorization: Bearer <token> and JSON body:
+//   { "current_password": ..., "new_password": ... }
+// (snake_case, per the backend's existing convention — see auth.js).
+// Expects { success, errorMessage } back, same shape as ApiService.login.
+// See the ApiService.changePassword snippet provided alongside this file
+// if that method doesn't exist yet.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../services/api_service.dart';
-import 'login_screen.dart';
-
-enum AppNoticeType { success, error, info }
-
-class AppNotice extends StatelessWidget {
-  const AppNotice({super.key, required this.type, required this.message});
-
-  final AppNoticeType type;
-  final String message;
-
-  static const _styles = {
-    AppNoticeType.success: (
-      accent: Color(0xFF15803D),
-      bg: Color(0xFFF0FDF4),
-      icon: Icons.check_circle_outline_rounded,
-      label: 'Success',
-    ),
-    AppNoticeType.error: (
-      accent: Color(0xFFDC2626),
-      bg: Color(0xFFFFF1F2),
-      icon: Icons.error_outline_rounded,
-      label: 'Error',
-    ),
-    AppNoticeType.info: (
-      accent: Color(0xFF00225F),
-      bg: Color(0xFFEEF2FA),
-      icon: Icons.info_outline_rounded,
-      label: 'Notice',
-    ),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final s = _styles[type]!;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: s.bg,
-        border: Border(left: BorderSide(color: s.accent, width: 3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(s.icon, size: 18, color: s.accent),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.label.toUpperCase(),
-                  style: GoogleFonts.ibmPlexMono(
-                    fontSize: 9,
-                    letterSpacing: 1.4,
-                    fontWeight: FontWeight.w600,
-                    color: s.accent,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  message,
-                  style: const TextStyle(
-                      fontSize: 13, color: Color(0xFF334155), height: 1.4),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+import '../../widgets/app_notice.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -97,11 +34,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _loading = false;
   String? _errorMessage;
   bool _success = false;
-  // True only when the backend told us the session/token itself is gone
-  // (401), as opposed to an ordinary wrong-current-password error. Drives
-  // the info-styled notice + redirect-to-login branch in _submit() below,
-  // instead of the normal error banner.
-  bool _redirectingToLogin = false;
 
   @override
   void dispose() {
@@ -167,36 +99,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       // return to the profile drawer.
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) Navigator.pop(context);
-      return;
-    }
-
-    if (result.sessionExpired) {
-      // ApiService.changePassword already cleared the stale token.
-      // Show a brief notice, then drop the whole nav stack and send
-      // the establishment back to LoginScreen — same pattern as the
-      // profile drawer's own _logout().
+    } else {
       setState(() {
         _loading = false;
         _success = false;
-        _redirectingToLogin = true;
-        _errorMessage = result.errorMessage;
+        _errorMessage = result.errorMessage ??
+            'Could not update password. Please try again.';
       });
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-      return;
     }
-
-    setState(() {
-      _loading = false;
-      _success = false;
-      _errorMessage =
-          result.errorMessage ?? 'Could not update password. Please try again.';
-    });
   }
 
   Widget _fieldLabel(String text) {
@@ -286,13 +196,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   type: AppNoticeType.success,
                   message: 'Password updated. Returning to your profile…',
                 ),
-              if (_redirectingToLogin)
-                AppNotice(
-                  type: AppNoticeType.info,
-                  message:
-                      '${_errorMessage ?? 'Your session has expired.'} Redirecting to login…',
-                ),
-              if (_errorMessage != null && !_redirectingToLogin && !_success)
+              if (_errorMessage != null)
                 AppNotice(type: AppNoticeType.error, message: _errorMessage!),
               _fieldLabel('Current Password'),
               const SizedBox(height: 6),

@@ -2,362 +2,216 @@
 
 **Pamantasan ng Lungsod ng Valenzuela — Capstone 2026**
 
-> This guide covers buying a domain, choosing a host, and deploying the full
-> iDetect stack (Node.js API + PostgreSQL + React frontend) to a live URL.
+> This guide covers the actual production deployment of iDetect: a combined
+> Node.js/Express API + staff web portal service on **Northflank**, backed by
+> **PostgreSQL/Storage on Supabase**, reachable at **https://idetect.it.com**.
 
 ---
 
 ## 1. Architecture Overview
 
-Your app has **three parts** that all need to be live:
-
-| Part           | What it is                      | Recommended Host |
-| -------------- | ------------------------------- | ---------------- |
-| **API**        | Node.js / Express (`apps/api/`) | Vercel           |
-| **Database**   | PostgreSQL                      | Supabase         |
-| **Web Portal** | React / Vite (`apps/web/`)      | Vercel           |
-| **Domain**     | e.g. `idetect.com.ph`           | Namecheap        |
+| Part                       | What it is                                                                                          | Host                                                     |
+| -------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| **API + Staff Web Portal** | Node.js / Express (`apps/api`) + React/Vite build (`apps/web`) deployed as **one combined service** | Northflank (US-Central)                                  |
+| **Database**               | PostgreSQL                                                                                          | Supabase (connection pooler)                             |
+| **File/image storage**     | ID captures, dispute documents                                                                      | Supabase Storage (`id-captures`, `dispute-docs` buckets) |
+| **Domain**                 | `idetect.it.com`                                                                                    | DNS pointed at Northflank                                |
 
 ```
-User → idetect.com.ph         → Vercel (React app)
-                                   ↓ API calls to the deployed Vercel API
-     idetect.com.ph/api/*   → Vercel API functions
-                        ↓
-                      Supabase
+User → https://idetect.it.com          → Northflank combined service
+                                            ├─ serves the staff web portal (role-routed: BPLO/OSCA/PDAO)
+                                            └─ serves /api/* (Node.js + Express)
+                                                   ↓
+                                                Supabase (PostgreSQL + Storage)
 ```
 
-The React app and the API both live on Vercel. Supabase provides the database and storage.
+There is **one URL** for staff use: https://idetect.it.com. After sign-in, the account is routed to the BPLO, OSCA, or PDAO dashboard based on its role — there are no separate per-office URLs to distribute.
+
+The two Flutter mobile apps (Client Portal for establishments, Beneficiary app) call the same API base URL, `https://idetect.it.com/api`.
 
 ---
 
-## 2. Choosing a Host — Recommendation
+## 2. Source & CI/CD
 
-### Domain: Namecheap ✅ (your choice is good)
-
-Namecheap is a solid registrar. Pros: cheap, no dark patterns, good DNS panel.
-
-**Suggested domain options** (check availability on namecheap.com):
-
-- `idetect.com.ph` — most professional for a Philippine system (~₱800/yr)
-- `idetect-valenzuela.com` — international TLD, easier to register (~$12/yr)
-- `idetect.site` — cheapest (~$2 first year, ~$25 renewal)
-
-> **Note:** `.gov.ph` requires official LGU accreditation — skip it for the capstone.
-
----
-
-### Hosting: Vercel (API + Frontend) + Supabase (DB + Storage)
-
-**Why not Namecheap hosting?**
-Namecheap's shared hosting runs PHP/Apache. It does not support Node.js.
-Their VPS works but requires Linux sysadmin knowledge (nginx, PM2, etc.) —
-too much overhead for a capstone.
-
-**Why Vercel for the API?**
-
-- Free tier is enough for a capstone backend
-- Portal and API both deploy through Vercel and stay on the same stack
-- Automatic deploys from GitHub
-- Works well for request/response APIs
-
-**Why Vercel?**
-
-- Made specifically for React/Vite apps
-- Deploys in ~30 seconds from GitHub
-- **Free forever** for static frontend
-- Custom domain support included
-
-**Cost summary:**
-| Item | Cost |
-|---|---|
-| Domain (Namecheap, .com.ph) | ~₱800/year |
-| Vercel | Free |
-| Supabase | Free tier to start |
-| **Total** | **Low-cost / free to start** |
+- **Repository:** GitHub — `ceedee9/idetect-capstone`
+- **Pipeline:** GitHub → Northflank. Every push to `main` triggers an automatic build and deploy of the combined service.
+- **Rollback:** Use Northflank's deployment history to redeploy a previous build if a release introduces a regression.
 
 ---
 
 ## 3. Pre-Deployment Checklist
 
-Do these **before** you buy anything.
-
 ### 3.1 Push Code to GitHub
 
-Everything must be in a GitHub repository. If not already:
+Everything must be in the `ceedee9/idetect-capstone` GitHub repository.
 
-```bash
-# In the root idetect/ folder
-git init
-git add .
-git commit -m "initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/idetect.git
-git push -u origin main
-```
-
-> ⚠️ Make sure `.env` is in your `.gitignore`. **Never push secrets to GitHub.**
-
-Check that `apps/api/.gitignore` or the root `.gitignore` contains:
-
-```
-.env
-*.env
-node_modules/
-```
+> ⚠️ Make sure `.env` is in `.gitignore`. **Never commit secrets to GitHub.** All runtime secrets live in **Northflank Secrets**, not in the repository.
 
 ### 3.2 Generate Strong Production Secrets
 
-Replace your development secrets with long random strings for production.
-Run this in PowerShell to generate them:
+Generate independent random strings for each JWT signing secret. Run this in PowerShell (repeat for each secret):
 
 ```powershell
-# Run 3 times — one output per JWT secret
 -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 64 | ForEach-Object { [char]$_ })
 ```
 
-You will need:
+You need **three separate secrets** — one per actor type, so a token issued for one type can never be reused as another:
 
-- `JWT_SECRET_STAFF` — a 64-character random string
-- `JWT_SECRET_ESTABLISHMENT` — a 64-character random string
-- `JWT_SECRET_BENEFICIARY` — a 64-character random string
+- `JWT_SECRET_STAFF` — used for BPLO/OSCA/PDAO web portal sessions
+- `JWT_SECRET_ESTABLISHMENT` — used for the Client Portal mobile app
+- `JWT_SECRET_BENEFICIARY` — used for the Beneficiary mobile app (issued after OTP/PIN verification)
 
-Save these somewhere secure (a password manager). You'll paste them into Vercel.
+Store these in a password manager, then paste them into **Northflank → Service → Secrets**.
 
-### 3.3 Prepare the API for Production
+### 3.3 Confirm the API Entry Point
 
-Open `apps/api/package.json` and confirm there is a `start` script:
+`apps/api/package.json` scripts:
 
 ```json
 "scripts": {
-  "start": "node src/index.js",
-  "dev": "nodemon src/index.js"
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js",
+  "db:migrate": "node scripts/migrate.js"
 }
 ```
 
-If your entry file is named differently (e.g. `server.js`), adjust accordingly.
+Northflank runs `npm start` to launch the combined service.
 
 ---
 
-## 4. Buy the Domain (Namecheap)
+## 4. Supabase Setup (Database + Storage)
 
-1. Go to **namecheap.com** and search for your chosen domain name.
-2. Add it to cart. **Uncheck** the "WhoisGuard" upsell if you don't need it
-   (it's free anyway now on most TLDs).
-3. Checkout — you do not need hosting from Namecheap; domain only.
-4. After purchase, go to **Dashboard → Domain List → Manage** for your domain.
-5. Click **Advanced DNS** — this is where you will add DNS records later.
-
-> Keep this tab open — you will return to it in Step 7.
-
----
-
-## 5. Deploy the API on Vercel
-
-### 5.1 Sign Up
-
-1. Go to **vercel.com** and sign up with your GitHub account.
-2. Click **Add New → Project**.
-3. Import your `idetect` repository.
-
-### 5.2 Configure the API Project
-
-Deploy `apps/api` as its own Vercel project:
-
-| Setting              | Value         |
-| -------------------- | ------------- |
-| **Framework Preset** | Other         |
-| **Root Directory**   | `apps/api`    |
-| **Build Command**    | leave default |
-| **Output Directory** | none          |
-
-### 5.3 Set Environment Variables on Vercel
-
-Add the API secrets and Supabase settings in the API project:
-
-| Variable                    | Value                           |
-| --------------------------- | ------------------------------- |
-| `NODE_ENV`                  | `production`                    |
-| `DATABASE_URL`              | Your Supabase connection string |
-| `SUPABASE_URL`              | Your Supabase project URL       |
-| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key  |
-| `JWT_SECRET_STAFF`          | _(your 64-char random string)_  |
-| `JWT_SECRET_ESTABLISHMENT`  | _(your 64-char random string)_  |
-| `JWT_SECRET_BENEFICIARY`    | _(your 64-char random string)_  |
-| `JWT_EXPIRES_IN`            | `8h`                            |
-| `OCR_CONFIDENCE_THRESHOLD`  | `75`                            |
-| `SMS_PROVIDER`              | `semaphore`                     |
-| `SMS_API_KEY`               | _(your Semaphore key)_          |
-
-### 5.4 Deploy and Test
-
-1. Deploy the API project.
-2. Open its `/api/health` endpoint.
-3. Confirm the response shows the database as `ok`.
-
----
-
-## 6. Deploy the Frontend on Vercel
-
-### 6.1 Sign Up
-
-1. Go to **vercel.com** and sign up with your GitHub account.
-2. Click **Add New → Project**.
-3. Import your `idetect` repository.
-
-### 6.2 Configure the Web Project
-
-Vercel will show configuration options:
-
-| Setting              | Value           |
-| -------------------- | --------------- |
-| **Framework Preset** | Vite            |
-| **Root Directory**   | `apps/web`      |
-| **Build Command**    | `npm run build` |
-| **Output Directory** | `dist`          |
-
-### 6.3 Set Environment Variables on Vercel
-
-Set the portal API base URL to the deployed API project:
-
-| Variable       | Value                                     |
-| -------------- | ----------------------------------------- |
-| `VITE_API_URL` | `https://your-api-project.vercel.app/api` |
-
-### 6.4 Deploy
-
-Click **Deploy**. Vercel builds and deploys in about 30 seconds. You get a URL like:
-
-```
-https://idetect.vercel.app
-```
-
-Test it — the login page should load and API calls should work.
-
----
-
-## 7. Connect Your Custom Domain
-
-### 7.1 Add Domain to Vercel
-
-1. In Vercel → your project → **Settings → Domains**.
-2. Type your domain: `idetect.com.ph` and click **Add**.
-3. Vercel shows you DNS records to add. You need two:
-
-| Type    | Name  | Value                  |
-| ------- | ----- | ---------------------- |
-| `A`     | `@`   | `76.76.21.21`          |
-| `CNAME` | `www` | `cname.vercel-dns.com` |
-
-### 7.2 Add DNS Records in Namecheap
-
-1. Go back to Namecheap → **Dashboard → Domain List → Manage → Advanced DNS**.
-2. Delete any existing `A` record for `@` (there may be a default Namecheap parking one).
-3. Click **Add New Record** and add both records from the table above.
-4. Set TTL to **Automatic**.
-5. Save.
-
-DNS propagation takes **5 minutes to 48 hours** (usually under 30 minutes).
-
-### 7.3 Verify
-
-Once propagated, visiting `https://idetect.com.ph` should load your React app
-and API calls should go to the deployed Vercel API project.
-
-You can check propagation status at: **dnschecker.org**
-
----
-
-## 8. Update CORS on the API
-
-Now that you have a real domain, update your API's CORS allowed origins.
-
-Open `apps/api/src/app.js` and set:
-
-```js
-const cors = require("cors");
-
-app.use(
-  cors({
-    origin: [
-      "https://idetect.com.ph",
-      "https://www.idetect.com.ph",
-      "https://idetect.vercel.app", // keep during testing
-      ...(process.env.NODE_ENV === "development"
-        ? ["http://localhost:5173"]
-        : []),
-    ],
-    credentials: true,
-  }),
-);
-```
-
-Commit and push — Vercel auto-deploys from GitHub.
-
----
-
-## 9. Firebase (Push Notifications)
-
-Your API uses a Firebase service account JSON file (`FIREBASE_KEY_PATH`).
-You should use environment variables for the service account JSON rather than a file path:
-
-1. Open your Firebase `.json` key file. Copy the entire contents.
-2. In Vercel → your API project → Environment Variables, add:
+1. **Create a Supabase project** (or use the existing one for this deployment).
+2. **Database:** Use the **connection pooler** connection string (session/transaction pooling mode) — not the direct connection — for the Northflank-deployed API, since Northflank containers scale/restart and a pooled connection avoids exhausting Postgres connection limits.
+3. **Storage buckets:** Create two buckets:
+   - `id-captures` — scanned ID card images
+   - `dispute-docs` — beneficiary dispute supporting documents
+     (Override the default names with `SUPABASE_STORAGE_BUCKET_ID_IMAGES` / `SUPABASE_STORAGE_BUCKET_DISPUTE_DOCS` env vars if you need different names.)
+4. **Run migrations** against the Supabase database:
+   ```powershell
+   cd apps/api
+   npm run db:migrate
    ```
-   FIREBASE_SERVICE_ACCOUNT_JSON = { "type": "service_account", ... }
+5. **Credentials** (`DATABASE_URL`/pooler connection string, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) go into **Northflank Secrets**, never into the repository.
+
+---
+
+## 5. Deploy the Combined Service on Northflank
+
+### 5.1 Create the Service
+
+1. Sign in to Northflank and connect the `ceedee9/idetect-capstone` GitHub repository.
+2. Create a new service pointed at `apps/api` (the service is responsible for serving both the API and the built staff web portal).
+3. Set the region to **US-Central**.
+4. Set the public port to **3000**.
+5. Enable **auto-deploy on push to `main`**.
+
+### 5.2 Set Environment Variables (Northflank Secrets)
+
+| Variable                               | Value                                                          |
+| -------------------------------------- | -------------------------------------------------------------- |
+| `NODE_ENV`                             | `production`                                                   |
+| `PORT`                                 | `3000`                                                         |
+| `DATABASE_URL`                         | Supabase connection-pooler string                              |
+| `SUPABASE_URL`                         | Your Supabase project URL                                      |
+| `SUPABASE_SERVICE_ROLE_KEY`            | Your Supabase service role key                                 |
+| `SUPABASE_STORAGE_BUCKET_ID_IMAGES`    | `id-captures` (or override)                                    |
+| `SUPABASE_STORAGE_BUCKET_DISPUTE_DOCS` | `dispute-docs` (or override)                                   |
+| `JWT_SECRET_STAFF`                     | _(64-char random string)_                                      |
+| `JWT_SECRET_ESTABLISHMENT`             | _(64-char random string)_                                      |
+| `JWT_SECRET_BENEFICIARY`               | _(64-char random string)_                                      |
+| `SMS_PROVIDER`                         | `semaphore`                                                    |
+| `SEMAPHORE_API_KEY`                    | Your Semaphore API key                                         |
+| `RESEND_API_KEY`                       | Your Resend API key (verified `idetect.it.com` sending domain) |
+| `FIREBASE_SERVICE_ACCOUNT_JSON`        | Full Firebase service-account JSON (as a string)               |
+| `OCR_CONFIDENCE_THRESHOLD`             | `75`                                                           |
+
+### 5.3 Deploy and Verify
+
+1. Trigger the first deploy (or push to `main`).
+2. Once live, check the health endpoint:
    ```
-   (Paste the entire JSON as the value.)
-3. In your API code, update the Firebase initialization:
+   GET https://idetect.it.com/api/health
+   ```
+   _Expected: a healthy/ready response confirming the database connection._
+3. Load `https://idetect.it.com` in a browser — the staff login page should appear.
 
-```js
-// Instead of reading from a file path:
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
-  : require(process.env.FIREBASE_KEY_PATH);
+---
 
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+## 6. Connect the Domain
+
+1. Point the `idetect.it.com` domain's DNS at the Northflank service (Northflank provides the target records once the service is created).
+2. Northflank provisions the TLS/SSL certificate automatically for the domain — no manual certificate management needed.
+3. Verify propagation at a DNS checker, then confirm `https://idetect.it.com` loads over HTTPS with a valid certificate.
+
+---
+
+## 7. Notifications & Email Setup
+
+| Channel            | Provider                              | Notes                                                                            |
+| ------------------ | ------------------------------------- | -------------------------------------------------------------------------------- |
+| SMS (OTP, alerts)  | Semaphore                             | API key stored in Northflank Secrets                                             |
+| Push notifications | Firebase Cloud Messaging (FCM) / APNs | Service-account JSON stored in Northflank Secrets                                |
+| Email              | Resend                                | Uses the verified `idetect.it.com` sending domain; API key in Northflank Secrets |
+
+If a notification provider's credentials are missing, the corresponding service degrades gracefully (e.g., logs the message instead of sending it) rather than crashing the API — confirm this behavior is acceptable for your environment before going live.
+
+---
+
+## 8. Mobile App Configuration
+
+Both Flutter apps (Client Portal in the repo root `lib/`, Beneficiary app in `apps/beneficiary/`) must point at the production API:
+
+```
+https://idetect.it.com/api
 ```
 
----
-
-## 10. Post-Deployment Verification Checklist
-
-After everything is live, test each of these:
-
-- [ ] `https://idetect.com.ph` loads the login page
-- [ ] Login works with `osca_admin` credentials — green theme, Senior Citizens nav
-- [ ] Login works with `pdao_admin` credentials — teal theme, PWD Records nav
-- [ ] Login works with `bplo_admin` credentials — blue theme, Establishments nav
-- [ ] Beneficiary records load for OSCA/PDAO
-- [ ] Establishments load for BPLO
-- [ ] ID scan / verification works
-- [ ] Session timeout works (idle 15 min → redirect to login)
-- [ ] HTTPS padlock shows in browser (Vercel handles SSL automatically)
-- [ ] Mobile layout looks correct (test on a phone)
+There are currently **no published app store / APK distribution links** — see the [User Manual §4.5](USER_MANUAL.md#45-mobile-installation) for the outstanding items around official mobile distribution.
 
 ---
 
-## 11. Ongoing Maintenance
+## 9. Post-Deployment Verification Checklist
 
-| Task                        | How                                                            |
-| --------------------------- | -------------------------------------------------------------- |
-| **Deploy a code update**    | `git push` — Vercel auto-deploys both projects                 |
-| **View API logs**           | Vercel → API project → **Functions / Logs**                    |
-| **View database**           | Supabase → Project → **Table Editor / SQL**                    |
-| **Rollback a bad deploy**   | Vercel has one-click rollback in the dashboard                 |
-| **Domain renewal**          | Namecheap sends email reminders — renew before expiry          |
-| **Add a new staff account** | Use the Staff page inside the portal (no server access needed) |
-
----
-
-## Quick Reference — URLs
-
-| Service          | URL                                                   |
-| ---------------- | ----------------------------------------------------- |
-| Your live portal | `https://idetect.com.ph`                              |
-| Vercel dashboard | `vercel.com/dashboard`                                |
-| Vercel dashboard | `vercel.com/dashboard`                                |
-| Namecheap DNS    | `namecheap.com → Domain List → Manage → Advanced DNS` |
+- [ ] `https://idetect.it.com` loads the staff login page
+- [ ] `GET https://idetect.it.com/api/health` returns healthy
+- [ ] BPLO login routes to the BPLO dashboard
+- [ ] OSCA login routes to the Senior Citizen-only dashboard
+- [ ] PDAO login routes to the PWD-only dashboard
+- [ ] Cross-portal access is blocked (an OSCA account cannot reach PDAO data, etc.)
+- [ ] ID scan / verification works end-to-end from the Client Portal mobile app
+- [ ] OTP delivery works (Semaphore) for beneficiary login
+- [ ] Push notifications deliver (Firebase FCM)
+- [ ] Transactional email delivers (Resend, `idetect.it.com` domain)
+- [ ] Session timeout works (idle → redirect to login)
+- [ ] HTTPS padlock shows in the browser (Northflank-managed TLS)
 
 ---
 
-_Guide written for iDetect Capstone 2026 — PLV CEIT_
+## 10. Ongoing Maintenance
+
+| Task                    | How                                                                   |
+| ----------------------- | --------------------------------------------------------------------- |
+| Deploy a code update    | `git push` to `main` — Northflank auto-builds and deploys             |
+| View API logs           | Northflank → Service → Logs                                           |
+| View/query the database | Supabase → Project → Table Editor / SQL Editor                        |
+| Rotate a secret         | Update the value in Northflank Secrets, redeploy the service          |
+| Rollback a bad deploy   | Northflank → Service → Deployment history → redeploy a previous build |
+| Add a new staff account | Use the Staff page inside the portal (no server access needed)        |
+
+---
+
+## Quick Reference
+
+| Item             | Value                                               |
+| ---------------- | --------------------------------------------------- |
+| Production URL   | https://idetect.it.com                              |
+| API health check | https://idetect.it.com/api/health                   |
+| Hosting          | Northflank, US-Central, combined service, port 3000 |
+| Database         | PostgreSQL via Supabase (connection pooler)         |
+| Storage          | Supabase Storage — `id-captures`, `dispute-docs`    |
+| Repository       | GitHub `ceedee9/idetect-capstone`                   |
+
+---
+
+_Guide updated for the Northflank/Supabase production deployment — iDetect Capstone 2026 — PLV CEIT_
 _De los Reyes · Enoria · Mercado · Santiago_

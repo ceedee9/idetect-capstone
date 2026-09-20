@@ -207,5 +207,88 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navAlerts => 'Alerts';
 
   @override
+  String get transactionsEmptyState => 'No verification records yet';
+
+  @override
+  String get transactionsUnknownEstablishment => 'Unknown';
+
+  @override
+  String get transactionsDetailTitle => 'Verification Details';
+
+  @override
+  String get transactionsEstablishmentLabel => 'Establishment';
+
+  @override
+  String get transactionsDateTimeLabel => 'Date & Time';
+
+  @override
+  String get transactionsStatusLabel => 'Status';
+
+  @override
+  String get transactionsEntryLabel => 'Entry';
+
+  @override
+  String get transactionsEntryManual => 'Manual';
+
+  @override
+  String get fraudReportTitle => 'Report Fraud';
+
+  @override
+  String get fraudReportWarningBanner =>
+      'Filing a fraud report will immediately flag your ID for review. This helps protect your benefits.';
+
+  @override
+  String get fraudReportWhatHappened => 'What happened?';
+
+  @override
+  String get fraudTypeUnauthorizedLabel => 'Unauthorized Use';
+
+  @override
+  String get fraudTypeUnauthorizedDesc =>
+      'Someone used my ID without my permission';
+
+  @override
+  String get fraudTypeStolenLabel => 'Stolen ID';
+
+  @override
+  String get fraudTypeStolenDesc => 'My physical ID card was stolen';
+
+  @override
+  String get fraudTypeFakeLabel => 'Fake / Cloned ID';
+
+  @override
+  String get fraudTypeFakeDesc => 'Someone created a copy of my ID';
+
+  @override
+  String get fraudTypeOtherLabel => 'Other';
+
+  @override
+  String get fraudTypeOtherDesc => 'Another type of fraud or misuse';
+
+  @override
+  String get fraudReportDescribeIncident => 'Describe the incident';
+
+  @override
+  String get fraudReportDescriptionHint =>
+      'Provide details: when, where, and how you discovered the fraud...';
+
+  @override
+  String get fraudReportErrorEmptyDescription => 'Please describe the incident';
+
+  @override
+  String get fraudReportSuccessSnackbar =>
+      'Fraud report submitted successfully';
+
+  @override
+  String get fraudReportErrorSnackbar =>
+      'Failed to submit report. Please try again.';
+
+  @override
+  String get fraudReportSubmitting => 'Submitting...';
+
+  @override
+  String get fraudReportSubmitButton => 'Submit Report';
+
+  @override
   String get notificationFallbackTitle => 'Notification';
 }

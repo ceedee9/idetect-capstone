@@ -244,6 +244,17 @@ class AppDesignSystem {
   static const double sectionSpacing = 32.0;
 
   // ===========================================================================
+  // TOUCH TARGETS â€” WCAG 2.1 SC 2.5.5 (AAA: 44x44) / Android: 48dp
+  // We target 56dp minimum, 64dp for primary actions (Fitts' Law)
+  // ===========================================================================
+
+  /// Minimum touch target for all interactive elements
+  static const double touchTargetMin = 56.0;
+
+  /// Primary action touch target (buttons, main CTA)
+  static const double touchTargetPrimary = 64.0;
+
+  // ===========================================================================
   // BORDER RADIUS â€” Slightly less rounded = more "professional tool" feel
   // ===========================================================================
 
@@ -454,4 +465,3 @@ class AppDesignSystem {
     return statusText.copyWith(color: getStatusColor(status));
   }
 }
-

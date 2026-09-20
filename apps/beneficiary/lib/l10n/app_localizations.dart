@@ -464,6 +464,162 @@ abstract class AppLocalizations {
   /// **'Alerts'**
   String get navAlerts;
 
+  /// No description provided for @transactionsEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No verification records yet'**
+  String get transactionsEmptyState;
+
+  /// No description provided for @transactionsUnknownEstablishment.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get transactionsUnknownEstablishment;
+
+  /// No description provided for @transactionsDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Details'**
+  String get transactionsDetailTitle;
+
+  /// No description provided for @transactionsEstablishmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Establishment'**
+  String get transactionsEstablishmentLabel;
+
+  /// No description provided for @transactionsDateTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date & Time'**
+  String get transactionsDateTimeLabel;
+
+  /// No description provided for @transactionsStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get transactionsStatusLabel;
+
+  /// No description provided for @transactionsEntryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry'**
+  String get transactionsEntryLabel;
+
+  /// No description provided for @transactionsEntryManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get transactionsEntryManual;
+
+  /// No description provided for @fraudReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Fraud'**
+  String get fraudReportTitle;
+
+  /// No description provided for @fraudReportWarningBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Filing a fraud report will immediately flag your ID for review. This helps protect your benefits.'**
+  String get fraudReportWarningBanner;
+
+  /// No description provided for @fraudReportWhatHappened.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened?'**
+  String get fraudReportWhatHappened;
+
+  /// No description provided for @fraudTypeUnauthorizedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unauthorized Use'**
+  String get fraudTypeUnauthorizedLabel;
+
+  /// No description provided for @fraudTypeUnauthorizedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone used my ID without my permission'**
+  String get fraudTypeUnauthorizedDesc;
+
+  /// No description provided for @fraudTypeStolenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stolen ID'**
+  String get fraudTypeStolenLabel;
+
+  /// No description provided for @fraudTypeStolenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'My physical ID card was stolen'**
+  String get fraudTypeStolenDesc;
+
+  /// No description provided for @fraudTypeFakeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fake / Cloned ID'**
+  String get fraudTypeFakeLabel;
+
+  /// No description provided for @fraudTypeFakeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone created a copy of my ID'**
+  String get fraudTypeFakeDesc;
+
+  /// No description provided for @fraudTypeOtherLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get fraudTypeOtherLabel;
+
+  /// No description provided for @fraudTypeOtherDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Another type of fraud or misuse'**
+  String get fraudTypeOtherDesc;
+
+  /// No description provided for @fraudReportDescribeIncident.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the incident'**
+  String get fraudReportDescribeIncident;
+
+  /// No description provided for @fraudReportDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide details: when, where, and how you discovered the fraud...'**
+  String get fraudReportDescriptionHint;
+
+  /// No description provided for @fraudReportErrorEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the incident'**
+  String get fraudReportErrorEmptyDescription;
+
+  /// No description provided for @fraudReportSuccessSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Fraud report submitted successfully'**
+  String get fraudReportSuccessSnackbar;
+
+  /// No description provided for @fraudReportErrorSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit report. Please try again.'**
+  String get fraudReportErrorSnackbar;
+
+  /// No description provided for @fraudReportSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting...'**
+  String get fraudReportSubmitting;
+
+  /// No description provided for @fraudReportSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Report'**
+  String get fraudReportSubmitButton;
+
   /// No description provided for @notificationFallbackTitle.
   ///
   /// In en, this message translates to:

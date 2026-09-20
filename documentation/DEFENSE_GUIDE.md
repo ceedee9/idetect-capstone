@@ -64,28 +64,35 @@ Senior Citizens and PWDs in the Philippines are entitled to a **20% discount** o
 
 ```
 [Flutter Mobile App]  ←→  [Node.js REST API]  ←→  [PostgreSQL Database]
-(Establishment App)         (Express.js)            (Railway cloud)
+(Establishment App)         (Express.js)            (Supabase, pooled)
 (Beneficiary App)            ↕
-                        [React Web Portals]
-                    (OSCA Portal | PDAO Portal | BPLO Portal)
+                     [React Staff Web Portal]
+              (one URL, role-routed: BPLO | OSCA | PDAO)
+
+API + staff portal are deployed together as one combined service on
+Northflank (https://idetect.it.com). Image/document uploads go to
+Supabase Storage (id-captures, dispute-docs buckets).
 ```
 
 ### The Five Components
 
-| Component         | Technology           | Who Uses It                        |
-| ----------------- | -------------------- | ---------------------------------- |
-| Establishment App | Flutter (Android)    | Cashiers at stores                 |
-| Beneficiary App   | Flutter (Android)    | Senior citizens / PWDs             |
-| REST API          | Node.js + Express.js | All apps communicate through this  |
-| Web Portals (3x)  | React.js             | OSCA staff, PDAO staff, BPLO staff |
-| Database          | PostgreSQL (Railway) | Backend data storage               |
+| Component         | Technology                         | Who Uses It                                                   |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------- |
+| Establishment App | Flutter (Android/iOS)              | Cashiers at stores                                            |
+| Beneficiary App   | Flutter (Android/iOS)              | Senior citizens / PWDs                                        |
+| REST API          | Node.js + Express.js               | All apps communicate through this                             |
+| Staff Web Portal  | React.js (one unified URL)         | OSCA, PDAO, and BPLO staff — routed by role after login       |
+| Database          | PostgreSQL (Supabase)              | Backend data storage                                          |
+| File Storage      | Supabase Storage                   | ID card images (`id-captures`), dispute docs (`dispute-docs`) |
+| Hosting           | Northflank (US-Central, port 3000) | Combined API + staff portal service, `https://idetect.it.com` |
 
 ### Why This Architecture?
 
 - **Mobile app** handles OCR locally — faster, works offline, no image upload needed for OCR.
 - **REST API** is the single source of truth — all apps talk to the same data.
-- **Separate web portals** per LGU office — OSCA cannot see PWD data and vice versa (data compartmentalization).
-- **PostgreSQL on Railway** — managed cloud database, no server to maintain yourself.
+- **One unified web portal URL** with role-based routing — OSCA cannot see PWD data and vice versa (data compartmentalization is enforced by RBAC, not by separate URLs).
+- **PostgreSQL on Supabase** — managed cloud database with a connection pooler, no server to maintain yourself; Supabase Storage also holds ID/dispute images.
+- **Northflank** — hosts the combined API + staff portal service, with automatic HTTPS/TLS and GitHub-triggered CI/CD on every push to `main`.
 
 ---
 
@@ -112,20 +119,22 @@ Senior Citizens and PWDs in the Philippines are entitled to a **20% discount** o
 - **Multer** — File upload handling for ID card images and dispute documents.
 - **Firebase Admin SDK** — Sends FCM push notifications to beneficiary devices.
 - **Semaphore SMS Gateway** — Sends OTP codes and alerts via SMS.
+- **Resend** — Sends transactional email (onboarding, notifications) from the verified `idetect.it.com` domain.
 - **node-cron** — Scheduled background jobs (ID expiry alerts, SLA escalation, flag decay).
 - **Jaro-Winkler** — String similarity algorithm for cross-validating OCR-extracted names against database names.
 
-### Web Portals (React)
+### Staff Web Portal (React)
 
 - **React.js + Vite** — Fast, modern web application framework.
 - **Axios** — HTTP client for API calls.
 - **Lucide React** — Icon library.
-- **Three separate React apps** — one per LGU office (OSCA, PDAO, BPLO).
+- **One unified React app** — serves BPLO, OSCA, and PDAO staff from the same build; role-based routing after login determines the dashboard shown.
 
-### Database (PostgreSQL)
+### Database (PostgreSQL) & Storage
 
-- **25 migrations** applied incrementally — structured, version-controlled schema.
-- **Railway** — Cloud platform for hosting the database and API.
+- **Migrations** applied incrementally — structured, version-controlled schema.
+- **Supabase** — Managed PostgreSQL (via connection pooler) and object storage (`id-captures`, `dispute-docs` buckets).
+- **Northflank** — Hosts the combined API + staff portal service (US-Central, port 3000), deployed automatically from GitHub on every push to `main`.
 
 ---
 
@@ -420,9 +429,10 @@ LGU Admin resolves or rejects
 
 ### Authentication
 
-- **Staff (Web Portals)**: JWT (JSON Web Token) with a separate admin secret. Tokens auto-refresh silently when < 5 minutes from expiry. No re-login required mid-session.
-- **Establishments (Mobile)**: JWT with a separate establishment secret.
-- **Beneficiaries (Mobile)**: OTP-based (ID number + DOB → OTP to registered mobile). Can also use PIN (4-digit, max 5 attempts, 15-min lockout) or biometric (fingerprint via `local_auth`).
+- **Staff (Web Portal)**: JWT (JSON Web Token) signed with `JWT_SECRET_STAFF`. Tokens auto-refresh silently when < 5 minutes from expiry. No re-login required mid-session.
+- **Establishments (Mobile)**: JWT signed with `JWT_SECRET_ESTABLISHMENT`.
+- **Beneficiaries (Mobile)**: OTP-based (ID number + DOB → OTP to registered mobile); once verified, a JWT signed with `JWT_SECRET_BENEFICIARY` is issued for the session. Can also use PIN (4-digit, max 5 attempts, 15-min lockout) or biometric (fingerprint via `local_auth`).
+- Each actor type has its **own signing secret**, so a token issued for one type (e.g., establishment) cannot be reused to authenticate as another (e.g., staff).
 
 ### Password Security
 
@@ -443,9 +453,9 @@ LGU Admin resolves or rejects
 
 ### Authenticated File Serving
 
-- ID card images stored in the server's `uploads/` folder are **not publicly accessible**.
-- Only authenticated staff (valid JWT) can retrieve them via `GET /api/uploads/*`.
-- The API validates the file path to prevent directory traversal attacks.
+- ID card images and dispute documents are stored in **Supabase Storage** (`id-captures`, `dispute-docs` buckets) — the buckets are **not publicly accessible**.
+- Only authenticated staff (valid JWT) can retrieve them via `GET /api/uploads/*`, which proxies the download from Supabase Storage.
+- The API validates the bucket/object path to prevent directory traversal attacks.
 
 ### CORS
 
@@ -692,9 +702,9 @@ If any of these fail, the result is SUSPICIOUS or MANUAL_REVIEW, not VALID. Addi
 
 ---
 
-### Q: Why are there three separate web portals instead of one?
+### Q: Why is there one staff portal instead of separate ones per office?
 
-**A:** Data compartmentalization and role separation. OSCA staff should never see PWD records, and PDAO staff should never see senior citizen records — these are different LGU offices with different legal mandates. BPLO handles establishment management, not beneficiary data. Separate portals physically enforce this boundary and reduce accidental data exposure. Each portal also has different features relevant to each office.
+**A:** Data compartmentalization and role separation are enforced through RBAC rather than through physically separate deployments. OSCA staff should never see PWD records, and PDAO staff should never see senior citizen records — these are different LGU offices with different legal mandates. BPLO handles establishment management, not beneficiary data. The staff portal is a single deployed web app at one URL; after login, each account is routed to the dashboard matching its role, and the API enforces that a token for one role cannot fetch another role's data. This keeps one codebase/deployment to maintain while still guaranteeing the same access boundaries as separate portals would.
 
 ---
 
@@ -736,14 +746,14 @@ For subsequent logins, they can set a 4-digit PIN (faster) or enable biometric (
 
 ### Q: What database did you use and why PostgreSQL?
 
-**A:** PostgreSQL, hosted on Railway. We chose it because:
+**A:** PostgreSQL, hosted on Supabase (accessed via its connection pooler). We chose it because:
 
 - It supports **enum types**, which enforce valid values at the database level (no invalid statuses possible).
 - It supports **JSONB** for flexible metadata storage in audit logs.
 - It has powerful **expression indexes** (used for normalized ID number lookups).
 - It supports **partial indexes** (used for the unique person constraint that excludes revoked records).
 - It's production-grade, ACID-compliant, and well-supported by the `pg` library in Node.js.
-- Railway provides managed hosting with automatic backups.
+- Supabase provides managed hosting, automatic backups, and doubles as the object storage for ID/dispute images.
 
 ---
 

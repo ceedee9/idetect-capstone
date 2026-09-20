@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/constants/app_design_system.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
@@ -116,136 +117,146 @@ class _StatusScreenState extends State<StatusScreen> {
         const SizedBox(height: AppDesignSystem.spaceXS),
 
         // ── Status Card ──
-        Container(
-          padding: const EdgeInsets.all(AppDesignSystem.spaceMD),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppDesignSystem.primaryBlue,
-                AppDesignSystem.primaryBlue.withOpacity(0.85),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        // Wrapped in a single Semantics block so screen readers announce
+        // status/name/ID as one coherent statement instead of reading
+        // the pill, name, and ID number as three fragmented elements.
+        Semantics(
+          container: true,
+          label:
+              '${AppDesignSystem.getStatusLabel(p.status)}. ${p.fullName}. '
+              '${loc.statusIdDetailsTitle}: ${p.idNumber}.',
+          excludeSemantics: true,
+          child: Container(
+            padding: const EdgeInsets.all(AppDesignSystem.spaceMD),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppDesignSystem.primaryBlue,
+                  AppDesignSystem.primaryBlue.withOpacity(0.85),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: AppDesignSystem.cardRadius,
+              boxShadow: AppDesignSystem.shadowMD,
             ),
-            borderRadius: AppDesignSystem.cardRadius,
-            boxShadow: AppDesignSystem.shadowMD,
-          ),
-          child: Column(
-            children: [
-              // Status indicator — large, prominent (Von Restorff Effect)
-              // NOTE: AppDesignSystem.getStatusLabel(p.status) is NOT localized here —
-              // it lives in app_design_system.dart, which hasn't been reviewed yet.
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(
-                    AppDesignSystem.radiusFull,
-                  ),
-                  border: Border.all(color: color, width: 2),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(_statusIcon(p.status), color: color, size: 28),
-                    const SizedBox(width: 10),
-                    Text(
-                      AppDesignSystem.getStatusLabel(p.status),
-                      style: AppDesignSystem.buttonLarge.copyWith(
-                        color: color,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppDesignSystem.spaceMD),
-
-              // Name
-              Text(
-                p.fullName,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  height: 1.2,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-
-              // ID Number
-              Text(
-                p.idNumber,
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white70,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: AppDesignSystem.spaceSM),
-
-              // Type badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(
-                    AppDesignSystem.radiusFull,
-                  ),
-                ),
-                child: Text(
-                  _beneficiaryTypeBadge(p.beneficiaryType, loc),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-
-              if (p.statusReason != null) ...[
-                const SizedBox(height: AppDesignSystem.spaceSM),
+            child: Column(
+              children: [
+                // Status indicator — large, prominent (Von Restorff Effect)
+                // NOTE: AppDesignSystem.getStatusLabel(p.status) is NOT localized here —
+                // it lives in app_design_system.dart, which hasn't been reviewed yet.
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: color.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(
-                      AppDesignSystem.radiusSM,
+                      AppDesignSystem.radiusFull,
                     ),
+                    border: Border.all(color: color, width: 2),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Colors.white70,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          // Server-supplied text (a staff-entered reason) — not localized here.
-                          p.statusReason!,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Colors.white70,
-                            height: 1.5,
-                          ),
+                      Icon(_statusIcon(p.status), color: color, size: 28),
+                      const SizedBox(width: 10),
+                      Text(
+                        AppDesignSystem.getStatusLabel(p.status),
+                        style: AppDesignSystem.buttonLarge.copyWith(
+                          color: color,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: AppDesignSystem.spaceMD),
+
+                // Name
+                Text(
+                  p.fullName,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+
+                // ID Number
+                Text(
+                  p.idNumber,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white70,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: AppDesignSystem.spaceSM),
+
+                // Type badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(
+                      AppDesignSystem.radiusFull,
+                    ),
+                  ),
+                  child: Text(
+                    _beneficiaryTypeBadge(p.beneficiaryType, loc),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+
+                if (p.statusReason != null) ...[
+                  const SizedBox(height: AppDesignSystem.spaceSM),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(
+                        AppDesignSystem.radiusSM,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            // Server-supplied text (a staff-entered reason) — not localized here.
+                            p.statusReason!,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.white70,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         const SizedBox(height: AppDesignSystem.spaceMD),
@@ -300,6 +311,7 @@ class _StatusScreenState extends State<StatusScreen> {
             height: AppDesignSystem.touchTargetPrimary,
             child: OutlinedButton.icon(
               onPressed: () {
+                HapticFeedback.selectionClick();
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const FraudReportScreen()),

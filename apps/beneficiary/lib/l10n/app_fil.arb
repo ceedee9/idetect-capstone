@@ -77,5 +77,33 @@
   "navDisputes": "Reklamo",
   "navAlerts": "Mga Alerto",
 
+  "transactionsEmptyState": "Wala pang mga talaan ng beripikasyon",
+  "transactionsUnknownEstablishment": "Hindi Kilala",
+  "transactionsDetailTitle": "Mga Detalye ng Beripikasyon",
+  "transactionsEstablishmentLabel": "Establisyemento",
+  "transactionsDateTimeLabel": "Petsa at Oras",
+  "transactionsStatusLabel": "Katayuan",
+  "transactionsEntryLabel": "Paraan ng Pagpasok",
+  "transactionsEntryManual": "Manwal",
+
+  "fraudReportTitle": "Iulat ang Panloloko",
+  "fraudReportWarningBanner": "Ang pagsusumite ng ulat ng panloloko ay agad na magma-flag sa iyong ID para sa pagsusuri. Nakakatulong ito na protektahan ang iyong mga benepisyo.",
+  "fraudReportWhatHappened": "Ano ang nangyari?",
+  "fraudTypeUnauthorizedLabel": "Hindi Awtorisadong Paggamit",
+  "fraudTypeUnauthorizedDesc": "May gumamit ng aking ID nang wala akong pahintulot",
+  "fraudTypeStolenLabel": "Nanakaw na ID",
+  "fraudTypeStolenDesc": "Ninakaw ang aking pisikal na ID card",
+  "fraudTypeFakeLabel": "Pekeng / Ginayang ID",
+  "fraudTypeFakeDesc": "May gumawa ng kopya ng aking ID",
+  "fraudTypeOtherLabel": "Iba Pa",
+  "fraudTypeOtherDesc": "Ibang uri ng panloloko o maling paggamit",
+  "fraudReportDescribeIncident": "Ilarawan ang insidente",
+  "fraudReportDescriptionHint": "Magbigay ng detalye: kailan, saan, at paano mo nalaman ang panloloko...",
+  "fraudReportErrorEmptyDescription": "Pakilarawan ang insidente",
+  "fraudReportSuccessSnackbar": "Matagumpay na naisumite ang ulat ng panloloko",
+  "fraudReportErrorSnackbar": "Hindi naisumite ang ulat. Pakisubukang muli.",
+  "fraudReportSubmitting": "Isinusumite...",
+  "fraudReportSubmitButton": "Isumite ang Ulat",
+
   "notificationFallbackTitle": "Abiso"
 }

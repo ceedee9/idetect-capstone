@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/constants/app_design_system.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 
 class FraudReportScreen extends StatefulWidget {
@@ -14,26 +16,36 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
   final _descCtrl = TextEditingController();
   bool _submitting = false;
 
-  final _types = <String, _FraudType>{
+  // Icons + report-type keys stay here; labels/descriptions now come
+  // from AppLocalizations (built in _typesFor below) since they need
+  // to switch with the language toggle like every other screen.
+  static const _typeIcons = <String, IconData>{
+    'unauthorized_use': Icons.person_off_outlined,
+    'stolen_id': Icons.warning_amber_rounded,
+    'fake_id': Icons.content_copy_outlined,
+    'other': Icons.report_outlined,
+  };
+
+  Map<String, _FraudType> _typesFor(AppLocalizations loc) => {
     'unauthorized_use': _FraudType(
-      icon: Icons.person_off_outlined,
-      label: 'Unauthorized Use',
-      desc: 'Someone used my ID without my permission',
+      icon: _typeIcons['unauthorized_use']!,
+      label: loc.fraudTypeUnauthorizedLabel,
+      desc: loc.fraudTypeUnauthorizedDesc,
     ),
     'stolen_id': _FraudType(
-      icon: Icons.warning_amber_rounded,
-      label: 'Stolen ID',
-      desc: 'My physical ID card was stolen',
+      icon: _typeIcons['stolen_id']!,
+      label: loc.fraudTypeStolenLabel,
+      desc: loc.fraudTypeStolenDesc,
     ),
     'fake_id': _FraudType(
-      icon: Icons.content_copy_outlined,
-      label: 'Fake / Cloned ID',
-      desc: 'Someone created a copy of my ID',
+      icon: _typeIcons['fake_id']!,
+      label: loc.fraudTypeFakeLabel,
+      desc: loc.fraudTypeFakeDesc,
     ),
     'other': _FraudType(
-      icon: Icons.report_outlined,
-      label: 'Other',
-      desc: 'Another type of fraud or misuse',
+      icon: _typeIcons['other']!,
+      label: loc.fraudTypeOtherLabel,
+      desc: loc.fraudTypeOtherDesc,
     ),
   };
 
@@ -44,13 +56,15 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocalizations.of(context)!;
     if (_descCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please describe the incident')),
+        SnackBar(content: Text(loc.fraudReportErrorEmptyDescription)),
       );
       return;
     }
 
+    HapticFeedback.mediumImpact();
     setState(() => _submitting = true);
 
     final result = await ApiService.submitFraudReport(
@@ -63,16 +77,16 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
 
     if (result['error'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fraud report submitted successfully'),
+        SnackBar(
+          content: Text(loc.fraudReportSuccessSnackbar),
           backgroundColor: AppDesignSystem.statusValid,
         ),
       );
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to submit report. Please try again.'),
+        SnackBar(
+          content: Text(loc.fraudReportErrorSnackbar),
           backgroundColor: AppDesignSystem.statusInvalid,
         ),
       );
@@ -81,13 +95,16 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final types = _typesFor(loc);
+
     return Scaffold(
       backgroundColor: AppDesignSystem.backgroundWarm,
       appBar: AppBar(
         backgroundColor: AppDesignSystem.primaryBlue,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: Text('Report Fraud', style: AppDesignSystem.heading3),
+        title: Text(loc.fraudReportTitle, style: AppDesignSystem.heading3),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDesignSystem.screenPaddingHorizontal),
@@ -116,7 +133,7 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Filing a fraud report will immediately flag your ID for review. This helps protect your benefits.',
+                      loc.fraudReportWarningBanner,
                       style: AppDesignSystem.bodySmall.copyWith(
                         color: AppDesignSystem.accentRed,
                       ),
@@ -127,69 +144,79 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
             ),
             const SizedBox(height: AppDesignSystem.spaceMD),
 
-            // Type selection
-            Text('What happened?', style: AppDesignSystem.heading4),
+            // Type selection — functions as a radio group, so each
+            // option now carries Semantics(selected:) for screen
+            // readers, matching how the bottom nav tabs are handled.
+            Text(loc.fraudReportWhatHappened, style: AppDesignSystem.heading4),
             const SizedBox(height: AppDesignSystem.spaceSM),
 
-            ..._types.entries.map((e) {
+            ...types.entries.map((e) {
               final active = e.key == _selectedType;
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppDesignSystem.spaceXS),
-                child: InkWell(
-                  borderRadius: AppDesignSystem.cardRadius,
-                  onTap: () => setState(() => _selectedType = e.key),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: active
-                          ? AppDesignSystem.primaryBlue.withOpacity(0.06)
-                          : Colors.white,
-                      borderRadius: AppDesignSystem.cardRadius,
-                      border: Border.all(
+                child: Semantics(
+                  label: '${e.value.label}. ${e.value.desc}',
+                  selected: active,
+                  button: true,
+                  child: InkWell(
+                    borderRadius: AppDesignSystem.cardRadius,
+                    onTap: () {
+                      if (!active) HapticFeedback.selectionClick();
+                      setState(() => _selectedType = e.key);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
                         color: active
-                            ? AppDesignSystem.primaryBlue
-                            : AppDesignSystem.borderLight,
-                        width: active ? 2 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          e.value.icon,
+                            ? AppDesignSystem.primaryBlue.withOpacity(0.06)
+                            : Colors.white,
+                        borderRadius: AppDesignSystem.cardRadius,
+                        border: Border.all(
                           color: active
                               ? AppDesignSystem.primaryBlue
-                              : AppDesignSystem.textSecondary,
-                          size: 24,
+                              : AppDesignSystem.borderLight,
+                          width: active ? 2 : 1,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                e.value.label,
-                                style: AppDesignSystem.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: active
-                                      ? AppDesignSystem.primaryBlue
-                                      : AppDesignSystem.textPrimary,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            e.value.icon,
+                            color: active
+                                ? AppDesignSystem.primaryBlue
+                                : AppDesignSystem.textSecondary,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  e.value.label,
+                                  style: AppDesignSystem.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: active
+                                        ? AppDesignSystem.primaryBlue
+                                        : AppDesignSystem.textPrimary,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                e.value.desc,
-                                style: AppDesignSystem.caption,
-                              ),
-                            ],
+                                const SizedBox(height: 2),
+                                Text(
+                                  e.value.desc,
+                                  style: AppDesignSystem.caption,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (active)
-                          const Icon(
-                            Icons.check_circle,
-                            color: AppDesignSystem.primaryBlue,
-                            size: 22,
-                          ),
-                      ],
+                          if (active)
+                            const Icon(
+                              Icons.check_circle,
+                              color: AppDesignSystem.primaryBlue,
+                              size: 22,
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -199,21 +226,26 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
             const SizedBox(height: AppDesignSystem.spaceMD),
 
             // Description
-            Text('Describe the incident', style: AppDesignSystem.heading4),
+            Text(
+              loc.fraudReportDescribeIncident,
+              style: AppDesignSystem.heading4,
+            ),
             const SizedBox(height: AppDesignSystem.spaceSM),
             TextField(
               controller: _descCtrl,
               maxLines: 5,
               decoration: AppDesignSystem.inputDecoration(
-                hintText:
-                    'Provide details: when, where, and how you discovered the fraud...',
+                hintText: loc.fraudReportDescriptionHint,
               ),
             ),
             const SizedBox(height: AppDesignSystem.spaceLG),
 
-            // Submit
+            // Submit — explicit 64dp, matching the touchTargetPrimary
+            // convention used for primary CTAs elsewhere (this button
+            // previously had no explicit height at all).
             SizedBox(
               width: double.infinity,
+              height: AppDesignSystem.touchTargetPrimary,
               child: ElevatedButton.icon(
                 onPressed: _submitting ? null : _submit,
                 icon: _submitting
@@ -226,13 +258,17 @@ class _FraudReportScreenState extends State<FraudReportScreen> {
                         ),
                       )
                     : const Icon(Icons.send, color: Colors.white),
-                label: Text(
-                  _submitting ? 'Submitting...' : 'Submit Report',
-                  style: AppDesignSystem.buttonMedium,
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _submitting
+                        ? loc.fraudReportSubmitting
+                        : loc.fraudReportSubmitButton,
+                    style: AppDesignSystem.buttonMedium,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppDesignSystem.accentRed,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: AppDesignSystem.buttonRadius,
                   ),

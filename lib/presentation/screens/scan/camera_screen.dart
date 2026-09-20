@@ -6,12 +6,13 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_design_system.dart';
-import 'processing_screen.dart';
+import 'review_capture_screen.dart';
 import '../../../services/seal_presence_detector.dart';
 import '../../../services/zone_optimized_ocr.dart';
 import '../../../services/layout_based_field_extractor.dart';
@@ -166,23 +167,31 @@ class _CameraScreenState extends State<CameraScreen> {
         img.encodeJpg(croppedImage, quality: 95),
       );
 
-      final sealResult = await SealPresenceDetector.checkSeal(
-        imagePath: processedPath,
-        imageWidth: croppedImage.width,
-        imageHeight: croppedImage.height,
-        beneficiaryType: widget.idType,
-      );
+      final sealResult = widget.idType == 'auto'
+          ? SealCheckResult.unavailable('Card type not resolved yet')
+          : await SealPresenceDetector.checkSeal(
+              imagePath: processedPath,
+              imageWidth: croppedImage.width,
+              imageHeight: croppedImage.height,
+              beneficiaryType: widget.idType,
+            );
       debugPrint('[SEAL TEST] detected=${sealResult.sealDetected}, '
           'blueness=${sealResult.blueness}, '
           'stdDev=${sealResult.stdDevLuminance}');
 
       if (mounted) {
         debugPrint(
-            '[TRACE] CameraScreen -> ProcessingScreen: idFormat=${widget.idFormat}');
+            '[TRACE] CameraScreen -> ReviewCaptureScreen: idFormat=${widget.idFormat}');
+        // Route through a review step instead of straight into the OCR
+        // pipeline — lets staff catch a bad photo (and see the seal
+        // detection result above, previously computed but unused) before
+        // committing to processing. ReviewCaptureScreen itself decides
+        // whether to pushReplacement into ProcessingScreen (Use This
+        // Photo) or just pop back here (Retake).
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProcessingScreen(
+            builder: (context) => ReviewCaptureScreen(
               imagePath: processedPath,
               idType: widget.idType,
               idFormat: widget.idFormat,
@@ -190,7 +199,7 @@ class _CameraScreenState extends State<CameraScreen> {
             ),
           ),
         );
-        // Reset capturing state when returning from processing
+        // Reset capturing state when returning from review/processing
         if (mounted) {
           setState(() => _isCapturing = false);
         }
@@ -306,14 +315,17 @@ class _CameraScreenState extends State<CameraScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                widget.idType == 'senior'
-                    ? 'Senior Citizen ID'
-                    : widget.idType == 'pwd'
-                        ? 'PWD ID'
-                        : 'Auto-detect ID Type',
-                style: AppDesignSystem.bodyMedium.copyWith(
+                (widget.idType == 'senior'
+                        ? 'Senior Citizen ID'
+                        : widget.idType == 'pwd'
+                            ? 'PWD ID'
+                            : 'Auto-detect ID Type')
+                    .toUpperCase(),
+                style: GoogleFonts.ibmPlexMono(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  letterSpacing: 1.4,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -358,10 +370,12 @@ class _CameraScreenState extends State<CameraScreen> {
                 child: Column(
                   children: [
                     Text(
-                      'Position ID card within the frame',
-                      style: AppDesignSystem.bodySmall.copyWith(
+                      'POSITION ID CARD WITHIN THE FRAME',
+                      style: GoogleFonts.ibmPlexMono(
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        letterSpacing: 1.0,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -410,10 +424,11 @@ class _CameraScreenState extends State<CameraScreen> {
 
               // Capture label
               Text(
-                _isCapturing ? 'Processing...' : 'TAP TO CAPTURE',
-                style: AppDesignSystem.bodyMedium.copyWith(
+                _isCapturing ? 'PROCESSING...' : 'TAP TO CAPTURE',
+                style: GoogleFonts.ibmPlexMono(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -476,23 +491,17 @@ class _IDFramePainter extends CustomPainter {
       Paint()..color = Colors.black.withOpacity(0.6),
     );
 
-    // Draw green frame border
-    final framePaint = Paint()
-      ..color = const Color(0xFF4CAF50) // Softer green
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(frameRect, const Radius.circular(12)),
-      framePaint,
-    );
-
-    // Draw corner guides
+    // NOTE: previously drew a full rounded-rect border in green PLUS
+    // corner brackets on top of it — redundant, and green specifically
+    // collides with "valid" as an outcome color once a scan result
+    // exists. Corner brackets only now, in white (kept white rather
+    // than institutional navy so the guide stays visible against dark
+    // ID cards/backgrounds — navy can disappear against a dark scene).
     final cornerLength = 30.0;
     final cornerPaint = Paint()
-      ..color = const Color(0xFF4CAF50) // Softer green
+      ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5.0
+      ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
 
     // Top-left corner

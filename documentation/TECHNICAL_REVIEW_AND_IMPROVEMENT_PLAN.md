@@ -3,6 +3,8 @@
 **Reviewed:** April 29, 2026  
 **Status:** Pending Implementation
 
+> **Editorial note (Sep 2026):** Kept as a historical improvement roadmap. Documentation-only issues referencing the old hosting platform have since been corrected elsewhere in `documentation/` (backend is Node.js/Express on Northflank, PostgreSQL/Storage on Supabase). The functional gaps below should be re-verified against the current codebase rather than assumed fixed.
+
 ---
 
 ## I. EXECUTIVE SUMMARY

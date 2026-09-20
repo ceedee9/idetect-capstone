@@ -210,5 +210,88 @@ class AppLocalizationsFil extends AppLocalizations {
   String get navAlerts => 'Mga Alerto';
 
   @override
+  String get transactionsEmptyState => 'Wala pang mga talaan ng beripikasyon';
+
+  @override
+  String get transactionsUnknownEstablishment => 'Hindi Kilala';
+
+  @override
+  String get transactionsDetailTitle => 'Mga Detalye ng Beripikasyon';
+
+  @override
+  String get transactionsEstablishmentLabel => 'Establisyemento';
+
+  @override
+  String get transactionsDateTimeLabel => 'Petsa at Oras';
+
+  @override
+  String get transactionsStatusLabel => 'Katayuan';
+
+  @override
+  String get transactionsEntryLabel => 'Paraan ng Pagpasok';
+
+  @override
+  String get transactionsEntryManual => 'Manwal';
+
+  @override
+  String get fraudReportTitle => 'Iulat ang Panloloko';
+
+  @override
+  String get fraudReportWarningBanner =>
+      'Ang pagsusumite ng ulat ng panloloko ay agad na magma-flag sa iyong ID para sa pagsusuri. Nakakatulong ito na protektahan ang iyong mga benepisyo.';
+
+  @override
+  String get fraudReportWhatHappened => 'Ano ang nangyari?';
+
+  @override
+  String get fraudTypeUnauthorizedLabel => 'Hindi Awtorisadong Paggamit';
+
+  @override
+  String get fraudTypeUnauthorizedDesc =>
+      'May gumamit ng aking ID nang wala akong pahintulot';
+
+  @override
+  String get fraudTypeStolenLabel => 'Nanakaw na ID';
+
+  @override
+  String get fraudTypeStolenDesc => 'Ninakaw ang aking pisikal na ID card';
+
+  @override
+  String get fraudTypeFakeLabel => 'Pekeng / Ginayang ID';
+
+  @override
+  String get fraudTypeFakeDesc => 'May gumawa ng kopya ng aking ID';
+
+  @override
+  String get fraudTypeOtherLabel => 'Iba Pa';
+
+  @override
+  String get fraudTypeOtherDesc => 'Ibang uri ng panloloko o maling paggamit';
+
+  @override
+  String get fraudReportDescribeIncident => 'Ilarawan ang insidente';
+
+  @override
+  String get fraudReportDescriptionHint =>
+      'Magbigay ng detalye: kailan, saan, at paano mo nalaman ang panloloko...';
+
+  @override
+  String get fraudReportErrorEmptyDescription => 'Pakilarawan ang insidente';
+
+  @override
+  String get fraudReportSuccessSnackbar =>
+      'Matagumpay na naisumite ang ulat ng panloloko';
+
+  @override
+  String get fraudReportErrorSnackbar =>
+      'Hindi naisumite ang ulat. Pakisubukang muli.';
+
+  @override
+  String get fraudReportSubmitting => 'Isinusumite...';
+
+  @override
+  String get fraudReportSubmitButton => 'Isumite ang Ulat';
+
+  @override
   String get notificationFallbackTitle => 'Abiso';
 }

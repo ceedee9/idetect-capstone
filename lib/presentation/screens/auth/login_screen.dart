@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
+import '../../widgets/guilloche_painter.dart';
 import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -150,7 +151,8 @@ class _LoginScreenState extends State<LoginScreen> {
           // it reads as document texture, not decoration competing
           // with the logo/form.
           Positioned.fill(
-            child: CustomPaint(painter: _GuillochePainter()),
+            child: CustomPaint(
+                painter: const GuillochePainter(baseColor: Color(0xFF8FA9DD))),
           ),
           SafeArea(
             child: Center(
@@ -367,72 +369,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
-
-/// Subtle interlocking-wave "security document" texture — the same
-/// guilloché motif used behind the header band on the web login,
-/// reimplemented as a CustomPainter since Flutter has no built-in
-/// inline-SVG rendering without adding flutter_svg as a dependency.
-/// Two overlapping wave layers at very low opacity, matching the
-/// two-tone treatment used on web.
-class _GuillochePainter extends CustomPainter {
-  const _GuillochePainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    _drawLayer(
-      canvas,
-      size,
-      wavelength: 96,
-      amplitude: 22,
-      rowSpacing: 40,
-      phaseShift: 0,
-      color: const Color(0xFF8FA9DD).withOpacity(0.07),
-      strokeWidth: 0.8,
-    );
-    _drawLayer(
-      canvas,
-      size,
-      wavelength: 96,
-      amplitude: 22,
-      rowSpacing: 40,
-      phaseShift: 20,
-      color: const Color(0xFF5680CB).withOpacity(0.05),
-      strokeWidth: 0.6,
-    );
-  }
-
-  void _drawLayer(
-    Canvas canvas,
-    Size size, {
-    required double wavelength,
-    required double amplitude,
-    required double rowSpacing,
-    required double phaseShift,
-    required Color color,
-    required double strokeWidth,
-  }) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    for (double rowY = phaseShift - amplitude;
-        rowY < size.height + amplitude;
-        rowY += rowSpacing) {
-      final path = Path()..moveTo(-wavelength, rowY);
-      for (double x = -wavelength;
-          x < size.width + wavelength;
-          x += wavelength) {
-        path.relativeQuadraticBezierTo(
-            wavelength / 2, -amplitude, wavelength, 0);
-        path.relativeQuadraticBezierTo(
-            wavelength / 2, amplitude, wavelength, 0);
-      }
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _GuillochePainter oldDelegate) => false;
 }

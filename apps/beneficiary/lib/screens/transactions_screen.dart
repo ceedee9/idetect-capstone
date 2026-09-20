@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_design_system.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 
 class TransactionsScreen extends StatefulWidget {
@@ -67,6 +69,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     if (_transactions.isEmpty && _isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppDesignSystem.primaryBlue),
@@ -92,7 +96,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     ),
                     const SizedBox(height: AppDesignSystem.spaceSM),
                     Text(
-                      'No verification records yet',
+                      loc.transactionsEmptyState,
                       style: AppDesignSystem.bodyMedium,
                     ),
                   ],
@@ -122,13 +126,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ),
             );
           }
-          return _buildTile(_transactions[i]);
+          return _buildTile(_transactions[i], loc);
         },
       ),
     );
   }
 
-  Widget _buildTile(TransactionRecord tx) {
+  Widget _buildTile(TransactionRecord tx, AppLocalizations loc) {
     final statusColors = {
       'valid': AppDesignSystem.statusValid,
       'invalid': AppDesignSystem.statusInvalid,
@@ -149,7 +153,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       ),
       child: InkWell(
         borderRadius: AppDesignSystem.cardRadius,
-        onTap: () => _showDetail(tx),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          _showDetail(tx, loc);
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -177,7 +184,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tx.establishmentName ?? 'Unknown',
+                      tx.establishmentName ??
+                          loc.transactionsUnknownEstablishment,
                       style: AppDesignSystem.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -185,7 +193,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Text('$date  â€¢  $time', style: AppDesignSystem.caption),
+                    // Was 'â€¢' — a mojibake/encoding bug rendering as
+                    // literal garbage text instead of a bullet (•).
+                    Text('$date  •  $time', style: AppDesignSystem.caption),
                   ],
                 ),
               ),
@@ -201,6 +211,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                 ),
                 child: Text(
+                  // NOTE: raw API status value, uppercased — not localized.
+                  // Same known gap already flagged in status_screen.dart's
+                  // AppDesignSystem.getStatusLabel comment; fixing it means
+                  // touching that shared helper, out of scope for this file.
                   tx.result.toUpperCase(),
                   style: AppDesignSystem.caption.copyWith(
                     color: color,
@@ -216,9 +230,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  void _showDetail(TransactionRecord tx) {
+  void _showDetail(TransactionRecord tx, AppLocalizations loc) {
     final formatted = DateFormat(
-      'MMMM d, yyyy  â€¢  h:mm a',
+      'MMMM d, yyyy  •  h:mm a', // was 'â€¢' — same mojibake fix as above
     ).format(tx.verifiedAt);
 
     showModalBottomSheet(
@@ -248,16 +262,23 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Verification Details',
+              loc.transactionsDetailTitle,
               style: AppDesignSystem.heading3.copyWith(
                 color: AppDesignSystem.textPrimary,
               ),
             ),
             const SizedBox(height: 16),
-            _detailRow('Establishment', tx.establishmentName ?? 'Unknown'),
-            _detailRow('Date & Time', formatted),
-            _detailRow('Status', tx.result.toUpperCase()),
-            if (tx.manuallyEntered) _detailRow('Entry', 'Manual'),
+            _detailRow(
+              loc.transactionsEstablishmentLabel,
+              tx.establishmentName ?? loc.transactionsUnknownEstablishment,
+            ),
+            _detailRow(loc.transactionsDateTimeLabel, formatted),
+            _detailRow(loc.transactionsStatusLabel, tx.result.toUpperCase()),
+            if (tx.manuallyEntered)
+              _detailRow(
+                loc.transactionsEntryLabel,
+                loc.transactionsEntryManual,
+              ),
             const SizedBox(height: 16),
           ],
         ),

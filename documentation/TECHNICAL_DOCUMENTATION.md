@@ -65,8 +65,8 @@ The system automates the extraction of personal information from Philippine gove
 2. **Image Processing**: 10-step enhancement pipeline
 3. **Text Recognition**: Dual OCR engine (Tesseract + ML Kit)
 4. **Field Extraction**: Multi-layer parsing strategy
-5. **Validation**: Cross-reference with local/remote database
-6. **Data Management**: Local storage with Supabase sync capability
+5. **Validation**: Cross-reference with local cache and the production database (via the iDetect API)
+6. **Data Management**: Local storage (SQLite/Hive) with server-side logging through the iDetect API, backed by PostgreSQL on Supabase
 
 ### Target Users
 
@@ -229,10 +229,11 @@ final bestResult = _selectBestOCRResult(tesseractResult, mlKitResult);
 - **`lottie: ^3.0.0`**: Animated illustrations (loading screens)
 - **`flutter_svg: ^2.0.10`**: SVG support for icons and logos
 
-### Backend (Production — Railway)
+### Backend (Production — Northflank)
 
-- **PostgreSQL**: Hosted on Railway; stores all beneficiary, verification, and fraud flag records
-- **Node.js / Express REST API**: Deployed at `https://idetect-capstone-production.up.railway.app/api`
+- **PostgreSQL**: Managed via Supabase (accessed through the connection pooler); stores all beneficiary, verification, and fraud flag records
+- **Node.js / Express REST API**: Deployed together with the staff web portal as one combined Northflank service at `https://idetect.it.com/api`
+- **File storage**: ID card images and dispute documents are stored in Supabase Storage (`id-captures`, `dispute-docs` buckets)
 - **Offline fallback**: When the device has no connectivity, the app uses a 6-hour local Hive cache of previously synced beneficiary statuses
 
 ---
@@ -411,7 +412,7 @@ final bestResult = _selectBestOCRResult(tesseractResult, mlKitResult);
    │   ├─> Confidence score
    │   └─> Extraction method
    │
-   └─> Optional: Sync to Supabase (future)
+   └─> Also logged server-side via the iDetect API when online (PostgreSQL on Supabase)
 ```
 
 ---
@@ -2468,9 +2469,9 @@ class AppSettings {
 }
 ```
 
-### Future: Supabase Integration
+### Future: Direct Mobile-to-Supabase Sync
 
-Planned for remote validation and multi-device sync:
+> Note: the production **backend already runs on Supabase** (PostgreSQL + Storage), reached through the iDetect API. What's described below is a separate, not-yet-built idea for the _mobile app_ to talk to Supabase directly (bypassing the API) for offline-first multi-device sync — it is not required by the current architecture.
 
 ```dart
 // When implemented:
@@ -2689,8 +2690,8 @@ if (currentMonth < birthMonth ||
 
 ### Medium-Term (3-6 Months)
 
-1. **Supabase Integration**
-   - Remote database sync
+1. **Direct Mobile-to-Supabase Sync**
+   - Optional offline-first sync directly from the mobile app to Supabase (in addition to the existing API-mediated backend, which is already live on Supabase/Northflank)
    - Multi-device access
    - Real-time validation
    - Server-side processing for heavy tasks
@@ -2919,7 +2920,7 @@ flutter build windows --release
 - **Perspective Correction**: Full corner detection and transformation
 - **Database Expansion**: More comprehensive Filipino name database
 - **Multi-ID Support**: Extend to other government IDs
-- **Cloud Integration**: Supabase sync for multi-device access
+- **Cloud Integration**: Direct Supabase Realtime sync for multi-device access on the mobile app (the backend API is already on Supabase/Northflank in production)
 
 ### Contact for Technical Questions
 

@@ -90,7 +90,9 @@ export default function EstablishmentsPage() {
       await refetch();
     } catch (err) {
       setActionError(
-        err.response?.data?.message || "Action failed. Please try again.",
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Action failed. Please try again.",
       );
     } finally {
       setActionLoading(false);

@@ -5,6 +5,8 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -16,10 +18,10 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   static const _pageSize = 20;
-  static const Color _primary = Color(0xFF002E6B);
-  static const Color _validColor = Color(0xFF16A34A);
-  static const Color _suspiciousColor = Color(0xFFD97706);
-  static const Color _invalidColor = Color(0xFFDC2626);
+  static const Color _primary = AppDesignSystem.primaryBlue;
+  static const Color _validColor = AppDesignSystem.statusValid;
+  static const Color _suspiciousColor = AppDesignSystem.statusSuspicious;
+  static const Color _invalidColor = AppDesignSystem.statusInvalid;
 
   List<Map<String, dynamic>> _records = [];
   int _totalRecords = 0;
@@ -118,7 +120,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     int v = 0, s = 0, inv = 0;
     for (final r in rows) {
       final result = (r['result'] as String? ?? '').toLowerCase();
-      if (result == 'valid')
+      // 'manual_review' is displayed as VALID in _RecordTile ("ID found in
+      // DB — treat as valid"), so it must be folded into the valid tally
+      // here too, or this summary and the visible list disagree.
+      if (result == 'valid' || result == 'manual_review')
         v++;
       else if (result == 'suspicious')
         s++;
@@ -183,7 +188,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       case 'invalid':
         return _invalidColor;
       default:
-        return Colors.grey;
+        return AppDesignSystem.textTertiary;
     }
   }
 
@@ -213,18 +218,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppDesignSystem.backgroundLight,
       appBar: AppBar(
         backgroundColor: _primary,
         foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'Verification History',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: GoogleFonts.sourceSerif4(
+              fontWeight: FontWeight.w700, fontSize: 19),
         ),
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh',
             onPressed: () => _load(page: 1, replace: true),
           ),
@@ -257,12 +263,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.history,
-                          size: 64, color: Colors.grey.shade300),
+                      Icon(Icons.history_rounded,
+                          size: 64, color: AppDesignSystem.textTertiary),
                       const SizedBox(height: 12),
                       Text(
                         'No verification records found.',
-                        style: TextStyle(color: Colors.grey.shade500),
+                        style: AppDesignSystem.bodyMedium
+                            .copyWith(color: AppDesignSystem.textTertiary),
                       ),
                     ],
                   ),
@@ -308,13 +315,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Compliance Summary',
-            style: TextStyle(
-              fontSize: 13,
+          Text(
+            'COMPLIANCE SUMMARY',
+            style: GoogleFonts.ibmPlexMono(
+              fontSize: 11,
+              letterSpacing: 1.8,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF374151),
-              letterSpacing: 0.3,
+              color: AppDesignSystem.textTertiary,
             ),
           ),
           const SizedBox(height: 8),
@@ -361,24 +368,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: AppDesignSystem.backgroundWhite,
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
+        border: Border.all(color: AppDesignSystem.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.filter_alt_outlined,
-                  size: 16, color: Color(0xFF6B7280)),
+              Icon(Icons.filter_alt_outlined,
+                  size: 16, color: AppDesignSystem.iconLight),
               const SizedBox(width: 6),
-              const Text(
+              Text(
                 'Filter by date range & result',
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF374151)),
+                style: GoogleFonts.ibmPlexMono(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                  color: AppDesignSystem.textSecondary,
+                ),
               ),
               const Spacer(),
               if (hasFilter)
@@ -391,12 +400,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     });
                     _applyFilters();
                   },
-                  child: const Text(
+                  child: Text(
                     'Clear',
                     style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF2563EB),
-                        fontWeight: FontWeight.w500),
+                        color: AppDesignSystem.secondaryBlue,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
             ],
@@ -471,17 +480,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _applyFilters,
-                  icon: const Icon(Icons.search, size: 14),
-                  label: const Text('Apply', style: TextStyle(fontSize: 12)),
+                  icon: const Icon(Icons.search_rounded, size: 14),
+                  label: Text('Apply',
+                      style: GoogleFonts.ibmPlexMono(
+                          fontSize: 11, letterSpacing: 0.4)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primary,
                     foregroundColor: Colors.white,
+                    elevation: 0,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius:
+                          BorderRadius.circular(AppDesignSystem.radiusSM),
                     ),
                   ),
                 ),
@@ -504,21 +517,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: _currentPage > 1
                 ? () => _load(page: _currentPage - 1, replace: true)
                 : null,
-            icon: const Icon(Icons.chevron_left),
+            icon: const Icon(Icons.chevron_left_rounded),
             color: _primary,
           ),
           Text(
             'Page $_currentPage of $_totalPages',
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF374151)),
+            style: GoogleFonts.ibmPlexMono(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
+                color: AppDesignSystem.textSecondary),
           ),
           IconButton(
             onPressed: _currentPage < _totalPages
                 ? () => _load(page: _currentPage + 1, replace: true)
                 : null,
-            icon: const Icon(Icons.chevron_right),
+            icon: const Icon(Icons.chevron_right_rounded),
             color: _primary,
           ),
         ],
@@ -549,8 +563,8 @@ class _SummaryCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
           color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.2)),
+          borderRadius: BorderRadius.circular(AppDesignSystem.radiusSM),
+          border: Border.all(color: color.withOpacity(0.25)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -559,15 +573,16 @@ class _SummaryCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '$count',
-              style: TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold, color: color),
+              style: GoogleFonts.sourceSerif4(
+                  fontSize: 18, fontWeight: FontWeight.w700, color: color),
             ),
             Text(
-              label,
-              style: TextStyle(
-                  fontSize: 10,
-                  color: color.withOpacity(0.8),
-                  fontWeight: FontWeight.w500),
+              label.toUpperCase(),
+              style: GoogleFonts.ibmPlexMono(
+                  fontSize: 9,
+                  letterSpacing: 0.6,
+                  color: color.withOpacity(0.85),
+                  fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -589,19 +604,20 @@ class _DateButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFD1D5DB)),
+          color: AppDesignSystem.backgroundLightBlue,
+          borderRadius: BorderRadius.circular(AppDesignSystem.radiusSM),
+          border: Border.all(color: AppDesignSystem.borderLight),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined,
-                size: 14, color: Color(0xFF6B7280)),
+            Icon(Icons.calendar_today_outlined,
+                size: 14, color: AppDesignSystem.iconLight),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF374151)),
+                style: TextStyle(
+                    fontSize: 11, color: AppDesignSystem.textSecondary),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -634,15 +650,16 @@ class _FilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: selected ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? color : const Color(0xFFD1D5DB)),
+          borderRadius: BorderRadius.circular(AppDesignSystem.radiusFull),
+          border: Border.all(
+              color: selected ? color : AppDesignSystem.borderMedium),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: selected ? Colors.white : const Color(0xFF6B7280),
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : AppDesignSystem.textSecondary,
           ),
         ),
       ),
@@ -686,16 +703,10 @@ class _RecordTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        color: AppDesignSystem.backgroundWhite,
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
+        border: Border.all(color: AppDesignSystem.borderLight),
+        boxShadow: AppDesignSystem.shadowSM,
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -725,7 +736,7 @@ class _RecordTile extends StatelessWidget {
                           style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
-                              color: Color(0xFF111827)),
+                              color: AppDesignSystem.textPrimary),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -734,13 +745,15 @@ class _RecordTile extends StatelessWidget {
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: resultColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius:
+                              BorderRadius.circular(AppDesignSystem.radiusXS),
                         ),
                         child: Text(
                           result,
-                          style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                          style: GoogleFonts.ibmPlexMono(
+                              fontSize: 9.5,
+                              letterSpacing: 0.4,
+                              fontWeight: FontWeight.w700,
                               color: resultColor),
                         ),
                       ),
@@ -749,10 +762,8 @@ class _RecordTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     idNumber,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF6B7280),
-                        fontFamily: 'monospace'),
+                    style: GoogleFonts.ibmPlexMono(
+                        fontSize: 11, color: AppDesignSystem.textSecondary),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -761,7 +772,7 @@ class _RecordTile extends StatelessWidget {
                       if (manual) ...[
                         const SizedBox(width: 6),
                         _chip('Manual', Icons.edit_outlined,
-                            color: const Color(0xFFD97706)),
+                            color: AppDesignSystem.statusSuspicious),
                       ],
                       if (confStr != null) ...[
                         const SizedBox(width: 6),
@@ -770,15 +781,15 @@ class _RecordTile extends StatelessWidget {
                       if (isManualReview) ...[
                         const SizedBox(width: 6),
                         _chip('Manual Review', Icons.remove_red_eye_outlined,
-                            color: Color(0xFF1A56DB)),
+                            color: AppDesignSystem.statusManualReview),
                       ],
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     ts,
-                    style:
-                        const TextStyle(fontSize: 10, color: Color(0xFF9CA3AF)),
+                    style: TextStyle(
+                        fontSize: 10, color: AppDesignSystem.textTertiary),
                   ),
                 ],
               ),
@@ -790,7 +801,7 @@ class _RecordTile extends StatelessWidget {
   }
 
   Widget _chip(String label, IconData icon,
-      {Color color = const Color(0xFF6B7280)}) {
+      {Color color = AppDesignSystem.textSecondary}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -814,16 +825,19 @@ class _ErrorBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusSM),
+        border: Border.all(
+            color: AppDesignSystem.statusInvalid.withOpacity(0.4), width: 1.5),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 18),
+          Icon(Icons.error_outline_rounded,
+              color: AppDesignSystem.statusInvalid, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(message,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B))),
+                style: TextStyle(
+                    fontSize: 12, color: AppDesignSystem.statusInvalid)),
           ),
         ],
       ),

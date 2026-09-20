@@ -19,21 +19,21 @@ If you do not set `VITE_API_URL`, the portal falls back to `/api` only in develo
 
 ### Deployed portal
 
-If the unified portal is deployed on Vercel, set `VITE_API_URL` to your deployed API project URL.
+In production, the portal is built and served together with the API as **one combined Northflank service** at `https://idetect.it.com`, so `VITE_API_URL` normally does not need to point at a separate host.
 
-Example:
+Example (only needed if you intentionally point at a different backend host):
 
 ```env
-VITE_API_URL=https://your-api-project.vercel.app/api
+VITE_API_URL=https://idetect.it.com/api
 ```
 
-You only need a full URL if you intentionally use a separate backend host.
+> Note: `apps/web/vercel.json` is a leftover from an earlier Vercel-based deployment plan and is not used by the current Northflank deployment.
 
 ## Current Code State
 
 - `apps/web/src/services/api.js` requires `VITE_API_URL` in production.
 - `apps/web/vite.config.js` still proxies `/api` to `http://localhost:3000` for local dev.
-- `apps/web/vercel.json` keeps SPA routing and does not proxy the API in production.
+- In production, the combined Northflank service serves both the portal build and `/api/*` from the same origin.
 
 ## Rebuild Order
 

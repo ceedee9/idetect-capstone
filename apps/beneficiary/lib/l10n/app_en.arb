@@ -84,5 +84,34 @@
   "navDisputes": "Disputes",
   "navAlerts": "Alerts",
 
+  "transactionsEmptyState": "No verification records yet",
+  "transactionsUnknownEstablishment": "Unknown",
+  "transactionsDetailTitle": "Verification Details",
+  "transactionsEstablishmentLabel": "Establishment",
+  "transactionsDateTimeLabel": "Date & Time",
+  "transactionsStatusLabel": "Status",
+  "transactionsEntryLabel": "Entry",
+  "transactionsEntryManual": "Manual",
+
+  "fraudReportTitle": "Report Fraud",
+  "fraudReportWarningBanner": "Filing a fraud report will immediately flag your ID for review. This helps protect your benefits.",
+  "fraudReportWhatHappened": "What happened?",
+  "fraudTypeUnauthorizedLabel": "Unauthorized Use",
+  "fraudTypeUnauthorizedDesc": "Someone used my ID without my permission",
+  "fraudTypeStolenLabel": "Stolen ID",
+  "fraudTypeStolenDesc": "My physical ID card was stolen",
+  "fraudTypeFakeLabel": "Fake / Cloned ID",
+  "fraudTypeFakeDesc": "Someone created a copy of my ID",
+  "fraudTypeOtherLabel": "Other",
+  "fraudTypeOtherDesc": "Another type of fraud or misuse",
+  "fraudReportDescribeIncident": "Describe the incident",
+  "fraudReportDescriptionHint": "Provide details: when, where, and how you discovered the fraud...",
+  "fraudReportErrorEmptyDescription": "Please describe the incident",
+  "fraudReportSuccessSnackbar": "Fraud report submitted successfully",
+  "fraudReportErrorSnackbar": "Failed to submit report. Please try again.",
+  "fraudReportSubmitting": "Submitting...",
+  "fraudReportSubmitButton": "Submit Report",
+
   "notificationFallbackTitle": "Notification"
+
 }
