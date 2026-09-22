@@ -293,5 +293,109 @@ class AppLocalizationsFil extends AppLocalizations {
   String get fraudReportSubmitButton => 'Isumite ang Ulat';
 
   @override
+  String get disputesNewButton => 'Bagong Reklamo';
+
+  @override
+  String get disputesEmptyTitle => 'Walang naisumiteng reklamo';
+
+  @override
+  String get disputesEmptySubtitle =>
+      'Pindutin ang button sa ibaba para maghain ng bagong reklamo';
+
+  @override
+  String get disputesDetailTitle => 'Mga Detalye ng Reklamo';
+
+  @override
+  String get disputesTypeLabel => 'Uri';
+
+  @override
+  String get disputesFiledLabel => 'Isinampa';
+
+  @override
+  String get disputesDescriptionLabel => 'Paglalarawan';
+
+  @override
+  String get disputesResolutionLabel => 'Resolusyon';
+
+  @override
+  String get disputesFileTitle => 'Maghain ng Reklamo';
+
+  @override
+  String get disputesTypeSectionLabel => 'Uri ng Reklamo';
+
+  @override
+  String get disputesDescriptionHint => 'Ilarawan ang iyong reklamo...';
+
+  @override
+  String get disputesSupportingDocLabel => 'Sumusuportang Dokumento';
+
+  @override
+  String get disputesSupportingDocHint =>
+      'Opsyonal — maglakip ng larawan ng iyong ID, sertipiko ng barangay, atbp.';
+
+  @override
+  String get disputesAttachButton => 'Maglakip ng Larawan / Dokumento';
+
+  @override
+  String get disputesErrorEmptyDescription =>
+      'Pakilagay ang isang paglalarawan';
+
+  @override
+  String disputesErrorUploadFailed(String error) {
+    return 'Hindi na-upload: $error';
+  }
+
+  @override
+  String get disputesSuccessSnackbar => 'Naisumite ang reklamo';
+
+  @override
+  String get disputesSubmitButton => 'Isumite ang Reklamo';
+
+  @override
+  String get disputeTypeWrongDenialLabel => 'Maling Pagtanggi';
+
+  @override
+  String get disputeTypeWrongDenialDesc =>
+      'Maling tinanggihan ka ng isang negosyo sa diskwento';
+
+  @override
+  String get disputeTypeBusinessRefusalLabel => 'Pagtanggi ng Negosyo';
+
+  @override
+  String get disputeTypeBusinessRefusalDesc =>
+      'May negosyong tumanggi kilalanin ang iyong wastong ID';
+
+  @override
+  String get disputeTypeIncorrectDbInfoLabel =>
+      'Maling Impormasyon sa Database';
+
+  @override
+  String get disputeTypeIncorrectDbInfoDesc =>
+      'Mali ang iyong impormasyon sa aming sistema';
+
+  @override
+  String get notificationsErrorFallback => 'Hindi ma-load ang mga abiso.';
+
+  @override
+  String get notificationsErrorGeneric =>
+      'May naganap na error. Pakisubukang muli.';
+
+  @override
+  String get notificationsRetryButton => 'Subukang Muli';
+
+  @override
+  String get notificationsMarkAllRead => 'Markahan lahat bilang nabasa';
+
+  @override
+  String get notificationsEmptyTitle => 'Walang abiso';
+
+  @override
+  String get notificationsEmptySubtitle => 'I-pull pababa para mag-refresh';
+
+  @override
+  String get notificationsLoadMoreError =>
+      'Hindi ma-load ang karagdagang abiso.';
+
+  @override
   String get notificationFallbackTitle => 'Abiso';
 }

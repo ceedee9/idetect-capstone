@@ -1,8 +1,10 @@
 ﻿import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_design_system.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 
 class DisputesScreen extends StatefulWidget {
@@ -10,6 +12,17 @@ class DisputesScreen extends StatefulWidget {
 
   @override
   State<DisputesScreen> createState() => _DisputesScreenState();
+}
+
+class _DisputeType {
+  final IconData icon;
+  final String label;
+  final String desc;
+  const _DisputeType({
+    required this.icon,
+    required this.label,
+    required this.desc,
+  });
 }
 
 class _DisputesScreenState extends State<DisputesScreen> {
@@ -48,8 +61,52 @@ class _DisputesScreenState extends State<DisputesScreen> {
     }
   }
 
+  // Known dispute-type keys get explicit localized label/icon/description
+  // (matching fraud_report_screen's pattern) instead of the mechanical
+  // word-capitalization _formatType did before — that approach can't be
+  // translated and produced awkward results (e.g. "Incorrect Db Info").
+  // _formatType is kept only as a fallback for an unrecognized type value.
+  Map<String, _DisputeType> _typesFor(AppLocalizations loc) => {
+    'wrong_denial': _DisputeType(
+      icon: Icons.block_outlined,
+      label: loc.disputeTypeWrongDenialLabel,
+      desc: loc.disputeTypeWrongDenialDesc,
+    ),
+    // Reuses the fraud-report screen's "unauthorized use" strings —
+    // genuinely the same phrase/meaning in both contexts.
+    'unauthorized_use': _DisputeType(
+      icon: Icons.person_off_outlined,
+      label: loc.fraudTypeUnauthorizedLabel,
+      desc: loc.fraudTypeUnauthorizedDesc,
+    ),
+    'business_refusal': _DisputeType(
+      icon: Icons.storefront_outlined,
+      label: loc.disputeTypeBusinessRefusalLabel,
+      desc: loc.disputeTypeBusinessRefusalDesc,
+    ),
+    'incorrect_db_info': _DisputeType(
+      icon: Icons.fact_check_outlined,
+      label: loc.disputeTypeIncorrectDbInfoLabel,
+      desc: loc.disputeTypeIncorrectDbInfoDesc,
+    ),
+  };
+
+  String _formatType(String t, AppLocalizations loc) {
+    final known = _typesFor(loc)[t];
+    if (known != null) return known.label;
+    return t
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) {
+          if (w.isEmpty) return w;
+          return w[0].toUpperCase() + w.substring(1);
+        })
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppDesignSystem.backgroundWarm,
       body: _isLoading
@@ -59,7 +116,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
               ),
             )
           : _disputes!.isEmpty
-          ? _buildEmpty()
+          ? _buildEmpty(loc)
           : RefreshIndicator(
               onRefresh: _load,
               color: AppDesignSystem.primaryBlue,
@@ -68,37 +125,37 @@ class _DisputesScreenState extends State<DisputesScreen> {
                   AppDesignSystem.screenPaddingHorizontal,
                 ),
                 itemCount: _disputes!.length,
-                itemBuilder: (_, i) => _buildTile(_disputes![i]),
+                itemBuilder: (_, i) => _buildTile(_disputes![i], loc),
               ),
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showNewDispute,
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          _showNewDispute();
+        },
         backgroundColor: AppDesignSystem.primaryBlue,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: Text('New Dispute', style: AppDesignSystem.buttonMedium),
+        label: Text(loc.disputesNewButton, style: AppDesignSystem.buttonMedium),
       ),
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(AppLocalizations loc) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.gavel, size: 64, color: AppDesignSystem.textHint),
           const SizedBox(height: AppDesignSystem.spaceSM),
-          Text('No disputes filed', style: AppDesignSystem.bodyMedium),
+          Text(loc.disputesEmptyTitle, style: AppDesignSystem.bodyMedium),
           const SizedBox(height: AppDesignSystem.spaceXS),
-          Text(
-            'Tap the button below to file a new dispute',
-            style: AppDesignSystem.caption,
-          ),
+          Text(loc.disputesEmptySubtitle, style: AppDesignSystem.caption),
         ],
       ),
     );
   }
 
-  Widget _buildTile(DisputeRecord d) {
+  Widget _buildTile(DisputeRecord d, AppLocalizations loc) {
     final date = DateFormat('MMM d, yyyy').format(d.submittedAt);
     final color = _statusColor(d.status);
 
@@ -111,7 +168,10 @@ class _DisputesScreenState extends State<DisputesScreen> {
       ),
       child: InkWell(
         borderRadius: AppDesignSystem.cardRadius,
-        onTap: () => _showDetail(d),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          _showDetail(d, loc);
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -121,7 +181,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      _formatType(d.disputeType),
+                      _formatType(d.disputeType, loc),
                       style: AppDesignSystem.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -139,6 +199,10 @@ class _DisputesScreenState extends State<DisputesScreen> {
                       ),
                     ),
                     child: Text(
+                      // NOTE: raw API status value, uppercased — not
+                      // localized. Same known, already-flagged gap as
+                      // AppDesignSystem.getStatusLabel and
+                      // transactions_screen's result badge.
                       d.status.toUpperCase(),
                       style: AppDesignSystem.caption.copyWith(
                         color: color,
@@ -169,20 +233,9 @@ class _DisputesScreenState extends State<DisputesScreen> {
     );
   }
 
-  String _formatType(String t) {
-    return t
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((w) {
-          if (w.isEmpty) return w;
-          return w[0].toUpperCase() + w.substring(1);
-        })
-        .join(' ');
-  }
-
-  void _showDetail(DisputeRecord d) {
+  void _showDetail(DisputeRecord d, AppLocalizations loc) {
     final formatted = DateFormat(
-      'MMMM d, yyyy  â€¢  h:mm a',
+      'MMMM d, yyyy  •  h:mm a', // was 'â€¢' — mojibake fix
     ).format(d.submittedAt);
     final color = _statusColor(d.status);
 
@@ -217,17 +270,21 @@ class _DisputesScreenState extends State<DisputesScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Dispute Details',
+              loc.disputesDetailTitle,
               style: AppDesignSystem.heading3.copyWith(
                 color: AppDesignSystem.textPrimary,
               ),
             ),
             const SizedBox(height: 16),
 
-            // Status
+            // Status — was a bare, unstyled Text('Status: ') with no
+            // AppDesignSystem style at all, unlike everything else here.
             Row(
               children: [
-                const Text('Status: '),
+                Text(
+                  '${loc.transactionsStatusLabel}: ',
+                  style: AppDesignSystem.bodyMedium,
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -251,11 +308,11 @@ class _DisputesScreenState extends State<DisputesScreen> {
             ),
             const SizedBox(height: 12),
 
-            _detailRow('Type', _formatType(d.disputeType)),
-            _detailRow('Filed', formatted),
+            _detailRow(loc.disputesTypeLabel, _formatType(d.disputeType, loc)),
+            _detailRow(loc.disputesFiledLabel, formatted),
             const SizedBox(height: 12),
 
-            Text('Description', style: AppDesignSystem.heading4),
+            Text(loc.disputesDescriptionLabel, style: AppDesignSystem.heading4),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -268,7 +325,10 @@ class _DisputesScreenState extends State<DisputesScreen> {
 
             if (d.resolution != null) ...[
               const SizedBox(height: 16),
-              Text('Resolution', style: AppDesignSystem.heading4),
+              Text(
+                loc.disputesResolutionLabel,
+                style: AppDesignSystem.heading4,
+              ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -313,19 +373,15 @@ class _DisputesScreenState extends State<DisputesScreen> {
     );
   }
 
-  // â”€â”€ New Dispute Sheet â”€â”€
+  // ── New Dispute Sheet ──
   void _showNewDispute() {
+    final loc = AppLocalizations.of(context)!;
+    final types = _typesFor(loc);
     String selectedType = 'wrong_denial';
     final descCtrl = TextEditingController();
     XFile? pickedFile;
     bool isUploading = false;
     String? uploadError;
-    final types = [
-      'wrong_denial',
-      'unauthorized_use',
-      'business_refusal',
-      'incorrect_db_info',
-    ];
 
     showModalBottomSheet(
       context: context,
@@ -362,54 +418,123 @@ class _DisputesScreenState extends State<DisputesScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'File a Dispute',
+                  loc.disputesFileTitle,
                   style: AppDesignSystem.heading3.copyWith(
                     color: AppDesignSystem.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                Text('Dispute Type', style: AppDesignSystem.heading4),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: types.map((t) {
-                    final active = t == selectedType;
-                    return ChoiceChip(
-                      label: Text(_formatType(t)),
-                      selected: active,
-                      onSelected: (_) => setSheetState(() => selectedType = t),
-                      selectedColor: AppDesignSystem.primaryBlue.withOpacity(
-                        0.15,
-                      ),
-                      labelStyle: AppDesignSystem.bodySmall.copyWith(
-                        color: active
-                            ? AppDesignSystem.primaryBlue
-                            : AppDesignSystem.textPrimary,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                      ),
-                    );
-                  }).toList(),
+                // Dispute type — full-width selectable cards, matching
+                // fraud_report_screen's pattern instead of the smaller
+                // ChoiceChip row this used before. Same kind of
+                // "choose one of ~4 categories" interaction deserves
+                // the same tap-target size and visual treatment across
+                // the app, not two different conventions.
+                Text(
+                  loc.disputesTypeSectionLabel,
+                  style: AppDesignSystem.heading4,
                 ),
+                const SizedBox(height: 8),
+                ...types.entries.map((e) {
+                  final active = e.key == selectedType;
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: AppDesignSystem.spaceXS,
+                    ),
+                    child: Semantics(
+                      label: '${e.value.label}. ${e.value.desc}',
+                      selected: active,
+                      button: true,
+                      child: InkWell(
+                        borderRadius: AppDesignSystem.cardRadius,
+                        onTap: () {
+                          if (!active) HapticFeedback.selectionClick();
+                          setSheetState(() => selectedType = e.key);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: active
+                                ? AppDesignSystem.primaryBlue.withOpacity(0.06)
+                                : Colors.white,
+                            borderRadius: AppDesignSystem.cardRadius,
+                            border: Border.all(
+                              color: active
+                                  ? AppDesignSystem.primaryBlue
+                                  : AppDesignSystem.borderLight,
+                              width: active ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                e.value.icon,
+                                color: active
+                                    ? AppDesignSystem.primaryBlue
+                                    : AppDesignSystem.textSecondary,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      e.value.label,
+                                      style: AppDesignSystem.bodySmall.copyWith(
+                                        fontWeight: active
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                        color: active
+                                            ? AppDesignSystem.primaryBlue
+                                            : AppDesignSystem.textPrimary,
+                                      ),
+                                    ),
+                                    Text(
+                                      e.value.desc,
+                                      style: AppDesignSystem.caption,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (active)
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: AppDesignSystem.primaryBlue,
+                                  size: 20,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 16),
 
-                Text('Description', style: AppDesignSystem.heading4),
+                Text(
+                  loc.disputesDescriptionLabel,
+                  style: AppDesignSystem.heading4,
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: descCtrl,
                   maxLines: 4,
                   decoration: AppDesignSystem.inputDecoration(
-                    hintText: 'Describe your dispute...',
+                    hintText: loc.disputesDescriptionHint,
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // â”€â”€ Supporting document picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                Text('Supporting Document', style: AppDesignSystem.heading4),
+                // ── Supporting document picker ──
+                Text(
+                  loc.disputesSupportingDocLabel,
+                  style: AppDesignSystem.heading4,
+                ),
                 const SizedBox(height: 4),
                 Text(
-                  'Optional â€” attach a photo of your ID, barangay cert, etc.',
+                  loc.disputesSupportingDocHint,
                   style: AppDesignSystem.caption.copyWith(
                     color: AppDesignSystem.textSecondary,
                   ),
@@ -447,33 +572,50 @@ class _DisputesScreenState extends State<DisputesScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 18),
-                          onPressed: () =>
-                              setSheetState(() => pickedFile = null),
-                          color: AppDesignSystem.textSecondary,
+                        // Was default IconButton sizing (~34dp total) —
+                        // under this system's 56dp touch-target floor.
+                        SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              setSheetState(() => pickedFile = null);
+                            },
+                            color: AppDesignSystem.textSecondary,
+                            padding: EdgeInsets.zero,
+                          ),
                         ),
                       ],
                     ),
                   )
                 else
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final picker = ImagePicker();
-                      final picked = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        imageQuality: 80,
-                      );
-                      if (picked != null) {
-                        setSheetState(() => pickedFile = picked);
-                      }
-                    },
-                    icon: const Icon(Icons.attach_file, size: 18),
-                    label: const Text('Attach Photo / Document'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppDesignSystem.primaryBlue,
-                      side: BorderSide(
-                        color: AppDesignSystem.primaryBlue.withOpacity(0.4),
+                  SizedBox(
+                    width: double.infinity,
+                    height: AppDesignSystem.touchTargetMin,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        HapticFeedback.selectionClick();
+                        final picker = ImagePicker();
+                        final picked = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          imageQuality: 80,
+                        );
+                        if (picked != null) {
+                          setSheetState(() => pickedFile = picked);
+                        }
+                      },
+                      icon: const Icon(Icons.attach_file, size: 18),
+                      label: Text(loc.disputesAttachButton),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppDesignSystem.primaryBlue,
+                        side: BorderSide(
+                          color: AppDesignSystem.primaryBlue.withOpacity(0.4),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppDesignSystem.buttonRadius,
+                        ),
                       ),
                     ),
                   ),
@@ -491,6 +633,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
 
                 SizedBox(
                   width: double.infinity,
+                  height: AppDesignSystem.touchTargetPrimary,
                   child: ElevatedButton(
                     onPressed: isUploading
                         ? null
@@ -498,13 +641,16 @@ class _DisputesScreenState extends State<DisputesScreen> {
                             final text = descCtrl.text.trim();
                             if (text.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please enter a description'),
+                                SnackBar(
+                                  content: Text(
+                                    loc.disputesErrorEmptyDescription,
+                                  ),
                                 ),
                               );
                               return;
                             }
 
+                            HapticFeedback.mediumImpact();
                             setSheetState(() {
                               isUploading = true;
                               uploadError = null;
@@ -520,45 +666,52 @@ class _DisputesScreenState extends State<DisputesScreen> {
                               if (uploadResult['error'] != null) {
                                 setSheetState(() {
                                   isUploading = false;
-                                  uploadError =
-                                      'Upload failed: ${uploadResult['error']}';
+                                  uploadError = loc.disputesErrorUploadFailed(
+                                    uploadResult['error'].toString(),
+                                  );
                                 });
                                 return;
                               }
                               docPath = uploadResult['path'] as String?;
                             }
 
-                            Navigator.pop(ctx);
+                            // FIX: previously popped the sheet here,
+                            // before submitDispute had even been
+                            // called — if that call failed, the sheet
+                            // was already gone and the person's typed
+                            // description + selected type were lost
+                            // with no way to retry without starting
+                            // over. Now the sheet only closes on
+                            // confirmed success, mirroring how the
+                            // doc-upload failure case above already
+                            // (correctly) keeps the sheet open.
                             final result = await ApiService.submitDispute(
                               disputeType: selectedType,
                               explanation: text,
                               supportingDocPath: docPath,
                             );
+
                             if (result['error'] == null) {
+                              Navigator.pop(ctx);
                               _load();
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Dispute submitted'),
+                                  SnackBar(
+                                    content: Text(loc.disputesSuccessSnackbar),
                                     backgroundColor:
                                         AppDesignSystem.statusValid,
                                   ),
                                 );
                               }
                             } else {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(result['error'].toString()),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
+                              setSheetState(() {
+                                isUploading = false;
+                                uploadError = result['error'].toString();
+                              });
                             }
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppDesignSystem.primaryBlue,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: AppDesignSystem.buttonRadius,
                       ),
@@ -572,9 +725,12 @@ class _DisputesScreenState extends State<DisputesScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : Text(
-                            'Submit Dispute',
-                            style: AppDesignSystem.buttonMedium,
+                        : FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              loc.disputesSubmitButton,
+                              style: AppDesignSystem.buttonMedium,
+                            ),
                           ),
                   ),
                 ),

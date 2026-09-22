@@ -112,6 +112,42 @@
   "fraudReportSubmitting": "Submitting...",
   "fraudReportSubmitButton": "Submit Report",
 
+  "disputesNewButton": "New Dispute",
+  "disputesEmptyTitle": "No disputes filed",
+  "disputesEmptySubtitle": "Tap the button below to file a new dispute",
+  "disputesDetailTitle": "Dispute Details",
+  "disputesTypeLabel": "Type",
+  "disputesFiledLabel": "Filed",
+  "disputesDescriptionLabel": "Description",
+  "disputesResolutionLabel": "Resolution",
+  "disputesFileTitle": "File a Dispute",
+  "disputesTypeSectionLabel": "Dispute Type",
+  "disputesDescriptionHint": "Describe your dispute...",
+  "disputesSupportingDocLabel": "Supporting Document",
+  "disputesSupportingDocHint": "Optional — attach a photo of your ID, barangay cert, etc.",
+  "disputesAttachButton": "Attach Photo / Document",
+  "disputesErrorEmptyDescription": "Please enter a description",
+  "disputesErrorUploadFailed": "Upload failed: {error}",
+  "@disputesErrorUploadFailed": {
+    "placeholders": {"error": {"type": "String"}}
+  },
+  "disputesSuccessSnackbar": "Dispute submitted",
+  "disputesSubmitButton": "Submit Dispute",
+  "disputeTypeWrongDenialLabel": "Wrong Denial",
+  "disputeTypeWrongDenialDesc": "A business incorrectly denied you the discount",
+  "disputeTypeBusinessRefusalLabel": "Business Refusal",
+  "disputeTypeBusinessRefusalDesc": "A business refused to honor your valid ID",
+  "disputeTypeIncorrectDbInfoLabel": "Incorrect Database Info",
+  "disputeTypeIncorrectDbInfoDesc": "Your information in our system is incorrect",
+
+  "notificationsErrorFallback": "Failed to load notifications.",
+  "notificationsErrorGeneric": "Something went wrong. Please try again.",
+  "notificationsRetryButton": "Retry",
+  "notificationsMarkAllRead": "Mark all as read",
+  "notificationsEmptyTitle": "No notifications",
+  "notificationsEmptySubtitle": "Pull down to refresh",
+  "notificationsLoadMoreError": "Couldn't load more notifications.",
+
   "notificationFallbackTitle": "Notification"
 
 }

@@ -290,5 +290,106 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fraudReportSubmitButton => 'Submit Report';
 
   @override
+  String get disputesNewButton => 'New Dispute';
+
+  @override
+  String get disputesEmptyTitle => 'No disputes filed';
+
+  @override
+  String get disputesEmptySubtitle =>
+      'Tap the button below to file a new dispute';
+
+  @override
+  String get disputesDetailTitle => 'Dispute Details';
+
+  @override
+  String get disputesTypeLabel => 'Type';
+
+  @override
+  String get disputesFiledLabel => 'Filed';
+
+  @override
+  String get disputesDescriptionLabel => 'Description';
+
+  @override
+  String get disputesResolutionLabel => 'Resolution';
+
+  @override
+  String get disputesFileTitle => 'File a Dispute';
+
+  @override
+  String get disputesTypeSectionLabel => 'Dispute Type';
+
+  @override
+  String get disputesDescriptionHint => 'Describe your dispute...';
+
+  @override
+  String get disputesSupportingDocLabel => 'Supporting Document';
+
+  @override
+  String get disputesSupportingDocHint =>
+      'Optional — attach a photo of your ID, barangay cert, etc.';
+
+  @override
+  String get disputesAttachButton => 'Attach Photo / Document';
+
+  @override
+  String get disputesErrorEmptyDescription => 'Please enter a description';
+
+  @override
+  String disputesErrorUploadFailed(String error) {
+    return 'Upload failed: $error';
+  }
+
+  @override
+  String get disputesSuccessSnackbar => 'Dispute submitted';
+
+  @override
+  String get disputesSubmitButton => 'Submit Dispute';
+
+  @override
+  String get disputeTypeWrongDenialLabel => 'Wrong Denial';
+
+  @override
+  String get disputeTypeWrongDenialDesc =>
+      'A business incorrectly denied you the discount';
+
+  @override
+  String get disputeTypeBusinessRefusalLabel => 'Business Refusal';
+
+  @override
+  String get disputeTypeBusinessRefusalDesc =>
+      'A business refused to honor your valid ID';
+
+  @override
+  String get disputeTypeIncorrectDbInfoLabel => 'Incorrect Database Info';
+
+  @override
+  String get disputeTypeIncorrectDbInfoDesc =>
+      'Your information in our system is incorrect';
+
+  @override
+  String get notificationsErrorFallback => 'Failed to load notifications.';
+
+  @override
+  String get notificationsErrorGeneric =>
+      'Something went wrong. Please try again.';
+
+  @override
+  String get notificationsRetryButton => 'Retry';
+
+  @override
+  String get notificationsMarkAllRead => 'Mark all as read';
+
+  @override
+  String get notificationsEmptyTitle => 'No notifications';
+
+  @override
+  String get notificationsEmptySubtitle => 'Pull down to refresh';
+
+  @override
+  String get notificationsLoadMoreError => 'Couldn\'t load more notifications.';
+
+  @override
   String get notificationFallbackTitle => 'Notification';
 }

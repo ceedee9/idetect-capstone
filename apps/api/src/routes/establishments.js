@@ -596,6 +596,7 @@ router.post(
           : `Establishment "${business_name}" created and approved successfully, but the setup-link email to ${email} could not be sent. Please ask the establishment to use "Forgot password" once you resend it, or contact them manually.`,
         establishment: result.rows[0],
         email_sent: !!emailResult?.success,
+        setup_url: setupUrl,
       });
     } catch (err) {
       next(err);

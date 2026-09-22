@@ -620,6 +620,192 @@ abstract class AppLocalizations {
   /// **'Submit Report'**
   String get fraudReportSubmitButton;
 
+  /// No description provided for @disputesNewButton.
+  ///
+  /// In en, this message translates to:
+  /// **'New Dispute'**
+  String get disputesNewButton;
+
+  /// No description provided for @disputesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No disputes filed'**
+  String get disputesEmptyTitle;
+
+  /// No description provided for @disputesEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the button below to file a new dispute'**
+  String get disputesEmptySubtitle;
+
+  /// No description provided for @disputesDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispute Details'**
+  String get disputesDetailTitle;
+
+  /// No description provided for @disputesTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get disputesTypeLabel;
+
+  /// No description provided for @disputesFiledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Filed'**
+  String get disputesFiledLabel;
+
+  /// No description provided for @disputesDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get disputesDescriptionLabel;
+
+  /// No description provided for @disputesResolutionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get disputesResolutionLabel;
+
+  /// No description provided for @disputesFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'File a Dispute'**
+  String get disputesFileTitle;
+
+  /// No description provided for @disputesTypeSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispute Type'**
+  String get disputesTypeSectionLabel;
+
+  /// No description provided for @disputesDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your dispute...'**
+  String get disputesDescriptionHint;
+
+  /// No description provided for @disputesSupportingDocLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Supporting Document'**
+  String get disputesSupportingDocLabel;
+
+  /// No description provided for @disputesSupportingDocHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — attach a photo of your ID, barangay cert, etc.'**
+  String get disputesSupportingDocHint;
+
+  /// No description provided for @disputesAttachButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach Photo / Document'**
+  String get disputesAttachButton;
+
+  /// No description provided for @disputesErrorEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a description'**
+  String get disputesErrorEmptyDescription;
+
+  /// No description provided for @disputesErrorUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed: {error}'**
+  String disputesErrorUploadFailed(String error);
+
+  /// No description provided for @disputesSuccessSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispute submitted'**
+  String get disputesSuccessSnackbar;
+
+  /// No description provided for @disputesSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Dispute'**
+  String get disputesSubmitButton;
+
+  /// No description provided for @disputeTypeWrongDenialLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong Denial'**
+  String get disputeTypeWrongDenialLabel;
+
+  /// No description provided for @disputeTypeWrongDenialDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A business incorrectly denied you the discount'**
+  String get disputeTypeWrongDenialDesc;
+
+  /// No description provided for @disputeTypeBusinessRefusalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Refusal'**
+  String get disputeTypeBusinessRefusalLabel;
+
+  /// No description provided for @disputeTypeBusinessRefusalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A business refused to honor your valid ID'**
+  String get disputeTypeBusinessRefusalDesc;
+
+  /// No description provided for @disputeTypeIncorrectDbInfoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect Database Info'**
+  String get disputeTypeIncorrectDbInfoLabel;
+
+  /// No description provided for @disputeTypeIncorrectDbInfoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your information in our system is incorrect'**
+  String get disputeTypeIncorrectDbInfoDesc;
+
+  /// No description provided for @notificationsErrorFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load notifications.'**
+  String get notificationsErrorFallback;
+
+  /// No description provided for @notificationsErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get notificationsErrorGeneric;
+
+  /// No description provided for @notificationsRetryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get notificationsRetryButton;
+
+  /// No description provided for @notificationsMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get notificationsMarkAllRead;
+
+  /// No description provided for @notificationsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get notificationsEmptyTitle;
+
+  /// No description provided for @notificationsEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull down to refresh'**
+  String get notificationsEmptySubtitle;
+
+  /// No description provided for @notificationsLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more notifications.'**
+  String get notificationsLoadMoreError;
+
   /// No description provided for @notificationFallbackTitle.
   ///
   /// In en, this message translates to:

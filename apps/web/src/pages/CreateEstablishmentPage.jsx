@@ -47,6 +47,7 @@ export default function CreateEstablishmentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   function set(field) {
     return (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -63,6 +64,17 @@ export default function CreateEstablishmentPage() {
     if (!/\S+@\S+\.\S+/.test(form.email))
       return "Please enter a valid email address.";
     return null;
+  }
+
+  async function handleCopyLink() {
+    if (!success?.setup_url) return;
+    try {
+      await navigator.clipboard.writeText(success.setup_url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API can fail on non-HTTPS/old browsers; fall back to a manual select
+    }
   }
 
   async function handleSubmit(e) {
@@ -156,10 +168,43 @@ export default function CreateEstablishmentPage() {
               </span>
             </p>
           </div>
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            A password-setup link has been emailed to the establishment. It
-            expires in 24 hours.
-          </p>
+          {success.email_sent ? (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+              A password-setup link has been emailed to the establishment. It
+              expires in 24 hours.
+            </p>
+          ) : (
+            <div className="text-xs text-danger-700 bg-danger-50 border border-danger-200 rounded px-3 py-2 space-y-1">
+              <p className="font-medium">
+                The setup-link email could not be sent. Share this link with the
+                establishment directly — it expires in 24 hours.
+              </p>
+            </div>
+          )}
+          {success.setup_url && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-500">
+                Setup link{" "}
+                {success.email_sent ? "(backup — also sent by email)" : ""}
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={success.setup_url}
+                  onClick={(e) => e.target.select()}
+                  className="input text-xs font-mono flex-1 bg-gray-50"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="btn-secondary text-xs whitespace-nowrap"
+                >
+                  {copied ? "Copied!" : "Copy Link"}
+                </button>
+              </div>
+            </div>
+          )}
           <p className="text-xs text-success-700">
             Once they set their password, they can log in to the Client Portal
             and begin scanning IDs.
