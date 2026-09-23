@@ -981,10 +981,9 @@ router.post(
       );
 
       await pool.query(
-        `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
-         VALUES ($1, 'password_reset', 'establishments', $2, $3)`,
+        `INSERT INTO audit_logs (establishment_id, action, metadata)
+        VALUES ($1, 'password_reset', $2)`,
         [
-          est.id,
           est.id,
           JSON.stringify({
             business_name: est.business_name,
@@ -1049,9 +1048,9 @@ router.post(
       );
 
       await pool.query(
-        `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
-         VALUES ($1, 'password_reset', 'establishments', $2, $3)`,
-        [est.id, est.id, JSON.stringify({ email, via: "initial_setup_link" })],
+        `INSERT INTO audit_logs (establishment_id, action, metadata)
+         VALUES ($1, 'password_reset', $2)`,
+        [est.id, JSON.stringify({ email, via: "initial_setup_link" })],
       );
 
       res.json({ message: "Password set successfully. You can now log in." });

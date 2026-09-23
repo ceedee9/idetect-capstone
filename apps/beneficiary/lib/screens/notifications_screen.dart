@@ -44,7 +44,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _load() async {
-    final loc = AppLocalizations.of(context)!;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -53,29 +52,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     try {
       final result = await ApiService.getNotifications(page: 1, limit: 30);
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          if (result.success) {
-            _notifications = result.notifications;
-            _hasMore = _notifications!.length < result.total;
-            _page = 2;
-          } else {
-            _error = result.errorMessage ?? loc.notificationsErrorFallback;
-            _notifications = [];
-          }
-        });
-      }
+      if (!mounted) return;
+      final loc = AppLocalizations.of(context)!;
+      setState(() {
+        _isLoading = false;
+        if (result.success) {
+          _notifications = result.notifications;
+          _hasMore = _notifications!.length < result.total;
+          _page = 2;
+        } else {
+          _error = result.errorMessage ?? loc.notificationsErrorFallback;
+          _notifications = [];
+        }
+      });
     } catch (e) {
       // Was showing the raw exception text ('Error: $e') directly to the
       // user — could surface something like "SocketException: Failed
       // host lookup", not appropriate for this audience. Logged for
       // developers instead; the user gets a plain, friendly message.
+      //
+      // The localization lookup itself is wrapped in its own null-safe
+      // fallback here too: this catch block is the app's last line of
+      // defense against a stuck spinner, so it must not be able to
+      // throw itself, whatever the original failure was.
       debugPrint('NotificationsScreen._load failed: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = loc.notificationsErrorGeneric;
+          _error =
+              AppLocalizations.of(context)?.notificationsErrorGeneric ??
+              'Something went wrong. Please try again.';
           _notifications = [];
         });
       }

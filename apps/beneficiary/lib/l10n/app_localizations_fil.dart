@@ -25,12 +25,11 @@ class AppLocalizationsFil extends AppLocalizations {
       'Pakilagay ang iyong ID number at petsa ng kapanganakan.';
 
   @override
-  String get loginErrorMissingMobile =>
-      'Pakilagay ang iyong numero ng cellphone.';
+  String get loginErrorMissingMobile => 'Pakilagay ang iyong mobile number.';
 
   @override
   String get loginErrorInvalidMobile =>
-      'Pakilagay ang wastong numero ng cellphone sa Pilipinas\n(hal. 09171234567)';
+      'Pakilagay ang wastong mobile number sa Pilipinas\n(hal. 09171234567)';
 
   @override
   String get loginBiometricReasonSignIn =>
@@ -53,7 +52,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get loginSignInPin => 'Mag-sign In gamit ang PIN';
 
   @override
-  String get loginSendOtp => 'Ipadala ang OTP sa Aking Telepono';
+  String get loginSendOtp => 'Ipadala ang OTP sa Aking Cellphone';
 
   @override
   String get loginNotYou => 'Hindi ikaw? Gumamit ng ibang ID';
@@ -150,19 +149,19 @@ class AppLocalizationsFil extends AppLocalizations {
   String get statusIdDetailsTitle => 'Mga Detalye ng ID';
 
   @override
-  String get statusIssuingOffice => 'Opisina ng Pag-isyu';
+  String get statusIssuingOffice => 'Pinanggalingang Tanggapan';
 
   @override
   String get statusValidFrom => 'Simula ng Bisa';
 
   @override
-  String get statusValidUntil => 'Hanggang sa Bisa';
+  String get statusValidUntil => 'Katapusan ng Bisa';
 
   @override
   String get statusBirthdate => 'Petsa ng Kapanganakan';
 
   @override
-  String get statusMobile => 'Numero ng Cellphone';
+  String get statusMobile => 'Cellphone Number';
 
   @override
   String get statusActivitySummaryTitle => 'Buod ng Aktibidad';
