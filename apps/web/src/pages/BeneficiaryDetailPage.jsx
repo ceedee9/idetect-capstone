@@ -17,6 +17,7 @@ import {
   Mail,
   Pencil,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useBeneficiary } from "../hooks/useBeneficiaries";
 import { beneficiariesAPI } from "../services/api";
@@ -74,6 +75,8 @@ export default function BeneficiaryDetailPage() {
   const [modal, setModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   // Edit record state
@@ -100,6 +103,23 @@ export default function BeneficiaryDetailPage() {
       setActionError(err.response?.data?.message || "Action failed.");
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      await beneficiariesAPI.delete(id);
+      navigate("/beneficiaries");
+    } catch (err) {
+      setDeleteError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Permanent deletion failed.",
+      );
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -285,6 +305,18 @@ export default function BeneficiaryDetailPage() {
             <button onClick={() => setModal("suspend")} className="btn-danger">
               <UserX className="w-4 h-4" />
               Suspend
+            </button>
+          )}
+          {b.status === "revoked" && (
+            <button
+              onClick={() => {
+                setDeleteError("");
+                setModal("delete");
+              }}
+              className="btn-danger"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Permanently
             </button>
           )}
         </div>
@@ -513,6 +545,28 @@ export default function BeneficiaryDetailPage() {
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />
             {actionError}
+          </p>
+        )}
+      </ConfirmModal>
+
+      {/* Permanent deletion is available only for revoked records. */}
+      <ConfirmModal
+        open={modal === "delete"}
+        onClose={() => {
+          setModal(null);
+          setDeleteError("");
+        }}
+        onConfirm={handleDelete}
+        title="Delete Beneficiary Permanently"
+        description={`Permanently delete ${fullName} (ID ${b.id_number})? This cannot be undone. Records linked to an open or retained dispute cannot be deleted.`}
+        confirmLabel="Delete Permanently"
+        variant="danger"
+        loading={deleteLoading}
+      >
+        {deleteError && (
+          <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
+            <AlertCircle className="w-4 h-4" />
+            {deleteError}
           </p>
         )}
       </ConfirmModal>

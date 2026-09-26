@@ -174,6 +174,8 @@ export const beneficiariesAPI = {
   updateStatus: (id, status) =>
     api.patch(`/beneficiaries/${id}/status`, { status }),
 
+  delete: (id) => api.delete(`/beneficiaries/${id}`),
+
   update: (id, data) => api.put(`/beneficiaries/${id}`, data),
 
   renew: (id, validity_start, validity_end) =>

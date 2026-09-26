@@ -65,6 +65,7 @@ const MIGRATIONS = [
   "027_staff_password_reset.sql",
   "028_add_id_format_to_verification_logs.sql",
   "029_add_synced_from_offline_to_verification_logs.sql",
+  "030_add_beneficiary_deleted_audit_action.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

@@ -45,6 +45,7 @@ const ACTION_GROUPS = [
       "beneficiary_created",
       "beneficiary_updated",
       "beneficiary_status_changed",
+      "beneficiary_deleted",
       "beneficiary_bulk_import",
       "beneficiary_renewed",
       "fraud_report_submitted",

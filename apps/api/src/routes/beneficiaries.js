@@ -8,7 +8,7 @@
 //   PATCH  /api/beneficiaries/:id/status — Change status (active/suspended/revoked)
 
 const express = require("express");
-const { body, validationResult } = require("express-validator");
+const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
@@ -189,6 +189,73 @@ router.get("/:id([0-9a-fA-F-]{36})", async (req, res, next) => {
     next(err);
   }
 });
+
+// ── DELETE /api/beneficiaries/:id ─────────────────────────────
+// Only revoked records can be permanently deleted.
+router.delete(
+  "/:id([0-9a-fA-F-]{36})",
+  param("id").isUUID(),
+  async (req, res, next) => {
+    const client = await pool.connect();
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const type = getTypeForRole(req.user.role);
+      await client.query("BEGIN");
+
+      const existing = await client.query(
+        `SELECT id, id_number, full_name, beneficiary_type, status
+         FROM beneficiaries
+         WHERE id = $1 AND beneficiary_type = $2
+         FOR UPDATE`,
+        [req.params.id, type],
+      );
+
+      if (!existing.rows.length)
+        throw createError(404, "Beneficiary not found");
+      if (existing.rows[0].status !== "revoked") {
+        throw createError(
+          400,
+          "Only revoked beneficiaries can be deleted. Revoke the record first.",
+        );
+      }
+
+      await client.query("DELETE FROM beneficiaries WHERE id = $1", [
+        req.params.id,
+      ]);
+      await client.query(
+        `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
+         VALUES ($1, 'beneficiary_deleted', 'beneficiaries', $2, $3)`,
+        [
+          req.user.id,
+          req.params.id,
+          JSON.stringify({ ...existing.rows[0], deleted_by: req.user.id }),
+        ],
+      );
+
+      await client.query("COMMIT");
+      res.json({
+        message: `Beneficiary "${existing.rows[0].full_name}" has been permanently deleted.`,
+      });
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {});
+      if (err.code === "23503") {
+        return next(
+          createError(
+            409,
+            "This beneficiary has linked dispute records and cannot be permanently deleted.",
+          ),
+        );
+      }
+      next(err);
+    } finally {
+      client.release();
+    }
+  },
+);
 
 // ── POST /api/beneficiaries/import ─────────────────────────────
 router.post("/import", async (req, res, next) => {
