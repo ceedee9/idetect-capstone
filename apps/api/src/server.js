@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require("fs");
 const path = require("path");
 const app = require("./app");
 const pool = require("./config/database");
@@ -217,6 +218,20 @@ async function runMigrationsOnStartup() {
   });
 }
 
+async function applyBeneficiaryDeleteLogMigration() {
+  const migrationPath = path.resolve(
+    __dirname,
+    "..",
+    "migrations",
+    "031_allow_beneficiary_fk_cleanup_in_verification_logs.sql",
+  );
+  const migrationSql = fs.readFileSync(migrationPath, "utf8");
+  await pool.query(migrationSql);
+  console.log(
+    "✅ Verification log immutability allows beneficiary FK cleanup.",
+  );
+}
+
 async function startServer() {
   const dbReady = await waitForDatabaseConnection();
   if (!dbReady) {
@@ -225,6 +240,7 @@ async function startServer() {
 
   await runStartupMigrations();
   await runMigrationsOnStartup();
+  await applyBeneficiaryDeleteLogMigration();
   await ensureSeedAdminAccounts();
 
   return app.listen(PORT, "0.0.0.0", () => {
