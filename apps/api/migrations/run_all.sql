@@ -76,5 +76,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 030: beneficiary deletion audit action'
 \i 030_add_beneficiary_deleted_audit_action.sql
 
+\echo '>>> Running migration 031: allow beneficiary FK cleanup in immutable verification logs'
+\i 031_allow_beneficiary_fk_cleanup_in_verification_logs.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='
