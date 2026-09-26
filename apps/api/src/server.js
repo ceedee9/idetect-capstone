@@ -218,17 +218,17 @@ async function runMigrationsOnStartup() {
   });
 }
 
-async function applyBeneficiaryDeleteLogMigration() {
+async function applyBeneficiaryDeleteMigration() {
   const migrationPath = path.resolve(
     __dirname,
     "..",
     "migrations",
-    "031_allow_beneficiary_fk_cleanup_in_verification_logs.sql",
+    "032_preserve_immutable_logs_on_beneficiary_delete.sql",
   );
   const migrationSql = fs.readFileSync(migrationPath, "utf8");
   await pool.query(migrationSql);
   console.log(
-    "✅ Verification log immutability allows beneficiary FK cleanup.",
+    "✅ Beneficiary delete migration applied; verification logs remain immutable.",
   );
 }
 
@@ -240,7 +240,7 @@ async function startServer() {
 
   await runStartupMigrations();
   await runMigrationsOnStartup();
-  await applyBeneficiaryDeleteLogMigration();
+  await applyBeneficiaryDeleteMigration();
   await ensureSeedAdminAccounts();
 
   return app.listen(PORT, "0.0.0.0", () => {

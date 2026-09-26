@@ -67,6 +67,7 @@ const MIGRATIONS = [
   "029_add_synced_from_offline_to_verification_logs.sql",
   "030_add_beneficiary_deleted_audit_action.sql",
   "031_allow_beneficiary_fk_cleanup_in_verification_logs.sql",
+  "032_preserve_immutable_logs_on_beneficiary_delete.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/
