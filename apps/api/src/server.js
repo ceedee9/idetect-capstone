@@ -34,6 +34,9 @@ async function runStartupMigrations() {
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_created';
     `);
     await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_deleted';
+    `);
+    await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'beneficiary_renewed';
     `);
     await pool.query(`
