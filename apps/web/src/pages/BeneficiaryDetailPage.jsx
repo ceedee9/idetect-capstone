@@ -18,6 +18,7 @@ import {
   Pencil,
   RefreshCw,
   Trash2,
+  Ban,
 } from "lucide-react";
 import { useBeneficiary } from "../hooks/useBeneficiaries";
 import { beneficiariesAPI } from "../services/api";
@@ -25,6 +26,14 @@ import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
 import { fmtDate, fmtDateTime, fmtRelative, calcAge } from "../utils/date";
+
+// Maps each action modal to the status it sets.
+const STATUS_FOR_MODAL = {
+  activate: "active",
+  suspend: "suspended",
+  revoke: "revoked",
+  expire: "expired",
+};
 
 function InfoRow({ icon: Icon, label, value, mono = false }) {
   return (
@@ -75,6 +84,7 @@ export default function BeneficiaryDetailPage() {
   const [modal, setModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [actionReason, setActionReason] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -89,15 +99,25 @@ export default function BeneficiaryDetailPage() {
   const [renewLoading, setRenewLoading] = useState(false);
   const [renewError, setRenewError] = useState("");
 
+  function closeActionModal() {
+    setModal(null);
+    setActionError("");
+    setActionReason("");
+  }
+
   async function handleAction() {
-    if (!modal) return;
+    const newStatus = STATUS_FOR_MODAL[modal];
+    if (!newStatus) return;
     setActionLoading(true);
     setActionError("");
-    const newStatus = modal === "activate" ? "active" : "suspended";
     try {
-      await beneficiariesAPI.updateStatus(id, newStatus);
+      await beneficiariesAPI.updateStatus(
+        id,
+        newStatus,
+        actionReason.trim() || undefined,
+      );
       setSuccessMsg(`Status updated to ${newStatus} successfully.`);
-      setModal(null);
+      closeActionModal();
       await refetch();
     } catch (err) {
       setActionError(err.response?.data?.message || "Action failed.");
@@ -307,6 +327,21 @@ export default function BeneficiaryDetailPage() {
               Suspend
             </button>
           )}
+          {["active", "suspended"].includes(b.status) && (
+            <button
+              onClick={() => setModal("expire")}
+              className="btn-secondary"
+            >
+              <Clock className="w-4 h-4" />
+              Mark Expired
+            </button>
+          )}
+          {b.status !== "revoked" && (
+            <button onClick={() => setModal("revoke")} className="btn-danger">
+              <Ban className="w-4 h-4" />
+              Revoke
+            </button>
+          )}
           {b.status === "revoked" && (
             <button
               onClick={() => {
@@ -431,7 +466,9 @@ export default function BeneficiaryDetailPage() {
                 {
                   label: "Active — eligible for discounts",
                   sub: b.status !== "inactive" ? "Verified" : null,
-                  done: ["active", "suspended", "expired"].includes(b.status),
+                  done: ["active", "suspended", "expired", "revoked"].includes(
+                    b.status,
+                  ),
                   color: "teal",
                 },
                 {
@@ -448,6 +485,13 @@ export default function BeneficiaryDetailPage() {
                       ? fmtDate(b.validity_end || b.id_expiry_date)
                       : null,
                   done: b.status === "expired",
+                  color: "red",
+                },
+                {
+                  label: "Revoked",
+                  sub:
+                    b.status === "revoked" ? fmtRelative(b.updated_at) : null,
+                  done: b.status === "revoked",
                   color: "red",
                 },
               ].map(({ label, sub, done, color }) => (
@@ -508,10 +552,7 @@ export default function BeneficiaryDetailPage() {
       {/* Activate modal */}
       <ConfirmModal
         open={modal === "activate"}
-        onClose={() => {
-          setModal(null);
-          setActionError("");
-        }}
+        onClose={closeActionModal}
         onConfirm={handleAction}
         title="Activate Beneficiary"
         description={`Restore active status for ${fullName}? They will be eligible for ${discountText} immediately.`}
@@ -530,10 +571,7 @@ export default function BeneficiaryDetailPage() {
       {/* Suspend modal */}
       <ConfirmModal
         open={modal === "suspend"}
-        onClose={() => {
-          setModal(null);
-          setActionError("");
-        }}
+        onClose={closeActionModal}
         onConfirm={handleAction}
         title="Suspend Beneficiary"
         description={`Suspend ${fullName}? Their ID will return SUSPICIOUS on all establishment scans until reinstated.`}
@@ -541,6 +579,50 @@ export default function BeneficiaryDetailPage() {
         variant="warn"
         loading={actionLoading}
       >
+        {actionError && (
+          <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
+            <AlertCircle className="w-4 h-4" />
+            {actionError}
+          </p>
+        )}
+      </ConfirmModal>
+
+      {/* Mark expired modal */}
+      <ConfirmModal
+        open={modal === "expire"}
+        onClose={closeActionModal}
+        onConfirm={handleAction}
+        title="Mark as Expired"
+        description={`Mark ${fullName}'s ID as expired? Scans will be denied until the ID is renewed.`}
+        confirmLabel="Mark Expired"
+        variant="warn"
+        loading={actionLoading}
+      >
+        {actionError && (
+          <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
+            <AlertCircle className="w-4 h-4" />
+            {actionError}
+          </p>
+        )}
+      </ConfirmModal>
+
+      {/* Revoke modal */}
+      <ConfirmModal
+        open={modal === "revoke"}
+        onClose={closeActionModal}
+        onConfirm={handleAction}
+        title="Revoke Beneficiary"
+        description={`Revoke ${fullName}? Their ID will be permanently blocked on all scans. Only revoked records can be deleted.`}
+        confirmLabel="Revoke"
+        variant="danger"
+        loading={actionLoading}
+      >
+        <input
+          className="input mt-3"
+          placeholder="Reason (optional)"
+          value={actionReason}
+          onChange={(e) => setActionReason(e.target.value)}
+        />
         {actionError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />

@@ -171,8 +171,8 @@ export const beneficiariesAPI = {
 
   importBulk: (records) => api.post("/beneficiaries/import", { records }),
 
-  updateStatus: (id, status) =>
-    api.patch(`/beneficiaries/${id}/status`, { status }),
+  updateStatus: (id, status, status_reason) =>
+    api.patch(`/beneficiaries/${id}/status`, { status, status_reason }),
 
   delete: (id) => api.delete(`/beneficiaries/${id}`),
 
