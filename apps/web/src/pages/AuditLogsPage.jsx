@@ -118,35 +118,65 @@ const ACTION_GROUPS = [
   },
 ];
 
+// Full class strings are listed so Tailwind keeps them.
+const ACTION_STYLES = {
+  // Auth
+  login: "bg-emerald-100 text-emerald-800",
+  logout: "bg-orange-100 text-orange-800",
+  password_changed: "bg-sky-100 text-sky-800",
+  otp_requested: "bg-cyan-100 text-cyan-800",
+  otp_verified: "bg-teal-100 text-teal-800",
+  account_locked: "bg-rose-100 text-rose-800",
+  account_unlocked: "bg-lime-100 text-lime-800",
+  password_reset: "bg-violet-100 text-violet-800",
+  password_reset_by_admin: "bg-fuchsia-100 text-fuchsia-800",
+  // Beneficiary
+  beneficiary_created: "bg-blue-100 text-blue-800",
+  beneficiary_updated: "bg-indigo-100 text-indigo-800",
+  beneficiary_status_changed: "bg-yellow-100 text-yellow-800",
+  beneficiary_deleted: "bg-red-100 text-red-800",
+  beneficiary_bulk_import: "bg-slate-200 text-slate-800",
+  beneficiary_renewed: "bg-green-100 text-green-800",
+  fraud_report_submitted: "bg-pink-100 text-pink-800",
+  // Establishment
+  establishment_approved: "bg-green-200 text-green-900",
+  establishment_suspended: "bg-amber-100 text-amber-800",
+  establishment_revoked: "bg-red-200 text-red-900",
+  establishment_self_registered: "bg-purple-100 text-purple-800",
+  establishment_created: "bg-blue-200 text-blue-900",
+  establishment_bulk_import: "bg-indigo-200 text-indigo-900",
+  establishment_updated: "bg-violet-200 text-violet-900",
+  establishment_deleted: "bg-rose-200 text-rose-900",
+  // Fraud flags
+  flag_created: "bg-orange-200 text-orange-900",
+  flag_reviewed: "bg-yellow-200 text-yellow-900",
+  flag_confirmed: "bg-red-600 text-white",
+  flag_dismissed: "bg-stone-200 text-stone-800",
+  flag_restored: "bg-lime-200 text-lime-900",
+  unauthorized_use_reported: "bg-pink-200 text-pink-900",
+  // Disputes
+  dispute_submitted: "bg-sky-200 text-sky-900",
+  dispute_acknowledged: "bg-cyan-200 text-cyan-900",
+  dispute_resolved: "bg-emerald-200 text-emerald-900",
+  dispute_rejected: "bg-rose-600 text-white",
+  // System
+  data_export: "bg-teal-200 text-teal-900",
+  report_generated: "bg-fuchsia-200 text-fuchsia-900",
+  breach_incident_report_generated: "bg-red-700 text-white",
+  // Validations
+  verification_performed: "bg-gov-50 text-gov-700",
+  verification_manual: "bg-amber-100 text-amber-800",
+  verification_action_taken: "bg-zinc-200 text-zinc-800",
+  // Staff
+  staff_created: "bg-green-100 text-green-800",
+  staff_updated: "bg-slate-200 text-slate-800",
+  staff_activated: "bg-lime-100 text-lime-800",
+  staff_deactivated: "bg-stone-300 text-stone-800",
+  staff_password_reset: "bg-fuchsia-100 text-fuchsia-800",
+};
+
 function actionColor(action) {
-  if (!action) return "bg-slate-100 text-slate-600";
-  if (action === "verification_manual") return "bg-amber-100 text-amber-800";
-  if (
-    action.startsWith("flag_") ||
-    action.startsWith("dispute_") ||
-    action === "unauthorized_use_reported"
-  )
-    return "bg-accent-50 text-accent-700";
-  if (action.startsWith("beneficiary_") || action === "fraud_report_submitted")
-    return "bg-gov-50 text-gov-700";
-  if (action.startsWith("establishment_"))
-    return "bg-purple-50 text-purple-700";
-  if (action.startsWith("staff_")) return "bg-indigo-50 text-indigo-700";
-  if (
-    [
-      "login",
-      "logout",
-      "password_changed",
-      "otp_requested",
-      "otp_verified",
-      "account_locked",
-      "account_unlocked",
-      "password_reset",
-      "password_reset_by_admin",
-    ].includes(action)
-  )
-    return "bg-blue-50 text-blue-700";
-  return "bg-slate-100 text-slate-600";
+  return ACTION_STYLES[action] ?? "bg-slate-100 text-slate-600";
 }
 
 function downloadBlob(blob, filename) {
@@ -354,8 +384,8 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Action group tabs */}
-        <div className="flex items-center gap-1 mt-3 border-b border-slate-200 flex-wrap">
-          <Filter className="w-4 h-4 text-slate-400 mr-1" />
+        <div className="flex items-center gap-x-1 gap-y-0 mt-3 border-b border-slate-200 flex-wrap">
+          <Filter className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
           {ACTION_GROUPS.map((grp) => (
             <button
               key={grp.value}
@@ -363,7 +393,7 @@ export default function AuditLogsPage() {
                 setActionGroup(grp.value);
                 setPage(1);
               }}
-              className={`px-3 py-2 border-b-2 text-xs font-semibold transition-colors
+              className={`inline-flex items-center gap-2 whitespace-nowrap px-3 py-2 -mb-px border-b-2 text-xs font-semibold transition-colors
                 ${
                   actionGroup === grp.value
                     ? "border-gov-600 text-gov-700"
@@ -372,7 +402,7 @@ export default function AuditLogsPage() {
             >
               {grp.label}
               <span
-                className={`font-mono text-[10px] px-1.5 py-0.5 rounded-registry ${
+                className={`inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 font-mono text-[10px] leading-none tabular-nums rounded-full ${
                   actionGroup === grp.value
                     ? "bg-gov-100 text-gov-700"
                     : "bg-slate-100 text-slate-500"
