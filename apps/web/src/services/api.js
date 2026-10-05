@@ -269,6 +269,11 @@ export const auditLogsAPI = {
       params,
       ...(asBlob ? { responseType: "blob" } : {}),
     }),
+  caseFile: (ref, asBlob = false) =>
+    api.get("/audit-logs/case", {
+      params: { ref, format: asBlob ? "csv" : "json" },
+      ...(asBlob ? { responseType: "blob" } : {}),
+    }),
 };
 
 // ─── Reports / CSV export ─────────────────────────────────────────────────────

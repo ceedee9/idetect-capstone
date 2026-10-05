@@ -31,6 +31,45 @@ function downloadBlob(blob, filename) {
 }
 
 export default function AuditReportModal({ onClose }) {
+  const [tab, setTab] = useState("period");
+  const [refNo, setRefNo] = useState("");
+  const [casePreview, setCasePreview] = useState(null);
+  const [caseBusy, setCaseBusy] = useState(false);
+  const [caseError, setCaseError] = useState("");
+
+  async function runCase(download) {
+    setCaseBusy(true);
+    setCaseError("");
+    try {
+      const ref = refNo.trim().toUpperCase();
+      const res = await auditLogsAPI.caseFile(ref, download);
+      if (download) {
+        downloadBlob(new Blob([res.data], { type: "text/csv" }), `case-${ref}.csv`);
+      } else {
+        setCasePreview(res.data);
+      }
+    } catch (e) {
+      setCasePreview(null);
+      setCaseError(
+        e.response?.status === 404
+          ? "No record found for that reference number."
+          : "Enter a valid reference number, e.g. DSP-2026-000123.",
+      );
+    } finally {
+      setCaseBusy(false);
+    }
+  }
+
+  const tabBtn = (v, text) => (
+    <button
+      type="button"
+      onClick={() => setTab(v)}
+      className={`px-4 py-2 text-sm font-semibold border-b-2 ${tab === v ? "border-primary-500 text-primary-700" : "border-transparent text-slate-500"}`}
+    >
+      {text}
+    </button>
+  );
+
   const now = new Date();
   const [type, setType] = useState("summary");
   const [period, setPeriod] = useState("month");
@@ -100,6 +139,74 @@ export default function AuditReportModal({ onClose }) {
           </button>
         </div>
 
+        <div className="flex gap-1 px-6 border-b border-slate-100">
+          {tabBtn("period", "Period reports")}
+          {tabBtn("case", "Case file")}
+        </div>
+
+        {tab === "case" && (
+          <>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Reference number</label>
+                <input
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
+                  placeholder="DSP-2026-000123, FLG-, VER-, EST- or BEN-"
+                  value={refNo}
+                  onChange={(e) => setRefNo(e.target.value)}
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Bundles the record, the related scan, flags and disputes, and the full audit timeline. ID numbers are masked.
+                </p>
+              </div>
+              {caseError && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-danger-50 border border-danger-100 rounded-lg text-danger-700 text-sm">
+                  <AlertCircle className="w-4 h-4" /> {caseError}
+                </div>
+              )}
+              {casePreview && (
+                <div className="space-y-3 max-h-72 overflow-auto">
+                  {casePreview.sections.map((s) => (
+                    <div key={s.title} className="border border-slate-200 rounded-xl overflow-hidden">
+                      <div className="px-3 py-1.5 bg-slate-50 text-xs font-semibold text-slate-700">
+                        {s.title} ({s.rows.length})
+                      </div>
+                      <div className="overflow-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr>{s.columns.map((c) => <th key={c} className="text-left px-3 py-1 text-slate-600">{c}</th>)}</tr>
+                          </thead>
+                          <tbody>
+                            {s.rows.slice(0, 50).map((r, i) => (
+                              <tr key={i} className="border-t border-slate-100">
+                                {r.map((c, j) => (
+                                  <td key={j} className="px-3 py-1 text-slate-700 max-w-[14rem] truncate">
+                                    {c !== null && typeof c === "object" ? JSON.stringify(c) : String(c ?? "")}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
+              <button className="btn-secondary" disabled={caseBusy || !refNo.trim()} onClick={() => runCase(false)}>
+                <Eye className="w-4 h-4" /> Preview
+              </button>
+              <button className="btn-primary" disabled={caseBusy || !refNo.trim()} onClick={() => runCase(true)}>
+                <Download className="w-4 h-4" /> Download case file
+              </button>
+            </div>
+          </>
+        )}
+
+        {tab === "period" && (
+          <>
         <div className="p-6 space-y-5">
           <div>
             <span className={label}>Report type</span>
@@ -243,6 +350,8 @@ export default function AuditReportModal({ onClose }) {
             <Download className="w-4 h-4" /> Download CSV
           </button>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
