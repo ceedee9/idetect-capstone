@@ -285,6 +285,7 @@ router.get(
       let query = `
       SELECT
          ff.id,
+         ff.reference_no,
          ff.establishment_id,
          ff.beneficiary_id,
          ff.id_number_flagged,

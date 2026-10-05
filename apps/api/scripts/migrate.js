@@ -70,6 +70,7 @@ const MIGRATIONS = [
   "032_preserve_immutable_logs_on_beneficiary_delete.sql",
   "033_add_reported_establishment_name_to_disputes.sql",
   "034_add_other_dispute_type.sql",
+  "035_add_reference_numbers.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

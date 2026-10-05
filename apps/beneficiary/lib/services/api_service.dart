@@ -791,9 +791,11 @@ class DisputeRecord {
   final DateTime? resolvedAt;
   final String? verificationResult;
   final String? establishmentName;
+  final String? referenceNo;
 
   DisputeRecord({
     required this.id,
+    this.referenceNo,
     required this.disputeType,
     required this.explanation,
     required this.status,
@@ -808,6 +810,7 @@ class DisputeRecord {
   factory DisputeRecord.fromJson(Map<String, dynamic> json) {
     return DisputeRecord(
       id: json['id'],
+      referenceNo: json['reference_no'],
       disputeType: json['dispute_type'] ?? '',
       explanation: json['explanation'] ?? '',
       status: json['status'] ?? 'submitted',
@@ -825,7 +828,7 @@ class DisputeRecord {
   }
 
   String get displayType => disputeType.replaceAll('_', ' ').toUpperCase();
-  String get reference => id.substring(0, 8).toUpperCase();
+  String get reference => referenceNo ?? id.substring(0, 8).toUpperCase();
 }
 
 class DisputeListResult {

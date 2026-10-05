@@ -559,10 +559,7 @@ export default function FraudFlagsPage() {
                     Reference
                   </p>
                   <span className="font-mono font-bold text-slate-900 text-sm">
-                    {selectedFlag.id
-                      .replace(/-/g, "")
-                      .slice(0, 12)
-                      .toUpperCase()}
+                    {selectedFlag.reference_no}
                   </span>
                 </div>
               </div>
@@ -722,10 +719,7 @@ export default function FraudFlagsPage() {
                       Reference code
                     </p>
                     <p className="mt-1 font-mono text-[11px] text-slate-700 tabular-nums truncate">
-                      {selectedFlag.id
-                        .replace(/-/g, "")
-                        .slice(0, 12)
-                        .toUpperCase()}
+                      {selectedFlag.reference_no}
                     </p>
                   </div>
                 </div>

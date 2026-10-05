@@ -306,7 +306,7 @@ export default function DisputesPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-slate-400 font-mono tabular-nums">
-                    Ref: {selected.id.slice(0, 8).toUpperCase()}
+                    Ref: {selected.reference_no}
                   </p>
                   <h2 className="text-lg font-bold text-slate-800 mt-1">
                     {DISPUTE_TYPE_LABELS[selected.dispute_type]}

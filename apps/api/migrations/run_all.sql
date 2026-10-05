@@ -85,5 +85,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 034: add other dispute type'
 \i 034_add_other_dispute_type.sql
 
+\echo '>>> Running migration 035: add reference numbers'
+\i 035_add_reference_numbers.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='
