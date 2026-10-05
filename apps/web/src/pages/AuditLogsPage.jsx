@@ -20,6 +20,7 @@ import {
 } from "../utils/auditLog";
 import AuditLogDetailDrawer from "../components/AuditLogDetailDrawer";
 import EmptyState from "../components/EmptyState";
+import AuditReportModal from "../components/AuditReportModal";
 
 const ACTION_GROUPS = [
   { value: "", label: "All Actions" },
@@ -208,6 +209,7 @@ export default function AuditLogsPage() {
   const [page, setPage] = useState(1);
 
   const [exporting, setExporting] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
 
   const activeActions = useMemo(() => {
@@ -280,7 +282,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
+      {showReport && <AuditReportModal onClose={() => setShowReport(false)} />}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-2xl text-slate-900">
@@ -291,6 +293,13 @@ export default function AuditLogsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start">
+          <button
+            onClick={() => setShowReport(true)}
+            className="btn-secondary"
+          >
+            <ScrollText className="w-4 h-4" />
+            Reports
+          </button>
           <button
             onClick={handleExport}
             disabled={exporting}

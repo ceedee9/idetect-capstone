@@ -264,6 +264,11 @@ export const auditLogsAPI = {
   list: (params = {}) => api.get("/audit-logs", { params }),
   exportCsv: (params = {}) =>
     api.get("/audit-logs/export", { params, responseType: "blob" }),
+  report: (params = {}, asBlob = false) =>
+    api.get("/audit-logs/report", {
+      params,
+      ...(asBlob ? { responseType: "blob" } : {}),
+    }),
 };
 
 // ─── Reports / CSV export ─────────────────────────────────────────────────────
