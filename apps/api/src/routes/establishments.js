@@ -734,9 +734,14 @@ router.patch("/:id/approve", async (req, res, next) => {
 // ── PATCH /api/establishments/:id/suspend ─────────────────────
 router.patch(
   "/:id/suspend",
-  [body("reason").notEmpty().trim()],
+  [body("reason").isString().trim().notEmpty().isLength({ max: 2500 })],
   async (req, res, next) => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const { reason } = req.body;
 
       const suspended = await pool.query(

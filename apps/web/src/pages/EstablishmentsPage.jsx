@@ -420,14 +420,18 @@ export default function EstablishmentsPage() {
           <label className="label text-xs">
             Reason for suspension (optional)
           </label>
-          <input
-            type="text"
+          <textarea
             className="input text-sm"
             placeholder="e.g. Expired business permit, non-compliance…"
             value={suspendReason}
             onChange={(e) => setSuspendReason(e.target.value)}
             disabled={actionLoading}
+            maxLength={2500}
+            rows={4}
           />
+          <p className="mt-1 text-xs text-gray-500 text-right" aria-live="polite">
+            {suspendReason.length} / 2,500 characters
+          </p>
         </div>
         {actionError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-3">
