@@ -124,7 +124,7 @@ router.get("/", async (req, res, next) => {
     const status = req.query.status || null;
 
     let query = `
-      SELECT id, id_number, full_name, birthdate, beneficiary_type,
+      SELECT id, reference_no, id_number, full_name, birthdate, beneficiary_type,
              issuing_office, validity_start, validity_end, status,
              disability_type, created_at
       FROM beneficiaries
@@ -134,7 +134,7 @@ router.get("/", async (req, res, next) => {
     let paramIdx = 2;
 
     if (search) {
-      query += ` AND (full_name ILIKE $${paramIdx} OR id_number ILIKE $${paramIdx})`;
+      query += ` AND (full_name ILIKE $${paramIdx} OR id_number ILIKE $${paramIdx} OR reference_no ILIKE $${paramIdx})`;
       params.push(`%${search}%`);
       paramIdx++;
     }
@@ -153,7 +153,7 @@ router.get("/", async (req, res, next) => {
     let countQuery =
       "SELECT COUNT(*) FROM beneficiaries WHERE beneficiary_type = $1";
     if (search) {
-      countQuery += ` AND (full_name ILIKE $2 OR id_number ILIKE $2)`;
+      countQuery += ` AND (full_name ILIKE $2 OR id_number ILIKE $2 OR reference_no ILIKE $2)`;
       countParams.push(`%${search}%`);
     }
 

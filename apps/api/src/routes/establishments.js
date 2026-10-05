@@ -635,7 +635,7 @@ router.get(
 router.get("/:id", async (req, res, next) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, business_name, business_permit_no, owner_name,
+      `SELECT id, reference_no, email, business_name, business_permit_no, owner_name,
              address, contact_number, business_type, status,
              approved_by, approved_at, suspended_reason, created_at, updated_at
       FROM establishments WHERE id = $1`,
@@ -660,7 +660,7 @@ router.get("/", async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT id, business_name, business_permit_no, owner_name,
+      SELECT id, reference_no, business_name, business_permit_no, owner_name,
              address, contact_number, status, approved_at, created_at
       FROM establishments WHERE 1=1
     `;
@@ -672,7 +672,7 @@ router.get("/", async (req, res, next) => {
       params.push(status);
     }
     if (search) {
-      query += ` AND (business_name ILIKE $${idx} OR business_permit_no ILIKE $${idx})`;
+      query += ` AND (business_name ILIKE $${idx} OR business_permit_no ILIKE $${idx} OR reference_no ILIKE $${idx})`;
       params.push(`%${search}%`);
       idx++;
     }

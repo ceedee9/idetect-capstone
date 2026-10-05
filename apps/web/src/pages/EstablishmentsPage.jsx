@@ -54,6 +54,7 @@ export default function EstablishmentsPage() {
         !search ||
         [
           e.business_name,
+          e.reference_no,
           e.address,
           e.contact_email,
           e.contact_phone,
@@ -162,7 +163,7 @@ export default function EstablishmentsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="search"
-            placeholder="Search by name, address, contact…"
+            placeholder="Search by name, reference no., address, contact…"
             className="input-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -285,6 +286,9 @@ export default function EstablishmentsPage() {
                         <div>
                           <p className="font-medium text-gray-900">
                             {est.business_name}
+                          </p>
+                          <p className="font-mono text-[11px] text-gray-400">
+                            {est.reference_no}
                           </p>
                           <p className="text-xs text-gray-400 mt-0.5 hidden sm:block truncate max-w-[200px]">
                             {est.address}

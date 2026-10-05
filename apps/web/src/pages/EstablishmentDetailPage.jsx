@@ -253,6 +253,9 @@ export default function EstablishmentDetailPage() {
               {est.business_type?.replace(/_/g, " ")} · Added{" "}
               {fmtDate(est.created_at)}
             </p>
+            <p className="font-mono text-xs text-gray-400 mt-0.5">
+              Ref: {est.reference_no}
+            </p>
           </div>
         </div>
 

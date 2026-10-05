@@ -299,6 +299,9 @@ export default function BeneficiaryDetailPage() {
               {beneficiaryTypeLabel} ·{" "}
               {age ? `${age} years old` : "Age unknown"} · {b.id_number}
             </p>
+            <p className="font-mono text-xs text-slate-400 mt-0.5">
+              Ref: {b.reference_no}
+            </p>
           </div>
         </div>
 

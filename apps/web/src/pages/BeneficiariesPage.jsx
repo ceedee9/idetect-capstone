@@ -80,6 +80,7 @@ export default function BeneficiariesPage() {
             b.middle_name,
             b.full_name,
             b.id_number,
+            b.reference_no,
             b.address,
           ].some((f) => f?.toLowerCase().includes(q));
         return matchStatus && (isPDAO ? matchDisability : true) && matchSearch;
@@ -239,7 +240,7 @@ export default function BeneficiariesPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="search"
-            placeholder="Search by name or ID number…"
+            placeholder="Search by name, reference no. or ID number…"
             className="input-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -376,6 +377,9 @@ export default function BeneficiariesPage() {
                           <div>
                             <p className="font-semibold text-slate-900">
                               {displayName}
+                            </p>
+                            <p className="font-mono text-[11px] text-slate-400">
+                              {b.reference_no}
                             </p>
                             <p className="font-mono text-xs text-slate-400 font-medium mt-0.5 lg:hidden">
                               {b.id_number}
