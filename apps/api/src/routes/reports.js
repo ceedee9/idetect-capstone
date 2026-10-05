@@ -42,7 +42,7 @@ router.get("/verifications/export", async (req, res, next) => {
     const role = req.user.role;
 
     let query = `
-      SELECT vl.id_number_scanned, vl.beneficiary_type_detected, vl.result,
+      SELECT vl.reference_no, vl.id_number_scanned, vl.beneficiary_type_detected, vl.result,
              vl.ocr_confidence_score, vl.manually_entered, vl.verified_at,
              b.full_name AS beneficiary_name,
              e.business_name AS establishment_name
@@ -89,9 +89,10 @@ router.get("/verifications/export", async (req, res, next) => {
     );
 
     const header =
-      "Date,ID Number,Beneficiary Name,Type,Result,Confidence,Manual Entry,Establishment\n";
+      "Reference No,Date,ID Number,Beneficiary Name,Type,Result,Confidence,Manual Entry,Establishment\n";
     const rows = result.rows.map((r) =>
       [
+        escCsv(r.reference_no),
         r.verified_at ? new Date(r.verified_at).toISOString() : "",
         escCsv(r.id_number_scanned),
         escCsv(r.beneficiary_name),

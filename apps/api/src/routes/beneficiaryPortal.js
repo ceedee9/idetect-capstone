@@ -87,7 +87,7 @@ router.get("/transactions", async (req, res, next) => {
 
     const result = await pool.query(
       `SELECT
-         vl.id, vl.result, vl.ocr_confidence_score,
+         vl.id, vl.reference_no, vl.result, vl.ocr_confidence_score,
          vl.manually_entered, vl.verified_at,
          e.business_name AS establishment_name,
          e.address AS establishment_address

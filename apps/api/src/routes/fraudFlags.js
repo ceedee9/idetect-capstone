@@ -310,6 +310,7 @@ router.get(
          vl.ocr_confidence_score,
          vl.ocr_raw_text,
          vl.verified_at    AS transaction_timestamp,
+         vl.reference_no   AS verification_reference_no,
          vl.manually_entered
        FROM fraud_flags ff
        JOIN establishments e ON e.id = ff.establishment_id

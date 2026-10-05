@@ -341,7 +341,7 @@ router.post(
           ocr_raw_text, image_path, manually_entered,
           extracted_name, extracted_dob, name_match_score, fields_matched,id_format)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-       RETURNING id, verified_at`,
+       RETURNING id, reference_no, verified_at`,
         [
           establishment_id,
           beneficiary_id,
@@ -566,6 +566,7 @@ router.post(
         result,
         message,
         verification_id: log.id,
+        reference_no: log.reference_no,
         verified_at: log.verified_at,
       };
 
@@ -690,7 +691,7 @@ router.get("/history", authenticateEstablishment, async (req, res, next) => {
 
     const dataResult = await pool.query(
       `SELECT
-         vl.id, vl.id_number_scanned, vl.beneficiary_type_detected,
+         vl.id, vl.reference_no, vl.id_number_scanned, vl.beneficiary_type_detected,
          vl.result, vl.ocr_confidence_score, vl.manually_entered, vl.verified_at,
          b.full_name AS beneficiary_name
        FROM verification_logs vl

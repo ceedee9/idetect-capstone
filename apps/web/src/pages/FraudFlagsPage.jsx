@@ -716,6 +716,14 @@ export default function FraudFlagsPage() {
                   </div>
                   <div>
                     <p className="uppercase tracking-wider text-[10px] text-slate-400">
+                      Transaction ref.
+                    </p>
+                    <p className="mt-1 font-mono text-[11px] text-slate-700 tabular-nums truncate">
+                      {selectedFlag.verification_reference_no ?? "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="uppercase tracking-wider text-[10px] text-slate-400">
                       Reference code
                     </p>
                     <p className="mt-1 font-mono text-[11px] text-slate-700 tabular-nums truncate">

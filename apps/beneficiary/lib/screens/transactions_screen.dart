@@ -389,6 +389,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               tx.establishmentName ?? loc.transactionsUnknownEstablishment,
             ),
             _detailRow(loc.transactionsDateTimeLabel, formatted),
+            if (tx.referenceNo != null) _detailRow('Ref. No.', tx.referenceNo!),
             _detailRow(
               loc.transactionsStatusLabel,
               _verificationStatusLabel(tx.result, loc),

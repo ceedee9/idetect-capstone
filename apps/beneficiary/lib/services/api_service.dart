@@ -669,6 +669,7 @@ class BeneficiaryProfile {
 
 class TransactionRecord {
   final String id;
+  final String? referenceNo;
   final String result;
   final double? ocrConfidence;
   final bool manuallyEntered;
@@ -678,6 +679,7 @@ class TransactionRecord {
 
   TransactionRecord({
     required this.id,
+    this.referenceNo,
     required this.result,
     this.ocrConfidence,
     required this.manuallyEntered,
@@ -689,6 +691,7 @@ class TransactionRecord {
   factory TransactionRecord.fromJson(Map<String, dynamic> json) {
     return TransactionRecord(
       id: json['id'],
+      referenceNo: json['reference_no'],
       result: json['result'] ?? 'unknown',
       ocrConfidence: json['ocr_confidence_score'] != null
           ? double.tryParse(json['ocr_confidence_score'].toString())
