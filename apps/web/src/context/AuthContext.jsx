@@ -34,9 +34,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback((reason = "manual") => {
-    // Must run before the token is cleared; failure must not block sign-out.
-    if (localStorage.getItem("staff_token")) {
-      authAPI.logout(reason).catch(() => {});
+    // Token is passed explicitly: the request interceptor runs after it is cleared below.
+    const currentToken = localStorage.getItem("staff_token");
+    if (currentToken) {
+      authAPI.logout(reason, currentToken).catch(() => {});
     }
     localStorage.removeItem("staff_token");
     localStorage.removeItem("staff_user");

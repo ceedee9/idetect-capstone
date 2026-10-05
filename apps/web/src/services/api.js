@@ -104,7 +104,12 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (email, password) =>
     api.post("/auth/staff/login", { email, password }),
-  logout: (reason) => api.post("/auth/staff/logout", { reason }),
+  logout: (reason, token) =>
+    api.post(
+      "/auth/staff/logout",
+      { reason },
+      { headers: { Authorization: `Bearer ${token}` } },
+    ),
   establishmentSetupPassword: (email, token, new_password) =>
     api.post("/auth/establishment/setup-password", {
       email,
