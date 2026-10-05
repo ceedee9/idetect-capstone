@@ -28,6 +28,20 @@ class _DisputeType {
 class _DisputesScreenState extends State<DisputesScreen> {
   List<DisputeRecord>? _disputes;
   bool _isLoading = true;
+  String? _error;
+
+  // Dispute types where "where did this happen" is essential to
+  // investigate — a business/establishment refusing or misusing the ID.
+  // incorrect_db_info is a records issue with no associated establishment,
+  // so it stays optional there.
+  static const Set<String> _establishmentRequiredTypes = {
+    'wrong_denial',
+    'unauthorized_use',
+    'business_refusal',
+  };
+
+  bool _isEstablishmentRequired(String type) =>
+      _establishmentRequiredTypes.contains(type);
 
   @override
   void initState() {
@@ -36,20 +50,28 @@ class _DisputesScreenState extends State<DisputesScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     final result = await ApiService.getMyDisputes();
     if (mounted) {
+      final loc = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;
         _disputes = result.disputes;
+        _error = result.success ? null : loc.serviceUnavailableMessage;
       });
     }
   }
 
   Color _statusColor(String s) {
     switch (s) {
+      case 'submitted':
       case 'open':
         return Colors.orange;
+      case 'acknowledged':
+      case 'under_review':
       case 'investigating':
         return AppDesignSystem.interactiveBlue;
       case 'resolved':
@@ -58,6 +80,25 @@ class _DisputesScreenState extends State<DisputesScreen> {
         return AppDesignSystem.statusInvalid;
       default:
         return AppDesignSystem.textSecondary;
+    }
+  }
+
+  String _statusLabel(String status, AppLocalizations loc) {
+    switch (status) {
+      case 'submitted':
+      case 'open':
+        return loc.disputeStatusSubmitted;
+      case 'acknowledged':
+        return loc.disputeStatusAcknowledged;
+      case 'under_review':
+      case 'investigating':
+        return loc.disputeStatusUnderReview;
+      case 'resolved':
+        return loc.disputeStatusResolved;
+      case 'rejected':
+        return loc.disputeStatusRejected;
+      default:
+        return loc.disputeStatusSubmitted;
     }
   }
 
@@ -89,6 +130,11 @@ class _DisputesScreenState extends State<DisputesScreen> {
       label: loc.disputeTypeIncorrectDbInfoLabel,
       desc: loc.disputeTypeIncorrectDbInfoDesc,
     ),
+    'other': _DisputeType(
+      icon: Icons.more_horiz,
+      label: loc.disputeTypeOtherLabel,
+      desc: loc.disputeTypeOtherDesc,
+    ),
   };
 
   String _formatType(String t, AppLocalizations loc) {
@@ -115,6 +161,8 @@ class _DisputesScreenState extends State<DisputesScreen> {
                 color: AppDesignSystem.primaryBlue,
               ),
             )
+          : _error != null
+          ? _buildUnavailable(loc)
           : _disputes!.isEmpty
           ? _buildEmpty(loc)
           : RefreshIndicator(
@@ -140,6 +188,48 @@ class _DisputesScreenState extends State<DisputesScreen> {
     );
   }
 
+  Widget _buildUnavailable(AppLocalizations loc) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.55,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.cloud_off_outlined,
+                    size: 56,
+                    color: AppDesignSystem.textHint,
+                  ),
+                  const SizedBox(height: AppDesignSystem.spaceSM),
+                  Text(
+                    loc.serviceUnavailableTitle,
+                    style: AppDesignSystem.bodyMedium,
+                  ),
+                  const SizedBox(height: AppDesignSystem.spaceXS),
+                  Text(
+                    _error!,
+                    style: AppDesignSystem.caption,
+                    textAlign: TextAlign.center,
+                  ),
+                  TextButton.icon(
+                    onPressed: _load,
+                    icon: const Icon(Icons.refresh),
+                    label: Text(loc.commonRetry),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmpty(AppLocalizations loc) {
     return Center(
       child: Column(
@@ -156,7 +246,10 @@ class _DisputesScreenState extends State<DisputesScreen> {
   }
 
   Widget _buildTile(DisputeRecord d, AppLocalizations loc) {
-    final date = DateFormat('MMM d, yyyy').format(d.submittedAt);
+    final date = DateFormat(
+      'MMM d, yyyy',
+      loc.localeName,
+    ).format(d.submittedAt);
     final color = _statusColor(d.status);
 
     return Container(
@@ -203,7 +296,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
                       // localized. Same known, already-flagged gap as
                       // AppDesignSystem.getStatusLabel and
                       // transactions_screen's result badge.
-                      d.status.toUpperCase(),
+                      _statusLabel(d.status, loc),
                       style: AppDesignSystem.caption.copyWith(
                         color: color,
                         fontWeight: FontWeight.w700,
@@ -235,7 +328,8 @@ class _DisputesScreenState extends State<DisputesScreen> {
 
   void _showDetail(DisputeRecord d, AppLocalizations loc) {
     final formatted = DateFormat(
-      'MMMM d, yyyy  •  h:mm a', // was 'â€¢' — mojibake fix
+      'MMMM d, yyyy  •  h:mm a',
+      loc.localeName,
     ).format(d.submittedAt);
     final color = _statusColor(d.status);
 
@@ -297,7 +391,7 @@ class _DisputesScreenState extends State<DisputesScreen> {
                     ),
                   ),
                   child: Text(
-                    d.status.toUpperCase(),
+                    _statusLabel(d.status, loc),
                     style: AppDesignSystem.caption.copyWith(
                       color: color,
                       fontWeight: FontWeight.w700,
@@ -310,6 +404,11 @@ class _DisputesScreenState extends State<DisputesScreen> {
 
             _detailRow(loc.disputesTypeLabel, _formatType(d.disputeType, loc)),
             _detailRow(loc.disputesFiledLabel, formatted),
+            // Surfaces where the incident happened, when provided,
+            // mirroring establishment_name already shown on the staff
+            // portals' dispute detail view.
+            if (d.establishmentName != null && d.establishmentName!.isNotEmpty)
+              _detailRow(loc.disputesEstablishmentLabel, d.establishmentName!),
             const SizedBox(height: 12),
 
             Text(loc.disputesDescriptionLabel, style: AppDesignSystem.heading4),
@@ -379,9 +478,19 @@ class _DisputesScreenState extends State<DisputesScreen> {
     final types = _typesFor(loc);
     String selectedType = 'wrong_denial';
     final descCtrl = TextEditingController();
+    // Lets the beneficiary say where the issue happened (business name,
+    // government office, etc.) so it flows through to the
+    // establishment_name field already displayed on the staff portals'
+    // dispute list/detail views. Required or optional depending on
+    // selectedType — see _isEstablishmentRequired.
+    final establishmentCtrl = TextEditingController();
     XFile? pickedFile;
     bool isUploading = false;
     String? uploadError;
+    // Inline validation state, shown under each field itself instead of
+    // relying solely on a SnackBar that's easy to miss.
+    String? descError;
+    String? establishmentError;
 
     showModalBottomSheet(
       context: context,
@@ -450,7 +559,19 @@ class _DisputesScreenState extends State<DisputesScreen> {
                         borderRadius: AppDesignSystem.cardRadius,
                         onTap: () {
                           if (!active) HapticFeedback.selectionClick();
-                          setSheetState(() => selectedType = e.key);
+                          setSheetState(() {
+                            selectedType = e.key;
+                            // Re-evaluate: a message that was required
+                            // for the old type may no longer apply
+                            // (or vice versa) after switching type.
+                            if (!_isEstablishmentRequired(selectedType)) {
+                              establishmentError = null;
+                            } else if (establishmentCtrl.text
+                                .trim()
+                                .isNotEmpty) {
+                              establishmentError = null;
+                            }
+                          });
                         },
                         child: Container(
                           padding: const EdgeInsets.all(14),
@@ -513,17 +634,75 @@ class _DisputesScreenState extends State<DisputesScreen> {
                 }),
                 const SizedBox(height: 16),
 
+                // Description — required for every dispute type: marked
+                // with an asterisk, and shows an inline error + red
+                // border when the user tries to submit blank, instead
+                // of only a SnackBar.
                 Text(
-                  loc.disputesDescriptionLabel,
+                  '${loc.disputesDescriptionLabel} *',
                   style: AppDesignSystem.heading4,
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: descCtrl,
                   maxLines: 4,
+                  onChanged: (value) {
+                    if (descError != null && value.trim().isNotEmpty) {
+                      setSheetState(() => descError = null);
+                    }
+                  },
                   decoration: AppDesignSystem.inputDecoration(
                     hintText: loc.disputesDescriptionHint,
-                  ),
+                  ).copyWith(errorText: descError, errorMaxLines: 2),
+                ),
+                const SizedBox(height: 16),
+
+                // Where the issue happened — required only for dispute
+                // types that inherently involve a specific business or
+                // office (see _establishmentRequiredTypes); optional
+                // otherwise (e.g. incorrect_db_info). Label, hint and
+                // validation all update live as selectedType changes.
+                Builder(
+                  builder: (_) {
+                    final required = _isEstablishmentRequired(selectedType);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          required
+                              ? '${loc.disputesEstablishmentLabel} *'
+                              : loc.disputesEstablishmentLabel,
+                          style: AppDesignSystem.heading4,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          required
+                              ? loc.disputesEstablishmentRequiredHint
+                              : loc.disputesEstablishmentHint,
+                          style: AppDesignSystem.caption.copyWith(
+                            color: AppDesignSystem.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: establishmentCtrl,
+                          onChanged: (value) {
+                            if (establishmentError != null &&
+                                value.trim().isNotEmpty) {
+                              setSheetState(() => establishmentError = null);
+                            }
+                          },
+                          decoration:
+                              AppDesignSystem.inputDecoration(
+                                hintText: loc.disputesEstablishmentPlaceholder,
+                              ).copyWith(
+                                errorText: establishmentError,
+                                errorMaxLines: 2,
+                              ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -639,14 +818,30 @@ class _DisputesScreenState extends State<DisputesScreen> {
                         ? null
                         : () async {
                             final text = descCtrl.text.trim();
+                            final establishment = establishmentCtrl.text.trim();
+
+                            // Validate required description inline
+                            // (red border + message under the field)
+                            // instead of only a SnackBar, so it's
+                            // obvious before/without needing to notice
+                            // a transient toast.
                             if (text.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    loc.disputesErrorEmptyDescription,
-                                  ),
-                                ),
-                              );
+                              setSheetState(() {
+                                descError = loc.disputesErrorEmptyDescription;
+                              });
+                              HapticFeedback.selectionClick();
+                              return;
+                            }
+
+                            // Validate establishment only for the
+                            // dispute types where it's required.
+                            if (_isEstablishmentRequired(selectedType) &&
+                                establishment.isEmpty) {
+                              setSheetState(() {
+                                establishmentError =
+                                    loc.disputesErrorEmptyEstablishment;
+                              });
+                              HapticFeedback.selectionClick();
                               return;
                             }
 
@@ -688,6 +883,9 @@ class _DisputesScreenState extends State<DisputesScreen> {
                             final result = await ApiService.submitDispute(
                               disputeType: selectedType,
                               explanation: text,
+                              establishmentName: establishment.isEmpty
+                                  ? null
+                                  : establishment,
                               supportingDocPath: docPath,
                             );
 

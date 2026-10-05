@@ -68,6 +68,8 @@ const MIGRATIONS = [
   "030_add_beneficiary_deleted_audit_action.sql",
   "031_allow_beneficiary_fk_cleanup_in_verification_logs.sql",
   "032_preserve_immutable_logs_on_beneficiary_delete.sql",
+  "033_add_reported_establishment_name_to_disputes.sql",
+  "034_add_other_dispute_type.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

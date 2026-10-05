@@ -8,6 +8,9 @@
     <mxCell id="title" value="Activity Diagram 5 — Beneficiary Record Management (OSCA / PDAO Admin)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
       <mxGeometry x="80" y="20" width="980" height="40" as="geometry" />
     </mxCell>
+    <mxCell id="dominant_user" value="Dominant User: OSCA / PDAO Admin" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;fontColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="80" y="45" width="980" height="20" as="geometry" />
+    </mxCell>
 
     <!-- SWIMLANES -->
     <mxCell id="lane1" value="OSCA / PDAO Admin" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
@@ -71,9 +74,6 @@
     <mxCell id="a_return_a" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
       <mxGeometry x="545" y="690" width="220" height="40" as="geometry" />
     </mxCell>
-    <mxCell id="end_a" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="645" y="750" width="30" height="30" as="geometry" />
-    </mxCell>
 
     <!-- ============================================================ -->
     <!-- BRANCH B: Edit Existing Record                               -->
@@ -105,9 +105,6 @@
     </mxCell>
     <mxCell id="a_return_b" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
       <mxGeometry x="545" y="1060" width="220" height="40" as="geometry" />
-    </mxCell>
-    <mxCell id="end_b" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="645" y="1120" width="30" height="30" as="geometry" />
     </mxCell>
 
     <!-- ============================================================ -->
@@ -145,9 +142,6 @@
     <mxCell id="a_ret_susp" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
       <mxGeometry x="540" y="1600" width="210" height="40" as="geometry" />
     </mxCell>
-    <mxCell id="end_susp" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="640" y="1660" width="30" height="30" as="geometry" />
-    </mxCell>
 
     <!-- Revoke sub-branch -->
     <mxCell id="lbl_c_rev" value="Revoke" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
@@ -168,9 +162,6 @@
     <mxCell id="a_ret_rev" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
       <mxGeometry x="540" y="1920" width="210" height="40" as="geometry" />
     </mxCell>
-    <mxCell id="end_rev" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="640" y="1980" width="30" height="30" as="geometry" />
-    </mxCell>
 
     <!-- Restore sub-branch -->
     <mxCell id="lbl_c_res" value="Restore" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="1">
@@ -190,9 +181,6 @@
     </mxCell>
     <mxCell id="a_ret_res" value="Return Success to Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
       <mxGeometry x="540" y="2300" width="210" height="40" as="geometry" />
-    </mxCell>
-    <mxCell id="end_res" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="640" y="2360" width="30" height="30" as="geometry" />
     </mxCell>
 
     <!-- ============================================================ -->
@@ -222,11 +210,8 @@
     <mxCell id="p_dl_csv" value="Download CSV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
       <mxGeometry x="100" y="2350" width="160" height="40" as="geometry" />
     </mxCell>
-    <mxCell id="end_d1" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="165" y="2410" width="30" height="30" as="geometry" />
-    </mxCell>
-    <mxCell id="end_d2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="330" y="2410" width="30" height="30" as="geometry" />
+    <mxCell id="end_final" value="&#215;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;strokeWidth=3;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="640" y="2410" width="36" height="36" as="geometry" />
     </mxCell>
 
     <!-- ===== EDGES ===== -->
@@ -246,7 +231,7 @@
     <mxCell id="e11" value="NO" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_dup_a" target="a_insert_ben" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_insert_ben" target="a_audit_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_a" target="a_return_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-    <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_return_a" target="end_a" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_return_a" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
 
     <!-- BRANCH B: Edit Record -->
     <mxCell id="e15" value="Edit Record" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_action" target="p_search_b" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="240" y="335"/><mxPoint x="210" y="335"/><mxPoint x="210" y="870"/></Array></mxGeometry></mxCell>
@@ -257,7 +242,7 @@
     <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_val_b" target="a_update_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_update_b" target="a_audit_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e22" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_b" target="a_return_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-    <mxCell id="e23" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_return_b" target="end_b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e23" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_return_b" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
 
     <!-- BRANCH C: Change Status -->
     <mxCell id="e24" value="Change Status" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_action" target="p_search_c" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="285" y="335"/><mxPoint x="210" y="335"/><mxPoint x="210" y="1220"/></Array></mxGeometry></mxCell>
@@ -269,7 +254,7 @@
     <mxCell id="e28" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_set_susp" target="a_audit_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e29" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_susp" target="a_notif_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e30" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_notif_susp" target="a_ret_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-    <mxCell id="e31" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_susp" target="end_susp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e31" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_susp" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
 
     <!-- Revoke -->
     <mxCell id="e32" value="Revoke" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_status" target="p_reason_rev" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="215" y="1360"/><mxPoint x="255" y="1360"/><mxPoint x="255" y="1730"/></Array></mxGeometry></mxCell>
@@ -277,7 +262,7 @@
     <mxCell id="e34" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_set_rev" target="a_audit_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e35" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_rev" target="a_notif_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e36" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_notif_rev" target="a_ret_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-    <mxCell id="e37" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_rev" target="end_rev" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e37" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_rev" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
 
     <!-- Restore -->
     <mxCell id="e38" value="Restore" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_status" target="a_set_active" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="295" y="1360"/><mxPoint x="645" y="1360"/><mxPoint x="645" y="2050"/></Array></mxGeometry></mxCell>
@@ -285,7 +270,7 @@
     <mxCell id="e40" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_clear_reason" target="a_audit_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e41" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit_res" target="a_notif_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e42" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_notif_res" target="a_ret_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-    <mxCell id="e43" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_res" target="end_res" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e43" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_ret_res" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
 
     <!-- BRANCH D: View History -->
     <mxCell id="e44" value="View History" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_action" target="p_search_d" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="320" y="335"/><mxPoint x="210" y="335"/><mxPoint x="210" y="2130"/></Array></mxGeometry></mxCell>
@@ -294,8 +279,8 @@
     <mxCell id="e47" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_display" target="d_export" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <mxCell id="e48" value="YES" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_export" target="a_gen_csv" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="290" y="2310"/><mxPoint x="645" y="2310"/><mxPoint x="645" y="2350"/></Array></mxGeometry></mxCell>
     <mxCell id="e49" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_gen_csv" target="p_dl_csv" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="645" y="2370"/><mxPoint x="180" y="2370"/></Array></mxGeometry></mxCell>
-    <mxCell id="e50" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_dl_csv" target="end_d1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-    <mxCell id="e51" value="NO" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_export" target="end_d2" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="210" y="2345"/><mxPoint x="345" y="2345"/><mxPoint x="345" y="2410"/></Array></mxGeometry></mxCell>
+    <mxCell id="e50" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="p_dl_csv" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e51" value="NO" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="d_export" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="210" y="2345"/><mxPoint x="645" y="2345"/><mxPoint x="645" y="2410"/></Array></mxGeometry></mxCell>
 
   </root>
 </mxGraphModel>

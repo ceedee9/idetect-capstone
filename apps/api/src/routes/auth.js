@@ -182,6 +182,38 @@ router.post("/staff/refresh", async (req, res, next) => {
   }
 });
 
+// ── Staff Logout (audit only; JWTs are stateless) ──────────────
+const LOGOUT_REASONS = ["manual", "idle_timeout"];
+router.post("/staff/logout", async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET_STAFF);
+    } catch {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    const reason = LOGOUT_REASONS.includes(req.body?.reason)
+      ? req.body.reason
+      : "manual";
+
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, action, metadata, ip_address)
+       VALUES ($1, 'logout', $2, $3)`,
+      [decoded.id, JSON.stringify({ email: decoded.email, reason }), req.ip],
+    );
+
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Establishment Login (Client Portal mobile app) ─────────────
 router.post(
   "/establishment/login",

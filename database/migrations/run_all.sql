@@ -28,6 +28,9 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 007: disputes'
 \i 007_create_disputes.sql
 
+\echo '>>> Running migration 034: add other dispute type'
+\i 034_add_other_dispute_type.sql
+
 \echo '>>> Running migration 008: notifications'
 \i 008_create_notifications.sql
 

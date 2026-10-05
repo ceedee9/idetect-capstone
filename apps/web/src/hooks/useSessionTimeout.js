@@ -32,7 +32,7 @@ export function useSessionTimeout() {
 
   const doLogout = useCallback(() => {
     clearInterval(countdownRef.current);
-    logout();
+    logout("idle_timeout");
     navigate("/login?reason=idle", { replace: true });
   }, [logout, navigate]);
 

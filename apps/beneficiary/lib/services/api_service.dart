@@ -459,6 +459,10 @@ class ApiService {
     String? verificationLogId,
     required String disputeType,
     required String explanation,
+    // NEW: where the incident happened (business/office name). Optional at
+    // this layer — disputes_screen.dart only requires it for certain
+    // dispute types; the backend decides what it does with a missing value.
+    String? establishmentName,
     String? supportingDocPath,
   }) async {
     try {
@@ -471,6 +475,8 @@ class ApiService {
                 'verification_log_id': verificationLogId,
               'dispute_type': disputeType,
               'explanation': explanation,
+              if (establishmentName != null)
+                'establishment_name': establishmentName,
               if (supportingDocPath != null)
                 'supporting_doc_path': supportingDocPath,
             }),

@@ -139,7 +139,13 @@ class AppLocalizationsFil extends AppLocalizations {
   String get beneficiaryTypePwd => 'PWD';
 
   @override
-  String get languageToggleTooltip => 'Baguhin ang wika';
+  String get languageToggleTooltip => 'Wika ng display';
+
+  @override
+  String get languageEnglishLabel => 'Ingles';
+
+  @override
+  String get languageFilipinoLabel => 'Filipino';
 
   @override
   String get statusErrorLoadProfile =>
@@ -231,6 +237,81 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get transactionsEntryManual => 'Manwal';
+
+  @override
+  String get historyEmptyState => 'Wala pang aktibidad';
+
+  @override
+  String get historyDisputeLabel => 'Reklamo / Ulat';
+
+  @override
+  String get serviceUnavailableTitle => 'Hindi maabot ang iDetect';
+
+  @override
+  String get serviceUnavailableMessage =>
+      'Hindi namin maabot ang iDetect. Suriin ang iyong koneksyon o subukan muli mamaya.';
+
+  @override
+  String get commonRetry => 'Subukang Muli';
+
+  @override
+  String get verificationStatusValid => 'WASTO';
+
+  @override
+  String get verificationStatusInvalid => 'HINDI WASTO';
+
+  @override
+  String get verificationStatusReview => 'KAILANGAN NG PAGSUSURI';
+
+  @override
+  String get verificationStatusManualReview => 'MANWAL NA PAGSUSURI';
+
+  @override
+  String get verificationStatusUnknown => 'HINDI ALAM';
+
+  @override
+  String get disputeStatusSubmitted => 'NAISUMITE';
+
+  @override
+  String get disputeStatusAcknowledged => 'KINILALA';
+
+  @override
+  String get disputeStatusUnderReview => 'SINUSURI';
+
+  @override
+  String get disputeStatusResolved => 'NALUTAS';
+
+  @override
+  String get disputeStatusRejected => 'TINANGGIHAN';
+
+  @override
+  String get beneficiaryStatusActive => 'Aktibo at wasto';
+
+  @override
+  String get beneficiaryStatusExpired => 'Nag-expire na';
+
+  @override
+  String get beneficiaryStatusSuspended => 'Sinusuri';
+
+  @override
+  String get beneficiaryStatusRevoked => 'Binawi';
+
+  @override
+  String get beneficiaryStatusUnknown => 'Hindi alam';
+
+  @override
+  String get statusIdNumberLabel => 'Numero ng ID';
+
+  @override
+  String get statusShowIdNumber => 'Ipakita ang numero ng ID';
+
+  @override
+  String get statusHideIdNumber => 'Itago ang numero ng ID';
+
+  @override
+  String statusIdNumberHidden(String lastTwo) {
+    return 'Nakatago ang numero ng ID. Nagtatapos sa $lastTwo.';
+  }
 
   @override
   String get fraudReportTitle => 'Iulat ang Panloloko';
@@ -326,6 +407,25 @@ class AppLocalizationsFil extends AppLocalizations {
   String get disputesDescriptionHint => 'Ilarawan ang iyong reklamo...';
 
   @override
+  String get disputesEstablishmentLabel => 'Saan ito nangyari?';
+
+  @override
+  String get disputesEstablishmentHint =>
+      'Opsyonal — ilagay ang pangalan ng establisyemento o tanggapan, kung naaangkop';
+
+  @override
+  String get disputesEstablishmentRequiredHint =>
+      'Pangalan ng establisyemento o tanggapang kinasangkutan';
+
+  @override
+  String get disputesEstablishmentPlaceholder =>
+      'hal. Valenzuela City Hall, ABC Store';
+
+  @override
+  String get disputesErrorEmptyEstablishment =>
+      'Pakilagay kung saan ito nangyari';
+
+  @override
   String get disputesSupportingDocLabel => 'Sumusuportang Dokumento';
 
   @override
@@ -371,6 +471,13 @@ class AppLocalizationsFil extends AppLocalizations {
   @override
   String get disputeTypeIncorrectDbInfoDesc =>
       'Mali ang iyong impormasyon sa aming sistema';
+
+  @override
+  String get disputeTypeOtherLabel => 'Iba Pa';
+
+  @override
+  String get disputeTypeOtherDesc =>
+      'Ibang isyung wala sa mga pagpipilian sa itaas';
 
   @override
   String get notificationsErrorFallback => 'Hindi ma-load ang mga abiso.';

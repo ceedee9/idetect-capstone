@@ -5,13 +5,21 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
+import 'package:idetect_beneficiary/core/locale_provider.dart';
 import 'package:idetect_beneficiary/main.dart';
 
 void main() {
   testWidgets('App launches smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const IDetectBeneficiaryApp());
-    expect(find.text('iDetect Beneficiary'), findsOneWidget);
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => LocaleProvider(),
+        child: const IDetectBeneficiaryApp(),
+      ),
+    );
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

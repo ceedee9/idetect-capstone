@@ -1,0 +1,1 @@
+ALTER TYPE dispute_type ADD VALUE IF NOT EXISTS 'other';

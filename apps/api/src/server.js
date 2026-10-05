@@ -101,6 +101,9 @@ async function runStartupMigrations() {
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'login';
     `);
     await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'logout';
+    `);
+    await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'password_changed';
     `);
     await pool.query(`

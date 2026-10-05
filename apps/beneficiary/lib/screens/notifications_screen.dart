@@ -61,7 +61,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           _hasMore = _notifications!.length < result.total;
           _page = 2;
         } else {
-          _error = result.errorMessage ?? loc.notificationsErrorFallback;
+          _error = loc.serviceUnavailableMessage;
           _notifications = [];
         }
       });
@@ -80,8 +80,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         setState(() {
           _isLoading = false;
           _error =
-              AppLocalizations.of(context)?.notificationsErrorGeneric ??
-              'Something went wrong. Please try again.';
+              AppLocalizations.of(context)?.serviceUnavailableMessage ??
+              'iDetect is unavailable. Check your connection or try again later.';
           _notifications = [];
         });
       }
@@ -244,7 +244,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const Icon(
+                Icons.cloud_off_outlined,
+                size: 48,
+                color: AppDesignSystem.statusWarning,
+              ),
               const SizedBox(height: 12),
               // Was unstyled (ambient default TextStyle) — every other
               // screen's error text goes through AppDesignSystem.
@@ -376,7 +380,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildTile(AppNotification n, AppLocalizations loc) {
-    final timeStr = DateFormat('MMM d, h:mm a').format(n.sentAt);
+    final timeStr = DateFormat(
+      'MMM d, h:mm a',
+      loc.localeName,
+    ).format(n.sentAt);
     final color = _colorForType(n.notificationType);
 
     return Container(
@@ -472,8 +479,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _showDetail(AppNotification n) {
+    final loc = AppLocalizations.of(context)!;
     final formatted = DateFormat(
-      'MMMM d, yyyy  •  h:mm a', // was 'â€¢' — mojibake fix
+      'MMMM d, yyyy  •  h:mm a',
+      loc.localeName,
     ).format(n.sentAt);
 
     showModalBottomSheet(

@@ -83,7 +83,9 @@ export function humanizeAuditLog(log) {
     case "login":
       return `${who} signed in (${m.email || "unknown email"})`;
     case "logout":
-      return `${who} signed out`;
+      return m.reason === "idle_timeout"
+        ? `${who} was signed out after inactivity`
+        : `${who} signed out`;
     case "password_changed":
       return `${who} changed their own password`;
     case "otp_requested":

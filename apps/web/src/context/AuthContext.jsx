@@ -33,7 +33,11 @@ export function AuthProvider({ children }) {
     return newUser;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback((reason = "manual") => {
+    // Must run before the token is cleared; failure must not block sign-out.
+    if (localStorage.getItem("staff_token")) {
+      authAPI.logout(reason).catch(() => {});
+    }
     localStorage.removeItem("staff_token");
     localStorage.removeItem("staff_user");
     setToken(null);

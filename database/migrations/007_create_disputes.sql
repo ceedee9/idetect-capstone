@@ -10,7 +10,8 @@ CREATE TYPE dispute_type AS ENUM (
   'wrong_denial',           -- "I am valid but was denied"
   'unauthorized_use',       -- "My ID was used without my knowledge"
   'business_refusal',       -- "Business refused despite system approval"
-  'incorrect_db_info'       -- "My record has wrong information"
+  'incorrect_db_info',      -- "My record has wrong information"
+  'other'                   -- Other dispute category
 );
 
 CREATE TYPE dispute_status AS ENUM (
@@ -51,6 +52,6 @@ CREATE INDEX idx_disputes_status                 ON disputes(status);
 CREATE INDEX idx_disputes_submitted_at           ON disputes(submitted_at DESC);
 
 COMMENT ON TABLE  disputes                       IS 'Beneficiary-submitted challenges to incorrect denials or database errors.';
-COMMENT ON COLUMN disputes.dispute_type          IS 'Maps to the four dispute categories described in the manuscript.';
+COMMENT ON COLUMN disputes.dispute_type          IS 'Category selected for a beneficiary-submitted dispute.';
 COMMENT ON COLUMN disputes.acknowledged_at       IS 'Must be filled within 24 hours of submission per SLA.';
 COMMENT ON COLUMN disputes.resolved_at           IS 'Target: 48-72 hours from submission for database errors.';

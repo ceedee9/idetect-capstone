@@ -111,6 +111,15 @@ router.post(
   },
 );
 
+// Dispute types that inherently involve a specific business or office.
+// Mirrors _establishmentRequiredTypes in the Flutter disputes_screen.dart —
+// kept in sync manually since the two codebases don't share constants.
+const ESTABLISHMENT_REQUIRED_TYPES = [
+  "wrong_denial",
+  "unauthorized_use",
+  "business_refusal",
+];
+
 // ── POST /api/disputes ─────────────────────────────────────────
 // REQ-2.13.1 through 2.13.4: Beneficiary submits a dispute
 router.post(
@@ -118,13 +127,43 @@ router.post(
   authenticateBeneficiary,
   [
     body("verification_log_id").optional().isUUID(),
-    body("dispute_type").isIn([
-      "wrong_denial",
-      "unauthorized_use",
-      "business_refusal",
-      "incorrect_db_info",
-    ]),
+    body("dispute_type")
+      .isIn([
+        "wrong_denial",
+        "unauthorized_use",
+        "business_refusal",
+        "incorrect_db_info",
+        "other",
+      ])
+      // Server-side mirror of the per-type requirement enforced in the
+      // mobile app: if the dispute type inherently involves a business/
+      // office and we have no verification_log_id to derive it from,
+      // the beneficiary must have typed one in.
+      .custom((value, { req }) => {
+        const requiresEstablishment =
+          ESTABLISHMENT_REQUIRED_TYPES.includes(value);
+        const hasVerificationLog = !!req.body.verification_log_id;
+        const hasEstablishmentName = !!(
+          req.body.establishment_name &&
+          String(req.body.establishment_name).trim()
+        );
+        if (
+          requiresEstablishment &&
+          !hasVerificationLog &&
+          !hasEstablishmentName
+        ) {
+          throw new Error(
+            "establishment_name is required for this dispute type",
+          );
+        }
+        return true;
+      }),
     body("explanation").isString().trim().notEmpty(),
+    body("establishment_name")
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 255 }),
     body("supporting_doc_path").optional().isString().trim(),
   ],
   async (req, res, next) => {
@@ -139,19 +178,21 @@ router.post(
         verification_log_id,
         dispute_type,
         explanation,
+        establishment_name,
         supporting_doc_path,
       } = req.body;
 
       const result = await pool.query(
         `INSERT INTO disputes
-         (beneficiary_account_id, verification_log_id, dispute_type, explanation, supporting_doc_path)
-       VALUES ($1, $2, $3, $4, $5)
+         (beneficiary_account_id, verification_log_id, dispute_type, explanation, reported_establishment_name, supporting_doc_path)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
         [
           accountId,
           verification_log_id || null,
           dispute_type,
           explanation,
+          establishment_name || null,
           supporting_doc_path || null,
         ],
       );
@@ -207,7 +248,7 @@ router.get("/mine", authenticateBeneficiary, async (req, res, next) => {
       `SELECT
          d.*,
          vl.result            AS verification_result,
-         e.business_name      AS establishment_name
+         COALESCE(e.business_name, d.reported_establishment_name) AS establishment_name
        FROM disputes d
        LEFT JOIN verification_logs vl ON vl.id = d.verification_log_id
        LEFT JOIN establishments e ON e.id = vl.establishment_id
@@ -274,7 +315,7 @@ router.get(
          b.id_number         AS beneficiary_id_number,
          b.beneficiary_type,
          vl.result            AS verification_result,
-         e.business_name      AS establishment_name,
+         COALESCE(e.business_name, d.reported_establishment_name) AS establishment_name,
          u.email              AS handled_by_email
        FROM disputes d
        JOIN beneficiary_accounts ba ON ba.id = d.beneficiary_account_id

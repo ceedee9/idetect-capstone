@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../core/constants/app_design_system.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
@@ -15,6 +16,7 @@ class StatusScreen extends StatefulWidget {
 class _StatusScreenState extends State<StatusScreen> {
   BeneficiaryProfile? _profile;
   bool _isLoading = true;
+  bool _isIdNumberVisible = false;
   String? _error;
 
   @override
@@ -48,17 +50,47 @@ class _StatusScreenState extends State<StatusScreen> {
     return AppDesignSystem.getStatusIcon(status);
   }
 
-  // Maps the raw beneficiary_type API value to its localized, uppercased
-  // display label used in the type badge (e.g. "SENIOR CITIZEN", "PWD").
-  String _beneficiaryTypeBadge(String rawType, AppLocalizations loc) {
+  String _statusLabel(String status, AppLocalizations loc) {
+    switch (status) {
+      case 'active':
+        return loc.beneficiaryStatusActive;
+      case 'expired':
+        return loc.beneficiaryStatusExpired;
+      case 'suspended':
+        return loc.beneficiaryStatusSuspended;
+      case 'revoked':
+        return loc.beneficiaryStatusRevoked;
+      default:
+        return loc.beneficiaryStatusUnknown;
+    }
+  }
+
+  String _formatDate(String value, AppLocalizations loc) {
+    try {
+      return DateFormat.yMMMd(loc.localeName).format(DateTime.parse(value));
+    } catch (_) {
+      return value;
+    }
+  }
+
+  String _beneficiaryTypeLabel(String rawType, AppLocalizations loc) {
     switch (rawType) {
       case 'senior_citizen':
-        return loc.beneficiaryTypeSenior.toUpperCase();
+        return loc.beneficiaryTypeSenior;
       case 'pwd':
-        return loc.beneficiaryTypePwd.toUpperCase();
+        return loc.beneficiaryTypePwd;
       default:
-        return rawType.replaceAll('_', ' ').toUpperCase();
+        return rawType.replaceAll('_', ' ');
     }
+  }
+
+  String _maskedIdNumber(String idNumber) {
+    final visibleCharacters = idNumber.length < 2 ? idNumber.length : 2;
+    final hiddenCharacters = List.filled(
+      idNumber.length - visibleCharacters,
+      '•',
+    ).join();
+    return '$hiddenCharacters${idNumber.substring(idNumber.length - visibleCharacters)}';
   }
 
   @override
@@ -117,146 +149,134 @@ class _StatusScreenState extends State<StatusScreen> {
         const SizedBox(height: AppDesignSystem.spaceXS),
 
         // ── Status Card ──
-        // Wrapped in a single Semantics block so screen readers announce
-        // status/name/ID as one coherent statement instead of reading
-        // the pill, name, and ID number as three fragmented elements.
-        Semantics(
-          container: true,
-          label:
-              '${AppDesignSystem.getStatusLabel(p.status)}. ${p.fullName}. '
-              '${loc.statusIdDetailsTitle}: ${p.idNumber}.',
-          excludeSemantics: true,
-          child: Container(
-            padding: const EdgeInsets.all(AppDesignSystem.spaceMD),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppDesignSystem.primaryBlue,
-                  AppDesignSystem.primaryBlue.withOpacity(0.85),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+        Container(
+          padding: const EdgeInsets.all(AppDesignSystem.spaceSM),
+          decoration: BoxDecoration(
+            color: AppDesignSystem.backgroundWhite,
+            borderRadius: AppDesignSystem.cardRadius,
+            border: Border.all(color: AppDesignSystem.borderLight),
+            boxShadow: AppDesignSystem.shadowSM,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.05),
+                  border: Border.all(color: color.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(
+                    AppDesignSystem.radiusFull,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_statusIcon(p.status), color: color, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      _statusLabel(p.status, loc),
+                      style: AppDesignSystem.bodySmall.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              borderRadius: AppDesignSystem.cardRadius,
-              boxShadow: AppDesignSystem.shadowMD,
-            ),
-            child: Column(
-              children: [
-                // Status indicator — large, prominent (Von Restorff Effect)
-                // NOTE: AppDesignSystem.getStatusLabel(p.status) is NOT localized here —
-                // it lives in app_design_system.dart, which hasn't been reviewed yet.
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(
-                      AppDesignSystem.radiusFull,
-                    ),
-                    border: Border.all(color: color, width: 2),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(_statusIcon(p.status), color: color, size: 28),
-                      const SizedBox(width: 10),
-                      Text(
-                        AppDesignSystem.getStatusLabel(p.status),
-                        style: AppDesignSystem.buttonLarge.copyWith(
-                          color: color,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
+              const SizedBox(height: AppDesignSystem.spaceSM),
+              Text(
+                p.fullName,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: AppDesignSystem.textPrimary,
+                  height: 1.25,
                 ),
-                const SizedBox(height: AppDesignSystem.spaceMD),
-
-                // Name
-                Text(
-                  p.fullName,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    height: 1.2,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    Icons.badge_outlined,
+                    size: 18,
+                    color: AppDesignSystem.textSecondary,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-
-                // ID Number
-                Text(
-                  p.idNumber,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: AppDesignSystem.spaceSM),
-
-                // Type badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(
-                      AppDesignSystem.radiusFull,
+                  const SizedBox(width: 6),
+                  Text(
+                    _beneficiaryTypeLabel(p.beneficiaryType, loc),
+                    style: AppDesignSystem.bodySmall.copyWith(
+                      color: AppDesignSystem.textSecondary,
                     ),
                   ),
-                  child: Text(
-                    _beneficiaryTypeBadge(p.beneficiaryType, loc),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-
-                if (p.statusReason != null) ...[
-                  const SizedBox(height: AppDesignSystem.spaceSM),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(
-                        AppDesignSystem.radiusSM,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Colors.white70,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            // Server-supplied text (a staff-entered reason) — not localized here.
-                            p.statusReason!,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Colors.white70,
-                              height: 1.5,
+                ],
+              ),
+              const SizedBox(height: AppDesignSystem.spaceSM),
+              const Divider(height: 1),
+              const SizedBox(height: AppDesignSystem.spaceSM),
+              Text(loc.statusIdNumberLabel, style: AppDesignSystem.label),
+              Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      label: _isIdNumberVisible
+                          ? '${loc.statusIdNumberLabel}: ${p.idNumber}'
+                          : loc.statusIdNumberHidden(
+                              p.idNumber.length <= 2
+                                  ? p.idNumber
+                                  : p.idNumber.substring(p.idNumber.length - 2),
                             ),
+                      child: ExcludeSemantics(
+                        child: Text(
+                          _isIdNumberVisible
+                              ? p.idNumber
+                              : _maskedIdNumber(p.idNumber),
+                          style: AppDesignSystem.bodyMedium.copyWith(
+                            color: AppDesignSystem.textPrimary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
+                  IconButton(
+                    tooltip: _isIdNumberVisible
+                        ? loc.statusHideIdNumber
+                        : loc.statusShowIdNumber,
+                    onPressed: () => setState(
+                      () => _isIdNumberVisible = !_isIdNumberVisible,
+                    ),
+                    icon: Icon(
+                      _isIdNumberVisible
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    color: AppDesignSystem.interactiveBlue,
+                  ),
                 ],
+              ),
+              if (p.statusReason != null) ...[
+                const Divider(height: AppDesignSystem.spaceMD),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, color: color, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        p.statusReason!,
+                        style: AppDesignSystem.bodySmall.copyWith(
+                          color: AppDesignSystem.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
+            ],
           ),
         ),
         const SizedBox(height: AppDesignSystem.spaceMD),
@@ -268,9 +288,15 @@ class _StatusScreenState extends State<StatusScreen> {
         // ── ID Details ──
         _buildSection(loc.statusIdDetailsTitle, [
           _buildDetailRow(loc.statusIssuingOffice, p.issuingOffice),
-          _buildDetailRow(loc.statusValidFrom, p.validityStart),
-          _buildDetailRow(loc.statusValidUntil, p.validityEnd),
-          _buildDetailRow(loc.statusBirthdate, p.birthdate),
+          _buildDetailRow(
+            loc.statusValidFrom,
+            _formatDate(p.validityStart, loc),
+          ),
+          _buildDetailRow(
+            loc.statusValidUntil,
+            _formatDate(p.validityEnd, loc),
+          ),
+          _buildDetailRow(loc.statusBirthdate, _formatDate(p.birthdate, loc)),
           if (p.registeredMobile != null)
             _buildDetailRow(loc.statusMobile, p.registeredMobile!),
         ]),

@@ -137,7 +137,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get beneficiaryTypePwd => 'PWD';
 
   @override
-  String get languageToggleTooltip => 'Change language';
+  String get languageToggleTooltip => 'Display language';
+
+  @override
+  String get languageEnglishLabel => 'English';
+
+  @override
+  String get languageFilipinoLabel => 'Filipino';
 
   @override
   String get statusErrorLoadProfile =>
@@ -229,6 +235,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transactionsEntryManual => 'Manual';
+
+  @override
+  String get historyEmptyState => 'No activity yet';
+
+  @override
+  String get historyDisputeLabel => 'Dispute / Report';
+
+  @override
+  String get serviceUnavailableTitle => 'iDetect is unavailable';
+
+  @override
+  String get serviceUnavailableMessage =>
+      'We could not reach iDetect. Check your connection or try again later.';
+
+  @override
+  String get commonRetry => 'Try Again';
+
+  @override
+  String get verificationStatusValid => 'VALID';
+
+  @override
+  String get verificationStatusInvalid => 'INVALID';
+
+  @override
+  String get verificationStatusReview => 'NEEDS REVIEW';
+
+  @override
+  String get verificationStatusManualReview => 'MANUAL REVIEW';
+
+  @override
+  String get verificationStatusUnknown => 'UNKNOWN';
+
+  @override
+  String get disputeStatusSubmitted => 'SUBMITTED';
+
+  @override
+  String get disputeStatusAcknowledged => 'ACKNOWLEDGED';
+
+  @override
+  String get disputeStatusUnderReview => 'UNDER REVIEW';
+
+  @override
+  String get disputeStatusResolved => 'RESOLVED';
+
+  @override
+  String get disputeStatusRejected => 'REJECTED';
+
+  @override
+  String get beneficiaryStatusActive => 'Active & valid';
+
+  @override
+  String get beneficiaryStatusExpired => 'Expired';
+
+  @override
+  String get beneficiaryStatusSuspended => 'Under investigation';
+
+  @override
+  String get beneficiaryStatusRevoked => 'Revoked';
+
+  @override
+  String get beneficiaryStatusUnknown => 'Unknown';
+
+  @override
+  String get statusIdNumberLabel => 'ID Number';
+
+  @override
+  String get statusShowIdNumber => 'Show ID number';
+
+  @override
+  String get statusHideIdNumber => 'Hide ID number';
+
+  @override
+  String statusIdNumberHidden(String lastTwo) {
+    return 'ID number hidden. It ends in $lastTwo.';
+  }
 
   @override
   String get fraudReportTitle => 'Report Fraud';
@@ -324,6 +405,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disputesDescriptionHint => 'Describe your dispute...';
 
   @override
+  String get disputesEstablishmentLabel => 'Where did this happen?';
+
+  @override
+  String get disputesEstablishmentHint =>
+      'Optional — name the establishment or office, if applicable';
+
+  @override
+  String get disputesEstablishmentRequiredHint =>
+      'Name of the establishment or office involved';
+
+  @override
+  String get disputesEstablishmentPlaceholder =>
+      'e.g. Valenzuela City Hall, ABC Store';
+
+  @override
+  String get disputesErrorEmptyEstablishment =>
+      'Please specify where this happened';
+
+  @override
   String get disputesSupportingDocLabel => 'Supporting Document';
 
   @override
@@ -367,6 +467,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get disputeTypeIncorrectDbInfoDesc =>
       'Your information in our system is incorrect';
+
+  @override
+  String get disputeTypeOtherLabel => 'Other';
+
+  @override
+  String get disputeTypeOtherDesc => 'A different issue not listed above';
 
   @override
   String get notificationsErrorFallback => 'Failed to load notifications.';

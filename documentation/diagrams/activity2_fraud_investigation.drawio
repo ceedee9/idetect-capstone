@@ -8,6 +8,9 @@
     <mxCell id="title" value="Activity Diagram 2 — Fraud Flag Investigation (OSCA / PDAO Admin)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
       <mxGeometry x="160" y="20" width="900" height="40" as="geometry" />
     </mxCell>
+    <mxCell id="dominant_user" value="Dominant User: OSCA / PDAO Admin" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;fontColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="160" y="45" width="900" height="20" as="geometry" />
+    </mxCell>
 
     <!-- ===== SWIMLANE HEADERS ===== -->
     <mxCell id="lane1" value="Establishment Staff" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1">
@@ -162,14 +165,8 @@
     </mxCell>
 
     <!-- ===== END NODES ===== -->
-    <mxCell id="end1" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="1082" y="1600" width="30" height="30" as="geometry" />
-    </mxCell>
-    <mxCell id="end2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="1082" y="1955" width="30" height="30" as="geometry" />
-    </mxCell>
-    <mxCell id="end3" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
-      <mxGeometry x="575" y="1790" width="30" height="30" as="geometry" />
+    <mxCell id="end_final" value="&#215;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;strokeWidth=3;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1082" y="1955" width="36" height="36" as="geometry" />
     </mxCell>
 
     <!-- ===== EDGES ===== -->
@@ -226,7 +223,7 @@
     <!-- a_audit2 → a_revoc_notif (cross to Beneficiary App lane) -->
     <mxCell id="e26" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit2" target="a_revoc_notif" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <!-- a_revoc_notif → end1 -->
-    <mxCell id="e27" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_revoc_notif" target="end1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e27" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_revoc_notif" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <!-- a_dismiss → a_recount (cross to API lane) -->
     <mxCell id="e28" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_dismiss" target="a_recount" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <!-- a_recount → d5 -->
@@ -240,9 +237,9 @@
     <!-- a_audit3 → a_restor_notif (cross to Beneficiary App lane) -->
     <mxCell id="e33" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_audit3" target="a_restor_notif" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <!-- a_restor_notif → end2 -->
-    <mxCell id="e34" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_restor_notif" target="end2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e34" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_restor_notif" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
     <!-- a_nochange → end3 -->
-    <mxCell id="e35" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_nochange" target="end3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e35" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="a_nochange" target="end_final" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
 
   </root>
 </mxGraphModel>

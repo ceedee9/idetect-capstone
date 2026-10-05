@@ -335,8 +335,20 @@ abstract class AppLocalizations {
   /// No description provided for @languageToggleTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Change language'**
+  /// **'Display language'**
   String get languageToggleTooltip;
+
+  /// No description provided for @languageEnglishLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglishLabel;
+
+  /// No description provided for @languageFilipinoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Filipino'**
+  String get languageFilipinoLabel;
 
   /// No description provided for @statusErrorLoadProfile.
   ///
@@ -512,6 +524,150 @@ abstract class AppLocalizations {
   /// **'Manual'**
   String get transactionsEntryManual;
 
+  /// No description provided for @historyEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet'**
+  String get historyEmptyState;
+
+  /// No description provided for @historyDisputeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispute / Report'**
+  String get historyDisputeLabel;
+
+  /// No description provided for @serviceUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'iDetect is unavailable'**
+  String get serviceUnavailableTitle;
+
+  /// No description provided for @serviceUnavailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not reach iDetect. Check your connection or try again later.'**
+  String get serviceUnavailableMessage;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get commonRetry;
+
+  /// No description provided for @verificationStatusValid.
+  ///
+  /// In en, this message translates to:
+  /// **'VALID'**
+  String get verificationStatusValid;
+
+  /// No description provided for @verificationStatusInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'INVALID'**
+  String get verificationStatusInvalid;
+
+  /// No description provided for @verificationStatusReview.
+  ///
+  /// In en, this message translates to:
+  /// **'NEEDS REVIEW'**
+  String get verificationStatusReview;
+
+  /// No description provided for @verificationStatusManualReview.
+  ///
+  /// In en, this message translates to:
+  /// **'MANUAL REVIEW'**
+  String get verificationStatusManualReview;
+
+  /// No description provided for @verificationStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'UNKNOWN'**
+  String get verificationStatusUnknown;
+
+  /// No description provided for @disputeStatusSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'SUBMITTED'**
+  String get disputeStatusSubmitted;
+
+  /// No description provided for @disputeStatusAcknowledged.
+  ///
+  /// In en, this message translates to:
+  /// **'ACKNOWLEDGED'**
+  String get disputeStatusAcknowledged;
+
+  /// No description provided for @disputeStatusUnderReview.
+  ///
+  /// In en, this message translates to:
+  /// **'UNDER REVIEW'**
+  String get disputeStatusUnderReview;
+
+  /// No description provided for @disputeStatusResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'RESOLVED'**
+  String get disputeStatusResolved;
+
+  /// No description provided for @disputeStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'REJECTED'**
+  String get disputeStatusRejected;
+
+  /// No description provided for @beneficiaryStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active & valid'**
+  String get beneficiaryStatusActive;
+
+  /// No description provided for @beneficiaryStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get beneficiaryStatusExpired;
+
+  /// No description provided for @beneficiaryStatusSuspended.
+  ///
+  /// In en, this message translates to:
+  /// **'Under investigation'**
+  String get beneficiaryStatusSuspended;
+
+  /// No description provided for @beneficiaryStatusRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked'**
+  String get beneficiaryStatusRevoked;
+
+  /// No description provided for @beneficiaryStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get beneficiaryStatusUnknown;
+
+  /// No description provided for @statusIdNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ID Number'**
+  String get statusIdNumberLabel;
+
+  /// No description provided for @statusShowIdNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Show ID number'**
+  String get statusShowIdNumber;
+
+  /// No description provided for @statusHideIdNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide ID number'**
+  String get statusHideIdNumber;
+
+  /// No description provided for @statusIdNumberHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'ID number hidden. It ends in {lastTwo}.'**
+  String statusIdNumberHidden(String lastTwo);
+
   /// No description provided for @fraudReportTitle.
   ///
   /// In en, this message translates to:
@@ -686,6 +842,36 @@ abstract class AppLocalizations {
   /// **'Describe your dispute...'**
   String get disputesDescriptionHint;
 
+  /// No description provided for @disputesEstablishmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Where did this happen?'**
+  String get disputesEstablishmentLabel;
+
+  /// No description provided for @disputesEstablishmentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — name the establishment or office, if applicable'**
+  String get disputesEstablishmentHint;
+
+  /// No description provided for @disputesEstablishmentRequiredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name of the establishment or office involved'**
+  String get disputesEstablishmentRequiredHint;
+
+  /// No description provided for @disputesEstablishmentPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Valenzuela City Hall, ABC Store'**
+  String get disputesEstablishmentPlaceholder;
+
+  /// No description provided for @disputesErrorEmptyEstablishment.
+  ///
+  /// In en, this message translates to:
+  /// **'Please specify where this happened'**
+  String get disputesErrorEmptyEstablishment;
+
   /// No description provided for @disputesSupportingDocLabel.
   ///
   /// In en, this message translates to:
@@ -763,6 +949,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your information in our system is incorrect'**
   String get disputeTypeIncorrectDbInfoDesc;
+
+  /// No description provided for @disputeTypeOtherLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get disputeTypeOtherLabel;
+
+  /// No description provided for @disputeTypeOtherDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A different issue not listed above'**
+  String get disputeTypeOtherDesc;
 
   /// No description provided for @notificationsErrorFallback.
   ///

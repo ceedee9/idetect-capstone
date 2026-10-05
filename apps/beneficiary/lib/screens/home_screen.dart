@@ -85,20 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  /// Maps the raw API beneficiary_type value ('senior_citizen' | 'pwd')
-  /// to its localized display label. Falls back to an empty string for
-  /// any unrecognized/null value, matching the previous behavior.
-  String _beneficiaryTypeLabel(dynamic rawType, AppLocalizations loc) {
-    switch (rawType?.toString()) {
-      case 'senior_citizen':
-        return loc.beneficiaryTypeSenior;
-      case 'pwd':
-        return loc.beneficiaryTypePwd;
-      default:
-        return '';
-    }
-  }
-
   void _onItemTapped(int index) {
     if (index != _selectedIndex) HapticFeedback.selectionClick();
     setState(() => _selectedIndex = index);
@@ -158,8 +144,49 @@ class _HomeScreenState extends State<HomeScreen> {
     final loc = AppLocalizations.of(context)!;
     final localeProvider = context.watch<LocaleProvider>();
     final isEnglish = localeProvider.locale.languageCode == 'en';
-    final user = ApiService.currentUser;
-    final fullName = user?['full_name'] ?? loc.appBeneficiaryFallback;
+
+    Widget languageOption({
+      required String code,
+      required String name,
+      required bool selected,
+      required Locale locale,
+    }) {
+      return Semantics(
+        button: true,
+        selected: selected,
+        label: name,
+        child: Tooltip(
+          message: name,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: () {
+              if (!selected) {
+                HapticFeedback.selectionClick();
+                context.read<LocaleProvider>().setLocale(locale);
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              constraints: const BoxConstraints(minWidth: 42, minHeight: 48),
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: selected ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                code,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? AppDesignSystem.primaryBlue : Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SessionActivityWrapper(
       child: Scaffold(
@@ -172,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                fullName,
+                'iDetect',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -180,10 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                _beneficiaryTypeLabel(user?['beneficiary_type'], loc),
-                // Was 14sp — below this design system's own stated 15sp
-                // caption floor (same violation already fixed on the
-                // login screen's mobile-format hint).
+                loc.loginBeneficiaryPortal,
                 style: const TextStyle(
                   fontSize: 15,
                   color: Colors.white70,
@@ -193,36 +217,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           actions: [
-            Semantics(
-              label: loc.languageToggleTooltip,
-              button: true,
-              child: Tooltip(
-                message: loc.languageToggleTooltip,
-                child: TextButton(
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    context.read<LocaleProvider>().setLocale(
-                      isEnglish ? const Locale('fil') : const Locale('en'),
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    // Height was 48 — under this system's own 56dp
-                    // touchTargetMin. Width already met it.
-                    minimumSize: const Size(56, 56),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+            Container(
+              height: 54,
+              margin: const EdgeInsets.symmetric(vertical: 5),
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.16),
+                border: Border.all(color: Colors.white70),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  languageOption(
+                    code: 'EN',
+                    name: loc.languageEnglishLabel,
+                    selected: isEnglish,
+                    locale: const Locale('en'),
                   ),
-                  child: Text(
-                    // Shows the language you'll SWITCH TO, not the current one —
-                    // matches how language toggles conventionally read (e.g. "中文" on an English UI).
-                    isEnglish ? 'FIL' : 'EN',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  languageOption(
+                    code: 'FIL',
+                    name: loc.languageFilipinoLabel,
+                    selected: !isEnglish,
+                    locale: const Locale('fil'),
                   ),
-                ),
+                ],
               ),
             ),
             Semantics(
@@ -236,8 +255,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onPressed: _logout,
                 tooltip: loc.homeSignOut,
-                // 12 gave a ~50dp tap area (12*2 + 26 icon) — under the
-                // 56dp touchTargetMin. 15 brings it to the full 56dp.
                 padding: const EdgeInsets.all(15),
               ),
             ),
