@@ -35,9 +35,11 @@ const AGENCY_ADMIN_ROLE = {
   pdao: "pdao_admin",
 };
 
-// Helper: admins can only manage users of their own role
+// Super Admins manage only the matching office-admin role in their agency.
 function ownRole(req) {
-  return SUPER_ADMIN_AGENCY[req.user.role] ? AGENCY_ADMIN_ROLE[SUPER_ADMIN_AGENCY[req.user.role]] : req.user.role;
+  return SUPER_ADMIN_AGENCY[req.user.role]
+    ? AGENCY_ADMIN_ROLE[SUPER_ADMIN_AGENCY[req.user.role]]
+    : req.user.role;
 }
 
 function isOfficeSuperAdmin(req) {
@@ -122,10 +124,8 @@ router.get("/:id", param("id").isUUID(), async (req, res, next) => {
     const { rows } = await pool.query(
       `SELECT id, email, full_name, role, is_active, created_at, updated_at
            FROM users WHERE id = $1
-           ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
-      isOfficeSuperAdmin(req)
-        ? [req.params.id]
-        : [req.params.id, ownRole(req)],
+           AND role = $2`,
+      [req.params.id, ownRole(req)],
     );
     if (!rows.length)
       return res.status(404).json({ error: "Staff member not found" });
@@ -152,7 +152,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
 
       const { email, full_name, password } = req.body;
-      const role = isOfficeSuperAdmin(req) ? ownRole(req) : ownRole(req);
+      const role = ownRole(req);
       if (req.body.role && (!isOfficeSuperAdmin(req) || req.body.role !== role)) {
         return res.status(403).json({
           error: "You can only create staff for your own agency",
@@ -220,8 +220,8 @@ router.patch(
       // Verify target exists in the caller's scope.
       const existing = await pool.query(
         `SELECT id, role FROM users WHERE id = $1
-         ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
-        isOfficeSuperAdmin(req) ? [id] : [id, role],
+         AND role = $2`,
+        [id, role],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
@@ -327,8 +327,8 @@ router.patch(
 
       const existing = await pool.query(
         `SELECT id, is_active, role FROM users WHERE id = $1
-         ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
-        isOfficeSuperAdmin(req) ? [id] : [id, ownRole(req)],
+         AND role = $2`,
+        [id, ownRole(req)],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
@@ -391,8 +391,8 @@ router.patch(
 
       const existing = await pool.query(
         `SELECT id FROM users WHERE id = $1
-         ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
-        isOfficeSuperAdmin(req) ? [id] : [id, ownRole(req)],
+         AND role = $2`,
+        [id, ownRole(req)],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
