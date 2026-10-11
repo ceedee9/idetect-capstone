@@ -12,6 +12,7 @@ $$ LANGUAGE sql;
 DO $$
 DECLARE
   t RECORD;
+
 BEGIN
   FOR t IN
     SELECT * FROM (VALUES

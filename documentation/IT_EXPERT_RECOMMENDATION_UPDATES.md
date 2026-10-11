@@ -46,7 +46,7 @@ This document brings together the changes made so far in response to the IT expe
 
 - **F-01:** Audit logging for establishment and beneficiary app logouts is not implemented. The legacy OSCA, PDAO, and BPLO portals were not changed.
 - **F-03:** Audit-log retention needs a policy decision.
-- **F-04 (remaining):** Search and year-end reports grouped by reference number, and the court-case file export. Audit-log numbering is optional and not done. The legacy OSCA/PDAO/BPLO portals do not show the numbers.
+- **F-04 (remaining):** Audit-log numbering is optional and not done. PDF output and per-record history reports are also not implemented. The legacy OSCA/PDAO/BPLO portals do not show the numbers.
 - **F-05/F-06:** ID and age masking in API responses remains outstanding pending the audit work.
 - **F-08:** Session timeout policy is undecided. The current two-minute recommendation has not been applied.
 - **F-09:** Suspension start/end dates and reminders are not implemented; the suspension policy must be decided first.
