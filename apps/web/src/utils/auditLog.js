@@ -53,6 +53,21 @@ export function formatTargetLabel(targetTable) {
   return singular.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+export function formatAffectedRecord(log) {
+  if (!log?.target_table) return null;
+
+  const label = formatTargetLabel(log.target_table);
+  const reference = log.target_reference;
+  const name = log.target_name;
+  if (reference && name) return `${label}: ${name} · ${reference}`;
+  if (reference) return `${label}: ${reference}`;
+  if (name) return `${label}: ${name}`;
+  if (log.target_id) {
+    return `${label}: #${log.target_id.slice(0, 8)}`;
+  }
+  return label;
+}
+
 const ACTION_LABEL_OVERRIDES = {
   verification_performed: "Validation Performed",
   verification_manual: "Manual Validation",

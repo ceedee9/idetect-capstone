@@ -16,7 +16,7 @@ import { fmtDateTime } from "../utils/date";
 import {
   humanizeAuditLog,
   actionLabel,
-  formatTargetLabel,
+  formatAffectedRecord,
 } from "../utils/auditLog";
 import AuditLogDetailDrawer from "../components/AuditLogDetailDrawer";
 import EmptyState from "../components/EmptyState";
@@ -443,7 +443,7 @@ export default function AuditLogsPage() {
                   User
                 </th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
-                  Target
+                  Affected record
                 </th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
                   Details
@@ -498,16 +498,7 @@ export default function AuditLogsPage() {
                       {log.user_name || "—"}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-slate-600">
-                      {log.target_table ? (
-                        <>
-                          {formatTargetLabel(log.target_table)}
-                          <span className="text-slate-400 font-mono ml-1.5">
-                            #{log.target_id ? log.target_id.slice(0, 8) : "—"}
-                          </span>
-                        </>
-                      ) : (
-                        "—"
-                      )}
+                      {formatAffectedRecord(log) || "—"}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-slate-500 max-w-xs truncate">
                       {humanizeAuditLog(log)}

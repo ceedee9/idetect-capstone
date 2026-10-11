@@ -30,6 +30,19 @@ router.get("/", async (req, res, next) => {
 
     let query = `
       SELECT al.id, al.action, al.target_table, al.target_id,
+             CASE al.target_table
+               WHEN 'establishments' THEN te.reference_no
+               WHEN 'beneficiaries' THEN tb.reference_no
+               WHEN 'disputes' THEN td.reference_no
+               WHEN 'fraud_flags' THEN tf.reference_no
+               WHEN 'verification_logs' THEN tv.reference_no
+               ELSE NULL
+             END AS target_reference,
+             CASE al.target_table
+               WHEN 'establishments' THEN te.business_name
+               WHEN 'beneficiaries' THEN tb.full_name
+               ELSE NULL
+             END AS target_name,
              al.metadata, al.ip_address, al.created_at,
              u.full_name AS user_name,
              u.role AS user_role,
@@ -37,6 +50,16 @@ router.get("/", async (req, res, next) => {
       FROM audit_logs al
       LEFT JOIN users u ON u.id = al.user_id
       LEFT JOIN establishments e ON e.id = al.establishment_id
+      LEFT JOIN establishments te
+        ON al.target_table = 'establishments' AND te.id = al.target_id
+      LEFT JOIN beneficiaries tb
+        ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
+      LEFT JOIN disputes td
+        ON al.target_table = 'disputes' AND td.id = al.target_id
+      LEFT JOIN fraud_flags tf
+        ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
+      LEFT JOIN verification_logs tv
+        ON al.target_table = 'verification_logs' AND tv.id = al.target_id
       WHERE 1=1
     `;
     const params = [];
@@ -107,6 +130,19 @@ router.get("/export", async (req, res, next) => {
 
     let query = `
       SELECT al.action, al.target_table, al.target_id,
+             CASE al.target_table
+               WHEN 'establishments' THEN te.reference_no
+               WHEN 'beneficiaries' THEN tb.reference_no
+               WHEN 'disputes' THEN td.reference_no
+               WHEN 'fraud_flags' THEN tf.reference_no
+               WHEN 'verification_logs' THEN tv.reference_no
+               ELSE NULL
+             END AS target_reference,
+             CASE al.target_table
+               WHEN 'establishments' THEN te.business_name
+               WHEN 'beneficiaries' THEN tb.full_name
+               ELSE NULL
+             END AS target_name,
              al.metadata, al.ip_address, al.created_at,
              u.full_name AS user_name,
              u.role AS user_role,
@@ -114,6 +150,16 @@ router.get("/export", async (req, res, next) => {
       FROM audit_logs al
       LEFT JOIN users u ON u.id = al.user_id
       LEFT JOIN establishments e ON e.id = al.establishment_id
+      LEFT JOIN establishments te
+        ON al.target_table = 'establishments' AND te.id = al.target_id
+      LEFT JOIN beneficiaries tb
+        ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
+      LEFT JOIN disputes td
+        ON al.target_table = 'disputes' AND td.id = al.target_id
+      LEFT JOIN fraud_flags tf
+        ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
+      LEFT JOIN verification_logs tv
+        ON al.target_table = 'verification_logs' AND tv.id = al.target_id
       WHERE 1=1
     `;
     const params = [];
@@ -164,6 +210,7 @@ router.get("/export", async (req, res, next) => {
       "User",
       "Role",
       "Establishment",
+      "Affected Record",
       "Target Table",
       "Target ID",
       "Details",
@@ -175,6 +222,7 @@ router.get("/export", async (req, res, next) => {
         r.user_name || "System",
         r.user_role || "",
         r.establishment_name || "",
+        r.target_reference || r.target_name || "",
         r.target_table || "",
         r.target_id || "",
         r.metadata,
@@ -264,6 +312,16 @@ router.get("/report", async (req, res, next) => {
     const from = `FROM audit_logs al
       LEFT JOIN users u ON u.id = al.user_id
       LEFT JOIN establishments e ON e.id = al.establishment_id
+      LEFT JOIN establishments te
+        ON al.target_table = 'establishments' AND te.id = al.target_id
+      LEFT JOIN beneficiaries tb
+        ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
+      LEFT JOIN disputes td
+        ON al.target_table = 'disputes' AND td.id = al.target_id
+      LEFT JOIN fraud_flags tf
+        ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
+      LEFT JOIN verification_logs tv
+        ON al.target_table = 'verification_logs' AND tv.id = al.target_id
       WHERE ${where}`;
 
     let columns;
@@ -287,17 +345,42 @@ router.get("/report", async (req, res, next) => {
       const r = await pool.query(
         `SELECT al.created_at, al.action, u.full_name AS user_name, u.role AS user_role,
                 e.business_name AS establishment_name, al.target_table, al.target_id,
+                CASE al.target_table
+                  WHEN 'establishments' THEN te.reference_no
+                  WHEN 'beneficiaries' THEN tb.reference_no
+                  WHEN 'disputes' THEN td.reference_no
+                  WHEN 'fraud_flags' THEN tf.reference_no
+                  WHEN 'verification_logs' THEN tv.reference_no
+                  ELSE NULL
+                END AS target_reference,
+                CASE al.target_table
+                  WHEN 'establishments' THEN te.business_name
+                  WHEN 'beneficiaries' THEN tb.full_name
+                  ELSE NULL
+                END AS target_name,
                 al.ip_address, al.metadata
          ${from} ORDER BY al.created_at DESC LIMIT ${limit}`,
         params,
       );
-      columns = ["Date", "Action", "User", "Role", "Establishment", "Target Table", "Target ID", "IP Address", "Details"];
+      columns = [
+        "Date",
+        "Action",
+        "User",
+        "Role",
+        "Establishment",
+        "Affected Record",
+        "Target Table",
+        "Target ID",
+        "IP Address",
+        "Details",
+      ];
       rows = r.rows.map((x) => [
         x.created_at ? new Date(x.created_at).toISOString() : "",
         x.action,
         x.user_name || "System",
         x.user_role || "",
         x.establishment_name || "",
+        x.target_reference || x.target_name || "",
         x.target_table || "",
         x.target_id || "",
         x.ip_address || "",

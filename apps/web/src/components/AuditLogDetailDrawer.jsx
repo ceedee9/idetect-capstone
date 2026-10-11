@@ -10,7 +10,7 @@ import {
   humanizeAuditLog,
   formatMetadataEntries,
   actionLabel,
-  formatTargetLabel,
+  formatAffectedRecord,
 } from "../utils/auditLog";
 
 export default function AuditLogDetailDrawer({ log, onClose }) {
@@ -113,13 +113,10 @@ export default function AuditLogDetailDrawer({ log, onClose }) {
                     <Tag className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-xs text-slate-400 font-medium">
-                        Target
+                        Affected record
                       </p>
                       <p className="text-slate-700 text-xs">
-                        {formatTargetLabel(log.target_table)}
-                        <span className="text-slate-400 font-mono ml-1.5">
-                          #{log.target_id ? log.target_id.slice(0, 8) : "—"}
-                        </span>
+                        {formatAffectedRecord(log)}
                       </p>
                     </div>
                   </div>
