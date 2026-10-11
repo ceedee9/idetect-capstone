@@ -131,7 +131,7 @@ export default function AuditReportModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 p-4">
-      <div className="absolute top-4 bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl w-full max-w-3xl flex flex-col overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h2 className="font-heading font-bold text-lg text-slate-900">Generate audit report</h2>
           <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-slate-700">
@@ -146,7 +146,7 @@ export default function AuditReportModal({ onClose }) {
 
         {tab === "case" && (
           <>
-            <div className="p-6 space-y-4 flex-1 min-h-0 overflow-y-auto">
+            <div className="p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Reference number</label>
                 <input
@@ -207,7 +207,7 @@ export default function AuditReportModal({ onClose }) {
 
         {tab === "period" && (
           <>
-        <div className="p-6 space-y-5 flex-1 min-h-0 overflow-y-auto">
+        <div className="p-6 space-y-5 overflow-y-auto">
           <div>
             <span className={label}>Report type</span>
             <div className="grid sm:grid-cols-2 gap-2">
