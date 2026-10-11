@@ -62,6 +62,29 @@ class ApiService {
     _removeUser();
   }
 
+  /// Records the logout while the current establishment token is still
+  /// available, then clears the local session even if the request fails.
+  static Future<void> logout({String reason = 'manual'}) async {
+    final token = _token;
+    if (token != null) {
+      try {
+        await http
+            .post(
+              Uri.parse('$baseUrl/auth/establishment/logout'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+              body: jsonEncode({'reason': reason}),
+            )
+            .timeout(const Duration(seconds: 5));
+      } catch (e) {
+        debugPrint('⚠️ Could not record establishment logout: $e');
+      }
+    }
+    clearToken();
+  }
+
   static bool get isLoggedIn => _token != null;
 
   /// Raw token string, for callers (e.g. status_sync_service.dart) that need

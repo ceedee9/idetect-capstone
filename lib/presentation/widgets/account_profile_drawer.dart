@@ -76,7 +76,7 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
   }
 
   Future<void> _logout(BuildContext context) async {
-    ApiService.clearToken();
+    await ApiService.logout();
 
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(

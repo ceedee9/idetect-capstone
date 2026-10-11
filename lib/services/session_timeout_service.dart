@@ -93,12 +93,12 @@ class _SessionActivityWrapperState extends State<SessionActivityWrapper> {
     });
   }
 
-  void _logout() {
+  Future<void> _logout() async {
     // Pop the warning dialog if still open
     if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
     }
-    ApiService.clearToken();
+    await ApiService.logout(reason: 'idle_timeout');
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),

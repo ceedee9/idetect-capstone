@@ -29,6 +29,7 @@ const ACTION_GROUPS = [
     label: "Auth",
     actions: [
       "login",
+      "login_failed",
       "logout",
       "password_changed",
       "otp_requested",
@@ -104,6 +105,7 @@ const ACTION_GROUPS = [
       "verification_performed",
       "verification_manual",
       "verification_action_taken",
+      "seal_not_detected",
     ],
   },
   {
@@ -123,6 +125,7 @@ const ACTION_GROUPS = [
 const ACTION_STYLES = {
   // Auth
   login: "bg-emerald-100 text-emerald-800",
+  login_failed: "bg-red-100 text-red-800",
   logout: "bg-orange-100 text-orange-800",
   password_changed: "bg-sky-100 text-sky-800",
   otp_requested: "bg-cyan-100 text-cyan-800",

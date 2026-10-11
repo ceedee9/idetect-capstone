@@ -82,6 +82,10 @@ export function humanizeAuditLog(log) {
     // ── Auth ──────────────────────────────────────────────────
     case "login":
       return `${who} signed in (${m.email || "unknown email"})`;
+    case "login_failed":
+      return `${who} had a failed sign-in attempt${m.reason ? ` (${m.reason})` : ""}`;
+    case "flag_created":
+      return `${who} submitted a fraud flag`;
     case "logout":
       return m.reason === "idle_timeout"
         ? `${who} was signed out after inactivity`

@@ -125,6 +125,23 @@ router.post(
         ],
       );
 
+      await pool.query(
+        `INSERT INTO audit_logs
+         (establishment_id, action, target_table, target_id, metadata, ip_address)
+         VALUES ($1, 'flag_created', 'fraud_flags', $2, $3, $4)`,
+        [
+          establishment_id,
+          result.rows[0].id,
+          JSON.stringify({
+            verification_log_id,
+            beneficiary_type,
+            verification_outcome,
+            is_supplementary,
+          }),
+          req.ip,
+        ],
+      );
+
       // ── Auto-suspend rule (adviser requirement) ──────────────
       // When a beneficiary's ID accumulates flags from 3 or more DISTINCT
       // establishments (all still pending/reviewing), automatically set their
