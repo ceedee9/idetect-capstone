@@ -19,8 +19,10 @@ import { staffAPI } from "../services/api";
 import { fmtDateTime } from "../utils/date";
 import StatusBadge from "../components/StatusBadge";
 import EmptyState from "../components/EmptyState";
+import { useAuth } from "../context/AuthContext";
 
 export default function StaffPage() {
+  const { user } = useAuth();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -93,7 +95,9 @@ export default function StaffPage() {
             Staff Accounts
           </h1>
           <p className="text-slate-500 text-sm mt-0.5 font-medium">
-            Manage OSCA admin user accounts
+            {user?.role === "super_admin"
+              ? "Manage authorized staff accounts and roles"
+              : `Manage ${roleLabel(user?.role)} user accounts`}
           </p>
         </div>
         <div className="flex items-center gap-2 self-start">
@@ -269,6 +273,8 @@ export default function StaffPage() {
       {/* Create modal */}
       {showCreate && (
         <CreateStaffModal
+          isSuperAdmin={user?.role === "super_admin"}
+          currentRole={user?.role}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
             setShowCreate(false);
@@ -320,11 +326,23 @@ function Overlay({ children, onClose }) {
   );
 }
 
-function CreateStaffModal({ onClose, onCreated }) {
+function roleLabel(role) {
+  return (
+    {
+      super_admin: "Super Admin",
+      bplo_admin: "BPLO",
+      osca_admin: "OSCA",
+      pdao_admin: "PDAO",
+    }[role] || "staff"
+  );
+}
+
+function CreateStaffModal({ onClose, onCreated, isSuperAdmin, currentRole }) {
   const [form, setForm] = useState({
     full_name: "",
     email: "",
     password: "",
+    role: isSuperAdmin ? "bplo_admin" : currentRole,
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -356,7 +374,11 @@ function CreateStaffModal({ onClose, onCreated }) {
           <X className="w-5 h-5" />
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-3"
+        autoComplete="off"
+      >
         <div>
           <label className="label text-xs">Full Name</label>
           <div className="relative">
@@ -381,6 +403,7 @@ function CreateStaffModal({ onClose, onCreated }) {
               className="input pl-9 text-sm w-full"
               placeholder="name@valenzuela.gov.ph"
               required
+              autoComplete="off"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
@@ -396,14 +419,35 @@ function CreateStaffModal({ onClose, onCreated }) {
               placeholder="Min 8 characters"
               required
               minLength={8}
+              autoComplete="new-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </div>
         </div>
+        <div>
+          <label className="label text-xs">Staff role</label>
+          {isSuperAdmin ? (
+            <select
+              className="input text-sm w-full"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            >
+              <option value="bplo_admin">BPLO Admin</option>
+              <option value="osca_admin">OSCA Admin</option>
+              <option value="pdao_admin">PDAO Admin</option>
+            </select>
+          ) : (
+            <div className="input text-sm w-full bg-slate-50 text-slate-600">
+              {roleLabel(currentRole)} Admin
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-400">
           <Shield className="w-3.5 h-3.5" />
-          Account will be created with your portal's admin role.
+          {isSuperAdmin
+            ? "Only approved office-admin roles can be assigned here."
+            : `Account will be created as a ${roleLabel(currentRole)} Admin.`}
         </div>
         {err && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5">
