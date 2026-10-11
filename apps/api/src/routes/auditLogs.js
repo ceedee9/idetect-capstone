@@ -158,26 +158,30 @@ router.get("/export", async (req, res, next) => {
       ],
     );
 
-    const header =
-      "Date,Action,User,Role,Establishment,Target Table,Target ID,Details\n";
+    const header = [
+      "Date",
+      "Action",
+      "User",
+      "Role",
+      "Establishment",
+      "Target Table",
+      "Target ID",
+      "Details",
+    ];
     const csvRows = result.rows.map((r) => {
-      const meta =
-        typeof r.metadata === "object"
-          ? JSON.stringify(r.metadata).replace(/"/g, '""')
-          : String(r.metadata || "");
-      return [
+      return csvLine([
         r.created_at ? new Date(r.created_at).toISOString() : "",
         r.action || "",
-        (r.user_name || "System").replace(/,/g, " "),
+        r.user_name || "System",
         r.user_role || "",
-        (r.establishment_name || "").replace(/,/g, " "),
+        r.establishment_name || "",
         r.target_table || "",
         r.target_id || "",
-        `"${meta}"`,
-      ].join(",");
+        r.metadata,
+      ]);
     });
 
-    const csv = header + csvRows.join("\n");
+    const csv = [csvLine(header), ...csvRows].join("\n");
 
     res.setHeader("Content-Type", "text/csv");
     res.setHeader(
@@ -202,6 +206,7 @@ const GROUP_EXPR = {
 };
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const REPORT_ROLES = new Set(["osca_admin", "pdao_admin", "bplo_admin"]);
 
 router.get("/report", async (req, res, next) => {
   try {
@@ -224,6 +229,9 @@ router.get("/report", async (req, res, next) => {
     if (q.user_id && !UUID_RE.test(q.user_id)) {
       return res.status(400).json({ error: "Invalid user_id" });
     }
+    if (q.role && !REPORT_ROLES.has(String(q.role))) {
+      return res.status(400).json({ error: "Invalid role" });
+    }
     const format = q.format === "json" ? "json" : "csv";
 
     const params = [period.start, period.end];
@@ -235,6 +243,9 @@ router.get("/report", async (req, res, next) => {
         .split(",")
         .map((a) => a.trim())
         .filter(Boolean);
+      if (def.actions && asked.some((action) => !def.actions.includes(action))) {
+        return res.status(400).json({ error: "Invalid action for this report type" });
+      }
       actions = actions ? asked.filter((a) => actions.includes(a)) : asked;
     }
     if (actions) {
@@ -316,7 +327,7 @@ router.get("/report", async (req, res, next) => {
           mode,
           period: period.label,
           filters: { action: q.action, user_id: q.user_id, role: q.role },
-          row_count: rows.length,
+          row_count: total,
         }),
       ],
     );

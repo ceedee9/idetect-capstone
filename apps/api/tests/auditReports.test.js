@@ -37,6 +37,13 @@ describe("resolvePeriod", () => {
     expect(resolvePeriod({ period: "half", half: "3" }).error).toBeTruthy();
     expect(resolvePeriod({ period: "decade" }).error).toBeTruthy();
     expect(resolvePeriod({ period: "year", year: "abc" }).error).toBeTruthy();
+    expect(
+      resolvePeriod({
+        period: "custom",
+        start_date: "2026-02-30",
+        end_date: "2026-03-01",
+      }).error,
+    ).toBeTruthy();
   });
 });
 

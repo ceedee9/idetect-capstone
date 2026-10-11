@@ -15,7 +15,11 @@ const REPORT_TYPES = {
   },
   exports: {
     label: "Data export log",
-    actions: ["data_export", "report_generated"],
+    actions: [
+      "data_export",
+      "report_generated",
+      "breach_incident_report_generated",
+    ],
   },
 };
 
@@ -28,13 +32,22 @@ const lastDay = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+function isValidDate(value) {
+  if (!DATE_RE.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return (
+    !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+  );
+}
+
 // Returns { start, end, label } (inclusive dates) or { error }.
 function resolvePeriod(q, now = new Date()) {
   const period = q.period || "month";
   if (!PERIODS.includes(period)) return { error: "Invalid period" };
 
   if (period === "custom") {
-    if (!DATE_RE.test(q.start_date || "") || !DATE_RE.test(q.end_date || "")) {
+    if (!isValidDate(q.start_date || "") || !isValidDate(q.end_date || "")) {
       return { error: "Custom period needs start_date and end_date" };
     }
     if (q.start_date > q.end_date) {
