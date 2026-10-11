@@ -1,6 +1,6 @@
 // src/routes/auth.js
 // Login endpoints for all three user types:
-//   POST /api/auth/staff/login        — BPLO, OSCA, PDAO admins
+//   POST /api/auth/staff/login        — Super Admin, BPLO, OSCA, PDAO admins
 //   POST /api/auth/establishment/login — Client Portal (mobile)
 //   POST /api/auth/beneficiary/request-otp  — Beneficiary app step 1
 //   POST /api/auth/beneficiary/verify-otp   — Beneficiary app step 2

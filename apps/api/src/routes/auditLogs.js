@@ -18,7 +18,7 @@ const {
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireRole(["osca_admin", "pdao_admin", "bplo_admin"]));
+router.use(requireRole(["super_admin", "osca_admin", "pdao_admin", "bplo_admin"]));
 
 // ── GET /api/audit-logs ────────────────────────────────────────
 router.get("/", async (req, res, next) => {
@@ -254,7 +254,12 @@ const GROUP_EXPR = {
 };
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const REPORT_ROLES = new Set(["osca_admin", "pdao_admin", "bplo_admin"]);
+const REPORT_ROLES = new Set([
+  "super_admin",
+  "osca_admin",
+  "pdao_admin",
+  "bplo_admin",
+]);
 
 router.get("/report", async (req, res, next) => {
   try {

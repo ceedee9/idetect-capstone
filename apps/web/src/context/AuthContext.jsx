@@ -3,7 +3,12 @@ import { authAPI } from "../services/api";
 
 const AuthContext = createContext(null);
 
-const ALLOWED_ROLES = ["osca_admin", "pdao_admin", "bplo_admin"];
+const ALLOWED_ROLES = [
+  "super_admin",
+  "osca_admin",
+  "pdao_admin",
+  "bplo_admin",
+];
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {

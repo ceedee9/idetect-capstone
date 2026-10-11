@@ -12,7 +12,7 @@ const { authenticate, requireRole } = require("../middleware/auth");
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireRole(["osca_admin", "pdao_admin", "bplo_admin"]));
+router.use(requireRole(["super_admin", "osca_admin", "pdao_admin", "bplo_admin"]));
 
 const getTypeForRole = (role) =>
   role === "osca_admin" ? "senior_citizen" : "pwd";
@@ -221,7 +221,7 @@ router.get("/disputes/export", async (req, res, next) => {
 
     if (role === "bplo_admin") {
       query += ` AND d.dispute_type = 'business_refusal'`;
-    } else {
+    } else if (role !== "super_admin") {
       const bType = getTypeForRole(role);
       query += ` AND d.dispute_type != 'business_refusal' AND b.beneficiary_type = $${idx}`;
       params.push(bType);

@@ -16,6 +16,18 @@ solves, the proposed improvement, and any policy or capacity decision needed
 before implementation. Move an item to the implementation document after it is
 delivered and validated.
 
+## Authority and account management
+
+The proposed Super Admin, establishment Super User, establishment Regular
+User, and office-scoped staff authority model is defined in
+[AUTHORITY_MODEL_AND_PERMISSION_MATRIX.md](./AUTHORITY_MODEL_AND_PERMISSION_MATRIX.md).
+This is a prerequisite for reliable F-05/F-06 masking and for replacing shared
+establishment credentials with individual accountability.
+
+Future implementation must include server-side scope checks, account states,
+audited privilege changes, controlled overrides, and protection against
+removing the final recovery administrator.
+
 ## Audit and accountability
 
 ### Readable target snapshots

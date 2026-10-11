@@ -89,6 +89,8 @@ const requireRole = (roles) => {
     }
     next();
   };
+
+  const requireSuperAdmin = requireRole("super_admin");
 };
 
 module.exports = {
@@ -96,4 +98,5 @@ module.exports = {
   authenticateEstablishment,
   authenticateBeneficiary,
   requireRole,
+  requireSuperAdmin,
 };

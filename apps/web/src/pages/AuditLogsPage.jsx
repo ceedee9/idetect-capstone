@@ -117,6 +117,7 @@ const ACTION_GROUPS = [
       "staff_activated",
       "staff_deactivated",
       "staff_password_reset",
+      "staff_role_changed",
     ],
   },
 ];

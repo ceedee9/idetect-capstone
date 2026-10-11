@@ -1,7 +1,7 @@
 // src/routes/staff.js
 // Staff user management — list, create, update, deactivate, reset password.
-// All endpoints require an authenticated admin of the SAME role.
-// i.e. osca_admin can only manage osca_admin accounts, etc.
+// Office admins manage accounts in their own role. Super Admin manages all
+// staff accounts and may assign approved staff roles.
 
 const express = require("express");
 const bcrypt = require("bcryptjs");
@@ -15,22 +15,35 @@ const SALT_ROUNDS = 12;
 
 // Every endpoint requires staff auth
 router.use(authenticate);
-router.use(requireRole(["osca_admin", "pdao_admin", "bplo_admin"]));
+router.use(requireRole(["super_admin", "osca_admin", "pdao_admin", "bplo_admin"]));
+
+const MANAGEABLE_ROLES = ["bplo_admin", "osca_admin", "pdao_admin"];
 
 // Helper: admins can only manage users of their own role
 function ownRole(req) {
-  return req.user.role;
+  return req.user.role === "super_admin" ? null : req.user.role;
+}
+
+function scopedStaffQuery(req, includeWhere = true) {
+  if (req.user.role === "super_admin") {
+    return { sql: includeWhere ? "WHERE 1=1" : "", params: [] };
+  }
+  return {
+    sql: includeWhere ? "WHERE role = $1" : "",
+    params: includeWhere ? [req.user.role] : [],
+  };
 }
 
 // ── LIST staff of same role ────────────────────────────────────
 router.get("/", async (req, res, next) => {
   try {
+    const scope = scopedStaffQuery(req);
     const { rows } = await pool.query(
       `SELECT id, email, full_name, role, is_active, created_at, updated_at
          FROM users
-        WHERE role = $1
+        ${scope.sql}
         ORDER BY created_at DESC`,
-      [ownRole(req)],
+      scope.params,
     );
     res.json({ staff: rows });
   } catch (err) {
@@ -82,8 +95,11 @@ router.get("/:id", param("id").isUUID(), async (req, res, next) => {
 
     const { rows } = await pool.query(
       `SELECT id, email, full_name, role, is_active, created_at, updated_at
-           FROM users WHERE id = $1 AND role = $2`,
-      [req.params.id, ownRole(req)],
+           FROM users WHERE id = $1
+           ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
+      req.user.role === "super_admin"
+        ? [req.params.id]
+        : [req.params.id, ownRole(req)],
     );
     if (!rows.length)
       return res.status(404).json({ error: "Staff member not found" });
@@ -100,6 +116,7 @@ router.post(
     body("email").isEmail().normalizeEmail(),
     body("full_name").trim().isLength({ min: 2, max: 255 }),
     body("password").isLength({ min: 8, max: 128 }),
+    body("role").optional().isIn(MANAGEABLE_ROLES),
   ],
   async (req, res, next) => {
     try {
@@ -108,7 +125,12 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
 
       const { email, full_name, password } = req.body;
-      const role = ownRole(req);
+      const role = req.user.role === "super_admin"
+        ? req.body.role || "bplo_admin"
+        : ownRole(req);
+      if (!role) {
+        return res.status(400).json({ error: "A staff role is required" });
+      }
 
       // Check duplicate email
       const dup = await pool.query("SELECT id FROM users WHERE email = $1", [
@@ -167,10 +189,11 @@ router.patch(
       const { id } = req.params;
       const role = ownRole(req);
 
-      // Verify target exists and is same role
+      // Verify target exists in the caller's scope.
       const existing = await pool.query(
-        "SELECT id FROM users WHERE id = $1 AND role = $2",
-        [id, role],
+        `SELECT id, role FROM users WHERE id = $1
+         ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
+        req.user.role === "super_admin" ? [id] : [id, role],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
@@ -193,6 +216,19 @@ router.patch(
       if (req.body.full_name) {
         sets.push(`full_name = $${idx++}`);
         vals.push(req.body.full_name);
+      }
+      if (req.body.role) {
+        if (req.user.role !== "super_admin") {
+          return res.status(403).json({ error: "Only a Super Admin can change staff roles" });
+        }
+        if (!MANAGEABLE_ROLES.includes(req.body.role)) {
+          return res.status(400).json({ error: "Invalid staff role" });
+        }
+        if (id === req.user.id) {
+          return res.status(400).json({ error: "Cannot change your own staff role" });
+        }
+        sets.push(`role = $${idx++}`);
+        vals.push(req.body.role);
       }
 
       if (!sets.length)
@@ -222,6 +258,22 @@ router.patch(
         ],
       );
 
+      if (req.body.role && req.body.role !== existing.rows[0].role) {
+        await pool.query(
+          `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata, ip_address)
+           VALUES ($1, 'staff_role_changed', 'users', $2, $3, $4)`,
+          [
+            req.user.id,
+            id,
+            JSON.stringify({
+              previous_role: existing.rows[0].role,
+              new_role: req.body.role,
+            }),
+            req.ip,
+          ],
+        );
+      }
+
       res.json({ staff: rows[0] });
     } catch (err) {
       next(err);
@@ -248,13 +300,27 @@ router.patch(
           .json({ error: "Cannot deactivate your own account" });
 
       const existing = await pool.query(
-        "SELECT id, is_active FROM users WHERE id = $1 AND role = $2",
-        [id, ownRole(req)],
+        `SELECT id, is_active, role FROM users WHERE id = $1
+         ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
+        req.user.role === "super_admin" ? [id] : [id, ownRole(req)],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
 
       const newStatus = !existing.rows[0].is_active;
+      if (
+        existing.rows[0].role === "super_admin" &&
+        newStatus === false
+      ) {
+        const count = await pool.query(
+          "SELECT COUNT(*)::int AS count FROM users WHERE role = 'super_admin' AND is_active = TRUE",
+        );
+        if (count.rows[0].count <= 1) {
+          return res.status(400).json({
+            error: "Cannot deactivate the final active Super Admin",
+          });
+        }
+      }
       const { rows } = await pool.query(
         `UPDATE users SET is_active = $1 WHERE id = $2
          RETURNING id, email, full_name, role, is_active, updated_at`,
@@ -296,8 +362,9 @@ router.patch(
       const { id } = req.params;
 
       const existing = await pool.query(
-        "SELECT id FROM users WHERE id = $1 AND role = $2",
-        [id, ownRole(req)],
+        `SELECT id FROM users WHERE id = $1
+         ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
+        req.user.role === "super_admin" ? [id] : [id, ownRole(req)],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
