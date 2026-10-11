@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Download, Eye, AlertCircle } from "lucide-react";
+import { X, Download, Eye, AlertCircle, Check } from "lucide-react";
 import { auditLogsAPI } from "../services/api";
 
 const TYPES = [
@@ -130,8 +130,8 @@ export default function AuditReportModal({ onClose }) {
   const input = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white";
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 p-4">
+      <div className="absolute top-4 bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl w-full max-w-3xl flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h2 className="font-heading font-bold text-lg text-slate-900">Generate audit report</h2>
           <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-slate-700">
@@ -146,7 +146,7 @@ export default function AuditReportModal({ onClose }) {
 
         {tab === "case" && (
           <>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 flex-1 min-h-0 overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Reference number</label>
                 <input
@@ -207,7 +207,7 @@ export default function AuditReportModal({ onClose }) {
 
         {tab === "period" && (
           <>
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 flex-1 min-h-0 overflow-y-auto">
           <div>
             <span className={label}>Report type</span>
             <div className="grid sm:grid-cols-2 gap-2">
@@ -215,11 +215,21 @@ export default function AuditReportModal({ onClose }) {
                 <button
                   key={t.value}
                   type="button"
+                  aria-pressed={type === t.value}
                   onClick={() => { setType(t.value); setPreview(null); }}
-                  className={`text-left rounded-xl border px-3 py-2 ${type === t.value ? "border-primary-500 bg-primary-50" : "border-slate-200 hover:bg-slate-50"}`}
+                  className={`relative text-left rounded-xl border-2 px-3 py-2.5 transition-colors ${
+                    type === t.value
+                      ? "border-primary-600 bg-primary-50 ring-2 ring-primary-100"
+                      : "border-slate-200 hover:border-primary-300 hover:bg-slate-50"
+                  }`}
                 >
+                  {type === t.value && (
+                    <span className="absolute top-2 right-2 flex items-center justify-center w-5 h-5 rounded-full bg-primary-600 text-white">
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    </span>
+                  )}
                   <div className="text-sm font-semibold text-slate-900">{t.label}</div>
-                  <div className="text-xs text-slate-500">{t.hint}</div>
+                  <div className={`text-xs ${type === t.value ? "text-primary-800" : "text-slate-500"}`}>{t.hint}</div>
                 </button>
               ))}
             </div>
