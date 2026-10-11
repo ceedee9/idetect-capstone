@@ -267,6 +267,18 @@ router.post(
       );
       if (!passwordMatch) {
         const newAttempts = (establishment.failed_attempts || 0) + 1;
+        await pool.query(
+          `INSERT INTO audit_logs (establishment_id, action, metadata, ip_address)
+           VALUES ($1, 'login_failed', $2, $3)`,
+          [
+            establishment.id,
+            JSON.stringify({
+              reason: "invalid_password",
+              attempt_number: newAttempts,
+            }),
+            req.ip,
+          ],
+        );
         if (newAttempts >= LOGIN_MAX_ATTEMPTS) {
           const lockUntil = new Date(Date.now() + LOGIN_LOCKOUT_MS);
           await pool.query(
@@ -357,6 +369,48 @@ router.post(
     }
   },
 );
+
+// ── Establishment Logout (audit only; JWTs are stateless) ──────
+const ESTABLISHMENT_LOGOUT_REASONS = [
+  "manual",
+  "idle_timeout",
+];
+router.post("/establishment/logout", async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(
+        authHeader.slice(7),
+        process.env.JWT_SECRET_ESTABLISHMENT,
+      );
+    } catch {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    const reason = ESTABLISHMENT_LOGOUT_REASONS.includes(req.body?.reason)
+      ? req.body.reason
+      : "manual";
+
+    await pool.query(
+      `INSERT INTO audit_logs (establishment_id, action, metadata, ip_address)
+       VALUES ($1, 'logout', $2, $3)`,
+      [
+        decoded.id,
+        JSON.stringify({ reason }),
+        req.ip,
+      ],
+    );
+
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── Beneficiary OTP Request (step 1 of 2) ─────────────────────
 // Beneficiary enters their ID number + birthdate.

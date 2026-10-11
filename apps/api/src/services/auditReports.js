@@ -7,6 +7,7 @@ const REPORT_TYPES = {
     label: "Security and access",
     actions: [
       "login",
+      "login_failed",
       "logout",
       "password_changed",
       "otp_requested",

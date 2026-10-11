@@ -72,6 +72,7 @@ const MIGRATIONS = [
   "034_add_other_dispute_type.sql",
   "035_add_reference_numbers.sql",
   "036_add_verification_reference_numbers.sql",
+  "037_add_login_failed_audit_action.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/
