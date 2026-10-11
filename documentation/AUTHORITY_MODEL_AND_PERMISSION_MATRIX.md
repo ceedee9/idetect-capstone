@@ -324,6 +324,8 @@ After approval, implementation should proceed in this order:
   PDAO Super Admins.
 - Each Agency Super Admin can list agency staff, create matching office-admin
   accounts, and change roles only within that agency.
+- Each Agency Super Admin can also access the normal dashboard for its own
+  agency; this does not grant access to another agency's dashboard or data.
 - Office admins retain same-role management restrictions.
 - The API prevents deactivating the final active Agency Super Admin and
   prevents a Super Admin from changing their own role.

@@ -18,10 +18,17 @@ const router = express.Router();
 router.get(
   "/stats",
   authenticate,
-  requireRole(["osca_admin", "pdao_admin", "bplo_admin"]),
+  requireRole([
+    "osca_admin",
+    "pdao_admin",
+    "bplo_admin",
+    "osca_super_admin",
+    "pdao_super_admin",
+    "bplo_super_admin",
+  ]),
   async (req, res, next) => {
     try {
-      const role = req.user.role;
+      const role = req.user.role.replace("_super_admin", "_admin");
 
       if (role === "bplo_admin") {
         return res.json(await getBploStats());

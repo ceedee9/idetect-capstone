@@ -1208,30 +1208,10 @@ function EstablishmentDashboard({ user }) {
 // ── Unified DashboardPage ──────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuth();
-  if (user?.role?.endsWith("_super_admin")) {
-    return (
-      <div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-slate-900">
-            System Administration
-          </h1>
-          <p className="text-slate-500 text-sm mt-0.5 font-medium">
-            Manage staff access, roles, and system-wide accountability.
-          </p>
-        </div>
-        <div className="card p-6 max-w-2xl">
-          <h2 className="font-heading font-semibold text-lg text-slate-900">
-            Staff access management
-          </h2>
-          <p className="text-slate-500 text-sm mt-2">
-            Use Staff to create office administrator accounts, review access,
-            and manage approved role assignments.
-          </p>
-        </div>
-      </div>
-    );
-  }
-  if (user?.role === "bplo_admin")
+  const dashboardRole = user?.role?.endsWith("_super_admin")
+    ? user.role.replace("_super_admin", "_admin")
+    : user?.role;
+  if (dashboardRole === "bplo_admin")
     return <EstablishmentDashboard user={user} />;
   return <BeneficiaryDashboard user={user} />;
 }
