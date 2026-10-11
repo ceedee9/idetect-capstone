@@ -159,7 +159,7 @@ export default function App() {
                 <Route
                   path="beneficiaries"
                   element={
-                    <RoleRoute roles={["osca_admin", "pdao_admin"]}>
+                    <RoleRoute roles={["osca_admin", "osca_super_admin", "pdao_admin", "pdao_super_admin"]}>
                       <BeneficiariesPage />
                     </RoleRoute>
                   }
@@ -167,7 +167,7 @@ export default function App() {
                 <Route
                   path="beneficiaries/add"
                   element={
-                    <RoleRoute roles={["osca_admin", "pdao_admin"]}>
+                    <RoleRoute roles={["osca_admin", "osca_super_admin", "pdao_admin", "pdao_super_admin"]}>
                       <AddBeneficiaryPage />
                     </RoleRoute>
                   }
@@ -175,7 +175,7 @@ export default function App() {
                 <Route
                   path="beneficiaries/:id"
                   element={
-                    <RoleRoute roles={["osca_admin", "pdao_admin"]}>
+                    <RoleRoute roles={["osca_admin", "osca_super_admin", "pdao_admin", "pdao_super_admin"]}>
                       <BeneficiaryDetailPage />
                     </RoleRoute>
                   }
@@ -185,7 +185,7 @@ export default function App() {
                 <Route
                   path="establishments"
                   element={
-                    <RoleRoute roles={["bplo_admin"]}>
+                    <RoleRoute roles={["bplo_admin", "bplo_super_admin"]}>
                       <EstablishmentsPage />
                     </RoleRoute>
                   }
@@ -193,7 +193,7 @@ export default function App() {
                 <Route
                   path="establishments/create"
                   element={
-                    <RoleRoute roles={["bplo_admin"]}>
+                    <RoleRoute roles={["bplo_admin", "bplo_super_admin"]}>
                       <CreateEstablishmentPage />
                     </RoleRoute>
                   }
@@ -201,7 +201,7 @@ export default function App() {
                 <Route
                   path="establishments/:id"
                   element={
-                    <RoleRoute roles={["bplo_admin"]}>
+                    <RoleRoute roles={["bplo_admin", "bplo_super_admin"]}>
                       <EstablishmentDetailPage />
                     </RoleRoute>
                   }
@@ -209,7 +209,7 @@ export default function App() {
                 <Route
                   path="business-refusals"
                   element={
-                    <RoleRoute roles={["bplo_admin"]}>
+                    <RoleRoute roles={["bplo_admin", "bplo_super_admin"]}>
                       <BusinessRefusalsPage />
                     </RoleRoute>
                   }
@@ -219,7 +219,7 @@ export default function App() {
                 <Route
                   path="fraud-flags"
                   element={
-                    <RoleRoute roles={["osca_admin", "pdao_admin"]}>
+                    <RoleRoute roles={["osca_admin", "osca_super_admin", "pdao_admin", "pdao_super_admin"]}>
                       <FraudFlagsPage />
                     </RoleRoute>
                   }

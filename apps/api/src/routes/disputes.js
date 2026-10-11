@@ -293,13 +293,13 @@ router.get(
 
       // Build WHERE clause based on admin role
       let typeFilter;
-      if (req.user.role === "bplo_admin") {
+      if (req.user.portalRole === "bplo_admin") {
         // BPLO only sees business refusal disputes (REQ-2.14.2)
         typeFilter = `d.dispute_type = 'business_refusal'`;
       } else {
         // OSCA/PDAO see disputes that match their beneficiary type
         const typeMap = { osca_admin: "senior_citizen", pdao_admin: "pwd" };
-        const beneficiaryType = typeMap[req.user.role];
+        const beneficiaryType = typeMap[req.user.portalRole];
         typeFilter = `b.beneficiary_type = '${beneficiaryType}'`;
       }
 
@@ -385,19 +385,19 @@ router.patch(
 
       // Enforce data compartmentalization
       if (
-        req.user.role === "osca_admin" &&
+        req.user.portalRole === "osca_admin" &&
         dispute.beneficiary_type !== "senior_citizen"
       ) {
         throw createError(403, "OSCA can only handle senior citizen disputes");
       }
       if (
-        req.user.role === "pdao_admin" &&
+        req.user.portalRole === "pdao_admin" &&
         dispute.beneficiary_type !== "pwd"
       ) {
         throw createError(403, "PDAO can only handle PWD disputes");
       }
       if (
-        req.user.role === "bplo_admin" &&
+        req.user.portalRole === "bplo_admin" &&
         dispute.dispute_type !== "business_refusal"
       ) {
         throw createError(
@@ -505,19 +505,19 @@ router.patch(
 
       // Enforce data compartmentalization
       if (
-        req.user.role === "osca_admin" &&
+        req.user.portalRole === "osca_admin" &&
         dispute.beneficiary_type !== "senior_citizen"
       ) {
         throw createError(403, "OSCA can only handle senior citizen disputes");
       }
       if (
-        req.user.role === "pdao_admin" &&
+        req.user.portalRole === "pdao_admin" &&
         dispute.beneficiary_type !== "pwd"
       ) {
         throw createError(403, "PDAO can only handle PWD disputes");
       }
       if (
-        req.user.role === "bplo_admin" &&
+        req.user.portalRole === "bplo_admin" &&
         dispute.dispute_type !== "business_refusal"
       ) {
         throw createError(

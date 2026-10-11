@@ -12,11 +12,16 @@ const ALLOWED_ROLES = [
   "bplo_admin",
 ];
 
+const withPortalRole = (user) =>
+  user?.role?.endsWith("_super_admin")
+    ? { ...user, portalRole: user.role.replace("_super_admin", "_admin") }
+    : user;
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("staff_user");
-      return stored ? JSON.parse(stored) : null;
+      return stored ? withPortalRole(JSON.parse(stored)) : null;
     } catch {
       return null;
     }
@@ -25,7 +30,8 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const res = await authAPI.login(email, password);
-    const { token: newToken, user: newUser } = res.data;
+    const { token: newToken, user: responseUser } = res.data;
+    const newUser = withPortalRole(responseUser);
 
     if (!ALLOWED_ROLES.includes(newUser.role)) {
       throw new Error(

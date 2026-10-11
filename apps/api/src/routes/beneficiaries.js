@@ -31,7 +31,9 @@ router.use(requireRole(["osca_admin", "pdao_admin"]));
 
 // Helper: get the beneficiary_type this admin can access
 const getTypeForRole = (role) => {
-  return role === "osca_admin" ? "senior_citizen" : "pwd";
+  return role === "osca_admin" || role === "osca_super_admin"
+    ? "senior_citizen"
+    : "pwd";
 };
 
 const PWD_ID_PATTERN = /^\d{2}-\d{4}-\d{3}-\d{7}$/;

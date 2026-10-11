@@ -128,9 +128,9 @@ function SlaIndicator({ dispute }) {
 export default function DisputesPage() {
   const { user } = useAuth();
   const disputeScope =
-    user?.role === "bplo_admin"
+    user?.portalRole === "bplo_admin"
       ? "Business Refusals"
-      : user?.role === "pdao_admin"
+      : user?.portalRole === "pdao_admin"
         ? "PWD Records"
         : "Senior Citizens";
   const { data: disputes, loading, error, refetch } = useDisputes();
@@ -230,7 +230,7 @@ export default function DisputesPage() {
             onClick={() => setStatusFilter(tab.value)}
             className={`px-3 py-2 border-b-2 text-sm font-medium transition-colors ${
               statusFilter === tab.value
-                ? `${user?.role === "pdao_admin" ? "border-pdao-600 text-pdao-700" : user?.role === "osca_admin" ? "border-osca-600 text-osca-700" : "border-gov-600 text-gov-700"}`
+                ? `${user?.portalRole === "pdao_admin" ? "border-pdao-600 text-pdao-700" : user?.portalRole === "osca_admin" ? "border-osca-600 text-osca-700" : "border-gov-600 text-gov-700"}`
                 : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -255,9 +255,9 @@ export default function DisputesPage() {
               <EmptyState
                 icon={Scale}
                 tone={
-                  user?.role === "pdao_admin"
+                  user?.portalRole === "pdao_admin"
                     ? "pdao"
-                    : user?.role === "osca_admin"
+                    : user?.portalRole === "osca_admin"
                       ? "osca"
                       : "gov"
                 }

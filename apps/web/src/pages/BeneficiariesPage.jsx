@@ -34,7 +34,7 @@ const STATUS_TABS = [
 
 export default function BeneficiariesPage() {
   const { user } = useAuth();
-  const isPDAO = user?.role === "pdao_admin";
+  const isPDAO = user?.portalRole === "pdao_admin";
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");

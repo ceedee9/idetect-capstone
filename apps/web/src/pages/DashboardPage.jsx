@@ -117,7 +117,7 @@ function BeneficiaryDashboard({ user }) {
   const { data: beneficiaries, loading } = useBeneficiaries();
   const { data: dashStats, loading: statsLoading } = useDashboardStats();
 
-  const isOsca = user.role === "osca_admin";
+  const isOsca = user.portalRole === "osca_admin";
   const roleColor = isOsca ? "osca" : "pdao";
   const scopeLabel = isOsca
     ? "Senior Citizen beneficiary overview — Valenzuela City OSCA"

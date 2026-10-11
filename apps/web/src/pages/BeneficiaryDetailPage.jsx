@@ -74,7 +74,7 @@ export default function BeneficiaryDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isOsca = user?.role === "osca_admin";
+  const isOsca = user?.portalRole === "osca_admin";
   const recordLabel = isOsca ? "Senior Citizens" : "PWD Records";
   const beneficiaryTypeLabel = isOsca ? "Senior Citizen" : "PWD";
   const raText = isOsca ? "RA 9994" : "RA 10754";

@@ -52,7 +52,7 @@ function FormField({ icon: Icon, label, required, children }) {
 export default function AddBeneficiaryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isOsca = user?.role === "osca_admin";
+  const isOsca = user?.portalRole === "osca_admin";
   const recordLabel = isOsca ? "Senior Citizens" : "PWD Records";
   const registryLabel = isOsca ? "OSCA" : "PDAO";
   const issuingOffice = isOsca ? "OSCA Valenzuela" : "PDAO Valenzuela";
@@ -84,7 +84,7 @@ export default function AddBeneficiaryPage() {
     setLoading(true);
     try {
       const beneficiaryType =
-        user?.role === "osca_admin" ? "senior_citizen" : "pwd";
+        user?.portalRole === "osca_admin" ? "senior_citizen" : "pwd";
       await beneficiariesAPI.create(form, beneficiaryType);
       setSuccess(true);
       setTimeout(() => navigate("/beneficiaries"), 1800);

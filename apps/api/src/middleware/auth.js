@@ -6,6 +6,11 @@
 const jwt = require("jsonwebtoken");
 const pool = require("../config/database");
 
+const normalizeStaffRole = (role) =>
+  typeof role === "string" && role.endsWith("_super_admin")
+    ? role.replace("_super_admin", "_admin")
+    : role;
+
 // Verifies token, checks signature, AND confirms the account is still active
 // in the database. This ensures deactivated staff accounts lose access
 // immediately rather than waiting for the JWT to expire naturally.
@@ -31,6 +36,7 @@ const authenticate = async (req, res, next) => {
     }
 
     req.user = decoded;
+    req.user.portalRole = normalizeStaffRole(decoded.role);
     next();
   } catch (err) {
     if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
@@ -84,7 +90,13 @@ const authenticateBeneficiary = (req, res, next) => {
 const requireRole = (roles) => {
   const allowed = Array.isArray(roles) ? roles : [roles];
   return (req, res, next) => {
-    if (!req.user || !allowed.includes(req.user.role)) {
+    const allowedWithSuperAdmins = new Set([
+      ...allowed,
+      ...allowed
+        .filter((role) => role.endsWith("_admin"))
+        .map((role) => role.replace("_admin", "_super_admin")),
+    ]);
+    if (!req.user || !allowedWithSuperAdmins.has(req.user.role)) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
     next();
@@ -96,4 +108,5 @@ module.exports = {
   authenticateEstablishment,
   authenticateBeneficiary,
   requireRole,
+  normalizeStaffRole,
 };

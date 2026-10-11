@@ -290,7 +290,12 @@ router.get(
   async (req, res, next) => {
     try {
       // Determine which type this admin can see
-      const typeMap = { osca_admin: "senior_citizen", pdao_admin: "pwd" };
+      const typeMap = {
+        osca_admin: "senior_citizen",
+        osca_super_admin: "senior_citizen",
+        pdao_admin: "pwd",
+        pdao_super_admin: "pwd",
+      };
       const beneficiary_type = typeMap[req.user.role];
 
       // status='' or omitted means "all"; otherwise filter by specific status
@@ -405,7 +410,12 @@ router.patch(
       const { decision, staff_notes } = req.body;
 
       // OSCA/PDAO can only review their own type
-      const typeMap = { osca_admin: "senior_citizen", pdao_admin: "pwd" };
+      const typeMap = {
+        osca_admin: "senior_citizen",
+        osca_super_admin: "senior_citizen",
+        pdao_admin: "pwd",
+        pdao_super_admin: "pwd",
+      };
       const allowedType = typeMap[req.user.role];
 
       let flagQuery = "SELECT * FROM fraud_flags WHERE id = $1";
@@ -530,7 +540,12 @@ router.patch(
       const { staff_notes } = req.body;
 
       // Scope to the admin's own type
-      const typeMap = { osca_admin: "senior_citizen", pdao_admin: "pwd" };
+      const typeMap = {
+        osca_admin: "senior_citizen",
+        osca_super_admin: "senior_citizen",
+        pdao_admin: "pwd",
+        pdao_super_admin: "pwd",
+      };
       const allowedType = typeMap[req.user.role];
 
       const flagResult = await pool.query(
