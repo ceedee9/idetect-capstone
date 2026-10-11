@@ -40,6 +40,19 @@ const TABLE_LABELS = {
   notifications: "Notification",
 };
 
+const SESSION_ACTIONS = new Set([
+  "login",
+  "login_failed",
+  "logout",
+  "account_locked",
+  "account_unlocked",
+  "otp_requested",
+  "otp_verified",
+  "password_changed",
+  "password_reset",
+  "password_reset_by_admin",
+]);
+
 /**
  * Turns a raw target_table value into a readable singular label,
  * e.g. "establishments" -> "Establishment".
@@ -54,7 +67,9 @@ export function formatTargetLabel(targetTable) {
 }
 
 export function formatAffectedRecord(log) {
-  if (!log?.target_table) return null;
+  if (!log?.target_table) {
+    return SESSION_ACTIONS.has(log?.action) ? "Session event" : null;
+  }
 
   const label = formatTargetLabel(log.target_table);
   const reference = log.target_reference;

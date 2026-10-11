@@ -108,7 +108,7 @@ export default function AuditLogDetailDrawer({ log, onClose }) {
                   </div>
                 )}
 
-                {log.target_table && (
+                {formatAffectedRecord(log) && (
                   <div className="flex items-start gap-2.5 text-sm">
                     <Tag className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                     <div>

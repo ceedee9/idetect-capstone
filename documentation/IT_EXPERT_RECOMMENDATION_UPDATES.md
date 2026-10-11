@@ -29,7 +29,7 @@ This document brings together the changes made so far in response to the IT expe
   - *CSV safety:* Both the new report export and the original audit-log export correctly escape commas, quotes, line breaks, and spreadsheet formula prefixes.
   - *UI improvements:* The report modal is centered in the visible viewport, keeps its action buttons close to the form, scrolls long content internally, and clearly highlights the selected report type.
 - **F-04 — Court-case file:** The Reports window has a **Case file** tab. Staff type any reference number (DSP-, FLG-, VER-, EST- or BEN-) and get one CSV with the record, the related scan, flags and disputes, and the full audit timeline (oldest first). ID numbers are masked except the last 2 characters, OSCA and PDAO admins can only open records of their own beneficiary type, and each download is written to the audit log.
-- **F-01/F-04 — Affected-record display:** The audit log keeps `target_table` and `target_id` for reliable internal linking, while the portal now presents an **Affected record** value using readable references and names such as `Establishment: KFC · EST-2026-000123`. Login and logout events remain without a target because they are session events. Raw technical identifiers remain available in the detail data and machine-readable exports where needed.
+- **F-01/F-04 — Affected-record display:** The audit log keeps `target_table` and `target_id` for reliable internal linking, while the portal now presents an **Affected record** value using readable references and names such as `Establishment: KFC · EST-2026-000123`. Login, logout, failed-login, lockout, and related authentication events display **Session event** instead of a blank value because they do not affect a database record. Raw technical identifiers remain available in the detail data and machine-readable exports where needed.
 
 ## How the changes were approached
 
@@ -58,7 +58,7 @@ This document brings together the changes made so far in response to the IT expe
 ## Recommendations still pending
 
 - **F-01 remaining:** Establishment token expiry is stateless, so an expired token cannot be actively logged as a separate event without a server-side session store. Beneficiary-app OTP/session auditing and beneficiary logout remain undecided. The legacy OSCA, PDAO, and BPLO portals were not changed.
-- **Future audit roadmap:** Readable target snapshots, record-history links, audit capacity monitoring, retention/archiving, and backup/restore testing are documented in [AUDIT_LOG_FUTURE_ROADMAP.md](./AUDIT_LOG_FUTURE_ROADMAP.md).
+- **Future system roadmap:** Future features and improvements across the beneficiary app, establishment app, staff portals, API, database, security, reporting, privacy, capacity, reliability, and operations are documented in [FUTURE_SYSTEM_ROADMAP.md](./FUTURE_SYSTEM_ROADMAP.md). The roadmap should be updated whenever a useful future enhancement is identified.
 - **F-03:** Audit-log retention needs a policy decision.
 - **F-04 (remaining):** Audit-log numbering is optional and not done. PDF output and per-record history reports are also not implemented. Report previews are not separately written to the audit log; only CSV downloads are logged. The legacy OSCA/PDAO/BPLO portals do not show the numbers.
 - **F-05/F-06:** ID and age masking in API responses remains outstanding pending the audit work.
