@@ -18,7 +18,14 @@ const {
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireRole(["super_admin", "osca_admin", "pdao_admin", "bplo_admin"]));
+router.use(requireRole([
+  "bplo_super_admin",
+  "osca_super_admin",
+  "pdao_super_admin",
+  "osca_admin",
+  "pdao_admin",
+  "bplo_admin",
+]));
 
 // ── GET /api/audit-logs ────────────────────────────────────────
 router.get("/", async (req, res, next) => {
@@ -64,6 +71,21 @@ router.get("/", async (req, res, next) => {
     `;
     const params = [];
     let idx = 1;
+
+    const agencyAdminRole = {
+      bplo_super_admin: "bplo_admin",
+      osca_super_admin: "osca_admin",
+      pdao_super_admin: "pdao_admin",
+    }[req.user.role];
+    if (agencyAdminRole) {
+      query += ` AND u.role IN ($${idx}, $${idx + 1})`;
+      params.push(agencyAdminRole, req.user.role);
+      idx += 2;
+    } else {
+      query += ` AND u.role = $${idx}`;
+      params.push(req.user.role);
+      idx++;
+    }
 
     if (action) {
       query += ` AND al.action = $${idx}`;
@@ -165,6 +187,17 @@ router.get("/export", async (req, res, next) => {
     const params = [];
     let idx = 1;
 
+    const agencyAdminRole = {
+      bplo_super_admin: "bplo_admin",
+      osca_super_admin: "osca_admin",
+      pdao_super_admin: "pdao_admin",
+    }[req.user.role];
+    query += agencyAdminRole
+      ? ` AND u.role IN ($${idx}, $${idx + 1})`
+      : ` AND u.role = $${idx}`;
+    params.push(...(agencyAdminRole ? [agencyAdminRole, req.user.role] : [req.user.role]));
+    idx += agencyAdminRole ? 2 : 1;
+
     if (action) {
       query += ` AND al.action = $${idx}`;
       params.push(action);
@@ -255,7 +288,9 @@ const GROUP_EXPR = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REPORT_ROLES = new Set([
-  "super_admin",
+  "bplo_super_admin",
+  "osca_super_admin",
+  "pdao_super_admin",
   "osca_admin",
   "pdao_admin",
   "bplo_admin",
@@ -289,6 +324,15 @@ router.get("/report", async (req, res, next) => {
 
     const params = [period.start, period.end];
     let where = `al.created_at >= $1::date AND al.created_at < ($2::date + INTERVAL '1 day')`;
+    const agencyAdminRole = {
+      bplo_super_admin: "bplo_admin",
+      osca_super_admin: "osca_admin",
+      pdao_super_admin: "pdao_admin",
+    }[req.user.role];
+    params.push(...(agencyAdminRole ? [agencyAdminRole, req.user.role] : [req.user.role]));
+    where += agencyAdminRole
+      ? ` AND u.role IN ($${params.length - 1}, $${params.length})`
+      : ` AND u.role = $${params.length}`;
 
     let actions = def.actions;
     if (q.action) {
@@ -310,6 +354,9 @@ router.get("/report", async (req, res, next) => {
       where += ` AND al.user_id = $${params.length}`;
     }
     if (q.role) {
+      if (agencyAdminRole && ![agencyAdminRole, req.user.role].includes(String(q.role))) {
+        return res.status(403).json({ error: "Role is outside your agency scope" });
+      }
       params.push(String(q.role));
       where += ` AND u.role::text = $${params.length}`;
     }

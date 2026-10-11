@@ -1208,7 +1208,7 @@ function EstablishmentDashboard({ user }) {
 // ── Unified DashboardPage ──────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuth();
-  if (user?.role === "super_admin") {
+  if (user?.role?.endsWith("_super_admin")) {
     return (
       <div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-6">
         <div>

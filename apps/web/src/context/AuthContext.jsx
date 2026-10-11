@@ -4,7 +4,9 @@ import { authAPI } from "../services/api";
 const AuthContext = createContext(null);
 
 const ALLOWED_ROLES = [
-  "super_admin",
+  "bplo_super_admin",
+  "osca_super_admin",
+  "pdao_super_admin",
   "osca_admin",
   "pdao_admin",
   "bplo_admin",

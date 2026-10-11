@@ -311,7 +311,9 @@ export default function AuditReportModal({ onClose }) {
               <label className={label}>Office / role</label>
               <select className={input} value={role} onChange={(e) => setRole(e.target.value)}>
                 <option value="">All</option>
-                <option value="super_admin">Super Admin</option>
+                <option value="bplo_super_admin">BPLO Super Admin</option>
+                <option value="osca_super_admin">OSCA Super Admin</option>
+                <option value="pdao_super_admin">PDAO Super Admin</option>
                 <option value="osca_admin">OSCA</option>
                 <option value="pdao_admin">PDAO</option>
                 <option value="bplo_admin">BPLO</option>

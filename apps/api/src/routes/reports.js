@@ -12,10 +12,24 @@ const { authenticate, requireRole } = require("../middleware/auth");
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireRole(["super_admin", "osca_admin", "pdao_admin", "bplo_admin"]));
+router.use(requireRole([
+  "bplo_super_admin",
+  "osca_super_admin",
+  "pdao_super_admin",
+  "osca_admin",
+  "pdao_admin",
+  "bplo_admin",
+]));
 
 const getTypeForRole = (role) =>
-  role === "osca_admin" ? "senior_citizen" : "pwd";
+  role === "osca_admin" || role === "osca_super_admin"
+    ? "senior_citizen"
+    : "pwd";
+
+const isBploRole = (role) =>
+  role === "bplo_admin" || role === "bplo_super_admin";
+const isOscaRole = (role) =>
+  role === "osca_admin" || role === "osca_super_admin";
 
 const escCsv = (val) => {
   if (val == null) return "";
@@ -55,9 +69,9 @@ router.get("/verifications/export", async (req, res, next) => {
     let idx = 1;
 
     // Role filtering
-    if (role === "osca_admin") {
+    if (isOscaRole(role)) {
       query += ` AND vl.beneficiary_type_detected = 'senior_citizen'`;
-    } else if (role === "pdao_admin") {
+    } else if (!isBploRole(role)) {
       query += ` AND vl.beneficiary_type_detected = 'pwd'`;
     }
     // bplo_admin sees all types
@@ -137,9 +151,9 @@ router.get("/fraud-flags/export", async (req, res, next) => {
     const params = [];
     let idx = 1;
 
-    if (role === "osca_admin") {
+    if (isOscaRole(role)) {
       query += ` AND ff.beneficiary_type = 'senior_citizen'`;
-    } else if (role === "pdao_admin") {
+    } else if (!isBploRole(role)) {
       query += ` AND ff.beneficiary_type = 'pwd'`;
     }
 
@@ -219,9 +233,9 @@ router.get("/disputes/export", async (req, res, next) => {
     const params = [];
     let idx = 1;
 
-    if (role === "bplo_admin") {
+    if (isBploRole(role)) {
       query += ` AND d.dispute_type = 'business_refusal'`;
-    } else if (role !== "super_admin") {
+    } else {
       const bType = getTypeForRole(role);
       query += ` AND d.dispute_type != 'business_refusal' AND b.beneficiary_type = $${idx}`;
       params.push(bType);

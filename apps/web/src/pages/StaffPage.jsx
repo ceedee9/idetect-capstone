@@ -96,8 +96,8 @@ export default function StaffPage() {
             Staff Accounts
           </h1>
           <p className="text-slate-500 text-sm mt-0.5 font-medium">
-            {user?.role === "super_admin"
-              ? "Manage authorized staff accounts and roles"
+            {user?.role?.endsWith("_super_admin")
+              ? `Manage ${roleLabel(user?.role)} staff accounts`
               : `Manage ${roleLabel(user?.role)} user accounts`}
           </p>
         </div>
@@ -274,7 +274,7 @@ export default function StaffPage() {
       {/* Create modal */}
       {showCreate && (
         <CreateStaffModal
-          isSuperAdmin={user?.role === "super_admin"}
+          isSuperAdmin={user?.role?.endsWith("_super_admin")}
           currentRole={user?.role}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
@@ -335,7 +335,9 @@ function Overlay({ children, onClose }) {
 function roleLabel(role) {
   return (
     {
-      super_admin: "Super Admin",
+      bplo_super_admin: "BPLO Super",
+      osca_super_admin: "OSCA Super",
+      pdao_super_admin: "PDAO Super",
       bplo_admin: "BPLO",
       osca_admin: "OSCA",
       pdao_admin: "PDAO",
@@ -348,7 +350,9 @@ function CreateStaffModal({ onClose, onCreated, isSuperAdmin, currentRole }) {
     full_name: "",
     email: "",
     password: "",
-    role: isSuperAdmin ? "bplo_admin" : currentRole,
+    role: currentRole?.endsWith("_super_admin")
+      ? currentRole.replace("_super_admin", "_admin")
+      : currentRole,
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -439,9 +443,9 @@ function CreateStaffModal({ onClose, onCreated, isSuperAdmin, currentRole }) {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
-              <option value="bplo_admin">BPLO Admin</option>
-              <option value="osca_admin">OSCA Admin</option>
-              <option value="pdao_admin">PDAO Admin</option>
+              <option value={currentRole.replace("_super_admin", "_admin")}>
+                {roleLabel(currentRole.replace("_super_admin", "_admin"))} Admin
+              </option>
             </select>
           ) : (
             <div className="input text-sm w-full bg-slate-50 text-slate-600">

@@ -18,9 +18,12 @@ delivered and validated.
 
 ## Authority and account management
 
-The proposed Super Admin, establishment Super User, establishment Regular
-User, and office-scoped staff authority model is defined in
+The proposed BPLO Super Admin, OSCA Super Admin, PDAO Super Admin,
+establishment Super User, establishment Regular User, and office-scoped staff
+authority model is defined in
 [AUTHORITY_MODEL_AND_PERMISSION_MATRIX.md](./AUTHORITY_MODEL_AND_PERMISSION_MATRIX.md).
+There is no overall Super Admin; each government agency is isolated from the
+others.
 This is a prerequisite for reliable F-05/F-06 masking and for replacing shared
 establishment credentials with individual accountability.
 

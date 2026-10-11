@@ -91,12 +91,9 @@ const requireRole = (roles) => {
   };
 };
 
-const requireSuperAdmin = requireRole("super_admin");
-
 module.exports = {
   authenticate,
   authenticateEstablishment,
   authenticateBeneficiary,
   requireRole,
-  requireSuperAdmin,
 };

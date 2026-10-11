@@ -35,13 +35,16 @@ features, not security controls.
 
 | Role | Scope | Primary purpose |
 |---|---|---|
-| `super_admin` | Whole iDetect system | Manage staff access, system governance, and cross-office administration |
+| `bplo_super_admin` | BPLO only | Manage BPLO staff access and BPLO governance |
+| `osca_super_admin` | OSCA only | Manage OSCA staff access and OSCA governance |
+| `pdao_super_admin` | PDAO only | Manage PDAO staff access and PDAO governance |
 | `bplo_admin` | BPLO office and authorized establishment workflows | Manage establishments, permits, business-refusal disputes, and BPLO operations |
 | `osca_admin` | OSCA office and senior-citizen records | Manage senior-citizen beneficiary workflows and related reviews |
 | `pdao_admin` | PDAO office and PWD records | Manage PWD beneficiary workflows and related reviews |
 
 The existing `bplo_admin`, `osca_admin`, and `pdao_admin` roles remain domain
-roles. They should not automatically gain Super Admin powers.
+roles. Each agency's Super Admin manages only its matching admin role. There is
+no overall Super Admin role and no cross-agency staff administrator.
 
 ### Establishment roles
 
@@ -67,28 +70,26 @@ view another beneficiary's protected information.
 
 ## System staff authority
 
-### Super Admin
+### Agency Super Admins
 
 #### Allowed
 
-- Create, activate, deactivate, and review staff accounts.
-- Assign approved staff roles and office scopes.
+- Create, activate, deactivate, and review staff accounts in their own agency.
+- Assign only their own agency's admin role.
 - Reset staff credentials through approved workflows.
-- Review system-wide audit logs and security reports.
+- Review audit logs and security reports within their own agency scope.
 - Review account access history and privilege changes.
 - Manage approved system-level configuration.
-- Initiate cross-office investigations when authorized by policy.
-- Access masked system-wide reporting needed for governance.
+- Initiate investigations within their own agency when authorized by policy.
 
 #### Restricted or conditional
 
 - Full personal data access is not automatic. Sensitive data requires a
   legitimate operational scope and must be audited.
-- Changing another Super Admin's role or disabling the final active Super
-  Admin requires a second authorized Super Admin or documented break-glass
-  procedure.
-- Super Admins must not bypass an established BPLO, OSCA, or PDAO decision
-  workflow merely because they have system-wide account authority.
+- Changing another Agency Super Admin's role or disabling the final active
+  Agency Super Admin requires a second authorized Super Admin from that same
+  agency or documented break-glass procedure.
+- Agency Super Admins must not bypass another agency's decision workflow.
 - Exporting sensitive data requires a legitimate purpose, minimum necessary
   fields, and an audit entry.
 
@@ -124,7 +125,8 @@ view another beneficiary's protected information.
 
 #### Never allowed
 
-- Assign or remove Super Admin privileges.
+- Assign or remove any agency Super Admin privilege.
+- View or manage another agency's staff accounts or unrestricted data.
 - Access another office's unrestricted beneficiary data without authorization.
 - Delete audit evidence or overwrite a verification result.
 - Use an establishment user's credentials.
@@ -190,7 +192,7 @@ cross-office authorization is explicitly implemented.
 
 - View or manage another establishment.
 - Approve, revoke, or change a government permit.
-- Manage BPLO, OSCA, PDAO, or Super Admin staff.
+- Manage BPLO, OSCA, PDAO, or Agency Super Admin staff outside its own scope.
 - Delete or edit audit logs.
 - Replace or erase an original verification result.
 - Reveal full beneficiary IDs or unrelated beneficiary records without an
@@ -288,7 +290,7 @@ At minimum, the system should audit:
 - Login, failed login, lockout, logout, and account-status denial.
 - Sensitive record creation, update, deletion attempt, review, and export.
 - Every controlled override and approval.
-- Super Admin and Super User privilege changes.
+- Agency Super Admin and Super User privilege changes.
 
 Audit records must retain the actor, action, scope, affected record, reason
 where applicable, and request context without storing secrets.
@@ -298,7 +300,7 @@ where applicable, and request context without storing secrets.
 Before coding these roles:
 
 - Confirm the final role names and office assignments.
-- Decide whether Super Admin is one role or a permission bundle.
+- Confirm the final Agency Super Admin role names and recovery procedures.
 - Define recovery and second-approval procedures.
 - Define establishment user invitation and identity-verification rules.
 - Decide which overrides require BPLO or second-person approval.
@@ -316,16 +318,17 @@ After approval, implementation should proceed in this order:
 
 ## Initial implementation status
 
-- Added the `super_admin` staff role to the database enum through migration
-  `038_add_super_admin_role.sql`.
-- Staff API authentication and staff management now recognize Super Admins.
-- Super Admins can list all staff accounts, create approved office-admin
-  accounts, and change another staff member's role.
+- Added agency-scoped Super Admin roles through migration
+  `039_add_office_super_admin_roles.sql`.
+- Staff API authentication and staff management now recognize BPLO, OSCA, and
+  PDAO Super Admins.
+- Each Agency Super Admin can list agency staff, create matching office-admin
+  accounts, and change roles only within that agency.
 - Office admins retain same-role management restrictions.
-- The API prevents deactivating the final active Super Admin and prevents a
-  Super Admin from changing their own role.
+- The API prevents deactivating the final active Agency Super Admin and
+  prevents a Super Admin from changing their own role.
 - Role changes are recorded as `staff_role_changed`.
 - Establishment Super User and Regular User accounts are not implemented yet;
   they require a separate establishment-user schema and invitation workflow.
-- A Super Admin must be provisioned through a controlled deployment/database
-  process; no default Super Admin password is seeded.
+- Each Agency Super Admin must be provisioned through a controlled
+  deployment/database process; no default Super Admin password is seeded.

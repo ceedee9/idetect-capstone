@@ -165,8 +165,11 @@ export default function AppShell() {
   }
 
   const role = user?.role ?? "osca_admin";
-  const nav = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.osca_admin;
-  const theme = THEME[role] ?? THEME.osca_admin;
+  const portalRole = role.endsWith("_super_admin")
+    ? role.replace("_super_admin", "_admin")
+    : role;
+  const nav = NAV_BY_ROLE[portalRole] ?? NAV_BY_ROLE.osca_admin;
+  const theme = THEME[portalRole] ?? THEME.osca_admin;
 
   function handleLogout() {
     logout();

@@ -1,7 +1,7 @@
 // src/routes/staff.js
 // Staff user management — list, create, update, deactivate, reset password.
-// Office admins manage accounts in their own role. Super Admin manages all
-// staff accounts and may assign approved staff roles.
+// Office admins manage accounts in their own role. Office Super Admins manage
+// staff inside their own agency and may assign only that agency's admin role.
 
 const express = require("express");
 const bcrypt = require("bcryptjs");
@@ -15,22 +15,39 @@ const SALT_ROUNDS = 12;
 
 // Every endpoint requires staff auth
 router.use(authenticate);
-router.use(requireRole(["super_admin", "osca_admin", "pdao_admin", "bplo_admin"]));
+router.use(requireRole([
+  "bplo_super_admin",
+  "osca_super_admin",
+  "pdao_super_admin",
+  "osca_admin",
+  "pdao_admin",
+  "bplo_admin",
+]));
 
-const MANAGEABLE_ROLES = ["bplo_admin", "osca_admin", "pdao_admin"];
+const SUPER_ADMIN_AGENCY = {
+  bplo_super_admin: "bplo",
+  osca_super_admin: "osca",
+  pdao_super_admin: "pdao",
+};
+const AGENCY_ADMIN_ROLE = {
+  bplo: "bplo_admin",
+  osca: "osca_admin",
+  pdao: "pdao_admin",
+};
 
 // Helper: admins can only manage users of their own role
 function ownRole(req) {
-  return req.user.role === "super_admin" ? null : req.user.role;
+  return SUPER_ADMIN_AGENCY[req.user.role] ? AGENCY_ADMIN_ROLE[SUPER_ADMIN_AGENCY[req.user.role]] : req.user.role;
+}
+
+function isOfficeSuperAdmin(req) {
+  return Boolean(SUPER_ADMIN_AGENCY[req.user.role]);
 }
 
 function scopedStaffQuery(req, includeWhere = true) {
-  if (req.user.role === "super_admin") {
-    return { sql: includeWhere ? "WHERE 1=1" : "", params: [] };
-  }
   return {
     sql: includeWhere ? "WHERE role = $1" : "",
-    params: includeWhere ? [req.user.role] : [],
+    params: includeWhere ? [ownRole(req)] : [],
   };
 }
 
@@ -96,8 +113,8 @@ router.get("/:id", param("id").isUUID(), async (req, res, next) => {
     const { rows } = await pool.query(
       `SELECT id, email, full_name, role, is_active, created_at, updated_at
            FROM users WHERE id = $1
-           ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
-      req.user.role === "super_admin"
+           ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
+      isOfficeSuperAdmin(req)
         ? [req.params.id]
         : [req.params.id, ownRole(req)],
     );
@@ -116,7 +133,7 @@ router.post(
     body("email").isEmail().normalizeEmail(),
     body("full_name").trim().isLength({ min: 2, max: 255 }),
     body("password").isLength({ min: 8, max: 128 }),
-    body("role").optional().isIn(MANAGEABLE_ROLES),
+    body("role").optional().isIn(["bplo_admin", "osca_admin", "pdao_admin"]),
   ],
   async (req, res, next) => {
     try {
@@ -125,11 +142,11 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
 
       const { email, full_name, password } = req.body;
-      const role = req.user.role === "super_admin"
-        ? req.body.role || "bplo_admin"
-        : ownRole(req);
-      if (!role) {
-        return res.status(400).json({ error: "A staff role is required" });
+      const role = isOfficeSuperAdmin(req) ? ownRole(req) : ownRole(req);
+      if (req.body.role && (!isOfficeSuperAdmin(req) || req.body.role !== role)) {
+        return res.status(403).json({
+          error: "You can only create staff for your own agency",
+        });
       }
 
       // Check duplicate email
@@ -192,8 +209,8 @@ router.patch(
       // Verify target exists in the caller's scope.
       const existing = await pool.query(
         `SELECT id, role FROM users WHERE id = $1
-         ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
-        req.user.role === "super_admin" ? [id] : [id, role],
+         ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
+        isOfficeSuperAdmin(req) ? [id] : [id, role],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
@@ -218,11 +235,8 @@ router.patch(
         vals.push(req.body.full_name);
       }
       if (req.body.role) {
-        if (req.user.role !== "super_admin") {
-          return res.status(403).json({ error: "Only a Super Admin can change staff roles" });
-        }
-        if (!MANAGEABLE_ROLES.includes(req.body.role)) {
-          return res.status(400).json({ error: "Invalid staff role" });
+        if (!isOfficeSuperAdmin(req) || req.body.role !== ownRole(req)) {
+          return res.status(403).json({ error: "Only your agency's Super Admin can change this role" });
         }
         if (id === req.user.id) {
           return res.status(400).json({ error: "Cannot change your own staff role" });
@@ -301,19 +315,20 @@ router.patch(
 
       const existing = await pool.query(
         `SELECT id, is_active, role FROM users WHERE id = $1
-         ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
-        req.user.role === "super_admin" ? [id] : [id, ownRole(req)],
+         ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
+        isOfficeSuperAdmin(req) ? [id] : [id, ownRole(req)],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
 
       const newStatus = !existing.rows[0].is_active;
       if (
-        existing.rows[0].role === "super_admin" &&
+        SUPER_ADMIN_AGENCY[existing.rows[0].role] &&
         newStatus === false
       ) {
         const count = await pool.query(
-          "SELECT COUNT(*)::int AS count FROM users WHERE role = 'super_admin' AND is_active = TRUE",
+          "SELECT COUNT(*)::int AS count FROM users WHERE role = $1 AND is_active = TRUE",
+          [req.user.role],
         );
         if (count.rows[0].count <= 1) {
           return res.status(400).json({
@@ -363,8 +378,8 @@ router.patch(
 
       const existing = await pool.query(
         `SELECT id FROM users WHERE id = $1
-         ${req.user.role === "super_admin" ? "" : "AND role = $2"}`,
-        req.user.role === "super_admin" ? [id] : [id, ownRole(req)],
+         ${isOfficeSuperAdmin(req) ? "" : "AND role = $2"}`,
+        isOfficeSuperAdmin(req) ? [id] : [id, ownRole(req)],
       );
       if (!existing.rows.length)
         return res.status(404).json({ error: "Staff member not found" });
