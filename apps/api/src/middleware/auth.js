@@ -89,9 +89,9 @@ const requireRole = (roles) => {
     }
     next();
   };
-
-  const requireSuperAdmin = requireRole("super_admin");
 };
+
+const requireSuperAdmin = requireRole("super_admin");
 
 module.exports = {
   authenticate,
