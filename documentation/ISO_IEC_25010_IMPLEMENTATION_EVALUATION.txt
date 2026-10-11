@@ -1,0 +1,611 @@
+iDetect
+ISO/IEC 25010:2023 Implementation Evidence Report
+==================================================
+
+Scope
+-----
+This report records behavior found in the iDetect source code, database
+migrations, package/configuration files, and deployment configuration.
+Documentation-only claims are not treated as implemented behavior.
+
+Portals evaluated:
+  1. Establishment/Client Portal app
+  2. Beneficiary app
+  3. BPLO web portal
+  4. OSCA web portal
+  5. PDAO web portal
+
+Status terms used in this report:
+  IMPLEMENTED  - behavior is present in executable code or schema.
+  PARTIAL      - some behavior is present, but coverage or guarantees are
+                 incomplete.
+  NOT FOUND    - no implementation was found in the inspected codebase.
+
+
+1. ESTABLISHMENT/CLIENT PORTAL APP
+-----------------------------------
+
+Main screens, features, and restrictions
+  IMPLEMENTED:
+  - Establishment email/password login.
+  - Department selection.
+  - Camera capture, capture review, OCR processing, verification result,
+    verification history, profile drawer, and password operations.
+  - The establishment token can access establishment verification and history
+    routes.
+  - Only establishments whose status is "approved" can log in.
+  PARTIAL:
+  - The app can verify IDs but cannot create or edit beneficiary records,
+    manage staff, process disputes, or change beneficiary status.
+
+RBAC
+  IMPLEMENTED:
+  - Establishment JWTs are verified separately from staff and beneficiary
+    JWTs.
+  - Establishment-only routes use authenticateEstablishment.
+  - Pending, suspended, and revoked establishments are denied login.
+
+Validation results and statuses
+  IMPLEMENTED:
+  - Exact API results: valid, suspicious, invalid, manual_review.
+  - valid: matching active, non-expired beneficiary record.
+  - suspicious: suspended ID, cross-database type conflict, or identity
+    mismatch.
+  - invalid: unknown, revoked, or expired ID, or other invalid status.
+  - manual_review: low OCR quality or insufficient extracted identity data.
+  - ID numbers are normalized to uppercase alphanumeric characters.
+  - Name matching uses Jaro-Winkler similarity.
+  - The API checks beneficiary type, expiry, OCR score, extracted name,
+    extracted date of birth, ID format, and new-format seal detection.
+
+Notifications
+  IMPLEMENTED:
+  - For a beneficiary account linked to the verified ID, the API creates both
+    a push notification record and an SMS notification record for each
+    recognized verification.
+  - valid and manual_review are treated as approved notifications.
+  - suspicious and invalid are treated as denied notifications.
+  - Push uses Firebase Cloud Messaging.
+  - SMS uses Semaphore.
+  PARTIAL:
+  - If provider credentials are absent, the services log to the server
+    console rather than deliver externally.
+
+Offline behavior
+  IMPLEMENTED:
+  - OCR and image processing execute locally.
+  - Hive stores scanned IDs and revoked/suspended status updates.
+  - Cached revoked or suspended IDs can immediately produce an offline
+    invalid/suspicious-style result.
+  - Offline scans are queued in pending_offline_scans.
+  - Queued scans replay to /api/verification/scan after connectivity returns.
+  - Replay attempts are limited to five attempts.
+  - The eight-second status polling service refreshes local blocked-ID data.
+  PARTIAL:
+  - Offline results are cache-based and can be stale.
+  - The UI warns not to approve high-value transactions solely from an
+    offline result.
+  - Queued records are discarded after repeated failure; guaranteed delivery
+    is not implemented.
+
+Error handling and fallbacks
+  IMPLEMENTED:
+  - Tesseract OCR can fall back to ML Kit after approximately 20 seconds.
+  - Layout extraction can fall back to fuzzy parsing.
+  - Unknown card type can be selected manually.
+  - Missing ID number produces manual_review with a manual-verification
+    message.
+  - Normal API requests use approximately ten-second timeouts.
+  - Offline replay uses a 30-second request timeout.
+  PARTIAL:
+  - Some synchronization failures are logged and retried rather than
+    presented as a detailed user-facing diagnostic.
+
+Authentication and rate limiting
+  IMPLEMENTED:
+  - Email/password authentication with JWT.
+  - Token persistence in SharedPreferences and restoration at startup.
+  - Explicit logout and password setup/change/reset API flows.
+  - Three failed establishment logins lock the account for 30 minutes.
+  - Verification scan rate limit: 60 scans per establishment per minute.
+  - Global API rate limit: 100 requests per 15 minutes.
+  NOT FOUND:
+  - Establishment OTP login.
+  - Establishment PIN login.
+  - Establishment biometric login.
+
+Input validation and attack protections
+  IMPLEMENTED:
+  - express-validator checks ID, beneficiary type, OCR values, ID format,
+    seal flag, and related fields.
+  - Parameterized PostgreSQL queries.
+  - JWT verification, bcrypt password hashes, Helmet, CORS, body-size limits,
+    upload limits, path traversal checks, and rate limiting.
+  PARTIAL:
+  - OCR confidence is a heuristic quality score, not a cryptographic
+    authenticity check.
+  - The dedicated login-specific rate limiter is commented out; the global
+    limiter remains active.
+
+Audit logging
+  IMPLEMENTED:
+  - Verification attempts are stored in verification_logs.
+  - Manual entry, missing seal detection, login, logout, lockout, and other
+    actions can be written to audit_logs.
+  PARTIAL:
+  - Verification records identify the establishment, but not necessarily the
+    individual cashier.
+  - Database rules prevent update/delete of verification_logs and audit_logs.
+
+Data recovery
+  NOT FOUND:
+  - No application backup, restore, WAL, transaction-log export, or
+    application-level disaster-recovery process.
+  PARTIAL:
+  - ID captures and dispute files are stored in Supabase Storage; external
+    provider backup behavior is outside this repository.
+
+Cross-portal exchange
+  IMPLEMENTED:
+  - Verification results use the shared API and database.
+  - A cross-type conflict creates fraud flags for both beneficiary types.
+  - OSCA/PDAO status updates propagate to client apps through polling.
+  - The local client cache receives status changes.
+
+Language and accessibility
+  PARTIAL:
+  - The app is primarily English.
+  - Some manual-review guidance and accessibility-oriented controls exist.
+  NOT FOUND:
+  - Complete bilingual localization comparable to the Beneficiary app.
+  - A user-controlled text-size setting.
+
+Installation, deployment, and hosting
+  IMPLEMENTED:
+  - Flutter project with mobile and desktop platform directories.
+  - API URL is supplied using IDETECT_API_BASE_URL through --dart-define.
+  PARTIAL:
+  - Deployment documentation states that the shared API/staff service runs on
+    Northflank and uses Supabase PostgreSQL/Storage; infrastructure-as-code
+    proving the active mobile deployment is not present.
+
+Performance, pagination, caching, and modularity
+  IMPLEMENTED:
+  - OCR fallback threshold: approximately 20 seconds.
+  - Normal HTTP timeout: approximately 10 seconds.
+  - Offline replay timeout: 30 seconds.
+  - Status polling: every 8 seconds.
+  - Verification scan limit: 60 per establishment per minute.
+  - Verification history supports page/limit pagination.
+  - OCR, image processing, parsing, seal detection, API, local storage,
+    offline sync, status sync, and session handling are separate services.
+
+
+2. BENEFICIARY APP
+-------------------
+
+Main screens, features, and restrictions
+  IMPLEMENTED:
+  - OTP/PIN login, profile/status, transactions, disputes, notifications,
+    fraud/unauthorized-use reporting, language selection, and logout.
+  - The beneficiary can view only their own profile, transactions,
+    notifications, and disputes through account-scoped API queries.
+  - The app can submit disputes, supporting documents, and fraud reports.
+
+RBAC
+  IMPLEMENTED:
+  - Beneficiary JWTs use a dedicated secret.
+  - Beneficiary routes use authenticateBeneficiary.
+  - Account ID from the token scopes profile, transaction, notification, and
+    dispute queries.
+
+Statuses
+  IMPLEMENTED:
+  - Profile statuses: active, expired, suspended, revoked.
+  - Verification statuses: valid, suspicious, invalid, manual_review.
+  - Dispute data is displayed using API-provided workflow statuses.
+  - The app masks the ID number by default and permits temporary display.
+
+Notifications
+  IMPLEMENTED:
+  - In-app notification list, unread count, mark-one-read, and mark-all-read.
+  - Firebase foreground push messages appear as an in-app SnackBar.
+  - API-created notification types include verification_approved,
+    verification_denied, dispute_acknowledged, dispute_resolved,
+    flag_confirmed, id_expiring_soon, and general.
+  - Verification SMS and push records are created by the API.
+  PARTIAL:
+  - Some notification values used in application code depend on later schema
+    migrations being applied consistently.
+
+Offline behavior
+  NOT FOUND:
+  - Offline profile access.
+  - Offline authoritative transaction history.
+  - Offline dispute submission.
+  - Offline notification synchronization queue.
+  PARTIAL:
+  - JWT and user metadata remain in SharedPreferences, but this is not an
+    offline portal data cache.
+  Conclusion:
+  - The Beneficiary app does not provide functional offline portal operation.
+
+Error handling and fallbacks
+  IMPLEMENTED:
+  - HTTP calls use approximately ten-second timeouts.
+  - Network errors become "Cannot reach server" or localized service errors.
+  - Profile, transaction, dispute, and notification screens provide retry or
+    empty/error states.
+  NOT FOUND:
+  - OCR failure handling, because the Beneficiary app does not perform ID OCR.
+
+Authentication and rate limiting
+  IMPLEMENTED:
+  - ID number plus birthdate requests a six-digit SMS OTP.
+  - OTP is bcrypt-hashed, expires after ten minutes, and is cleared after use.
+  - OTP verification permits at most five failed attempts for the current OTP.
+  - Generic request responses reduce ID/account enumeration.
+  - Four-digit PIN setup and PIN login are implemented.
+  - local_auth is used for available biometric fallback behavior in the login
+    screen.
+  - Tokens are persisted and restored.
+  - Fifteen-minute idle timeout, two-minute warning, and automatic logout.
+  - Global API rate limit: 100 requests per 15 minutes.
+  PARTIAL:
+  - No separate request-OTP rate limiter or long-term beneficiary-account
+    lockout was found.
+
+Input validation and protections
+  IMPLEMENTED:
+  - API validation for ID, birthdate, OTP length, PIN, mobile number,
+    disputes, and uploaded documents.
+  - Basic Philippine mobile-number validation in the app.
+  - JWT authentication, bcrypt, parameterized SQL, Helmet, CORS, request
+    limits, upload limits, and account scoping.
+  PARTIAL:
+  - Persisted tokens are stored in SharedPreferences without evidence of
+    application-level encryption.
+
+Audit logging and immutability
+  IMPLEMENTED:
+  - OTP, fraud-report, dispute, notification-related, and staff actions are
+    logged where implemented by the API.
+  - Verification and audit logs are protected from update/delete by database
+    rules.
+  PARTIAL:
+  - Beneficiary self-service actions are tied to beneficiary accounts or
+    target records, not always to a staff users.id.
+
+Data recovery and cross-portal exchange
+  NOT FOUND:
+  - Application-level backup/restore or local recovery queue.
+  IMPLEMENTED:
+  - Receives establishment verification outcomes.
+  - Receives OSCA/PDAO status and fraud notifications.
+  - Submits disputes and fraud reports for staff portal processing.
+
+Language and accessibility
+  IMPLEMENTED:
+  - English and Filipino localization files.
+  - Persisted locale selection.
+  - Semantic labels, tooltips, masked sensitive IDs, and relatively large
+    text controls.
+  NOT FOUND:
+  - A dedicated user-controlled text-size setting.
+
+Installation, hosting, performance, and modularity
+  IMPLEMENTED:
+  - Flutter Android/iOS/desktop/web project.
+  - Firebase configuration for push messaging.
+  - API URL supplied through IDETECT_API_BASE_URL.
+  - Transactions, disputes, and notifications use pagination.
+  - Authentication, API, session, FCM, localization, profile, transaction,
+    dispute, and notification logic are separated.
+  PARTIAL:
+  - Backend hosting is described as Northflank plus Supabase in deployment
+    documentation, but no complete infrastructure definition is included.
+
+
+3. BPLO WEB PORTAL
+-------------------
+
+Main screens, features, and restrictions
+  IMPLEMENTED:
+  - Login, dashboard, establishment list/create/detail pages, approval,
+    suspension and revocation operations, business-refusal reports,
+    audit logs, staff management, password reset/change, bulk establishment
+    import, and breach-report generation.
+  - API establishment-management routes require bplo_admin.
+  - BPLO cannot use OSCA/PDAO beneficiary-management or fraud-flag routes.
+
+Statuses and notifications
+  IMPLEMENTED:
+  - Verification values: valid, suspicious, invalid, manual_review.
+  - Establishment values: pending, approved, suspended, revoked.
+  - Beneficiary values may appear in verification/report data.
+  - Backend SMS is used for some establishment lifecycle, password, and
+    lockout events.
+  PARTIAL:
+  - No browser push or SMS notification UI for BPLO staff was found.
+  - Notifications are primarily represented by page data and API responses.
+
+Offline and error handling
+  NOT FOUND:
+  - Browser offline cache, service worker queue, IndexedDB write queue, or
+    replay mechanism.
+  IMPLEMENTED:
+  - Axios timeout is approximately ten seconds.
+  - Token refresh is attempted for authentication failures.
+  - Failed authentication redirects to login.
+  - Page-level loading and error states exist.
+  PARTIAL:
+  - Some shared notification-related catches silently ignore failures.
+
+Authentication, session, and rate limiting
+  IMPLEMENTED:
+  - Staff email/password login with JWT in localStorage.
+  - Active-account verification occurs server-side.
+  - Three failed attempts cause a 30-minute lockout.
+  - Fifteen-minute idle timeout, two-minute warning, automatic logout, and
+    token refresh.
+  - Global API limit: 100 requests per 15 minutes.
+  NOT FOUND:
+  - Active dedicated login rate limiter; the commented implementation is not
+    enabled.
+
+Input validation and audit logging
+  IMPLEMENTED:
+  - Role checks, express-validator, parameterized SQL, bcrypt, Helmet, CORS,
+    body/upload limits, pagination, import validation, and storage path checks.
+  - Establishment management, staff, authentication, reports, exports, and
+    related operations are audited.
+  - Audit and verification logs cannot be updated or deleted by database rules.
+  PARTIAL:
+  - Browser JWTs in localStorage remain dependent on effective XSS defenses.
+  - No explicit CSRF-token mechanism was found.
+
+Data recovery and cross-portal exchange
+  NOT FOUND:
+  - Application backup, restore, WAL, or transaction-log recovery.
+  IMPLEMENTED:
+  - Establishments managed by BPLO submit scans through the shared API.
+  - BPLO can view verification history and business-refusal data.
+  - Shared database and audit/report services connect BPLO workflows to OSCA,
+    PDAO, establishments, and the Beneficiary app.
+
+Language, deployment, performance, and modularity
+  PARTIAL:
+  - Responsive browser layout and standard controls exist.
+  - No bilingual localization or text-size setting was found.
+  IMPLEMENTED:
+  - React/Vite build.
+  - Vercel SPA rewrite configuration is present.
+  - Deployment documentation describes a combined Northflank API/staff
+    service with Supabase PostgreSQL/Storage.
+  - Axios timeout: approximately ten seconds.
+  - Establishment, audit, dispute, and report APIs support pagination.
+  - Reusable AppShell, auth context, API service, hooks, charts, modals,
+    import utilities, and report components are present.
+
+
+4. OSCA WEB PORTAL
+-------------------
+
+Main screens, features, and restrictions
+  IMPLEMENTED:
+  - Login, senior-citizen dashboard, senior-citizen beneficiary list,
+    add/detail/edit/status management, fraud flags, disputes, audit logs,
+    staff management, password operations, bulk import, breach reports,
+    charts, and dashboard statistics.
+  - Frontend accepts osca_admin.
+  - API scopes OSCA beneficiary data to senior_citizen.
+
+Capabilities and statuses
+  IMPLEMENTED:
+  - Create, import, update, suspend, revoke, and restore senior-citizen
+    records.
+  - Review applicable fraud flags and disputes.
+  - Beneficiary statuses: active, expired, suspended, revoked.
+  - Fraud flag workflow: pending, reviewing, confirmed, dismissed.
+  - Verification results: valid, suspicious, invalid, manual_review.
+  - Dispute workflow statuses are retrieved from the API.
+  PARTIAL:
+  - Exact dispute display behavior depends on the returned status values and
+    localized labels used by the page.
+
+Notifications and offline behavior
+  IMPLEMENTED:
+  - In-app staff alerts through the notification bell.
+  - Staff alerts are polled every 30 seconds and can be marked read.
+  NOT FOUND:
+  - Browser push, SMS staff alerts, offline cache, offline write queue, or
+    offline synchronization.
+
+Authentication, errors, validation, and security
+  IMPLEMENTED:
+  - Staff JWT authentication, localStorage persistence, token refresh,
+    fifteen-minute idle timeout, two-minute warning, and logout redirect.
+  - Three failed logins lock the staff account for 30 minutes.
+  - Global API rate limit: 100 requests per 15 minutes.
+  - Role checks, beneficiary-type scoping, express-validator, parameterized
+    SQL, bcrypt, Helmet, CORS, pagination, import validation, and storage
+    checks.
+  PARTIAL:
+  - Login-specific rate limiting is not enabled.
+  - Some alert polling errors are silently ignored.
+  - Browser tokens are stored in localStorage; no explicit CSRF-token layer
+    was found.
+
+Audit, recovery, and cross-portal exchange
+  IMPLEMENTED:
+  - Beneficiary, fraud flag, dispute, staff, authentication, export, and
+    report actions are logged.
+  - Audit and verification logs are protected by database no-op update/delete
+    rules.
+  - OSCA status changes affect establishment verification and Beneficiary
+    status displays.
+  - Fraud flags can suspend a beneficiary and notify the Beneficiary app.
+  - Dispute resolution can restore a credential.
+  NOT FOUND:
+  - Application-level backup, restore, WAL, or recovery process.
+
+Language, deployment, performance, and modularity
+  PARTIAL:
+  - Responsive UI, semantic controls, and readable labels exist.
+  - No Filipino localization or user-controlled text sizing was found.
+  IMPLEMENTED:
+  - React/Vite build and Vercel SPA rewrite configuration.
+  - Deployment documentation describes Northflank/Supabase hosting.
+  - Axios timeout: approximately ten seconds.
+  - Beneficiary, dispute, audit, and report queries use pagination.
+  - Shared pages, hooks, API service, charts, status badges, import tools,
+    audit pages, and report components are reusable.
+
+
+5. PDAO WEB PORTAL
+-------------------
+
+Main screens, features, and restrictions
+  IMPLEMENTED:
+  - Login, PWD dashboard, PWD list, add/detail/edit/status management,
+    fraud flags, disputes, audit logs, staff management, password operations,
+    PWD bulk import, breach reports, and charts.
+  - Frontend accepts pdao_admin.
+  - API scopes PDAO beneficiary data to pwd.
+
+Capabilities and statuses
+  IMPLEMENTED:
+  - Create, import, update, suspend, revoke, and restore PWD records.
+  - Review PWD fraud flags and applicable disputes.
+  - Beneficiary statuses: active, expired, suspended, revoked.
+  - Fraud flag workflow: pending, reviewing, confirmed, dismissed.
+  - Verification results: valid, suspicious, invalid, manual_review.
+  - Dispute workflow data is retrieved from the shared API.
+
+Notifications and offline behavior
+  IMPLEMENTED:
+  - In-app staff alerts through a notification bell.
+  - Staff alerts poll every 30 seconds and support mark-all-read.
+  NOT FOUND:
+  - Browser push, SMS staff alerts, offline cache, offline writes, or
+    synchronization queues.
+
+Authentication, errors, validation, and security
+  IMPLEMENTED:
+  - Staff JWT authentication, localStorage persistence, token refresh,
+    fifteen-minute idle timeout, warning dialog, and login redirect.
+  - Three failed logins lock the account for 30 minutes.
+  - Global API rate limit: 100 requests per 15 minutes.
+  - Role/type checks, express-validator, parameterized SQL, bcrypt, Helmet,
+    CORS, pagination, import validation, upload limits, and storage checks.
+  PARTIAL:
+  - Dedicated login rate limiting is not active.
+  - Some alert polling failures are silently ignored.
+  - Browser JWTs are stored in localStorage and no explicit CSRF-token layer
+    was found.
+
+Audit, recovery, and cross-portal exchange
+  IMPLEMENTED:
+  - PWD record changes, fraud flags, disputes, staff actions, logins,
+    exports, and reports are audited.
+  - Audit and verification logs are protected against update/delete.
+  - PDAO changes affect establishment verification and Beneficiary status.
+  - Fraud and dispute workflows can suspend or restore shared credentials.
+  NOT FOUND:
+  - Application-level backup, restore, WAL, or transaction-log recovery.
+
+Language, deployment, performance, and modularity
+  PARTIAL:
+  - Responsive UI and standard accessible controls exist.
+  - No Filipino localization or text-size setting was found.
+  IMPLEMENTED:
+  - React/Vite build and Vercel SPA rewrite configuration.
+  - Deployment documentation describes Northflank/Supabase hosting.
+  - Axios timeout: approximately ten seconds.
+  - Beneficiary, fraud, dispute, audit, and report queries use pagination.
+  - Reusable API service, AuthContext, AppShell, session hook, beneficiary
+    hooks, charts, status badges, import utilities, and report components.
+
+
+6. SHARED BACKEND AND DATABASE FINDINGS
+----------------------------------------
+
+Authentication and authorization
+  - Staff, establishment, and beneficiary tokens use separate JWT secrets.
+  - Staff roles are osca_admin, pdao_admin, and bplo_admin.
+  - requireRole enforces staff role restrictions.
+  - Active staff accounts are checked in the database on authenticated
+    requests.
+
+Validation and security controls
+  - express-validator is used on major API inputs.
+  - PostgreSQL queries are parameterized.
+  - bcrypt/bcryptjs is used for passwords, OTP hashes, and PIN hashes.
+  - Helmet and CORS are configured.
+  - JSON request size is limited to 10 MB.
+  - Dispute uploads are limited to 8 MB.
+  - Uploaded-file proxy paths reject traversal sequences and unapproved
+    storage buckets.
+  - API-wide rate limiting is configured.
+
+Audit and verification evidence
+  - verification_logs stores every verification attempt, result, OCR score,
+    raw OCR text, image path, manual-entry flag, establishment, and time.
+  - audit_logs stores administrative/system actions, metadata, IP address,
+    user agent, and timestamps.
+  - Database rules prevent UPDATE and DELETE on verification_logs and
+    audit_logs.
+  - Some system actions may have no staff users.id.
+
+Reference numbers
+  - Migration 035 adds unique human-readable references:
+      DSP-YYYY-NNNNNN for disputes
+      FLG-YYYY-NNNNNN for fraud flags
+      EST-YYYY-NNNNNN for establishments
+      BEN-YYYY-NNNNNN for beneficiaries
+  - These numbers use PostgreSQL sequences and unique indexes.
+  - This supports auditability and case tracking but is not itself a backup
+    or recovery mechanism.
+
+Notifications
+  - Push uses Firebase Cloud Messaging.
+  - SMS uses Semaphore.
+  - When credentials are not configured, provider services log development
+    fallback messages to the server console.
+  - Email service code exists for some operations, but delivery guarantees
+    depend on external configuration.
+
+Data recovery
+  - No application-level backup, restore, WAL, point-in-time recovery,
+    transaction-log archive, or failover implementation was found.
+  - Supabase PostgreSQL and Storage are external managed services referenced
+    by deployment documentation.
+
+Deployment
+  - Deployment documentation describes Northflank hosting the combined
+    Node.js/Express API and staff portal.
+  - Supabase provides PostgreSQL and storage buckets for ID captures and
+    dispute documents.
+  - Separate React portal packages contain Vercel SPA rewrite files.
+  - The repository does not contain complete infrastructure-as-code proving
+    which optional deployment path is currently active.
+
+Overall conclusion
+------------------
+The strongest implemented areas are role separation, shared API
+authorization, verification outcome modeling, OCR/manual-review fallback
+paths, audit-log immutability, offline scan support in the Establishment
+client, Beneficiary app authentication, staff session timeout, pagination,
+and modular service structure.
+
+The main partial or missing areas are:
+  - The Beneficiary app does not operate as an offline portal.
+  - Web portals have no offline operation.
+  - Application-level backup and restore are not implemented.
+  - Browser staff notifications are in-app polling, not browser push/SMS.
+  - Login-specific rate limiting is not enabled beyond the global limiter.
+  - Web portals are English-only in the inspected source.
+  - Some logs identify an establishment or account rather than an individual
+    human operator.
+  - External hosting/provider backup and delivery behavior cannot be proven
+    from application source code alone.
