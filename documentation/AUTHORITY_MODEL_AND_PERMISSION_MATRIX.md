@@ -327,6 +327,9 @@ After approval, implementation should proceed in this order:
 - Each Agency Super Admin can also access the normal dashboard for its own
   agency; this does not grant access to another agency's dashboard or data.
 - Office admins retain same-role management restrictions.
+- Regular BPLO, OSCA, and PDAO Admin accounts are read-only in the Staff
+  directory. They cannot create, edit, reset, activate, deactivate, or unlock
+  staff accounts.
 - The API prevents deactivating the final active Agency Super Admin and
   prevents a Super Admin from changing their own role.
 - Role changes are recorded as `staff_role_changed`.

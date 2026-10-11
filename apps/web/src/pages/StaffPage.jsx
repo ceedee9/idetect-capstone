@@ -24,6 +24,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function StaffPage() {
   const { user } = useAuth();
+  const canManageStaff = user?.role?.endsWith("_super_admin");
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -102,10 +103,17 @@ export default function StaffPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start">
-          <button onClick={() => setShowCreate(true)} className="btn-primary">
-            <Plus className="w-4 h-4" />
-            Add Staff
-          </button>
+          {canManageStaff && (
+            <button onClick={() => setShowCreate(true)} className="btn-primary">
+              <Plus className="w-4 h-4" />
+              Add Staff
+            </button>
+          )}
+          {!canManageStaff && (
+            <span className="text-xs text-slate-500">
+              Read-only staff directory
+            </span>
+          )}
           <button
             onClick={fetchStaff}
             disabled={loading}
@@ -168,16 +176,18 @@ export default function StaffPage() {
                 <th className="text-left px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
                   Created
                 </th>
-                <th className="text-right px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
-                  Actions
-                </th>
+                {canManageStaff && (
+                  <th className="text-right px-4 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(5)].map((__, j) => (
+                    {[...Array(canManageStaff ? 5 : 4)].map((__, j) => (
                       <td key={j} className="px-4 py-2.5">
                         <div className="skeleton h-4 w-full rounded" />
                       </td>
@@ -186,7 +196,7 @@ export default function StaffPage() {
                 ))
               ) : staff.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={canManageStaff ? 5 : 4}>
                     <EmptyState
                       icon={Users}
                       tone="gov"
@@ -220,8 +230,9 @@ export default function StaffPage() {
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-400">
                       {fmtDateTime(m.created_at)}
                     </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center justify-end gap-1">
+                    {canManageStaff && (
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center justify-end gap-1">
                         <button
                           title="Edit"
                           onClick={() => setShowEdit(m)}
@@ -261,8 +272,9 @@ export default function StaffPage() {
                               <LockOpen className="w-4 h-4" />
                             </button>
                           )}
-                      </div>
-                    </td>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

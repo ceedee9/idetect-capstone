@@ -44,6 +44,15 @@ function isOfficeSuperAdmin(req) {
   return Boolean(SUPER_ADMIN_AGENCY[req.user.role]);
 }
 
+function requireOfficeSuperAdmin(req, res, next) {
+  if (!isOfficeSuperAdmin(req)) {
+    return res.status(403).json({
+      error: "Only your agency's Super Admin can manage staff accounts",
+    });
+  }
+  next();
+}
+
 function scopedStaffQuery(req, includeWhere = true) {
   return {
     sql: includeWhere ? "WHERE role = $1" : "",
@@ -129,6 +138,7 @@ router.get("/:id", param("id").isUUID(), async (req, res, next) => {
 // ── CREATE new staff account ───────────────────────────────────
 router.post(
   "/",
+  requireOfficeSuperAdmin,
   [
     body("email").isEmail().normalizeEmail(),
     body("full_name").trim().isLength({ min: 2, max: 255 }),
@@ -192,6 +202,7 @@ router.post(
 // ── UPDATE staff profile (name / email) ────────────────────────
 router.patch(
   "/:id",
+  requireOfficeSuperAdmin,
   [
     param("id").isUUID(),
     body("email").optional().isEmail().normalizeEmail(),
@@ -298,6 +309,7 @@ router.patch(
 // ── TOGGLE active status (activate / deactivate) ──────────────
 router.patch(
   "/:id/toggle-active",
+  requireOfficeSuperAdmin,
   param("id").isUUID(),
   async (req, res, next) => {
     try {
@@ -367,6 +379,7 @@ router.patch(
 // ── RESET password (admin sets new password for a staff member) ─
 router.patch(
   "/:id/reset-password",
+  requireOfficeSuperAdmin,
   [param("id").isUUID(), body("password").isLength({ min: 8, max: 128 })],
   async (req, res, next) => {
     try {
@@ -462,7 +475,11 @@ router.patch(
 );
 
 // ── UNLOCK a locked staff account ─────────────────────────────
-router.patch("/:id/unlock", param("id").isUUID(), async (req, res, next) => {
+router.patch(
+  "/:id/unlock",
+  requireOfficeSuperAdmin,
+  param("id").isUUID(),
+  async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty())
@@ -500,7 +517,8 @@ router.patch("/:id/unlock", param("id").isUUID(), async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+  },
+);
 
 // ── GET /alerts — unread staff alerts for the logged-in admin's role ──────────
 router.get("/alerts", async (req, res, next) => {
