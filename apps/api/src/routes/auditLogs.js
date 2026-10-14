@@ -64,10 +64,6 @@ router.get("/", async (req, res, next) => {
         ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
       LEFT JOIN disputes td
         ON al.target_table = 'disputes' AND td.id = al.target_id
-      LEFT JOIN beneficiary_accounts dba
-        ON al.target_table = 'disputes' AND dba.id = td.beneficiary_account_id
-      LEFT JOIN beneficiaries db
-        ON al.target_table = 'disputes' AND db.id = dba.beneficiary_id
       LEFT JOIN fraud_flags tf
         ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
       LEFT JOIN verification_logs tv
@@ -177,10 +173,6 @@ router.get("/export", async (req, res, next) => {
         ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
       LEFT JOIN disputes td
         ON al.target_table = 'disputes' AND td.id = al.target_id
-      LEFT JOIN beneficiary_accounts dba
-        ON al.target_table = 'disputes' AND dba.id = td.beneficiary_account_id
-      LEFT JOIN beneficiaries db
-        ON al.target_table = 'disputes' AND db.id = dba.beneficiary_id
       LEFT JOIN fraud_flags tf
         ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
       LEFT JOIN verification_logs tv
@@ -375,10 +367,6 @@ router.get("/report", async (req, res, next) => {
         ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
       LEFT JOIN disputes td
         ON al.target_table = 'disputes' AND td.id = al.target_id
-      LEFT JOIN beneficiary_accounts dba
-        ON al.target_table = 'disputes' AND dba.id = td.beneficiary_account_id
-      LEFT JOIN beneficiaries db
-        ON al.target_table = 'disputes' AND db.id = dba.beneficiary_id
       LEFT JOIN fraud_flags tf
         ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
       LEFT JOIN verification_logs tv
