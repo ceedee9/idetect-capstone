@@ -19,6 +19,8 @@ import {
   RefreshCw,
   Trash2,
   Ban,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useBeneficiary } from "../hooks/useBeneficiaries";
 import { beneficiariesAPI } from "../services/api";
@@ -88,6 +90,9 @@ export default function BeneficiaryDetailPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [revealedId, setRevealedId] = useState(null);
+  const [revealLoading, setRevealLoading] = useState(false);
+  const [revealError, setRevealError] = useState("");
 
   // Edit record state
   const [editForm, setEditForm] = useState(null); // null = closed
@@ -196,6 +201,21 @@ export default function BeneficiaryDetailPage() {
       setRenewError(err.response?.data?.message || "Renewal failed.");
     } finally {
       setRenewLoading(false);
+    }
+
+    async function revealId() {
+      setRevealLoading(true);
+      setRevealError("");
+      try {
+        const response = await beneficiariesAPI.revealId(id);
+        setRevealedId(response.data?.id_number || null);
+      } catch (err) {
+        setRevealError(
+          err.response?.data?.message || "Unable to reveal the ID number.",
+        );
+      } finally {
+        setRevealLoading(false);
+      }
     }
   }
 
@@ -377,7 +397,47 @@ export default function BeneficiaryDetailPage() {
               Official {isOsca ? "OSCA" : "PDAO"} registry record
             </p>
             <div>
-              <InfoRow icon={Hash} label="ID Number" value={b.id_number} mono />
+              <div className="flex items-start gap-3 py-3.5 border-b border-slate-50">
+                <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {revealedId ? (
+                    <EyeOff className="w-4 h-4 text-slate-400" />
+                  ) : (
+                    <Hash className="w-4 h-4 text-slate-400" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                    ID Number
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-sm text-slate-900 font-medium font-mono">
+                      {revealedId || b.id_number || "—"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (revealedId) {
+                          setRevealedId(null);
+                        } else {
+                          revealId();
+                        }
+                      }}
+                      disabled={revealLoading}
+                      className="text-xs font-semibold text-gov-700 hover:text-gov-900 disabled:opacity-50"
+                    >
+                      {revealLoading ? "Loading…" : revealedId ? "Hide" : "Reveal"}
+                    </button>
+                  </div>
+                  {revealError && (
+                    <p className="text-xs text-danger-600 mt-1">{revealError}</p>
+                  )}
+                  {revealedId && (
+                    <p className="text-[11px] text-amber-700 mt-1">
+                      Access recorded in the audit log.
+                    </p>
+                  )}
+                </div>
+              </div>
               <InfoRow icon={User} label="Full Name" value={fullName} />
               <InfoRow
                 icon={Calendar}

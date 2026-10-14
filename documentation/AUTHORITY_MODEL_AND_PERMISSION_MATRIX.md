@@ -354,4 +354,6 @@ After approval, implementation should proceed in this order:
   staff beneficiary/fraud/dispute/dashboard views, and CSV exports. ID values
   expose only the final two characters, while exact birth dates are omitted
   and replaced with age bands. Raw values are not returned by ordinary read
-  endpoints.
+  endpoints. Matching-agency staff may use a separate detail-page reveal
+  action when operationally necessary; each reveal is authenticated,
+  agency-scoped, and recorded as `sensitive_data_revealed` in the audit log.

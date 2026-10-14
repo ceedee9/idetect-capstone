@@ -177,6 +177,37 @@ router.get("/", async (req, res, next) => {
 });
 
 // ── GET /api/beneficiaries/:id ─────────────────────────────────
+router.get("/:id([0-9a-fA-F-]{36})/sensitive", async (req, res, next) => {
+  try {
+    const type = getTypeForRole(req.user.role);
+    const result = await pool.query(
+      `SELECT id, id_number, beneficiary_type
+       FROM beneficiaries
+       WHERE id = $1 AND beneficiary_type = $2`,
+      [req.params.id, type],
+    );
+
+    if (!result.rows.length) throw createError(404, "Beneficiary not found");
+
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
+       VALUES ($1, 'sensitive_data_revealed', 'beneficiaries', $2, $3)`,
+      [
+        req.user.id,
+        req.params.id,
+        JSON.stringify({
+          field: "id_number",
+          beneficiary_type: result.rows[0].beneficiary_type,
+        }),
+      ],
+    );
+
+    res.json({ id_number: result.rows[0].id_number });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/:id([0-9a-fA-F-]{36})", async (req, res, next) => {
   try {
     const type = getTypeForRole(req.user.role);
