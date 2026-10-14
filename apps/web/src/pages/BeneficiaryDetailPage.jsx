@@ -486,7 +486,7 @@ export default function BeneficiaryDetailPage() {
                       disabled={revealLoading}
                       aria-label={revealedId ? "Hide full ID number" : "Reveal full ID number"}
                       title={revealedId ? "Hide full ID number" : "Reveal full ID number"}
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-gov-700 hover:bg-gov-50 hover:text-gov-900 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gov-200 px-2.5 py-1 text-xs font-semibold text-gov-700 hover:bg-gov-50 hover:text-gov-900 disabled:opacity-50"
                     >
                       {revealLoading ? (
                         <span
@@ -494,9 +494,15 @@ export default function BeneficiaryDetailPage() {
                           aria-label="Loading"
                         />
                       ) : revealedId ? (
-                        <Eye className="w-4 h-4" aria-hidden="true" />
+                        <>
+                          <EyeOff className="w-4 h-4" aria-hidden="true" />
+                          Hide ID
+                        </>
                       ) : (
-                        <EyeOff className="w-4 h-4" aria-hidden="true" />
+                        <>
+                          <Eye className="w-4 h-4" aria-hidden="true" />
+                          Reveal ID
+                        </>
                       )}
                     </button>
                   </div>
@@ -720,7 +726,7 @@ export default function BeneficiaryDetailPage() {
       {/* Sensitive date-of-birth warning */}
       <ConfirmModal
         open={modal === "reveal_sensitive"}
-        onClose={() => setModal(null)}
+        onClose={() => navigate("/beneficiaries")}
         onConfirm={async () => {
           if (await openSensitiveDetail()) {
             setReauthPassword("");
