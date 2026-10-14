@@ -107,12 +107,12 @@ function appendAuditScope(query, params, index, role) {
                 OR EXISTS (
                   SELECT 1 FROM verification_logs scope_v
                   WHERE scope_v.id = al.target_id
-                    AND scope_v.beneficiary_type_detected = $${typeIndex}
+                    AND scope_v.beneficiary_type_detected::text = $${typeIndex}
                 )
                 OR EXISTS (
                   SELECT 1 FROM fraud_flags scope_f
                   WHERE scope_f.id = al.target_id
-                    AND scope_f.beneficiary_type = $${typeIndex}
+                    AND scope_f.beneficiary_type::text = $${typeIndex}
                 )
               )
             )
