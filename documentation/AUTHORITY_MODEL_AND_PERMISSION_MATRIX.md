@@ -46,6 +46,11 @@ The existing `bplo_admin`, `osca_admin`, and `pdao_admin` roles remain domain
 roles. Each agency's Super Admin manages only its matching admin role. There is
 no overall Super Admin role and no cross-agency staff administrator.
 
+The legacy PostgreSQL enum label `super_admin` may remain from the earlier
+migration history because PostgreSQL does not safely remove enum values in
+place. It is retired: the API does not accept it, no account is provisioned
+with it, and it must not be used for new accounts.
+
 ### Establishment roles
 
 | Role | Scope | Primary purpose |
@@ -111,7 +116,7 @@ view another beneficiary's protected information.
 - Review business-refusal disputes.
 - Review establishment activity and related audit records.
 - Review establishment-submitted fraud flags as permitted by workflow.
-- Manage BPLO staff workflows that are explicitly assigned to the role.
+- View the BPLO staff directory in read-only mode.
 
 #### Restricted or conditional
 
@@ -147,6 +152,8 @@ view another beneficiary's protected information.
 - IDs, age, and other sensitive data are masked by default and exposed only
   when needed for an authorized case.
 - Bulk operations require validation, preview, confirmation, and audit logging.
+- Staff-account administration is restricted to the OSCA Super Admin; the OSCA
+  Admin staff directory is read-only.
 
 #### Never allowed
 
@@ -160,6 +167,9 @@ PDAO has the same general authority pattern as OSCA, but its normal scope is
 PWD beneficiary records and related PDAO workflows. PDAO cannot manage OSCA
 records, BPLO establishment administration, or staff roles unless a separate
 cross-office authorization is explicitly implemented.
+
+The PDAO Admin staff directory is read-only; staff-account administration is
+restricted to the PDAO Super Admin.
 
 ## Establishment authority
 
@@ -326,6 +336,9 @@ After approval, implementation should proceed in this order:
   accounts, and change roles only within that agency.
 - Each Agency Super Admin can also access the normal dashboard for its own
   agency; this does not grant access to another agency's dashboard or data.
+- Staff authorization tests cover regular-admin denial, matching-agency
+  Super Admin access, cross-agency denial, agency-scoped staff UUID lookups,
+  database-backed role refresh, and rejection of the retired global role.
 - Office admins retain same-role management restrictions.
 - Regular BPLO, OSCA, and PDAO Admin accounts are read-only in the Staff
   directory. They cannot create, edit, reset, activate, deactivate, or unlock
@@ -337,3 +350,8 @@ After approval, implementation should proceed in this order:
   they require a separate establishment-user schema and invitation workflow.
 - Each Agency Super Admin must be provisioned through a controlled
   deployment/database process; no default Super Admin password is seeded.
+- F-05/F-06 privacy baseline is enforced on beneficiary-facing API responses,
+  staff beneficiary/fraud/dispute/dashboard views, and CSV exports. ID values
+  expose only the final two characters, while exact birth dates are omitted
+  and replaced with age bands. Raw values are not returned by ordinary read
+  endpoints.

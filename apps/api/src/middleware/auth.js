@@ -28,15 +28,20 @@ const authenticate = async (req, res, next) => {
     // Confirm the user still exists and is active in the DB.
     // This invalidates tokens for deactivated/deleted accounts immediately.
     const result = await pool.query(
-      "SELECT id, is_active FROM users WHERE id = $1",
+      "SELECT id, is_active, role, full_name FROM users WHERE id = $1",
       [decoded.id],
     );
     if (!result.rows.length || !result.rows[0].is_active) {
       return res.status(401).json({ error: "Account not found or inactive" });
     }
 
-    req.user = decoded;
-    req.user.portalRole = normalizeStaffRole(decoded.role);
+    const currentUser = result.rows[0];
+    req.user = {
+      ...decoded,
+      role: currentUser.role,
+      full_name: currentUser.full_name || decoded.full_name,
+      portalRole: normalizeStaffRole(currentUser.role),
+    };
     next();
   } catch (err) {
     if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {

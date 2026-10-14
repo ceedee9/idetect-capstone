@@ -12,6 +12,7 @@ const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
+const { maskBeneficiary } = require("../utils/privacy");
 
 const router = express.Router();
 const DEFAULT_MAX_IMPORT_ROWS = 20000;
@@ -162,7 +163,7 @@ router.get("/", async (req, res, next) => {
     const countResult = await pool.query(countQuery, countParams);
 
     res.json({
-      data: result.rows,
+      data: result.rows.map(maskBeneficiary),
       pagination: {
         page,
         limit,
@@ -186,7 +187,7 @@ router.get("/:id([0-9a-fA-F-]{36})", async (req, res, next) => {
     );
 
     if (!result.rows.length) throw createError(404, "Beneficiary not found");
-    res.json(result.rows[0]);
+    res.json(maskBeneficiary(result.rows[0]));
   } catch (err) {
     next(err);
   }
@@ -445,7 +446,7 @@ router.get("/recently-auto-suspended", async (req, res, next) => {
     );
 
     res.json({
-      data: result.rows,
+      data: result.rows.map(maskBeneficiary),
       total: result.rows.length,
       window_hours: hours,
     });
@@ -475,7 +476,7 @@ router.get("/expiring-soon", async (req, res, next) => {
     );
 
     res.json({
-      data: result.rows,
+      data: result.rows.map(maskBeneficiary),
       total: result.rows.length,
       window_days: days,
     });
@@ -565,7 +566,7 @@ router.post(
         [req.user.id, result.rows[0].id, JSON.stringify({ id_number })],
       );
 
-      res.status(201).json(result.rows[0]);
+      res.status(201).json(maskBeneficiary(result.rows[0]));
     } catch (err) {
       next(err);
     }
@@ -659,7 +660,7 @@ router.put(
         ],
       );
 
-      res.json(updated.rows[0]);
+      res.json(maskBeneficiary(updated.rows[0]));
     } catch (err) {
       next(err);
     }

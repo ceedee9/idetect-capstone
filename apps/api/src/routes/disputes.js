@@ -19,6 +19,7 @@ const {
   requireRole,
 } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
+const { maskBeneficiary } = require("../utils/privacy");
 const { sendPushNotification } = require("../services/fcmService");
 const { sendSms } = require("../services/smsService");
 const {
@@ -264,7 +265,7 @@ router.get("/mine", authenticateBeneficiary, async (req, res, next) => {
     );
 
     res.json({
-      data: result.rows,
+      data: result.rows.map(maskBeneficiary),
       pagination: {
         page,
         limit,

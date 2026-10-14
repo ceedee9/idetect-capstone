@@ -21,7 +21,6 @@ import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
 import EmptyState from "../components/EmptyState";
-import { fmtDate, calcAge } from "../utils/date";
 import { PDAO_DISABILITY_FILTER_OPTIONS } from "../constants/disabilityTypes";
 
 const STATUS_TABS = [
@@ -347,7 +346,6 @@ export default function BeneficiariesPage() {
                 </tr>
               ) : (
                 filtered.map((b) => {
-                  const age = calcAge(b.date_of_birth);
                   const fallbackName = b.full_name || "Unknown beneficiary";
                   const displayName =
                     b.last_name || b.first_name
@@ -408,10 +406,7 @@ export default function BeneficiariesPage() {
                       {/* Age */}
                       <td className="px-5 py-2.5 hidden lg:table-cell">
                         <p className="text-slate-700 font-medium">
-                          {age ? `${age} yrs` : "—"}
-                        </p>
-                        <p className="font-mono text-xs text-slate-400">
-                          {fmtDate(b.date_of_birth)}
+                          {b.age_band?.replaceAll("_", " ") || "—"}
                         </p>
                       </td>
                       {/* Status */}

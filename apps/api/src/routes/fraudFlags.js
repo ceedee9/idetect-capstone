@@ -15,6 +15,7 @@ const {
   requireRole,
 } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
+const { maskBeneficiary } = require("../utils/privacy");
 
 const router = express.Router();
 
@@ -375,7 +376,7 @@ router.get(
       const countResult = await pool.query(countQuery, countParams);
 
       res.json({
-        data: result.rows,
+        data: result.rows.map(maskBeneficiary),
         pagination: {
           page,
           limit,

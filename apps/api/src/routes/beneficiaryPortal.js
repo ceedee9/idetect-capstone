@@ -11,6 +11,7 @@ const { body, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticateBeneficiary } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
+const { maskBeneficiary } = require("../utils/privacy");
 
 const router = express.Router();
 
@@ -51,7 +52,7 @@ router.get("/me", async (req, res, next) => {
       effectiveStatus = "expired";
     }
 
-    res.json({
+    res.json(maskBeneficiary({
       id: b.id,
       id_number: b.id_number,
       full_name: b.full_name,
@@ -69,7 +70,7 @@ router.get("/me", async (req, res, next) => {
         active_disputes: parseInt(b.active_disputes),
       },
       updated_at: b.updated_at,
-    });
+    }));
   } catch (err) {
     next(err);
   }

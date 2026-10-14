@@ -25,7 +25,7 @@ import { beneficiariesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
-import { fmtDate, fmtDateTime, fmtRelative, calcAge } from "../utils/date";
+import { fmtDateTime, fmtRelative } from "../utils/date";
 
 // Maps each action modal to the status it sets.
 const STATUS_FOR_MODAL = {
@@ -147,7 +147,6 @@ export default function BeneficiaryDetailPage() {
     setEditError("");
     setEditForm({
       full_name: b.full_name || "",
-      birthdate: b.date_of_birth || b.birthdate || "",
       issuing_office: b.issuing_office || "",
       registered_mobile: b.contact_number || b.registered_mobile || "",
     });
@@ -249,7 +248,6 @@ export default function BeneficiaryDetailPage() {
       </div>
     );
 
-  const age = calcAge(b.date_of_birth || b.birthdate);
   const fullName =
     b.last_name || b.first_name
       ? `${b.last_name || ""}${b.last_name && b.first_name ? "," : ""} ${b.first_name || ""}${b.middle_name ? " " + b.middle_name : ""}`.trim()
@@ -297,7 +295,7 @@ export default function BeneficiaryDetailPage() {
             </div>
             <p className="text-slate-400 text-sm mt-0.5 font-medium">
               {beneficiaryTypeLabel} ·{" "}
-              {age ? `${age} years old` : "Age unknown"} · {b.id_number}
+              {b.age_band?.replaceAll("_", " ") || "Age unknown"} · {b.id_number}
             </p>
             <p className="font-mono text-xs text-slate-400 mt-0.5">
               Ref: {b.reference_no}
@@ -383,8 +381,8 @@ export default function BeneficiaryDetailPage() {
               <InfoRow icon={User} label="Full Name" value={fullName} />
               <InfoRow
                 icon={Calendar}
-                label="Date of Birth"
-                value={`${fmtDate(b.date_of_birth || b.birthdate)}${age ? ` (${age} years old)` : ""}`}
+                label="Age band"
+                value={b.age_band?.replaceAll("_", " ")}
               />
               <InfoRow
                 icon={MapPin}
@@ -678,17 +676,6 @@ export default function BeneficiaryDetailPage() {
                     setEditForm((f) => ({ ...f, full_name: e.target.value }))
                   }
                   required
-                />
-              </div>
-              <div>
-                <label className="label">Date of Birth</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={editForm.birthdate}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, birthdate: e.target.value }))
-                  }
                 />
               </div>
               <div>

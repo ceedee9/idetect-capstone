@@ -8,6 +8,7 @@
 const express = require("express");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
+const { maskIdNumber } = require("../utils/privacy");
 
 const router = express.Router();
 
@@ -108,7 +109,7 @@ router.get("/verifications/export", async (req, res, next) => {
       [
         escCsv(r.reference_no),
         r.verified_at ? new Date(r.verified_at).toISOString() : "",
-        escCsv(r.id_number_scanned),
+        escCsv(maskIdNumber(r.id_number_scanned)),
         escCsv(r.beneficiary_name),
         r.beneficiary_type_detected || "",
         r.result || "",
@@ -188,7 +189,7 @@ router.get("/fraud-flags/export", async (req, res, next) => {
     const rows = result.rows.map((r) =>
       [
         r.flagged_at ? new Date(r.flagged_at).toISOString() : "",
-        escCsv(r.id_number_flagged),
+        escCsv(maskIdNumber(r.id_number_flagged)),
         escCsv(r.beneficiary_name),
         r.beneficiary_type || "",
         r.flag_status || "",
@@ -276,7 +277,7 @@ router.get("/disputes/export", async (req, res, next) => {
         r.dispute_type || "",
         r.status || "",
         escCsv(r.beneficiary_name),
-        escCsv(r.beneficiary_id_number),
+        escCsv(maskIdNumber(r.beneficiary_id_number)),
         escCsv(r.establishment_name),
         escCsv(r.description),
         escCsv(r.staff_response),

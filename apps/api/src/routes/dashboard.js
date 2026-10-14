@@ -7,6 +7,7 @@
 const express = require("express");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
+const { maskIdNumber } = require("../utils/privacy");
 
 const router = express.Router();
 
@@ -130,7 +131,10 @@ async function getBeneficiaryPortalStats(beneficiaryType) {
       date: r.date,
       count: r.count,
     })),
-    topFlagged: topFlaggedResult.rows,
+    topFlagged: topFlaggedResult.rows.map((row) => ({
+      ...row,
+      id_number: maskIdNumber(row.id_number),
+    })),
   };
 }
 
