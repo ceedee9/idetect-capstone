@@ -423,9 +423,20 @@ export default function BeneficiaryDetailPage() {
                         }
                       }}
                       disabled={revealLoading}
-                      className="text-xs font-semibold text-gov-700 hover:text-gov-900 disabled:opacity-50"
+                      aria-label={revealedId ? "Hide full ID number" : "Reveal full ID number"}
+                      title={revealedId ? "Hide full ID number" : "Reveal full ID number"}
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-gov-700 hover:bg-gov-50 hover:text-gov-900 disabled:opacity-50"
                     >
-                      {revealLoading ? "Loading…" : revealedId ? "Hide" : "Reveal"}
+                      {revealLoading ? (
+                        <span
+                          className="w-3.5 h-3.5 border-2 border-gov-200 border-t-gov-700 rounded-full animate-spin"
+                          aria-label="Loading"
+                        />
+                      ) : revealedId ? (
+                        <EyeOff className="w-4 h-4" aria-hidden="true" />
+                      ) : (
+                        <Eye className="w-4 h-4" aria-hidden="true" />
+                      )}
                     </button>
                   </div>
                   {revealError && (
