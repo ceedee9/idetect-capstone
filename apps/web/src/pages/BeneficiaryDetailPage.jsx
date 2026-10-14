@@ -93,6 +93,9 @@ export default function BeneficiaryDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [actionReason, setActionReason] = useState("");
+  const [suspensionStartDate, setSuspensionStartDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [suspensionEndDate, setSuspensionEndDate] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -124,6 +127,7 @@ export default function BeneficiaryDetailPage() {
     setModal(null);
     setActionError("");
     setActionReason("");
+    setSuspensionStartDate(new Date().toISOString().slice(0, 10));
     setSuspensionEndDate("");
   }
 
@@ -138,6 +142,13 @@ export default function BeneficiaryDetailPage() {
       setActionError("A suspension end date is required.");
       return;
     }
+    if (
+      newStatus === "suspended" &&
+      suspensionEndDate < suspensionStartDate
+    ) {
+      setActionError("Suspension end date cannot be earlier than the start date.");
+      return;
+    }
     setActionLoading(true);
     setActionError("");
     try {
@@ -145,7 +156,7 @@ export default function BeneficiaryDetailPage() {
         id,
         newStatus,
         actionReason.trim() || undefined,
-        undefined,
+        modal === "suspend" ? suspensionStartDate : undefined,
         modal === "suspend" ? suspensionEndDate : undefined,
       );
       setSuccessMsg(`Status updated to ${newStatus} successfully.`);
@@ -754,6 +765,36 @@ export default function BeneficiaryDetailPage() {
         variant="warn"
         loading={actionLoading}
       >
+        <textarea
+          className="input mt-3 min-h-20 resize-y"
+          placeholder="Suspension reason (required)"
+          maxLength={2500}
+          value={actionReason}
+          onChange={(e) => setActionReason(e.target.value)}
+        />
+        <p className="text-right text-xs text-slate-400 mt-1">
+          {actionReason.length} / 2,500 characters
+        </p>
+        <label className="block text-xs font-semibold text-slate-500 mt-3">
+          Suspension start date
+          <input
+            type="date"
+            className="input mt-1"
+            min={new Date().toISOString().slice(0, 10)}
+            value={suspensionStartDate}
+            onChange={(e) => setSuspensionStartDate(e.target.value)}
+          />
+        </label>
+        <label className="block text-xs font-semibold text-slate-500 mt-3">
+          Suspension end date
+          <input
+            type="date"
+            className="input mt-1"
+            min={suspensionStartDate}
+            value={suspensionEndDate}
+            onChange={(e) => setSuspensionEndDate(e.target.value)}
+          />
+        </label>
         {actionError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />
@@ -794,20 +835,11 @@ export default function BeneficiaryDetailPage() {
       >
         <input
           className="input mt-3"
-          placeholder="Reason (required)"
+          placeholder="Revocation reason (required)"
+          maxLength={2500}
           value={actionReason}
           onChange={(e) => setActionReason(e.target.value)}
         />
-        <label className="block text-xs font-semibold text-slate-500 mt-3">
-          Suspension end date
-          <input
-            type="date"
-            className="input mt-1"
-            min={new Date().toISOString().slice(0, 10)}
-            value={suspensionEndDate}
-            onChange={(e) => setSuspensionEndDate(e.target.value)}
-          />
-        </label>
         {actionError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />

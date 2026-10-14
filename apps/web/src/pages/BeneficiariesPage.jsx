@@ -41,6 +41,11 @@ export default function BeneficiariesPage() {
   const [modal, setModal] = useState(null); // { beneficiary, action: 'activate'|'suspend' }
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [actionReason, setActionReason] = useState("");
+  const [suspensionStartDate, setSuspensionStartDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [suspensionEndDate, setSuspensionEndDate] = useState("");
   const [toast, setToast] = useState(null);
   const [expiringSoon, setExpiringSoon] = useState([]);
   const [autoSuspended, setAutoSuspended] = useState([]);
@@ -109,12 +114,39 @@ export default function BeneficiariesPage() {
     setActionLoading(true);
     setActionError("");
     const newStatus = modal.action === "activate" ? "active" : "suspended";
+    if (newStatus === "suspended" && !actionReason.trim()) {
+      setActionError("A suspension reason is required.");
+      setActionLoading(false);
+      return;
+    }
+    if (newStatus === "suspended" && !suspensionEndDate) {
+      setActionError("A suspension end date is required.");
+      setActionLoading(false);
+      return;
+    }
+    if (
+      newStatus === "suspended" &&
+      suspensionEndDate < suspensionStartDate
+    ) {
+      setActionError("Suspension end date cannot be earlier than the start date.");
+      setActionLoading(false);
+      return;
+    }
     try {
-      await beneficiariesAPI.updateStatus(modal.beneficiary.id, newStatus);
+      await beneficiariesAPI.updateStatus(
+        modal.beneficiary.id,
+        newStatus,
+        actionReason.trim() || undefined,
+        newStatus === "suspended" ? suspensionStartDate : undefined,
+        newStatus === "suspended" ? suspensionEndDate : undefined,
+      );
       showToast(
         `${modal.beneficiary.first_name} ${modal.beneficiary.last_name} marked as ${newStatus}.`,
       );
       setModal(null);
+      setActionReason("");
+      setSuspensionStartDate(new Date().toISOString().slice(0, 10));
+      setSuspensionEndDate("");
       await refetch();
     } catch (err) {
       setActionError(err.response?.data?.message || "Action failed.");
@@ -467,6 +499,9 @@ export default function BeneficiariesPage() {
         onClose={() => {
           setModal(null);
           setActionError("");
+          setActionReason("");
+          setSuspensionStartDate(new Date().toISOString().slice(0, 10));
+          setSuspensionEndDate("");
         }}
         onConfirm={handleAction}
         title={`Activate ${entityLabel}`}
@@ -489,6 +524,9 @@ export default function BeneficiariesPage() {
         onClose={() => {
           setModal(null);
           setActionError("");
+          setActionReason("");
+          setSuspensionStartDate(new Date().toISOString().slice(0, 10));
+          setSuspensionEndDate("");
         }}
         onConfirm={handleAction}
         title={`Suspend ${entityLabel}`}
@@ -497,6 +535,36 @@ export default function BeneficiariesPage() {
         variant="warn"
         loading={actionLoading}
       >
+        <textarea
+          className="input mt-3 min-h-20 resize-y"
+          placeholder="Suspension reason (required)"
+          maxLength={2500}
+          value={actionReason}
+          onChange={(e) => setActionReason(e.target.value)}
+        />
+        <p className="text-right text-xs text-slate-400 mt-1">
+          {actionReason.length} / 2,500 characters
+        </p>
+        <label className="block text-xs font-semibold text-slate-500 mt-3">
+           Suspension start date
+          <input
+            type="date"
+            className="input mt-1"
+            min={new Date().toISOString().slice(0, 10)}
+             value={suspensionStartDate}
+             onChange={(e) => setSuspensionStartDate(e.target.value)}
+           />
+        </label>
+        <label className="block text-xs font-semibold text-slate-500 mt-3">
+           Suspension end date
+           <input
+             type="date"
+             className="input mt-1"
+             min={suspensionStartDate}
+            value={suspensionEndDate}
+            onChange={(e) => setSuspensionEndDate(e.target.value)}
+          />
+        </label>
         {actionError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4" />

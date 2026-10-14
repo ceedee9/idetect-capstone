@@ -826,6 +826,9 @@ router.patch(
       if (status === "suspended" && !endDate) {
         throw createError(400, "A suspension end date is required.");
       }
+      if (status === "suspended" && !status_reason?.trim()) {
+        throw createError(400, "A suspension reason is required.");
+      }
       if (
         status === "suspended" &&
         new Date(endDate) < new Date(startDate)
