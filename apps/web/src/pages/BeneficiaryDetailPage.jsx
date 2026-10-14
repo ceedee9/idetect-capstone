@@ -440,7 +440,10 @@ export default function BeneficiaryDetailPage() {
                     </button>
                   </div>
                   {revealError && (
-                    <p className="text-xs text-danger-600 mt-1">{revealError}</p>
+                    <p className="text-xs text-danger-600 mt-1 max-w-sm">
+                      {revealError} Try refreshing the page if the problem
+                      persists.
+                    </p>
                   )}
                   {revealedId && (
                     <p className="text-[11px] text-amber-700 mt-1">

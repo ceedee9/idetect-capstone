@@ -148,6 +148,9 @@ async function runStartupMigrations() {
     await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'verification_performed';
     `);
+    await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'sensitive_data_revealed';
+    `);
     console.log("✅ Startup migrations applied.");
   } catch (err) {
     console.warn("⚠️  Startup migration warning:", err.message);
