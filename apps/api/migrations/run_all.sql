@@ -94,5 +94,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 041: beneficiary suspension dates'
 \i 041_add_beneficiary_suspension_dates.sql
 
+\echo '>>> Running migration 042: establishment users'
+\i 042_add_establishment_users.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='

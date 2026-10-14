@@ -173,6 +173,24 @@ restricted to the PDAO Super Admin.
 
 ## Establishment authority
 
+### Establishment account foundation (Phase 2B)
+
+The API now has an `establishment_users` table for individual establishment
+accounts. The migration automatically converts each existing shared
+establishment login into an `establishment_super_user` record, so the current
+mobile client remains compatible while the account model is upgraded.
+
+New establishment login tokens carry both the establishment ID and the
+establishment-user ID. Existing establishment-level ownership checks remain
+based on the authenticated establishment relationship; client-supplied
+establishment IDs are not used to grant access. New verification logs and
+fraud flags also record the individual establishment user when available.
+
+The migration is intentionally compatibility-backed: the legacy
+`establishments.email` and `establishments.password_hash` fields remain during
+rollout. Password changes synchronize both records until the legacy login is
+retired.
+
 ### Establishment Super User
 
 #### Allowed

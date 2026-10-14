@@ -337,14 +337,15 @@ router.post(
       // Save the verification log
       const logResult = await pool.query(
         `INSERT INTO verification_logs
-         (establishment_id, beneficiary_id, id_number_scanned,
+         (establishment_id, establishment_user_id, beneficiary_id, id_number_scanned,
           beneficiary_type_detected, result, ocr_confidence_score,
           ocr_raw_text, image_path, manually_entered,
           extracted_name, extracted_dob, name_match_score, fields_matched,id_format)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        RETURNING id, reference_no, verified_at`,
         [
           establishment_id,
+          req.establishment.establishment_user_id || null,
           beneficiary_id,
           id_number,
           beneficiary_type,
@@ -395,12 +396,13 @@ router.post(
         // Flag for the scanned type (e.g. the senior_citizen portal)
         await pool.query(
           `INSERT INTO fraud_flags
-           (verification_log_id, establishment_id, beneficiary_id,
+           (verification_log_id, establishment_id, establishment_user_id, beneficiary_id,
             id_number_flagged, beneficiary_type, establishment_notes)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [
             log.id,
             establishment_id,
+            req.establishment.establishment_user_id || null,
             beneficiary_id,
             id_number,
             beneficiary_type,
@@ -413,12 +415,13 @@ router.post(
           beneficiary_type === "senior_citizen" ? "pwd" : "senior_citizen";
         await pool.query(
           `INSERT INTO fraud_flags
-           (verification_log_id, establishment_id, beneficiary_id,
+           (verification_log_id, establishment_id, establishment_user_id, beneficiary_id,
             id_number_flagged, beneficiary_type, establishment_notes)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [
             log.id,
             establishment_id,
+            req.establishment.establishment_user_id || null,
             beneficiary_id,
             id_number,
             actualType,

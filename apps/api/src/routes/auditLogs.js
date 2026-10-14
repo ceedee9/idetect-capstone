@@ -17,6 +17,55 @@ const {
 
 const router = express.Router();
 
+const ESTABLISHMENT_AUDIT_ACTIONS = [
+  "verification_performed",
+  "verification_action_taken",
+  "flag_created",
+];
+
+function appendAuditScope(query, params, index, role) {
+  const agencyAdminRole = {
+    bplo_super_admin: "bplo_admin",
+    osca_super_admin: "osca_admin",
+    pdao_super_admin: "pdao_admin",
+  }[role];
+  const allowedRoles = agencyAdminRole ? [agencyAdminRole, role] : [role];
+  const rolePlaceholders = allowedRoles.map(
+    (_, offset) => `$${index + offset}`,
+  );
+  params.push(...allowedRoles);
+
+  if (!["osca_admin", "osca_super_admin", "pdao_admin", "pdao_super_admin"].includes(role)) {
+    return {
+      query: `${query} AND u.role IN (${rolePlaceholders.join(", ")})`,
+      index: index + allowedRoles.length,
+    };
+  }
+
+  const beneficiaryType = role.startsWith("pdao") ? "pwd" : "senior_citizen";
+  const typeIndex = index + allowedRoles.length;
+  const actionIndex = typeIndex + 1;
+  params.push(beneficiaryType);
+  params.push(ESTABLISHMENT_AUDIT_ACTIONS);
+
+  return {
+    query: `${query} AND (
+      u.role IN (${rolePlaceholders.join(", ")})
+      OR (
+        u.id IS NULL
+        AND al.establishment_id IS NOT NULL
+        AND al.action = ANY($${typeIndex + 1}::audit_action[])
+        AND COALESCE(
+          al.metadata->>'beneficiary_type',
+          tv.beneficiary_type_detected::text,
+          tf.beneficiary_type::text
+        ) = $${typeIndex}
+      )
+    )`,
+    index: actionIndex + 1,
+  };
+}
+
 router.use(authenticate);
 router.use(requireRole([
   "bplo_super_admin",
@@ -72,20 +121,14 @@ router.get("/", async (req, res, next) => {
     const params = [];
     let idx = 1;
 
-    const agencyAdminRole = {
-      bplo_super_admin: "bplo_admin",
-      osca_super_admin: "osca_admin",
-      pdao_super_admin: "pdao_admin",
-    }[req.user.role];
-    if (agencyAdminRole) {
-      query += ` AND u.role IN ($${idx}, $${idx + 1})`;
-      params.push(agencyAdminRole, req.user.role);
-      idx += 2;
-    } else {
-      query += ` AND u.role = $${idx}`;
-      params.push(req.user.role);
-      idx++;
-    }
+    const auditScope = appendAuditScope(
+      query,
+      params,
+      idx,
+      req.user.role,
+    );
+    query = auditScope.query;
+    idx = auditScope.index;
 
     if (action) {
       query += ` AND al.action = $${idx}`;
@@ -187,16 +230,14 @@ router.get("/export", async (req, res, next) => {
     const params = [];
     let idx = 1;
 
-    const agencyAdminRole = {
-      bplo_super_admin: "bplo_admin",
-      osca_super_admin: "osca_admin",
-      pdao_super_admin: "pdao_admin",
-    }[req.user.role];
-    query += agencyAdminRole
-      ? ` AND u.role IN ($${idx}, $${idx + 1})`
-      : ` AND u.role = $${idx}`;
-    params.push(...(agencyAdminRole ? [agencyAdminRole, req.user.role] : [req.user.role]));
-    idx += agencyAdminRole ? 2 : 1;
+    const auditScope = appendAuditScope(
+      query,
+      params,
+      idx,
+      req.user.role,
+    );
+    query = auditScope.query;
+    idx = auditScope.index;
 
     if (action) {
       query += ` AND al.action = $${idx}`;
@@ -323,16 +364,20 @@ router.get("/report", async (req, res, next) => {
     const format = q.format === "json" ? "json" : "csv";
 
     const params = [period.start, period.end];
-    let where = `al.created_at >= $1::date AND al.created_at < ($2::date + INTERVAL '1 day')`;
     const agencyAdminRole = {
       bplo_super_admin: "bplo_admin",
       osca_super_admin: "osca_admin",
       pdao_super_admin: "pdao_admin",
     }[req.user.role];
-    params.push(...(agencyAdminRole ? [agencyAdminRole, req.user.role] : [req.user.role]));
-    where += agencyAdminRole
-      ? ` AND u.role IN ($${params.length - 1}, $${params.length})`
-      : ` AND u.role = $${params.length}`;
+    let where = `al.created_at >= $1::date AND al.created_at < ($2::date + INTERVAL '1 day')`;
+    const scopeStartIndex = params.length + 1;
+    const scoped = appendAuditScope(
+      "",
+      params,
+      scopeStartIndex,
+      req.user.role,
+    );
+    where += scoped.query;
 
     let actions = def.actions;
     if (q.action) {

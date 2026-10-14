@@ -228,7 +228,19 @@ router.post(
       const { email, password } = req.body;
 
       const result = await pool.query(
-        `SELECT * FROM establishments WHERE email = $1`,
+        `SELECT
+           e.*,
+           eu.id AS establishment_user_id,
+           eu.full_name AS user_full_name,
+           eu.role AS user_role,
+           eu.account_status AS user_account_status,
+           eu.password_hash AS user_password_hash,
+           eu.failed_attempts AS user_failed_attempts,
+           eu.locked_until AS user_locked_until,
+           eu.password_reset_required
+         FROM establishments e
+         LEFT JOIN establishment_users eu ON eu.establishment_id = e.id
+         WHERE lower(e.email) = lower($1) OR lower(eu.email) = lower($1)`,
         [email],
       );
 
@@ -248,12 +260,32 @@ router.post(
       }
 
       // Check lockout
+      const userAccountStatus = establishment.user_account_status || "active";
       if (
-        establishment.locked_until &&
-        new Date() < new Date(establishment.locked_until)
+        userAccountStatus !== "active" &&
+        !(
+          userAccountStatus === "locked" &&
+          establishment.user_locked_until &&
+          new Date() >= new Date(establishment.user_locked_until)
+        )
+      ) {
+        throw createError(
+          403,
+          "Your establishment user account is not active.",
+        );
+      }
+
+      if (
+        (establishment.user_locked_until || establishment.locked_until) &&
+        new Date() <
+          new Date(establishment.user_locked_until || establishment.locked_until)
       ) {
         const mins = Math.ceil(
-          (new Date(establishment.locked_until) - new Date()) / 60000,
+          (new Date(
+            establishment.user_locked_until || establishment.locked_until,
+          ) -
+            new Date()) /
+            60000,
         );
         throw createError(
           423,
@@ -263,10 +295,13 @@ router.post(
 
       const passwordMatch = await bcrypt.compare(
         password,
-        establishment.password_hash,
+        establishment.user_password_hash || establishment.password_hash,
       );
       if (!passwordMatch) {
-        const newAttempts = (establishment.failed_attempts || 0) + 1;
+          const newAttempts =
+            (establishment.user_failed_attempts ??
+              establishment.failed_attempts ??
+              0) + 1;
         await pool.query(
           `INSERT INTO audit_logs (establishment_id, action, metadata, ip_address)
            VALUES ($1, 'login_failed', $2, $3)`,
@@ -281,6 +316,12 @@ router.post(
         );
         if (newAttempts >= LOGIN_MAX_ATTEMPTS) {
           const lockUntil = new Date(Date.now() + LOGIN_LOCKOUT_MS);
+          if (establishment.establishment_user_id) {
+            await pool.query(
+              "UPDATE establishment_users SET failed_attempts = $1, locked_until = $2, account_status = 'locked' WHERE id = $3",
+              [newAttempts, lockUntil, establishment.establishment_user_id],
+            );
+          }
           await pool.query(
             "UPDATE establishments SET failed_attempts = $1, locked_until = $2 WHERE id = $3",
             [newAttempts, lockUntil, establishment.id],
@@ -309,6 +350,12 @@ router.post(
             "Account locked after too many failed attempts. Try again in 30 minutes or contact BPLO.",
           );
         }
+        if (establishment.establishment_user_id) {
+          await pool.query(
+            "UPDATE establishment_users SET failed_attempts = $1 WHERE id = $2",
+            [newAttempts, establishment.establishment_user_id],
+          );
+        }
         await pool.query(
           "UPDATE establishments SET failed_attempts = $1 WHERE id = $2",
           [newAttempts, establishment.id],
@@ -321,6 +368,12 @@ router.post(
       }
 
       // Success — clear failed attempts and lockout
+      if (establishment.establishment_user_id) {
+        await pool.query(
+          "UPDATE establishment_users SET failed_attempts = 0, locked_until = NULL, account_status = 'active', last_login_at = NOW() WHERE id = $1",
+          [establishment.establishment_user_id],
+        );
+      }
       await pool.query(
         "UPDATE establishments SET failed_attempts = 0, locked_until = NULL WHERE id = $1",
         [establishment.id],
@@ -339,8 +392,11 @@ router.post(
       const token = jwt.sign(
         {
           id: establishment.id,
+          establishment_user_id:
+            establishment.establishment_user_id || null,
           name: establishment.business_name,
           type: "establishment",
+          role: establishment.user_role || "establishment_super_user",
         },
         process.env.JWT_SECRET_ESTABLISHMENT,
         { expiresIn: process.env.JWT_EXPIRES_IN },
@@ -355,13 +411,17 @@ router.post(
           owner_name: establishment.owner_name,
           address: establishment.address,
           status: establishment.status,
+          user_id: establishment.establishment_user_id,
+          user_role:
+            establishment.user_role || "establishment_super_user",
         },
         user: {
-          id: establishment.id,
+          id: establishment.establishment_user_id || establishment.id,
           name: establishment.business_name,
-          full_name: establishment.owner_name,
+          full_name: establishment.user_full_name || establishment.owner_name,
           email: establishment.email,
-          role: "Establishment Account",
+          role:
+            establishment.user_role || "establishment_super_user",
         },
       });
     } catch (err) {
@@ -1231,8 +1291,19 @@ router.post(
       const { current_password, new_password } = req.body;
 
       const result = await pool.query(
-        "SELECT id, password_hash, business_name FROM establishments WHERE id = $1 AND status = 'approved'",
-        [decoded.id],
+        `SELECT
+           e.id,
+           e.password_hash AS legacy_password_hash,
+           e.business_name,
+           eu.id AS establishment_user_id,
+           eu.password_hash,
+           eu.role
+         FROM establishments e
+         LEFT JOIN establishment_users eu
+           ON eu.establishment_id = e.id
+          AND eu.id = $2
+         WHERE e.id = $1 AND e.status = 'approved'`,
+        [decoded.id, decoded.establishment_user_id],
       );
       const establishment = result.rows[0];
       if (!establishment) {
@@ -1241,7 +1312,7 @@ router.post(
 
       const currentMatch = await bcrypt.compare(
         current_password,
-        establishment.password_hash,
+        establishment.password_hash || establishment.legacy_password_hash,
       );
       if (!currentMatch) {
         throw createError(401, "Current password is incorrect.");
@@ -1261,6 +1332,14 @@ router.post(
          WHERE id = $2`,
         [password_hash, establishment.id],
       );
+      if (establishment.establishment_user_id) {
+        await pool.query(
+          `UPDATE establishment_users
+           SET password_hash = $1, password_reset_required = FALSE
+           WHERE id = $2`,
+          [password_hash, establishment.establishment_user_id],
+        );
+      }
 
       // NOTE: this file uses two different audit_logs shapes elsewhere
       // (login/lockout use establishment_id + ip_address; the OTP-based

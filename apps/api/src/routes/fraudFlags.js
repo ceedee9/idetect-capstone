@@ -107,14 +107,15 @@ router.post(
 
       const result = await pool.query(
         `INSERT INTO fraud_flags
-         (verification_log_id, establishment_id, beneficiary_id,
+         (verification_log_id, establishment_id, establishment_user_id, beneficiary_id,
           id_number_flagged, beneficiary_type, establishment_notes,
           image_path, verification_outcome, parent_flag_id, is_supplementary)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        RETURNING *`,
         [
           verification_log_id,
           establishment_id,
+          req.establishment.establishment_user_id || null,
           beneficiary_id,
           id_number_flagged,
           beneficiary_type,

@@ -52,7 +52,7 @@ const authenticate = async (req, res, next) => {
 };
 
 // Verifies establishment token (Client Portal mobile app)
-const authenticateEstablishment = (req, res, next) => {
+const authenticateEstablishment = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -62,7 +62,43 @@ const authenticateEstablishment = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_ESTABLISHMENT);
+    const result = await pool.query(
+      `SELECT
+         e.id AS establishment_id,
+         e.status AS establishment_status,
+         eu.id AS establishment_user_id,
+         eu.role,
+         eu.account_status,
+         eu.invitation_status,
+         eu.password_reset_required
+       FROM establishments e
+       LEFT JOIN establishment_users eu
+         ON eu.establishment_id = e.id
+        AND (
+          eu.id = $2
+          OR ($2 IS NULL AND lower(eu.email) = lower(e.email))
+        )
+       WHERE e.id = $1`,
+      [decoded.id, decoded.establishment_user_id || null],
+    );
+    const account = result.rows[0];
+    if (!account || account.establishment_status !== "approved") {
+      return res.status(403).json({ error: "Establishment account is not active" });
+    }
+    if (
+      account.establishment_user_id &&
+      (account.account_status !== "active" ||
+        account.invitation_status !== "accepted")
+    ) {
+      return res.status(403).json({ error: "Establishment user account is not active" });
+    }
     req.establishment = decoded;
+    req.establishment.establishment_user_id =
+      account.establishment_user_id || decoded.establishment_user_id || null;
+    req.establishment.role =
+      account.role || decoded.role || "establishment_super_user";
+    req.establishment.password_reset_required =
+      account.password_reset_required || false;
     next();
   } catch (err) {
     return res.status(403).json({ error: "Invalid or expired token" });
