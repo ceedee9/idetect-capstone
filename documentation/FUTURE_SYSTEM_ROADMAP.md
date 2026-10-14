@@ -1,6 +1,6 @@
 # iDetect Future System Roadmap
 
-**Updated:** October 11, 2026
+**Updated:** October 14, 2026
 
 This document records useful future features, improvements, and operational
 ideas for the entire iDetect system. It covers the beneficiary app, business
@@ -32,6 +32,16 @@ audited privilege changes, controlled overrides, and protection against
 removing the final recovery administrator.
 
 ## Audit and accountability
+
+### Beneficiary logout auditing
+
+The beneficiary app currently clears its local token on manual sign-out or
+inactivity timeout. Server-side beneficiary logout auditing is intentionally
+deferred: beneficiaries do not manage shared records, JWT logout does not
+invalidate a token by itself, and logout events would add volume with limited
+investigative value. Reconsider this only if a privacy review, incident-
+response requirement, or server-side session/revocation design makes it
+necessary.
 
 ### Readable target snapshots
 

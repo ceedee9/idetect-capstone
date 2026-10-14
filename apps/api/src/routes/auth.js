@@ -66,6 +66,18 @@ router.post(
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
         const newAttempts = (user.failed_attempts || 0) + 1;
+        await pool.query(
+          `INSERT INTO audit_logs (user_id, action, metadata, ip_address)
+           VALUES ($1, 'login_failed', $2, $3)`,
+          [
+            user.id,
+            JSON.stringify({
+              reason: "invalid_password",
+              attempt_number: newAttempts,
+            }),
+            req.ip,
+          ],
+        );
         if (newAttempts >= LOGIN_MAX_ATTEMPTS) {
           const lockUntil = new Date(Date.now() + LOGIN_LOCKOUT_MS);
           await pool.query(
@@ -513,6 +525,19 @@ router.post(
       }
 
       if (beneficiary.status === "suspended") {
+        await pool.query(
+          `INSERT INTO audit_logs
+            (action, target_table, target_id, metadata, ip_address)
+           VALUES ('login_failed', 'beneficiaries', $1, $2, $3)`,
+          [
+            beneficiary.id,
+            JSON.stringify({
+              reason: "suspended_beneficiary_authentication",
+              method: "otp",
+            }),
+            req.ip,
+          ],
+        );
         const endDate = beneficiary.suspension_end_date
           ? new Date(beneficiary.suspension_end_date)
           : null;
@@ -617,6 +642,16 @@ router.post(
 
       // Check attempts (max 5)
       if (record.otp_attempts >= 5) {
+        await pool.query(
+          `INSERT INTO audit_logs
+            (action, target_table, target_id, metadata, ip_address)
+           VALUES ('account_locked', 'beneficiaries', $1, $2, $3)`,
+          [
+            record.beneficiary_id,
+            JSON.stringify({ reason: "otp_attempt_limit", method: "otp" }),
+            req.ip,
+          ],
+        );
         throw createError(429, "Too many attempts. Please request a new OTP.");
       }
 
@@ -626,6 +661,21 @@ router.post(
           "UPDATE beneficiary_accounts SET otp_attempts = otp_attempts + 1 WHERE id = $1",
           [record.account_id],
         );
+        if (record.otp_attempts + 1 >= 5) {
+          await pool.query(
+            `INSERT INTO audit_logs
+              (action, target_table, target_id, metadata, ip_address)
+             VALUES ('account_locked', 'beneficiaries', $1, $2, $3)`,
+            [
+              record.beneficiary_id,
+              JSON.stringify({
+                reason: "otp_attempt_limit",
+                method: "otp",
+              }),
+              req.ip,
+            ],
+          );
+        }
         throw createError(401, "Invalid OTP");
       }
 
@@ -832,6 +882,19 @@ router.post(
       }
 
       if (record.status === "suspended") {
+        await pool.query(
+          `INSERT INTO audit_logs
+            (action, target_table, target_id, metadata, ip_address)
+           VALUES ('login_failed', 'beneficiaries', $1, $2, $3)`,
+          [
+            record.beneficiary_id,
+            JSON.stringify({
+              reason: "suspended_beneficiary_authentication",
+              method: "pin",
+            }),
+            req.ip,
+          ],
+        );
         const endDate = record.suspension_end_date
           ? new Date(record.suspension_end_date)
           : null;
@@ -873,6 +936,16 @@ router.post(
           "UPDATE beneficiary_accounts SET pin_locked_until = $1, pin_attempts = 0 WHERE id = $2",
           [lockUntil, record.account_id],
         );
+        await pool.query(
+          `INSERT INTO audit_logs
+            (action, target_table, target_id, metadata, ip_address)
+           VALUES ('account_locked', 'beneficiaries', $1, $2, $3)`,
+          [
+            record.beneficiary_id,
+            JSON.stringify({ reason: "pin_attempt_limit", method: "pin" }),
+            req.ip,
+          ],
+        );
         // Fetch mobile number to notify
         const benef = await pool.query(
           "SELECT registered_mobile FROM beneficiaries WHERE id = $1",
@@ -895,6 +968,16 @@ router.post(
           await pool.query(
             "UPDATE beneficiary_accounts SET pin_locked_until = $1, pin_attempts = $2 WHERE id = $3",
             [lockUntil, newAttempts, record.account_id],
+          );
+          await pool.query(
+            `INSERT INTO audit_logs
+              (action, target_table, target_id, metadata, ip_address)
+             VALUES ('account_locked', 'beneficiaries', $1, $2, $3)`,
+            [
+              record.beneficiary_id,
+              JSON.stringify({ reason: "pin_attempt_limit", method: "pin" }),
+              req.ip,
+            ],
           );
           const benef = await pool.query(
             "SELECT registered_mobile FROM beneficiaries WHERE id = $1",
