@@ -241,7 +241,9 @@ router.post(
            eu.password_reset_required
          FROM establishments e
          LEFT JOIN establishment_users eu ON eu.establishment_id = e.id
-         WHERE lower(e.email) = lower($1) OR lower(eu.email) = lower($1)`,
+         WHERE lower(e.email) = lower($1) OR lower(eu.email) = lower($1)
+         ORDER BY CASE WHEN lower(eu.email) = lower($1) THEN 0 ELSE 1 END
+         LIMIT 1`,
         [email],
       );
 
@@ -385,7 +387,10 @@ router.post(
        VALUES ($1, 'login', $2, $3)`,
         [
           establishment.id,
-          JSON.stringify({ email: establishment.email }),
+          JSON.stringify({
+            email: establishment.user_email || establishment.email,
+            establishment_user_id: establishment.establishment_user_id || null,
+          }),
           req.ip,
         ],
       );
@@ -420,7 +425,7 @@ router.post(
           id: establishment.establishment_user_id || establishment.id,
           name: establishment.business_name,
           full_name: establishment.user_full_name || establishment.owner_name,
-          email: establishment.email,
+          email: establishment.user_email || establishment.email,
           role:
             establishment.user_role || "establishment_super_user",
         },

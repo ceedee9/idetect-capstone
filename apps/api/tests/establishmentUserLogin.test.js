@@ -54,6 +54,7 @@ describe("establishment user-compatible login", () => {
           {
             id: "establishment-1",
             email: "owner@example.com",
+            user_email: "cashier@example.com",
             password_hash: "legacy-hash",
             user_password_hash: passwordHash,
             establishment_user_id: "est-user-1",
@@ -79,6 +80,7 @@ describe("establishment user-compatible login", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.user.id).toBe("est-user-1");
+    expect(res.body.user.email).toBe("cashier@example.com");
     expect(res.body.user.role).toBe("establishment_regular_user");
     expect(res.body.establishment.user_id).toBe("est-user-1");
 
