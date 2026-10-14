@@ -448,7 +448,7 @@ LGU Admin resolves or rejects
 ### Session Inactivity Timeout
 
 - **Web portals**: 15-minute idle timeout, 2-minute countdown warning before automatic logout.
-- **Mobile apps**: Same — 15-minute idle, then auto-logout.
+- **Mobile apps**: The approved target is a 5-minute protected-screen lock or reauthentication threshold. This is a target policy; implementation and acceptance testing are tracked separately.
 - Prevents unattended sessions being exploited.
 
 ### Authenticated File Serving

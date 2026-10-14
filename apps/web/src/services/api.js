@@ -36,6 +36,13 @@ const api = axios.create({
 // Decodes exp from the JWT payload without a library, refreshes proactively
 // when < 5 minutes remain. Uses a shared promise to avoid concurrent refresh calls.
 let _refreshing = null;
+const clearStoredStaffSession = () => {
+  localStorage.removeItem("staff_token");
+  localStorage.removeItem("staff_user");
+  sessionStorage.removeItem("staff_token");
+  sessionStorage.removeItem("staff_user");
+};
+
 async function ensureFreshToken() {
   const token = getStaffToken();
   if (!token) return token;
@@ -57,7 +64,16 @@ async function ensureFreshToken() {
           storage.setItem("staff_token", r.data.token);
           return r.data.token;
         })
-        .catch(() => token) // refresh failed — return old token, 401 will redirect
+        .catch((err) => {
+          if (
+            err.response?.status === 401 &&
+            err.response?.data?.error === "Session lifetime exceeded"
+          ) {
+            clearStoredStaffSession();
+            window.location.href = "/login?reason=absolute";
+          }
+          return token;
+        }) // Other refresh failures remain subject to the normal 401 handling.
         .finally(() => {
           _refreshing = null;
         });
@@ -98,11 +114,12 @@ api.interceptors.response.use(
       data: err.response?.data,
     });
     if (err.response?.status === 401 && !err.config?.url?.includes("/auth/")) {
-      localStorage.removeItem("staff_token");
-      localStorage.removeItem("staff_user");
-      sessionStorage.removeItem("staff_token");
-      sessionStorage.removeItem("staff_user");
-      window.location.href = "/login";
+      const reason =
+        err.response?.data?.error === "Session lifetime exceeded"
+          ? "absolute"
+          : "";
+      clearStoredStaffSession();
+      window.location.href = reason ? `/login?reason=${reason}` : "/login";
     }
     return Promise.reject(err);
   },
@@ -122,6 +139,8 @@ export const authAPI = {
       { reason },
       { headers: { Authorization: `Bearer ${token}` } },
     ),
+  reauthenticate: (password) =>
+    api.post("/auth/staff/reauth", { password }),
   establishmentSetupPassword: (email, token, new_password) =>
     api.post("/auth/establishment/setup-password", {
       email,
@@ -145,8 +164,14 @@ export const beneficiariesAPI = {
 
   getById: (id) => api.get(`/beneficiaries/${id}`),
 
-  revealId: (id) => api.get(`/beneficiaries/${id}/sensitive`),
-  getSensitiveDetail: (id) => api.get(`/beneficiaries/${id}/sensitive-detail`),
+  revealId: (id, stepUpToken) =>
+    api.get(`/beneficiaries/${id}/sensitive`, {
+      headers: { "X-Step-Up-Token": stepUpToken },
+    }),
+  getSensitiveDetail: (id, stepUpToken) =>
+    api.get(`/beneficiaries/${id}/sensitive-detail`, {
+      headers: { "X-Step-Up-Token": stepUpToken },
+    }),
 
   create: (data, beneficiaryType) => {
     const hasApiShape =

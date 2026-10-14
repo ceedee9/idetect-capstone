@@ -48,6 +48,12 @@ const NOTICE_STYLES = {
     icon: Clock,
     label: "Session Expired",
   },
+  absolute: {
+    accent: "#92560A",
+    bg: "#fffbeb",
+    icon: Clock,
+    label: "Session Limit Reached",
+  },
   credentials: {
     accent: "#dc2626",
     bg: "#fff1f2",
@@ -240,6 +246,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const idleExpired = searchParams.get("reason") === "idle";
+  const absoluteExpired = searchParams.get("reason") === "absolute";
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPw, setShowPw] = useState(false);
@@ -406,6 +413,12 @@ export default function LoginPage() {
                 <Notice
                   type="idle"
                   message="Your session expired due to inactivity. Please sign in again."
+                />
+              )}
+              {absoluteExpired && !error && (
+                <Notice
+                  type="absolute"
+                  message="Your eight-hour work session ended. Please sign in again to start a new session."
                 />
               )}
               {error && <Notice type={errorType} message={error} />}

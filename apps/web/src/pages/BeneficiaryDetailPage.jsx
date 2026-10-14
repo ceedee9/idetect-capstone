@@ -24,7 +24,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useBeneficiary } from "../hooks/useBeneficiaries";
-import { beneficiariesAPI } from "../services/api";
+import { authAPI, beneficiariesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
@@ -105,6 +105,8 @@ export default function BeneficiaryDetailPage() {
   const [detailAccessPrompted, setDetailAccessPrompted] = useState(false);
   const [revealLoading, setRevealLoading] = useState(false);
   const [revealError, setRevealError] = useState("");
+  const [reauthPassword, setReauthPassword] = useState("");
+  const [stepUpToken, setStepUpToken] = useState(null);
 
   // Edit record state
   const [editForm, setEditForm] = useState(null); // null = closed
@@ -246,10 +248,33 @@ export default function BeneficiaryDetailPage() {
     setRevealLoading(true);
     setRevealError("");
     try {
-      const response = await beneficiariesAPI.getSensitiveDetail(id);
+      const proof = stepUpToken || (await authAPI.reauthenticate(reauthPassword)).data.step_up_token;
+      setStepUpToken(proof);
+      const response = await beneficiariesAPI.getSensitiveDetail(id, proof);
       const birthdate = response.data?.birthdate;
       if (!birthdate) {
         throw new Error("The API returned no date of birth.");
+      }
+
+      async function revealSensitiveId() {
+        if (!stepUpToken) {
+          setModal("reveal_sensitive");
+          return;
+        }
+        try {
+          const response = await beneficiariesAPI.revealId(id, stepUpToken);
+          const fullId = response.data?.id_number;
+          if (!fullId) throw new Error("The API returned no ID number.");
+          setRevealedId(fullId);
+          setRevealError("");
+        } catch (err) {
+          setRevealError(
+            err.response?.data?.error ||
+              err.response?.data?.message ||
+              err.message ||
+              "Unable to reveal the ID number.",
+          );
+        }
       }
       setDetailBirthdate(birthdate);
       return true;
@@ -458,28 +483,9 @@ export default function BeneficiaryDetailPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (revealedId) {
-                          setRevealedId(null);
-                        } else {
-                          beneficiariesAPI
-                            .revealId(id)
-                            .then((response) => {
-                              const fullId = response.data?.id_number;
-                              if (!fullId) throw new Error("The API returned no ID number.");
-                              setRevealedId(fullId);
-                              setRevealError("");
-                            })
-                            .catch((err) =>
-                              setRevealError(
-                                err.response?.data?.error ||
-                                  err.response?.data?.message ||
-                                  err.message ||
-                                  "Unable to reveal the ID number.",
-                              ),
-                            );
-                        }
-                      }}
+                      onClick={() =>
+                        revealedId ? setRevealedId(null) : revealSensitiveId()
+                      }
                       disabled={revealLoading}
                       aria-label={revealedId ? "Hide full ID number" : "Reveal full ID number"}
                       title={revealedId ? "Hide full ID number" : "Reveal full ID number"}
@@ -719,7 +725,10 @@ export default function BeneficiaryDetailPage() {
         open={modal === "reveal_sensitive"}
         onClose={() => setModal(null)}
         onConfirm={async () => {
-          if (await openSensitiveDetail()) setModal(null);
+          if (await openSensitiveDetail()) {
+            setReauthPassword("");
+            setModal(null);
+          }
         }}
         title="Open Sensitive Beneficiary Details"
         description="This view contains sensitive personal information, including the exact date of birth. The ID number will stay masked unless you reveal it. Continue only for an authorized task. This access will be recorded in the audit log."
@@ -727,6 +736,15 @@ export default function BeneficiaryDetailPage() {
         variant="warn"
         loading={revealLoading}
       >
+        <input
+          type="password"
+          value={reauthPassword}
+          onChange={(event) => setReauthPassword(event.target.value)}
+          placeholder="Enter your current password"
+          autoComplete="current-password"
+          className="input w-full"
+          disabled={revealLoading}
+        />
         {revealError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />

@@ -12,6 +12,7 @@ const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
+const { requireStepUp } = require("../middleware/stepUp");
 const { maskBeneficiary } = require("../utils/privacy");
 
 const router = express.Router();
@@ -178,7 +179,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // ── GET /api/beneficiaries/:id ─────────────────────────────────
-router.get("/:id([0-9a-fA-F-]{36})/sensitive", async (req, res, next) => {
+router.get("/:id([0-9a-fA-F-]{36})/sensitive", requireStepUp, async (req, res, next) => {
   try {
     const type = getTypeForRole(req.user.role);
     const result = await pool.query(
@@ -196,7 +197,7 @@ router.get("/:id([0-9a-fA-F-]{36})/sensitive", async (req, res, next) => {
   }
 });
 
-router.get("/:id([0-9a-fA-F-]{36})/sensitive-detail", async (req, res, next) => {
+router.get("/:id([0-9a-fA-F-]{36})/sensitive-detail", requireStepUp, async (req, res, next) => {
   try {
     const type = getTypeForRole(req.user.role);
     const result = await pool.query(

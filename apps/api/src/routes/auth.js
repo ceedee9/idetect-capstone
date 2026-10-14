@@ -18,6 +18,7 @@ const LOGIN_MAX_ATTEMPTS = 3;
 const LOGIN_LOCKOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 const router = express.Router();
+const STAFF_ABSOLUTE_SESSION_SECONDS = 8 * 60 * 60;
 
 // Normalizes an id_number the same way beneficiaries.js does at storage
 // time (uppercase, strip everything except A-Z0-9). Every beneficiary
@@ -135,6 +136,7 @@ router.post(
           email: user.email,
           role: user.role,
           name: user.full_name,
+          session_started_at: Math.floor(Date.now() / 1000),
         },
         process.env.JWT_SECRET_STAFF,
         { expiresIn: process.env.JWT_EXPIRES_IN },
@@ -155,6 +157,40 @@ router.post(
   },
 );
 
+router.post("/staff/reauth", async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ") || !req.body?.password) {
+      return res.status(401).json({ error: "Current password is required" });
+    }
+
+    const decoded = jwt.verify(
+      authHeader.slice(7),
+      process.env.JWT_SECRET_STAFF,
+    );
+    const result = await pool.query(
+      "SELECT id, password_hash, is_active FROM users WHERE id = $1",
+      [decoded.id],
+    );
+    const user = result.rows[0];
+    if (!user?.is_active || !(await bcrypt.compare(req.body.password, user.password_hash))) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    const stepUpToken = jwt.sign(
+      { id: user.id, step_up: true },
+      process.env.JWT_SECRET_STAFF,
+      { expiresIn: "5m" },
+    );
+    res.json({ step_up_token: stepUpToken, expires_in: 300 });
+  } catch (err) {
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    next(err);
+  }
+});
+
 // ── Staff Token Refresh ─────────────────────────────────────────
 // Accepts the current still-valid staff JWT and returns a fresh one.
 // Called silently by portal interceptor before expiry to avoid logout.
@@ -173,6 +209,15 @@ router.post("/staff/refresh", async (req, res, next) => {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
 
+    const sessionStartedAt = decoded.session_started_at || decoded.iat;
+    if (
+      !sessionStartedAt ||
+      Math.floor(Date.now() / 1000) - sessionStartedAt >=
+        STAFF_ABSOLUTE_SESSION_SECONDS
+    ) {
+      return res.status(401).json({ error: "Session lifetime exceeded" });
+    }
+
     // Confirm user still exists and is active
     const result = await pool.query(
       "SELECT id, email, role, full_name, is_active FROM users WHERE id = $1",
@@ -184,7 +229,13 @@ router.post("/staff/refresh", async (req, res, next) => {
     const user = result.rows[0];
 
     const newToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, name: user.full_name },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.full_name,
+        session_started_at: sessionStartedAt,
+      },
       process.env.JWT_SECRET_STAFF,
       { expiresIn: process.env.JWT_EXPIRES_IN },
     );

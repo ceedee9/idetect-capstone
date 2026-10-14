@@ -211,8 +211,41 @@ measured usage rather than premature complexity.
 ## Open policy decisions
 
 - F-03 retention duration and archive period.
-- F-08 session-timeout duration and warning behavior.
 - F-09 suspension start/end dates and automatic reinstatement policy.
 - Whether report previews require their own audit events.
 - Whether beneficiary OTP and logout events need additional auditing.
 - Which future features require formal approval, notification, or legal review.
+
+## Approved F-08 session policy
+
+The session-timeout policy is approved as a phased security and usability
+control. The implementation status belongs in
+[IT_EXPERT_RECOMMENDATION_UPDATES.md](./IT_EXPERT_RECOMMENDATION_UPDATES.md).
+
+- **Staff and establishment portals:** 15 minutes without activity, with a
+  warning during the final 2 minutes, followed by automatic logout.
+- **Why 15 minutes:** Staff may be reviewing a long record, consulting paper
+  documents, speaking with a beneficiary, or completing work outside the
+  browser. A shorter global timeout would create avoidable data loss and may
+  encourage unsafe workarounds.
+- **8-hour absolute lifetime:** A continuously active session must still end
+  after eight hours, preventing an indefinitely valid authentication session.
+- **Remember me:** May preserve a session across browser restarts, but cannot
+  bypass either timeout or any required reauthentication.
+- **Sensitive actions:** Full sensitive-data reveal, sensitive exports and case
+  files, beneficiary status changes, role or permission changes, password
+  resets, and invitation administration should use step-up confirmation or
+  reauthentication.
+- **Beneficiary app:** Target a protected-screen lock or reauthentication
+  threshold of approximately 5 minutes of inactivity rather than a full
+  account logout.
+
+Implementation is deliberately phased: verify the existing staff behavior,
+the API absolute lifetime is now implemented, and step-up protection phase 1
+now covers exact beneficiary details and full ID reveal with a five-minute
+password-verified proof. The next step-up phase covers sensitive exports and
+case files, followed by Remember me safeguards and the beneficiary-app lock.
+The two-minute expert
+recommendation was not adopted as the global portal timeout because its
+security benefit would be outweighed by operational disruption for normal
+staff work.
