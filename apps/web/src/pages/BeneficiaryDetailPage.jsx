@@ -406,11 +406,7 @@ export default function BeneficiaryDetailPage() {
             <div>
               <div className="flex items-start gap-3 py-3.5 border-b border-slate-50">
                 <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                  {revealedId ? (
-                    <EyeOff className="w-4 h-4 text-slate-400" />
-                  ) : (
-                    <Hash className="w-4 h-4 text-slate-400" />
-                  )}
+                  <Hash className="w-4 h-4 text-slate-400" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
@@ -440,9 +436,9 @@ export default function BeneficiaryDetailPage() {
                           aria-label="Loading"
                         />
                       ) : revealedId ? (
-                        <EyeOff className="w-4 h-4" aria-hidden="true" />
-                      ) : (
                         <Eye className="w-4 h-4" aria-hidden="true" />
+                      ) : (
+                        <EyeOff className="w-4 h-4" aria-hidden="true" />
                       )}
                     </button>
                   </div>
