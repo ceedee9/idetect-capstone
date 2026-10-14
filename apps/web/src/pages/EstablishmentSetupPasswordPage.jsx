@@ -56,6 +56,8 @@ export default function EstablishmentSetupPasswordPage() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.response?.data?.detail ||
           "Something went wrong. Please try again or contact your BPLO administrator.",
       );
     } finally {
