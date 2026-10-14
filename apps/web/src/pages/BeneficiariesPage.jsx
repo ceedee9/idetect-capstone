@@ -398,7 +398,9 @@ export default function BeneficiariesPage() {
                               {b.disability_type}
                             </span>
                           ) : (
-                            <span className="text-slate-400 text-xs">—</span>
+                            <span className="text-slate-400 text-xs">
+                              Not recorded
+                            </span>
                           )}
                         </td>
                       )}

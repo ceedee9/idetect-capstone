@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
+  Accessibility,
   User,
   MapPin,
   Phone,
@@ -479,14 +480,16 @@ export default function BeneficiaryDetailPage() {
                       persists.
                     </p>
                   )}
-                  {revealedId && (
-                    <p className="text-[11px] text-amber-700 mt-1">
-                      Access recorded in the audit log.
-                    </p>
-                  )}
                 </div>
               </div>
               <InfoRow icon={User} label="Full Name" value={fullName} />
+              {!isOsca && (
+                <InfoRow
+                  icon={Accessibility}
+                  label="Disability Type"
+                  value={b.disability_type || "Not recorded"}
+                />
+              )}
               <div className="flex items-start gap-3 py-3.5 border-b border-slate-50">
                 <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Calendar className="w-4 h-4 text-slate-400" />
