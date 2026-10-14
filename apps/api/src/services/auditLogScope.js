@@ -37,7 +37,7 @@ function appendAuditScope(query, params, index, role) {
               tb.beneficiary_type,
               db.beneficiary_type,
               tf.beneficiary_type,
-              tv.beneficiary_type
+              tv.beneficiary_type_detected
             ) = $${typeIndex}
           )
         )
@@ -48,7 +48,7 @@ function appendAuditScope(query, params, index, role) {
               tb.beneficiary_type,
               db.beneficiary_type,
               tf.beneficiary_type,
-              tv.beneficiary_type
+              tv.beneficiary_type_detected
             ) = $${typeIndex}
             OR (
               al.establishment_id IS NOT NULL
@@ -66,6 +66,7 @@ function appendAuditScope(query, params, index, role) {
     };
   }
 
+  params.push(ESTABLISHMENT_AUDIT_ACTIONS);
   return {
     query: `${query} AND (
       u.role IN (${rolePlaceholders.join(", ")})
