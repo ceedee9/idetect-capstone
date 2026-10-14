@@ -141,7 +141,11 @@ export function humanizeAuditLog(log) {
     case "beneficiary_updated":
       return `Updated beneficiary details${m.new?.full_name ? ` for ${m.new.full_name}` : ""}`;
     case "beneficiary_status_changed":
-      return `Changed beneficiary status from "${m.old_status}" to "${m.new_status}"${m.status_reason ? ` — ${m.status_reason}` : ""}`;
+      return `Changed beneficiary status from "${m.old_status}" to "${m.new_status}"${
+        m.suspension_end_date
+          ? ` — suspension expires ${m.suspension_end_date}`
+          : ""
+      }${m.status_reason ? ` — ${m.status_reason}` : ""}`;
     case "beneficiary_deleted":
       return `Permanently deleted beneficiary "${m.full_name || "—"}" (ID ${m.id_number || "—"})`;
     case "beneficiary_bulk_import":

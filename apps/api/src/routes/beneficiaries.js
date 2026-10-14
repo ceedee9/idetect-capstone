@@ -872,7 +872,19 @@ router.patch(
         [
           req.user.id,
           req.params.id,
-          JSON.stringify({ old_status, new_status: status, status_reason }),
+          JSON.stringify({
+            old_status,
+            new_status: status,
+            status_reason: status_reason || null,
+            suspension_reason: status === "suspended" ? status_reason : null,
+            suspension_start_date: status === "suspended" ? startDate : null,
+            suspension_end_date: status === "suspended" ? endDate : null,
+            suspension_expiry: status === "suspended" ? endDate : null,
+            previous_suspension_start_date:
+              existing.rows[0].suspension_start_date || null,
+            previous_suspension_end_date:
+              existing.rows[0].suspension_end_date || null,
+          }),
         ],
       );
 

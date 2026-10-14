@@ -14,57 +14,9 @@ const {
   resolvePeriod,
   csvLine,
 } = require("../services/auditReports");
+const { appendAuditScope } = require("../services/auditLogScope");
 
 const router = express.Router();
-
-const ESTABLISHMENT_AUDIT_ACTIONS = [
-  "verification_performed",
-  "verification_action_taken",
-  "flag_created",
-];
-
-function appendAuditScope(query, params, index, role) {
-  const agencyAdminRole = {
-    bplo_super_admin: "bplo_admin",
-    osca_super_admin: "osca_admin",
-    pdao_super_admin: "pdao_admin",
-  }[role];
-  const allowedRoles = agencyAdminRole ? [agencyAdminRole, role] : [role];
-  const rolePlaceholders = allowedRoles.map(
-    (_, offset) => `$${index + offset}`,
-  );
-  params.push(...allowedRoles);
-
-  if (!["osca_admin", "osca_super_admin", "pdao_admin", "pdao_super_admin"].includes(role)) {
-    return {
-      query: `${query} AND u.role IN (${rolePlaceholders.join(", ")})`,
-      index: index + allowedRoles.length,
-    };
-  }
-
-  const beneficiaryType = role.startsWith("pdao") ? "pwd" : "senior_citizen";
-  const typeIndex = index + allowedRoles.length;
-  const actionIndex = typeIndex + 1;
-  params.push(beneficiaryType);
-  params.push(ESTABLISHMENT_AUDIT_ACTIONS);
-
-  return {
-    query: `${query} AND (
-      u.role IN (${rolePlaceholders.join(", ")})
-      OR (
-        u.id IS NULL
-        AND al.establishment_id IS NOT NULL
-        AND al.action = ANY($${typeIndex + 1}::audit_action[])
-        AND COALESCE(
-          al.metadata->>'beneficiary_type',
-          tv.beneficiary_type_detected::text,
-          tf.beneficiary_type::text
-        ) = $${typeIndex}
-      )
-    )`,
-    index: actionIndex + 1,
-  };
-}
 
 router.use(authenticate);
 router.use(requireRole([
@@ -112,6 +64,10 @@ router.get("/", async (req, res, next) => {
         ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
       LEFT JOIN disputes td
         ON al.target_table = 'disputes' AND td.id = al.target_id
+      LEFT JOIN beneficiary_accounts dba
+        ON al.target_table = 'disputes' AND dba.id = td.beneficiary_account_id
+      LEFT JOIN beneficiaries db
+        ON al.target_table = 'disputes' AND db.id = dba.beneficiary_id
       LEFT JOIN fraud_flags tf
         ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
       LEFT JOIN verification_logs tv
@@ -221,6 +177,10 @@ router.get("/export", async (req, res, next) => {
         ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
       LEFT JOIN disputes td
         ON al.target_table = 'disputes' AND td.id = al.target_id
+      LEFT JOIN beneficiary_accounts dba
+        ON al.target_table = 'disputes' AND dba.id = td.beneficiary_account_id
+      LEFT JOIN beneficiaries db
+        ON al.target_table = 'disputes' AND db.id = dba.beneficiary_id
       LEFT JOIN fraud_flags tf
         ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
       LEFT JOIN verification_logs tv
@@ -415,6 +375,10 @@ router.get("/report", async (req, res, next) => {
         ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
       LEFT JOIN disputes td
         ON al.target_table = 'disputes' AND td.id = al.target_id
+      LEFT JOIN beneficiary_accounts dba
+        ON al.target_table = 'disputes' AND dba.id = td.beneficiary_account_id
+      LEFT JOIN beneficiaries db
+        ON al.target_table = 'disputes' AND db.id = dba.beneficiary_id
       LEFT JOIN fraud_flags tf
         ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
       LEFT JOIN verification_logs tv
@@ -557,8 +521,12 @@ router.get("/case", async (req, res, next) => {
     const format = req.query.format === "json" ? "json" : "csv";
     const prefix = ref.slice(0, 3);
     const role = req.user.role;
-    const scopeType =
-      role === "osca_admin" ? "senior_citizen" : role === "pdao_admin" ? "pwd" : null;
+    const scopeType = role.startsWith("osca")
+      ? "senior_citizen"
+      : role.startsWith("pdao")
+        ? "pwd"
+        : null;
+    const isBplo = role.startsWith("bplo");
     const denied = () =>
       res.status(404).json({ error: "No record found for that reference number" });
 
@@ -580,7 +548,12 @@ router.get("/case", async (req, res, next) => {
          WHERE d.reference_no = $1`,
         [ref],
       );
-      if (!d || (scopeType && d.btype !== scopeType)) return denied();
+      if (
+        !d ||
+        (scopeType && d.btype !== scopeType) ||
+        (isBplo && d.dispute_type !== "business_refusal")
+      )
+        return denied();
       ids.push(d.id);
       logId = d.verification_log_id;
       sections.push({
@@ -615,7 +588,7 @@ router.get("/case", async (req, res, next) => {
         `SELECT id, reference_no, business_name, created_at FROM establishments WHERE reference_no = $1`,
         [ref],
       );
-      if (!e) return denied();
+      if (!e || !isBplo) return denied();
       ids.push(e.id);
       establishmentId = e.id;
       sections.push({
@@ -629,7 +602,7 @@ router.get("/case", async (req, res, next) => {
          FROM beneficiaries WHERE reference_no = $1`,
         [ref],
       );
-      if (!b || (scopeType && b.beneficiary_type !== scopeType)) return denied();
+      if (!b || !scopeType || b.beneficiary_type !== scopeType) return denied();
       ids.push(b.id);
       sections.push({
         title: "Beneficiary",
@@ -684,15 +657,37 @@ router.get("/case", async (req, res, next) => {
     }
 
     // Audit timeline (oldest first). Establishment files include everything for that establishment.
-    const tl = await q(
-      `SELECT al.created_at, al.action, u.full_name AS user_name, u.role AS user_role,
+    let timelineQuery = `
+      SELECT al.created_at, al.action, u.full_name AS user_name, u.role AS user_role,
               al.target_table, al.target_id, al.ip_address, al.metadata
        FROM audit_logs al LEFT JOIN users u ON u.id = al.user_id
-       WHERE al.target_id = ANY($1::uuid[])
+       LEFT JOIN establishments e ON e.id = al.establishment_id
+       LEFT JOIN establishments te
+         ON al.target_table = 'establishments' AND te.id = al.target_id
+       LEFT JOIN beneficiaries tb
+         ON al.target_table = 'beneficiaries' AND tb.id = al.target_id
+       LEFT JOIN disputes td
+         ON al.target_table = 'disputes' AND td.id = al.target_id
+       LEFT JOIN beneficiary_accounts dba
+         ON al.target_table = 'disputes' AND dba.id = td.beneficiary_account_id
+       LEFT JOIN beneficiaries db
+         ON al.target_table = 'disputes' AND db.id = dba.beneficiary_id
+       LEFT JOIN fraud_flags tf
+         ON al.target_table = 'fraud_flags' AND tf.id = al.target_id
+       LEFT JOIN verification_logs tv
+         ON al.target_table = 'verification_logs' AND tv.id = al.target_id
+       WHERE (al.target_id = ANY($1::uuid[])
           OR ($2::uuid IS NOT NULL AND $3::text = 'EST' AND al.establishment_id = $2::uuid)
-       ORDER BY al.created_at ASC LIMIT ${DETAIL_LIMIT}`,
-      [ids, establishmentId, prefix],
+       )`;
+    const timelineParams = [ids, establishmentId, prefix];
+    const timelineScope = appendAuditScope(
+      timelineQuery,
+      timelineParams,
+      timelineParams.length + 1,
+      role,
     );
+    timelineQuery = `${timelineScope.query} ORDER BY al.created_at ASC LIMIT ${DETAIL_LIMIT}`;
+    const tl = await q(timelineQuery, timelineParams);
     sections.push({
       title: "Audit timeline (oldest first)",
       columns: ["Date", "Action", "User", "Role", "Target table", "Target ID", "IP address", "Details"],
