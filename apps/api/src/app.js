@@ -7,6 +7,8 @@
 const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first");
 
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -167,6 +169,23 @@ app.post("/api/test-email", async (req, res) => {
   });
   res.json(result);
 });
+
+// ── Unified staff portal ─────────────────────────────────────
+// Northflank runs the API service from apps/api, while the Vite build is
+// produced in apps/web. Keep API routes above this fallback so they remain
+// JSON endpoints and client-side portal routes resolve to index.html.
+const webDistPath = path.resolve(__dirname, "../../../apps/web/dist");
+const webIndexPath = path.join(webDistPath, "index.html");
+
+if (fs.existsSync(webIndexPath)) {
+  app.use(express.static(webDistPath));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      return next();
+    }
+    return res.sendFile(webIndexPath);
+  });
+}
 
 // ── 404 handler ────────────────────────────────────────────────
 app.use((req, res) => {

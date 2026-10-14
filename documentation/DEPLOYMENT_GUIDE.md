@@ -75,7 +75,24 @@ Store these in a password manager, then paste them into **Northflank → Service
 }
 ```
 
-Northflank runs `npm start` to launch the combined service.
+Northflank runs `npm start` to launch the combined service. The API service's
+`prestart` script installs and builds `apps/web`, and the Express app serves
+that build for non-API routes. In Northflank, the service working directory
+must remain `apps/api`, and the command override (if enabled) must be:
+
+```text
+npm start
+```
+
+Set `VITE_API_URL` to the deployed API base URL before the build, for example:
+
+```text
+https://site--idetect--lr4dgpy2rvkq.code.run/api
+```
+
+The API routes continue to use `/api/...`; the frontend fallback serves
+`apps/web/dist/index.html` for portal routes such as `/login` and
+`/beneficiaries`.
 
 ---
 
