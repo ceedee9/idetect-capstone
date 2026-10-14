@@ -541,7 +541,7 @@ export default function FraudFlagsPage() {
 
       {/* REQ-2.6.2: Flag Detail Drawer */}
       {selectedFlag && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto p-4 sm:p-6">
           <div
             className="absolute inset-0 bg-slate-950/35"
             onClick={() => {
@@ -549,7 +549,7 @@ export default function FraudFlagsPage() {
               setSelectedFlag(null);
             }}
           />
-          <div className="relative z-10 flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl">
+          <div className="relative z-10 flex h-[min(82vh,760px)] max-h-[calc(100vh-2rem)] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             {/* Drawer Header */}
             <div className="relative flex flex-shrink-0 items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -604,7 +604,7 @@ export default function FraudFlagsPage() {
               </div>
             </div>
 
-            <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto p-5 sm:p-6">
+            <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
               {/* Tier 1: evidence */}
               <section>
                 <div className="flex items-center justify-between mb-2">
@@ -785,7 +785,7 @@ export default function FraudFlagsPage() {
 
             {/* Drawer Footer Actions */}
             {selectedFlag.status === "pending" && (
-              <div className="sticky bottom-0 z-10 flex flex-shrink-0 gap-3 border-t border-slate-200 bg-white px-6 py-4">
+              <div className="flex flex-shrink-0 justify-center gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:px-8">
                 <button
                   onClick={() => {
                     if (confirmArmed) {
@@ -795,7 +795,7 @@ export default function FraudFlagsPage() {
                       setConfirmArmed(true);
                     }
                   }}
-                  className={`flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-registry-lg transition-colors ${confirmArmed ? "bg-danger-700 text-white ring-2 ring-danger-200" : "bg-semantic-danger-600 text-white hover:bg-semantic-danger-700"}`}
+                  className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-registry-lg px-4 py-2.5 text-sm font-semibold transition-colors ${confirmArmed ? "bg-danger-700 text-white ring-2 ring-danger-200" : "bg-semantic-danger-600 text-white hover:bg-semantic-danger-700"}`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   {confirmArmed ? "Click again to confirm" : "Confirm Fraud"}
@@ -805,7 +805,7 @@ export default function FraudFlagsPage() {
                     setConfirmArmed(false);
                     setModal({ flag: selectedFlag, action: "dismiss" });
                   }}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-registry-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                  className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-registry-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
                 >
                   <XCircle className="w-4 h-4" /> Dismiss
                 </button>
