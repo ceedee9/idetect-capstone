@@ -52,7 +52,7 @@ function appendAuditScope(query, params, index, role) {
             ) = $${typeIndex}
             OR (
               al.establishment_id IS NOT NULL
-              AND al.action = ANY($${actionIndex}::audit_action[])
+              AND al.action::text = ANY($${actionIndex}::text[])
               AND COALESCE(
                 al.metadata->>'beneficiary_type',
                 tv.beneficiary_type_detected::text,
@@ -73,7 +73,7 @@ function appendAuditScope(query, params, index, role) {
       OR (
         u.id IS NULL
         AND al.establishment_id IS NOT NULL
-        AND al.action = ANY($${index + allowedRoles.length}::audit_action[])
+        AND al.action::text = ANY($${index + allowedRoles.length}::text[])
       )
     )`,
     index: index + allowedRoles.length + 1,

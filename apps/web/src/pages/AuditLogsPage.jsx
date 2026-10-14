@@ -236,7 +236,12 @@ export default function AuditLogsPage() {
         res.data?.pagination ?? { total: 0, page: 1, limit: 30, pages: 1 },
       );
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load audit logs.");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.response?.data?.detail ||
+          "Failed to load audit logs.",
+      );
     } finally {
       setLoading(false);
     }
