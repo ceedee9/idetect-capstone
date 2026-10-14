@@ -25,7 +25,7 @@ import { beneficiariesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
-import { fmtDateTime, fmtRelative } from "../utils/date";
+import { fmtDate, fmtDateTime, fmtRelative } from "../utils/date";
 
 // Maps each action modal to the status it sets.
 const STATUS_FOR_MODAL = {

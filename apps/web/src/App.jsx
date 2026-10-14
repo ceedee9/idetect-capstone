@@ -48,7 +48,7 @@ class ErrorBoundary extends Component {
     if (this.state.error)
       return (
         <div style={{ padding: 40, fontFamily: "monospace" }}>
-          <h2 style={{ color: "#dc2626" }}>⚠ Render Error</h2>
+          <h2 style={{ color: "#dc2626" }}>⚠ Unable to load this page</h2>
           <pre
             style={{
               background: "#fef2f2",
@@ -58,14 +58,13 @@ class ErrorBoundary extends Component {
               whiteSpace: "pre-wrap",
             }}
           >
-            {this.state.error.message}
-            {"\n\n"}
-            {this.state.error.stack}
+            Something went wrong while loading the page. Please reload and try
+            again.
           </pre>
           <button
             onClick={() => {
               this.setState({ error: null });
-              window.location.href = "/login";
+              window.location.reload();
             }}
             style={{
               marginTop: 16,
@@ -77,7 +76,7 @@ class ErrorBoundary extends Component {
               cursor: "pointer",
             }}
           >
-            Back to Login
+            Reload Page
           </button>
         </div>
       );
