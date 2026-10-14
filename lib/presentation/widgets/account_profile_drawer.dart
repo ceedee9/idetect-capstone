@@ -208,13 +208,30 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
                         color: _institutional, size: 19),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        role,
-                        style: const TextStyle(
-                          color: _institutional,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fullName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _institutional,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            role,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
