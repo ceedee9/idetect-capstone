@@ -12,10 +12,13 @@ const ALLOWED_ROLES = [
   "bplo_admin",
 ];
 
-const withPortalRole = (user) =>
-  user?.role?.endsWith("_super_admin")
-    ? { ...user, portalRole: user.role.replace("_super_admin", "_admin") }
-    : user;
+const withPortalRole = (user) => {
+  if (!user?.role) return user;
+  const portalRole = user.role.endsWith("_super_admin")
+    ? user.role.replace("_super_admin", "_admin")
+    : user.role;
+  return { ...user, portalRole };
+};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {

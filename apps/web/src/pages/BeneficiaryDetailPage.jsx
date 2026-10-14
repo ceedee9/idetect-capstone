@@ -202,20 +202,27 @@ export default function BeneficiaryDetailPage() {
     } finally {
       setRenewLoading(false);
     }
+  }
 
-    async function revealId() {
-      setRevealLoading(true);
-      setRevealError("");
-      try {
-        const response = await beneficiariesAPI.revealId(id);
-        setRevealedId(response.data?.id_number || null);
-      } catch (err) {
-        setRevealError(
-          err.response?.data?.message || "Unable to reveal the ID number.",
-        );
-      } finally {
-        setRevealLoading(false);
+  async function revealId() {
+    setRevealLoading(true);
+    setRevealError("");
+    try {
+      const response = await beneficiariesAPI.revealId(id);
+      const fullId = response.data?.id_number;
+      if (!fullId) {
+        throw new Error("The API returned no ID number.");
       }
+      setRevealedId(fullId);
+    } catch (err) {
+      setRevealError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "Unable to reveal the ID number.",
+      );
+    } finally {
+      setRevealLoading(false);
     }
   }
 
