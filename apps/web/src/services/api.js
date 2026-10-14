@@ -128,6 +128,7 @@ export const beneficiariesAPI = {
   getById: (id) => api.get(`/beneficiaries/${id}`),
 
   revealId: (id) => api.get(`/beneficiaries/${id}/sensitive`),
+  getSensitiveDetail: (id) => api.get(`/beneficiaries/${id}/sensitive-detail`),
 
   create: (data, beneficiaryType) => {
     const hasApiShape =

@@ -353,7 +353,10 @@ After approval, implementation should proceed in this order:
 - F-05/F-06 privacy baseline is enforced on beneficiary-facing API responses,
   staff beneficiary/fraud/dispute/dashboard views, and CSV exports. ID values
   expose only the final two characters, while exact birth dates are omitted
-  and replaced with age bands. Raw values are not returned by ordinary read
-  endpoints. Matching-agency staff may use a separate detail-page reveal
-  action when operationally necessary; each reveal is authenticated,
-  agency-scoped, and recorded as `sensitive_data_revealed` in the audit log.
+  and   excluded from ordinary beneficiary list/detail displays. Raw values are not
+  returned by ordinary read endpoints. Matching-agency staff may use separate
+  detail-page reveal actions for the full ID and exact date of birth when
+  operationally necessary. Exact DOB viewing requires an acknowledgement
+  warning; the acknowledged detail view is authenticated, agency-scoped, and
+  recorded once as `sensitive_data_revealed` in the audit log. The ID eye
+  control only changes the display mask within that already-authorized view.

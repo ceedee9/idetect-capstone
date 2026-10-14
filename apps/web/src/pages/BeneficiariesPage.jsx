@@ -297,7 +297,6 @@ export default function BeneficiariesPage() {
                   ...(isPDAO
                     ? [["Disability Type", "hidden lg:table-cell"]]
                     : []),
-                  ["Age / DOB", "hidden lg:table-cell"],
                   ["Status", ""],
                   ["Actions", "text-right"],
                 ].map(([h, cls]) => (
@@ -314,7 +313,7 @@ export default function BeneficiariesPage() {
               {loading ? (
                 [...Array(6)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(isPDAO ? 6 : 5)].map((_, j) => (
+                    {[...Array(isPDAO ? 5 : 4)].map((_, j) => (
                       <td key={j} className="px-5 py-2.5">
                         <div className="skeleton h-4 w-full max-w-[120px]" />
                       </td>
@@ -323,7 +322,7 @@ export default function BeneficiariesPage() {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={isPDAO ? 6 : 5}>
+                  <td colSpan={isPDAO ? 5 : 4}>
                     <EmptyState
                       icon={Accessibility}
                       tone={isPDAO ? "pdao" : "osca"}
@@ -403,12 +402,6 @@ export default function BeneficiariesPage() {
                           )}
                         </td>
                       )}
-                      {/* Age */}
-                      <td className="px-5 py-2.5 hidden lg:table-cell">
-                        <p className="text-slate-700 font-medium">
-                          {b.age_band?.replaceAll("_", " ") || "—"}
-                        </p>
-                      </td>
                       {/* Status */}
                       <td className="px-5 py-2.5">
                         <StatusBadge status={b.status} />

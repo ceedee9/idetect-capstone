@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -27,7 +27,12 @@ import { beneficiariesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
-import { fmtDate, fmtDateTime, fmtRelative } from "../utils/date";
+import {
+  calcAge,
+  fmtDate,
+  fmtDateTime,
+  fmtRelative,
+} from "../utils/date";
 
 // Maps each action modal to the status it sets.
 const STATUS_FOR_MODAL = {
@@ -91,6 +96,8 @@ export default function BeneficiaryDetailPage() {
   const [deleteError, setDeleteError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [revealedId, setRevealedId] = useState(null);
+  const [detailBirthdate, setDetailBirthdate] = useState(null);
+  const [detailAccessPrompted, setDetailAccessPrompted] = useState(false);
   const [revealLoading, setRevealLoading] = useState(false);
   const [revealError, setRevealError] = useState("");
 
@@ -103,6 +110,13 @@ export default function BeneficiaryDetailPage() {
   const [renewForm, setRenewForm] = useState(null); // null = closed
   const [renewLoading, setRenewLoading] = useState(false);
   const [renewError, setRenewError] = useState("");
+
+  useEffect(() => {
+    if (b && !detailAccessPrompted) {
+      setDetailAccessPrompted(true);
+      setModal("reveal_sensitive");
+    }
+  }, [b, detailAccessPrompted]);
 
   function closeActionModal() {
     setModal(null);
@@ -204,16 +218,17 @@ export default function BeneficiaryDetailPage() {
     }
   }
 
-  async function revealId() {
+  async function openSensitiveDetail() {
     setRevealLoading(true);
     setRevealError("");
     try {
-      const response = await beneficiariesAPI.revealId(id);
-      const fullId = response.data?.id_number;
-      if (!fullId) {
-        throw new Error("The API returned no ID number.");
+      const response = await beneficiariesAPI.getSensitiveDetail(id);
+      const birthdate = response.data?.birthdate;
+      if (!birthdate) {
+        throw new Error("The API returned no date of birth.");
       }
-      setRevealedId(fullId);
+      setDetailBirthdate(birthdate);
+      return true;
     } catch (err) {
       setRevealError(
         err.response?.data?.error ||
@@ -221,6 +236,7 @@ export default function BeneficiaryDetailPage() {
           err.message ||
           "Unable to reveal the ID number.",
       );
+      return false;
     } finally {
       setRevealLoading(false);
     }
@@ -322,7 +338,7 @@ export default function BeneficiaryDetailPage() {
             </div>
             <p className="text-slate-400 text-sm mt-0.5 font-medium">
               {beneficiaryTypeLabel} ·{" "}
-              {b.age_band?.replaceAll("_", " ") || "Age unknown"} · {b.id_number}
+              {b.id_number}
             </p>
             <p className="font-mono text-xs text-slate-400 mt-0.5">
               Ref: {b.reference_no}
@@ -422,7 +438,22 @@ export default function BeneficiaryDetailPage() {
                         if (revealedId) {
                           setRevealedId(null);
                         } else {
-                          revealId();
+                          beneficiariesAPI
+                            .revealId(id)
+                            .then((response) => {
+                              const fullId = response.data?.id_number;
+                              if (!fullId) throw new Error("The API returned no ID number.");
+                              setRevealedId(fullId);
+                              setRevealError("");
+                            })
+                            .catch((err) =>
+                              setRevealError(
+                                err.response?.data?.error ||
+                                  err.response?.data?.message ||
+                                  err.message ||
+                                  "Unable to reveal the ID number.",
+                              ),
+                            );
                         }
                       }}
                       disabled={revealLoading}
@@ -456,10 +487,33 @@ export default function BeneficiaryDetailPage() {
                 </div>
               </div>
               <InfoRow icon={User} label="Full Name" value={fullName} />
+              <div className="flex items-start gap-3 py-3.5 border-b border-slate-50">
+                <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                    Date of Birth
+                  </p>
+                  {detailBirthdate ? (
+                    <p className="text-sm text-slate-900 mt-0.5 font-medium">
+                      {fmtDate(detailBirthdate)}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      Acknowledgement required to view
+                    </p>
+                  )}
+                </div>
+              </div>
               <InfoRow
                 icon={Calendar}
-                label="Age band"
-                value={b.age_band?.replaceAll("_", " ")}
+                label="Age"
+                value={
+                  detailBirthdate
+                    ? `${calcAge(detailBirthdate)} years`
+                    : "Acknowledgement required to view"
+                }
               />
               <InfoRow
                 icon={MapPin}
@@ -626,6 +680,27 @@ export default function BeneficiaryDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Sensitive date-of-birth warning */}
+      <ConfirmModal
+        open={modal === "reveal_sensitive"}
+        onClose={() => setModal(null)}
+        onConfirm={async () => {
+          if (await openSensitiveDetail()) setModal(null);
+        }}
+        title="Open Sensitive Beneficiary Details"
+        description="This detail view contains sensitive personal information, including the beneficiary's exact date of birth. The ID number will remain masked until you explicitly reveal it. Continue only for an authorized registry or verification task. This access will be recorded in the audit log."
+        confirmLabel="Open Details"
+        variant="warn"
+        loading={revealLoading}
+      >
+        {revealError && (
+          <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
+            <AlertCircle className="w-4 h-4" />
+            {revealError}
+          </p>
+        )}
+      </ConfirmModal>
 
       {/* Activate modal */}
       <ConfirmModal

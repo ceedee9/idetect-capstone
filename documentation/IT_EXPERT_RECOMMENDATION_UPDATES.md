@@ -65,14 +65,16 @@ This document brings together the changes made so far in response to the IT expe
 - **F-05/F-06:** Implemented default privacy masking for beneficiary API responses,
   fraud/dispute/dashboard views, beneficiary self-service, and CSV exports.
   IDs retain only their final two characters; exact birth dates are omitted and
-  replaced with age bands. Verification history/status-sync IDs are also
+  excluded from ordinary beneficiary list/detail displays. Verification history/status-sync IDs are also
   masked, and ordinary fraud-flag lists expose only whether restricted OCR data
   exists, not its contents. Raw values remain available only inside
   server-side lookup and write operations. A matching-agency staff member may
-  reveal the full ID from the beneficiary detail page when necessary; the
-  reveal uses a separate authenticated endpoint and creates a
-  `sensitive_data_revealed` audit event, while the normal detail response
-  remains masked. The audit action is registered by migration 040.
+  reveal the full ID or exact date of birth from the beneficiary detail page
+  when necessary. The detail view requires an acknowledgement warning, uses a
+  separate authenticated endpoint, and creates one `sensitive_data_revealed`
+  audit event; the ID eye control only changes the display mask within that
+  authorized view. The normal detail response remains masked. The audit action
+  is registered by migration 040.
   The API also applies this enum addition during startup so a deployed
   database is repaired automatically on the next service restart.
 - **Authority model implementation:** Phase 1 is documented and the initial staff API foundation is implemented. The database recognizes agency-scoped Super Admin roles; each can manage only its own office-admin accounts, the final active agency Super Admin cannot be deactivated, and role changes are audited. There is no overall Super Admin. Phase 0 now includes middleware tests for role normalization, regular-admin denial, cross-agency denial, retired-role rejection, and database-backed role refresh. Establishment Super User/Regular User accounts, controlled overrides, and broader route-level authorization tests remain pending.
