@@ -8,7 +8,7 @@ import {
   Store,
   FileText,
 } from "lucide-react";
-import { disputesAPI } from "../services/api";
+import { disputesAPI, getStaffToken } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import StatusBadge from "../components/StatusBadge";
@@ -19,7 +19,7 @@ import { fmtDateTime, fmtRelative } from "../utils/date";
 // a temporary blob URL. The blob URL is revoked after 60 s to free memory.
 async function openAuthDocument(url) {
   try {
-    const token = localStorage.getItem("staff_token");
+    const token = getStaffToken();
     const res = await fetch(
       url,
       token ? { headers: { Authorization: `Bearer ${token}` } } : {},

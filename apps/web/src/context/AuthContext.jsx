@@ -23,15 +23,21 @@ const withPortalRole = (user) => {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem("staff_user");
+      const stored =
+        localStorage.getItem("staff_user") ||
+        sessionStorage.getItem("staff_user");
       return stored ? withPortalRole(JSON.parse(stored)) : null;
     } catch {
       return null;
     }
   });
-  const [token, setToken] = useState(() => localStorage.getItem("staff_token"));
+  const [token, setToken] = useState(
+    () =>
+      localStorage.getItem("staff_token") ||
+      sessionStorage.getItem("staff_token"),
+  );
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, rememberMe = false) => {
     const res = await authAPI.login(email, password);
     const { token: newToken, user: responseUser } = res.data;
     const newUser = withPortalRole(responseUser);
@@ -42,8 +48,12 @@ export function AuthProvider({ children }) {
       );
     }
 
-    localStorage.setItem("staff_token", newToken);
-    localStorage.setItem("staff_user", JSON.stringify(newUser));
+    const persistentStorage = rememberMe ? localStorage : sessionStorage;
+    const temporaryStorage = rememberMe ? sessionStorage : localStorage;
+    persistentStorage.setItem("staff_token", newToken);
+    persistentStorage.setItem("staff_user", JSON.stringify(newUser));
+    temporaryStorage.removeItem("staff_token");
+    temporaryStorage.removeItem("staff_user");
     setToken(newToken);
     setUser(newUser);
     return newUser;
@@ -51,12 +61,16 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback((reason = "manual") => {
     // Token is passed explicitly: the request interceptor runs after it is cleared below.
-    const currentToken = localStorage.getItem("staff_token");
+    const currentToken =
+      localStorage.getItem("staff_token") ||
+      sessionStorage.getItem("staff_token");
     if (currentToken) {
       authAPI.logout(reason, currentToken).catch(() => {});
     }
     localStorage.removeItem("staff_token");
     localStorage.removeItem("staff_user");
+    sessionStorage.removeItem("staff_token");
+    sessionStorage.removeItem("staff_user");
     setToken(null);
     setUser(null);
   }, []);

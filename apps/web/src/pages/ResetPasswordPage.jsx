@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import axios from "axios";
+import { authAPI } from "../services/api";
 
 const LOGO_SRC = "/IDETECT.png";
 
@@ -43,15 +43,12 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      await axios.post("/auth/staff/reset-password", {
-        email,
-        token,
-        new_password: password,
-      });
+      await authAPI.resetPassword(email, token, password);
       setSuccess(true);
     } catch (err) {
       setError(
         err.response?.data?.message ||
+          err.response?.data?.error ||
           "Something went wrong. Please try again or request a new link.",
       );
     } finally {

@@ -9,7 +9,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import axios from "axios";
+import { authAPI } from "../services/api";
 import { CivicStripe } from "../components/CivicChrome";
 
 // Design tokens — mirrors civicBlue/danger/warn ramps in tailwind.config.js.
@@ -134,10 +134,7 @@ function ForgotPasswordModal({ onClose }) {
     setLoading(true);
     setMsg("");
     try {
-      await axios.post("/auth/staff/forgot-password", {
-        email,
-        origin: window.location.origin,
-      });
+      await authAPI.forgotPassword(email, window.location.origin);
       setSent(true);
     } catch {
       setMsg("Something went wrong. Please try again.");
@@ -264,7 +261,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(form.email, form.password);
+      await login(form.email, form.password, remember);
       navigate("/");
     } catch (err) {
       if (!err.response) {

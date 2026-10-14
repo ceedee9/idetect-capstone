@@ -20,7 +20,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { fraudFlagsAPI, staffAlertsAPI } from "../services/api";
+import {
+  fraudFlagsAPI,
+  getStaffToken,
+  staffAlertsAPI,
+} from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { fmtDateTime, fmtRelative } from "../utils/date";
 
@@ -34,7 +38,7 @@ function useAuthImage(url) {
       return;
     }
     let cancelled = false;
-    const token = localStorage.getItem("staff_token");
+    const token = getStaffToken();
     fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : {})
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load image");

@@ -9,6 +9,9 @@ if (!configuredApiBaseUrl) {
   );
 }
 const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/$/, "");
+export const getStaffToken = () =>
+  localStorage.getItem("staff_token") ||
+  sessionStorage.getItem("staff_token");
 const buildApiPath = (path) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   if (normalizedPath.startsWith("/api")) {
@@ -34,7 +37,7 @@ const api = axios.create({
 // when < 5 minutes remain. Uses a shared promise to avoid concurrent refresh calls.
 let _refreshing = null;
 async function ensureFreshToken() {
-  const token = localStorage.getItem("staff_token");
+  const token = getStaffToken();
   if (!token) return token;
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -48,7 +51,10 @@ async function ensureFreshToken() {
           { headers: { Authorization: `Bearer ${token}` } },
         )
         .then((r) => {
-          localStorage.setItem("staff_token", r.data.token);
+          const storage = localStorage.getItem("staff_token")
+            ? localStorage
+            : sessionStorage;
+          storage.setItem("staff_token", r.data.token);
           return r.data.token;
         })
         .catch(() => token) // refresh failed — return old token, 401 will redirect
@@ -72,7 +78,7 @@ api.interceptors.request.use(async (config) => {
 
   if (requestUrl.includes("/auth/")) {
     // Skip refresh for auth endpoints to avoid recursion
-    const token = localStorage.getItem("staff_token");
+    const token = getStaffToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
   } else {
     const token = await ensureFreshToken();
@@ -94,6 +100,8 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !err.config?.url?.includes("/auth/")) {
       localStorage.removeItem("staff_token");
       localStorage.removeItem("staff_user");
+      sessionStorage.removeItem("staff_token");
+      sessionStorage.removeItem("staff_user");
       window.location.href = "/login";
     }
     return Promise.reject(err);
@@ -104,6 +112,10 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (email, password) =>
     api.post("/auth/staff/login", { email, password }),
+  forgotPassword: (email, origin) =>
+    api.post("/auth/staff/forgot-password", { email, origin }),
+  resetPassword: (email, token, new_password) =>
+    api.post("/auth/staff/reset-password", { email, token, new_password }),
   logout: (reason, token) =>
     api.post(
       "/auth/staff/logout",
