@@ -689,7 +689,7 @@ export default function BeneficiaryDetailPage() {
           if (await openSensitiveDetail()) setModal(null);
         }}
         title="Open Sensitive Beneficiary Details"
-        description="This detail view contains sensitive personal information, including the beneficiary's exact date of birth. The ID number will remain masked until you explicitly reveal it. Continue only for an authorized registry or verification task. This access will be recorded in the audit log."
+        description="This view contains sensitive personal information, including the exact date of birth. The ID number will stay masked unless you reveal it. Continue only for an authorized task. This access will be recorded in the audit log."
         confirmLabel="Open Details"
         variant="warn"
         loading={revealLoading}
