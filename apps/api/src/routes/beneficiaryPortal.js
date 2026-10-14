@@ -66,7 +66,8 @@ router.get("/me", async (req, res, next) => {
       ? Math.ceil((suspensionEnd - todayDate) / 86400000)
       : null;
 
-    res.json(maskBeneficiary({
+    // The beneficiary is viewing their own record; the app masks the ID by default.
+    const profile = maskBeneficiary({
       id: b.id,
       id_number: b.id_number,
       full_name: b.full_name,
@@ -87,7 +88,12 @@ router.get("/me", async (req, res, next) => {
         active_disputes: parseInt(b.active_disputes),
       },
       updated_at: b.updated_at,
-    }));
+    });
+    // This is the authenticated beneficiary's own profile. The Flutter app
+    // masks the value by default and only reveals it from local state.
+    profile.id_number = b.id_number;
+    profile.id_number = b.id_number;
+    res.json(profile);
   } catch (err) {
     next(err);
   }
