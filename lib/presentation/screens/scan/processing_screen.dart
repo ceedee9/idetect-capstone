@@ -63,6 +63,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
   // Resolved ID type: same as widget.idType unless 'auto' was selected
   late String _resolvedIdType;
+  late String _resolvedIdFormat;
+  bool? _resolvedSealDetected;
 
   late AnimationController _animationController;
   final Map<String, TextEditingController> _controllers = {};
@@ -71,6 +73,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   void initState() {
     super.initState();
     _resolvedIdType = widget.idType; // may be overwritten during auto-detect
+    _resolvedIdFormat = widget.idFormat;
+    _resolvedSealDetected = widget.sealDetected;
     _animationController = AnimationController(
       vsync: this,
       duration: AppDesignSystem.animationNormal,
@@ -98,7 +102,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       debugPrint('=== PROCESSING START ===');
 
       final imageFile = File(widget.imagePath);
-      var resolvedIdFormat = widget.idFormat;
       if (!await imageFile.exists()) {
         _handleError('Image file not found: ${widget.imagePath}');
         return;
@@ -154,9 +157,10 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             imageHeight: image.height,
             beneficiaryType: _resolvedIdType,
           );
-          resolvedIdFormat = sealResult.sealDetected == true ? 'new' : 'old';
+          _resolvedSealDetected = sealResult.sealDetected;
+          _resolvedIdFormat = sealResult.sealDetected == true ? 'new' : 'old';
           debugPrint(
-              '✅ Auto-detected $_resolvedIdType ${resolvedIdFormat.toUpperCase()} format');
+              '✅ Auto-detected $_resolvedIdType ${_resolvedIdFormat.toUpperCase()} format');
         }
       } else {
         await Future.delayed(const Duration(milliseconds: 800));
@@ -179,7 +183,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             .parseIDWithHybridApproach(
           imageFile: imageFile,
           idType: _resolvedIdType,
-          idFormat: resolvedIdFormat,
+          idFormat: _resolvedIdFormat,
         )
             .timeout(
           const Duration(seconds: 20),
@@ -489,8 +493,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       rawText: _ocrResult?.rawText ?? _parsedData?.rawText ?? '',
     );
 
-    debugPrint(
-        '[TRACE] ProcessingScreen -> VerifyingScreen: idFormat=${widget.idFormat}');
+    debugPrint('[TRACE] ProcessingScreen -> VerifyingScreen: '
+        'idType=$_resolvedIdType idFormat=$_resolvedIdFormat '
+        'sealDetected=$_resolvedSealDetected');
 
     Navigator.push(
       context,
@@ -499,8 +504,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           parsedData: updatedData,
           imagePath: widget.imagePath,
           idType: _resolvedIdType,
-          idFormat: widget.idFormat,
-          sealDetected: widget.sealDetected,
+          idFormat: _resolvedIdFormat,
+          sealDetected: _resolvedSealDetected,
         ),
       ),
     );

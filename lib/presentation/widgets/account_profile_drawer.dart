@@ -98,8 +98,12 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
   Widget build(BuildContext context) {
     final sourceUser = widget.user ?? ApiService.currentUser;
 
-    final fullName = _safeValue(
-      sourceUser?['name']?.toString() ?? sourceUser?['full_name']?.toString(),
+    final establishmentName = _safeValue(
+      sourceUser?['name']?.toString(),
+      'Establishment Account',
+    );
+    final userName = _safeValue(
+      sourceUser?['full_name']?.toString(),
       'Account User',
     );
     final email =
@@ -172,7 +176,7 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    fullName,
+                    establishmentName,
                     style: GoogleFonts.sourceSerif4(
                       color: Colors.white,
                       fontSize: 19,
@@ -212,7 +216,7 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            fullName,
+                            userName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
