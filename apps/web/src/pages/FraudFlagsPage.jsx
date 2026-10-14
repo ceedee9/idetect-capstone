@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
   Flag,
   AlertTriangle,
@@ -166,6 +167,7 @@ export default function FraudFlagsPage() {
   const [selectedFlag, setSelectedFlag] = useState(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [confirmArmed, setConfirmArmed] = useState(false);
+  const detailScrollRef = useRef(null);
 
   // Staff alerts (auto-suspend notifications)
   const [alerts, setAlerts] = useState([]);
@@ -211,6 +213,12 @@ export default function FraudFlagsPage() {
     setConfirmArmed(false);
     setSelectedFlag(flag);
   }
+
+  useEffect(() => {
+    if (selectedFlag) {
+      detailScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [selectedFlag?.id]);
 
   function moveInQueue(direction) {
     if (selectedQueueIndex < 0 || pendingQueue.length < 2) return;
@@ -541,15 +549,16 @@ export default function FraudFlagsPage() {
 
       {/* REQ-2.6.2: Flag Detail Drawer */}
       {selectedFlag && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto p-4 sm:p-6">
+        createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/35 p-4 sm:p-6">
           <div
-            className="absolute inset-0 bg-slate-950/35"
+            className="absolute inset-0"
             onClick={() => {
               setLightboxOpen(false);
               setSelectedFlag(null);
             }}
           />
-          <div className="relative z-10 flex h-[min(82vh,760px)] max-h-[calc(100vh-2rem)] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+          <div className="relative z-10 flex h-[min(760px,calc(100vh-2rem))] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             {/* Drawer Header */}
             <div className="relative flex flex-shrink-0 items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -604,7 +613,10 @@ export default function FraudFlagsPage() {
               </div>
             </div>
 
-            <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
+            <div
+              ref={detailScrollRef}
+              className="min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-5 py-5 sm:px-8 sm:py-6"
+            >
               {/* Tier 1: evidence */}
               <section>
                 <div className="flex items-center justify-between mb-2">
@@ -627,7 +639,7 @@ export default function FraudFlagsPage() {
                     <img
                       src={flagImageUrl ?? ""}
                       alt="Captured ID"
-                      className="block aspect-[4/3] h-auto max-h-[32rem] min-h-[17rem] w-full object-cover"
+                      className="block max-h-[16rem] w-full bg-slate-100 object-contain sm:max-h-[20rem]"
                     />
                     <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-registry-lg bg-slate-900/75 px-2.5 py-1.5 text-xs font-semibold text-white opacity-90 transition-opacity group-hover:bg-slate-900">
                       <Maximize2 className="w-3.5 h-3.5" />
@@ -825,7 +837,9 @@ export default function FraudFlagsPage() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
+        )
       )}
 
       {lightboxOpen && selectedFlag && flagImageUrl && (
