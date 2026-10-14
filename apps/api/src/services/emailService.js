@@ -57,4 +57,20 @@ async function sendEstablishmentSetupLink({ business_name, email, setupUrl }) {
   return sendEmail({ to: email, subject, text, html });
 }
 
-module.exports = { sendEmail, sendEstablishmentSetupLink };
+async function sendEstablishmentUserInvitation({
+  business_name,
+  full_name,
+  email,
+  invitationUrl,
+}) {
+  const subject = "You are invited to the iDetect Establishment Portal";
+  const text = `Hello ${full_name},\n\n${business_name} invited you to use the iDetect Establishment Portal as a Regular User.\n\nSet your password using this link. It expires in 24 hours:\n${invitationUrl}\n\nIf you were not expecting this invitation, contact your establishment administrator.\n\nThis is an automated notification; replies are not monitored.`;
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><div style="background:#002e6b;padding:20px 24px;"><h2 style="color:#fff;margin:0;font-size:18px;">iDetect Establishment Portal</h2><p style="color:#dbeafe;margin:4px 0 0;font-size:13px;">User invitation</p></div><div style="padding:24px;"><p style="margin-top:0;">Hello <strong>${full_name}</strong>,</p><p><strong>${business_name}</strong> invited you to use the iDetect Establishment Portal as a Regular User.</p><p>This invitation expires in 24 hours.</p><p style="text-align:center;margin:24px 0;"><a href="${invitationUrl}" style="background:#002e6b;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">Accept Invitation</a></p><p style="color:#6b7280;font-size:12px;">If you were not expecting this invitation, contact your establishment administrator.</p></div></div>`;
+  return sendEmail({ to: email, subject, text, html });
+}
+
+module.exports = {
+  sendEmail,
+  sendEstablishmentSetupLink,
+  sendEstablishmentUserInvitation,
+};

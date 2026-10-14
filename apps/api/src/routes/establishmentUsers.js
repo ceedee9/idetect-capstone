@@ -1,7 +1,9 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
+const { sendEstablishmentUserInvitation } = require("../services/emailService");
 const {
   authenticateEstablishment,
 } = require("../middleware/auth");
@@ -50,22 +52,20 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// Create a regular user. Invitation email delivery can be added later without
-// changing the tenant or permission boundary of this endpoint.
+// Create a regular user with an expiring invitation.
 router.post(
   "/",
   requireSuperUser,
   [
     body("email").isEmail().normalizeEmail(),
     body("full_name").trim().isLength({ min: 2, max: 255 }),
-    body("password").isLength({ min: 8, max: 128 }),
   ],
   async (req, res, next) => {
     try {
       const errorResponse = validationError(req, res);
       if (errorResponse) return errorResponse;
 
-      const { email, full_name, password } = req.body;
+      const { email, full_name } = req.body;
       const duplicate = await pool.query(
         "SELECT id FROM establishment_users WHERE lower(email) = lower($1)",
         [email],
@@ -74,23 +74,38 @@ router.post(
         return res.status(409).json({ error: "Email already registered" });
       }
 
-      const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      const invitationToken = crypto.randomBytes(32).toString("hex");
+      const invitationTokenHash = crypto
+        .createHash("sha256")
+        .update(invitationToken)
+        .digest("hex");
+      const unusablePasswordHash = await bcrypt.hash(
+        crypto.randomBytes(32).toString("hex"),
+        SALT_ROUNDS,
+      );
       const created = await pool.query(
         `INSERT INTO establishment_users
           (establishment_id, email, password_hash, full_name, role,
-           account_status, invitation_status, created_by_user_id, approved_by_user_id,
-           approved_at)
+           account_status, invitation_status, created_by_user_id,
+           invitation_token_hash, invitation_token_expires)
          VALUES ($1, $2, $3, $4, 'establishment_regular_user',
-                 'active', 'accepted', $5, $5, NOW())
+                 'inactive', 'pending', $5, $6, NOW() + INTERVAL '24 hours')
          RETURNING id, email, full_name, role, account_status, invitation_status,
                    password_reset_required, last_login_at, created_at, updated_at`,
-        [establishmentId(req), email, passwordHash, full_name, actorId(req)],
+        [
+          establishmentId(req),
+          email,
+          unusablePasswordHash,
+          full_name,
+          actorId(req),
+          invitationTokenHash,
+        ],
       );
 
       await pool.query(
         `INSERT INTO audit_logs
           (establishment_id, action, target_table, target_id, metadata, ip_address)
-         VALUES ($1, 'establishment_user_created', 'establishment_users', $2, $3, $4)`,
+         VALUES ($1, 'establishment_user_invited', 'establishment_users', $2, $3, $4)`,
         [
           establishmentId(req),
           created.rows[0].id,
@@ -98,12 +113,32 @@ router.post(
             actor_user_id: actorId(req),
             email,
             role: "establishment_regular_user",
+            invitation_status: "pending",
           }),
           req.ip,
         ],
       );
 
-      res.status(201).json({ user: created.rows[0] });
+      const invitationOrigin =
+        process.env.ESTABLISHMENT_PORTAL_ORIGIN ||
+        process.env.ALLOWED_PORTAL_ORIGINS?.split(",")[0] ||
+        "https://idetect.it.com";
+      const invitationUrl =
+        `${invitationOrigin.replace(/\/$/, "")}/establishment/accept-invitation` +
+        `?token=${invitationToken}&email=${encodeURIComponent(email)}`;
+      const emailResult = await sendEstablishmentUserInvitation({
+        business_name: req.establishment.name || "your establishment",
+        full_name,
+        email,
+        invitationUrl,
+      });
+      if (!emailResult.success) {
+        return res.status(502).json({
+          error: "User was created, but the invitation email could not be sent.",
+          user: created.rows[0],
+        });
+      }
+      res.status(201).json({ user: created.rows[0], invitation_sent: true });
     } catch (err) {
       next(err);
     }

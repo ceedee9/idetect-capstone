@@ -35,6 +35,7 @@ This document brings together the changes made so far in response to the IT expe
 - **Authority model — Phase 2B foundation:** Added the compatibility-backed `establishment_users` table. Existing establishment logins are migrated as establishment Super Users, individual user IDs and roles are included in new establishment tokens, and new verification logs and fraud flags retain the individual establishment user who performed the operation. Legacy establishment credentials remain synchronized during rollout.
 - **Fraud-flag cleanup:** Added a permanent-delete action for dismissed fraud flags only. OSCA/PDAO staff receive a clear irreversible-action acknowledgement before deletion, and the deletion is recorded as an immutable `flag_deleted` audit event. Pending and confirmed flags cannot be deleted through this workflow.
 - **Authority model — Phase 2C user management API:** Added establishment-scoped endpoints for Super Users to list, create, activate, deactivate, suspend, and reset Regular User accounts. Regular Users are prevented from managing accounts, and all changes are written to the establishment audit trail.
+- **Authority model — Phase 2D invitations:** Replaced direct temporary-password creation with a single-use, 24-hour invitation. The invited Regular User sets their own password through the public portal acceptance page before the account becomes active.
 
 ## How the changes were approached
 

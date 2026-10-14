@@ -14,6 +14,7 @@ export default function EstablishmentSetupPasswordPage() {
 
   const token = searchParams.get("token") || "";
   const email = searchParams.get("email") || "";
+  const isInvitation = window.location.pathname.endsWith("accept-invitation");
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -46,7 +47,11 @@ export default function EstablishmentSetupPasswordPage() {
 
     setLoading(true);
     try {
-      await authAPI.establishmentSetupPassword(email, token, password);
+      if (isInvitation) {
+        await authAPI.establishmentAcceptInvitation(email, token, password);
+      } else {
+        await authAPI.establishmentSetupPassword(email, token, password);
+      }
       setSuccess(true);
     } catch (err) {
       setError(
@@ -103,7 +108,7 @@ export default function EstablishmentSetupPasswordPage() {
                 className="font-bold text-2xl text-gray-900 mb-1"
                 style={{ letterSpacing: "-0.5px" }}
               >
-                Set Your Password
+                {isInvitation ? "Accept Invitation" : "Set Your Password"}
               </h2>
               <p className="text-xs text-gray-400 mb-6">
                 Choose a password for{" "}

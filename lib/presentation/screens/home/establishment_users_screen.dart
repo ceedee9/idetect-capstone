@@ -47,13 +47,12 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
     final response = await ApiService.createEstablishmentUser(
       email: result['email'] as String,
       fullName: result['full_name'] as String,
-      password: result['password'] as String,
     );
     if (!mounted) return;
     if (response['error'] != null) {
       _showMessage(response['error'].toString());
     } else {
-      _showMessage('Regular User created.');
+      _showMessage('Invitation sent to the Regular User.');
       _loadUsers();
     }
   }
@@ -365,14 +364,11 @@ class _CreateUserDialog extends StatefulWidget {
 class _CreateUserDialogState extends State<_CreateUserDialog> {
   final _name = TextEditingController();
   final _email = TextEditingController();
-  final _password = TextEditingController();
-  bool _showPassword = false;
 
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
-    _password.dispose();
     super.dispose();
   }
 
@@ -404,22 +400,14 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
                   )),
-              TextField(
-                controller: _password,
-                obscureText: !_showPassword,
-                decoration: InputDecoration(
-                  labelText: 'Temporary password',
-                  helperText: 'At least 8 characters',
-                  prefixIcon: const Icon(Icons.lock_outline_rounded),
-                  suffixIcon: IconButton(
-                    tooltip: _showPassword ? 'Hide password' : 'Show password',
-                    onPressed: () =>
-                        setState(() => _showPassword = !_showPassword),
-                    icon: Icon(
-                      _showPassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                    ),
+              const Padding(
+                padding: EdgeInsets.only(top: 14),
+                child: Text(
+                  'The user will receive an email invitation and create their own password. The invitation expires in 24 hours.',
+                  style: TextStyle(
+                    color: AppDesignSystem.textSecondary,
+                    fontSize: 13,
+                    height: 1.35,
                   ),
                 ),
               ),
@@ -436,15 +424,12 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
               foregroundColor: Colors.white,
             ),
             onPressed: () {
-              if (_name.text.trim().isEmpty ||
-                  _email.text.trim().isEmpty ||
-                  _password.text.length < 8) {
+              if (_name.text.trim().isEmpty || _email.text.trim().isEmpty) {
                 return;
               }
               Navigator.pop(context, {
                 'full_name': _name.text.trim(),
                 'email': _email.text.trim(),
-                'password': _password.text,
               });
             },
             child: const Text('Create'),

@@ -431,11 +431,10 @@ class ApiService {
   static Future<Map<String, dynamic>> createEstablishmentUser({
     required String email,
     required String fullName,
-    required String password,
   }) async {
     return _establishmentUserRequest(
       method: 'POST',
-      body: {'email': email, 'full_name': fullName, 'password': password},
+      body: {'email': email, 'full_name': fullName},
     );
   }
 

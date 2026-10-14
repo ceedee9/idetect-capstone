@@ -141,6 +141,10 @@ export default function App() {
                 path="/establishment/setup-password"
                 element={<EstablishmentSetupPasswordPage />}
               />
+              <Route
+                path="/establishment/accept-invitation"
+                element={<EstablishmentSetupPasswordPage />}
+              />
 
               {/* Protected shell */}
               <Route

@@ -202,6 +202,11 @@ Regular User accounts. The authenticated establishment relationship is always
 taken from the token; client-supplied establishment IDs are not used for
 authorization. Regular Users cannot manage accounts or change roles.
 
+Regular User creation now uses an invitation workflow. The account starts as
+inactive with a pending invitation, and the system stores only a hash of the
+single-use 24-hour invitation token. The invited user sets their own password
+through the public acceptance page; only then does the account become active.
+
 ### Establishment Super User
 
 #### Allowed

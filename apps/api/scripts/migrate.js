@@ -80,6 +80,7 @@ const MIGRATIONS = [
   "042_add_establishment_users.sql",
   "043_add_flag_deleted_audit_action.sql",
   "044_add_establishment_user_audit_actions.sql",
+  "045_add_establishment_user_invitations.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

@@ -116,6 +116,12 @@ export const authAPI = {
       token,
       new_password,
     }),
+  establishmentAcceptInvitation: (email, token, new_password) =>
+    api.post("/auth/establishment/accept-invitation", {
+      email,
+      token,
+      new_password,
+    }),
 };
 
 // ─── Beneficiaries ────────────────────────────────────────────────────────────
