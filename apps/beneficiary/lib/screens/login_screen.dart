@@ -324,7 +324,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['error'] != null) {
-      setState(() => _errorMessage = result['error']);
+      final days = result['suspension_days_remaining'];
+      final suspensionMessage = result['suspension_status'] != null
+          ? (days is num && days > 0
+              ? '${result['error']} ${days.toInt()} day(s) remaining. End date: ${result['suspension_end_date']}.'
+              : '${result['error']} The suspension period has ended and is awaiting office review.')
+          : result['error'];
+      setState(() => _errorMessage = suspensionMessage);
     } else if (result['mobile_required'] == true) {
       // No mobile on file — show registration form
       setState(() {

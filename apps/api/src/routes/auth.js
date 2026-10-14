@@ -445,6 +445,30 @@ router.post(
         });
       }
 
+      if (beneficiary.status === "suspended") {
+        const endDate = beneficiary.suspension_end_date
+          ? new Date(beneficiary.suspension_end_date)
+          : null;
+        const today = new Date();
+        const todayDate = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+        );
+        const daysRemaining = endDate
+          ? Math.ceil((endDate - todayDate) / 86400000)
+          : null;
+        return res.status(423).json({
+          error: "Your beneficiary record is currently suspended.",
+          suspension_status: daysRemaining != null && daysRemaining > 0
+            ? "suspended"
+            : "suspension_expired_review_required",
+          suspension_end_date: beneficiary.suspension_end_date,
+          suspension_days_remaining: daysRemaining,
+          status_reason: beneficiary.status_reason,
+        });
+      }
+
       // If no mobile number registered, tell the app so it can prompt registration
       if (!beneficiary.registered_mobile) {
         return res.json({
@@ -725,6 +749,7 @@ router.post(
 
       const result = await pool.query(
         `SELECT b.id AS beneficiary_id, b.full_name, b.beneficiary_type,
+                b.status, b.status_reason, b.suspension_end_date,
                 ba.id AS account_id, ba.pin_hash, ba.pin_attempts, ba.pin_locked_until
          FROM beneficiaries b
          JOIN beneficiary_accounts ba ON ba.beneficiary_id = b.id
@@ -737,6 +762,27 @@ router.post(
       // Don't reveal whether the ID exists
       if (!record || !record.pin_hash) {
         throw createError(401, "Invalid credentials");
+      }
+
+      if (record.status === "suspended") {
+        const endDate = record.suspension_end_date
+          ? new Date(record.suspension_end_date)
+          : null;
+        const today = new Date();
+        const todayDate = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+        );
+        const daysRemaining = endDate
+          ? Math.ceil((endDate - todayDate) / 86400000)
+          : null;
+        throw createError(
+          423,
+          daysRemaining != null && daysRemaining > 0
+            ? `Your beneficiary record is suspended. ${daysRemaining} day(s) remaining.`
+            : "Your suspension period has ended and is awaiting office review.",
+        );
       }
 
       // Check lock

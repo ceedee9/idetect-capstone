@@ -129,7 +129,8 @@ router.get("/", async (req, res, next) => {
     let query = `
       SELECT id, reference_no, id_number, full_name, birthdate, beneficiary_type,
              issuing_office, validity_start, validity_end, status,
-             disability_type, created_at
+             disability_type, suspension_start_date, suspension_end_date,
+             created_at
       FROM beneficiaries
       WHERE beneficiary_type = $1
     `;
@@ -800,7 +801,9 @@ router.patch(
   "/:id/status",
   [
     body("status").isIn(["active", "suspended", "revoked", "expired"]),
-    body("status_reason").optional().isString().trim(),
+    body("status_reason").optional().isString().trim().isLength({ max: 2500 }),
+    body("suspension_start_date").optional().isISO8601(),
+    body("suspension_end_date").optional().isISO8601(),
   ],
   async (req, res, next) => {
     try {
@@ -810,7 +813,28 @@ router.patch(
       }
 
       const type = getTypeForRole(req.user.role);
-      const { status, status_reason } = req.body;
+      const {
+        status,
+        status_reason,
+        suspension_start_date,
+        suspension_end_date,
+      } = req.body;
+      const startDate =
+        suspension_start_date || new Date().toISOString().slice(0, 10);
+      const endDate = suspension_end_date || null;
+
+      if (status === "suspended" && !endDate) {
+        throw createError(400, "A suspension end date is required.");
+      }
+      if (
+        status === "suspended" &&
+        new Date(endDate) < new Date(startDate)
+      ) {
+        throw createError(
+          400,
+          "Suspension end date cannot be earlier than the start date.",
+        );
+      }
 
       const existing = await pool.query(
         "SELECT * FROM beneficiaries WHERE id = $1 AND beneficiary_type = $2",
@@ -823,9 +847,20 @@ router.patch(
 
       await pool.query(
         `UPDATE beneficiaries
-       SET status = $1, status_reason = $2, updated_by = $3
-       WHERE id = $4`,
-        [status, status_reason || null, req.user.id, req.params.id],
+       SET status = $1,
+           status_reason = $2,
+           suspension_start_date = $3,
+           suspension_end_date = $4,
+           updated_by = $5
+       WHERE id = $6`,
+        [
+          status,
+          status_reason || null,
+          status === "suspended" ? startDate : null,
+          status === "suspended" ? endDate : null,
+          req.user.id,
+          req.params.id,
+        ],
       );
 
       await pool.query(

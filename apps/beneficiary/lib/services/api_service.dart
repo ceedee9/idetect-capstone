@@ -606,6 +606,8 @@ class BeneficiaryProfile {
   final String validityEnd;
   final String status;
   final String? statusReason;
+  final String? suspensionEndDate;
+  final int? suspensionDaysRemaining;
   final String? registeredMobile;
   final int totalVerifications;
   final int pendingFlags;
@@ -622,6 +624,8 @@ class BeneficiaryProfile {
     required this.validityEnd,
     required this.status,
     this.statusReason,
+    this.suspensionEndDate,
+    this.suspensionDaysRemaining,
     this.registeredMobile,
     this.totalVerifications = 0,
     this.pendingFlags = 0,
@@ -641,6 +645,10 @@ class BeneficiaryProfile {
       validityEnd: json['validity_end']?.toString().substring(0, 10) ?? '',
       status: json['status'],
       statusReason: json['status_reason'],
+      suspensionEndDate: json['suspension_end_date']?.toString(),
+      suspensionDaysRemaining: json['suspension_days_remaining'] is num
+          ? (json['suspension_days_remaining'] as num).toInt()
+          : null,
       registeredMobile: json['registered_mobile'],
       totalVerifications: stats['total_verifications'] ?? 0,
       pendingFlags: stats['pending_flags'] ?? 0,

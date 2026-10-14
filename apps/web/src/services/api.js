@@ -180,8 +180,13 @@ export const beneficiariesAPI = {
 
   importBulk: (records) => api.post("/beneficiaries/import", { records }),
 
-  updateStatus: (id, status, status_reason) =>
-    api.patch(`/beneficiaries/${id}/status`, { status, status_reason }),
+  updateStatus: (id, status, status_reason, suspension_start_date, suspension_end_date) =>
+    api.patch(`/beneficiaries/${id}/status`, {
+      status,
+      status_reason,
+      suspension_start_date,
+      suspension_end_date,
+    }),
 
   delete: (id) => api.delete(`/beneficiaries/${id}`),
 

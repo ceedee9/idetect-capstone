@@ -93,6 +93,7 @@ export default function BeneficiaryDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [actionReason, setActionReason] = useState("");
+  const [suspensionEndDate, setSuspensionEndDate] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -123,11 +124,20 @@ export default function BeneficiaryDetailPage() {
     setModal(null);
     setActionError("");
     setActionReason("");
+    setSuspensionEndDate("");
   }
 
   async function handleAction() {
     const newStatus = STATUS_FOR_MODAL[modal];
     if (!newStatus) return;
+    if (newStatus === "suspended" && !actionReason.trim()) {
+      setActionError("A suspension reason is required.");
+      return;
+    }
+    if (newStatus === "suspended" && !suspensionEndDate) {
+      setActionError("A suspension end date is required.");
+      return;
+    }
     setActionLoading(true);
     setActionError("");
     try {
@@ -135,6 +145,8 @@ export default function BeneficiaryDetailPage() {
         id,
         newStatus,
         actionReason.trim() || undefined,
+        undefined,
+        modal === "suspend" ? suspensionEndDate : undefined,
       );
       setSuccessMsg(`Status updated to ${newStatus} successfully.`);
       closeActionModal();
@@ -490,6 +502,13 @@ export default function BeneficiaryDetailPage() {
                   value={b.disability_type || "Not recorded"}
                 />
               )}
+              {b.status === "suspended" && (
+                <InfoRow
+                  icon={Clock}
+                  label="Suspension period"
+                  value={`${fmtDate(b.suspension_start_date)} to ${fmtDate(b.suspension_end_date)}`}
+                />
+              )}
               <div className="flex items-start gap-3 py-3.5 border-b border-slate-50">
                 <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Calendar className="w-4 h-4 text-slate-400" />
@@ -775,10 +794,20 @@ export default function BeneficiaryDetailPage() {
       >
         <input
           className="input mt-3"
-          placeholder="Reason (optional)"
+          placeholder="Reason (required)"
           value={actionReason}
           onChange={(e) => setActionReason(e.target.value)}
         />
+        <label className="block text-xs font-semibold text-slate-500 mt-3">
+          Suspension end date
+          <input
+            type="date"
+            className="input mt-1"
+            min={new Date().toISOString().slice(0, 10)}
+            value={suspensionEndDate}
+            onChange={(e) => setSuspensionEndDate(e.target.value)}
+          />
+        </label>
         {actionError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />

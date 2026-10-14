@@ -91,5 +91,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 036: add verification log reference numbers'
 \i 036_add_verification_reference_numbers.sql
 
+\echo '>>> Running migration 041: beneficiary suspension dates'
+\i 041_add_beneficiary_suspension_dates.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='

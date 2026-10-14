@@ -275,6 +275,19 @@ class _StatusScreenState extends State<StatusScreen> {
                     ),
                   ],
                 ),
+                if (p.isSuspended) ...[
+                  const SizedBox(height: AppDesignSystem.spaceSM),
+                  Text(
+                    p.suspensionDaysRemaining != null &&
+                            p.suspensionDaysRemaining! > 0
+                        ? 'Suspension period: ${p.suspensionDaysRemaining} day(s) remaining${p.suspensionEndDate == null ? '' : ' (ends ${p.suspensionEndDate})'}.'
+                        : 'Suspension period ended. Awaiting office review.',
+                    style: AppDesignSystem.bodySmall.copyWith(
+                      color: AppDesignSystem.statusWarning,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
             ],
           ),

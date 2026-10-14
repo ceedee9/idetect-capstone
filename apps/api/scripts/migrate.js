@@ -76,6 +76,7 @@ const MIGRATIONS = [
   "038_add_super_admin_role.sql",
   "039_add_office_super_admin_roles.sql",
   "040_add_sensitive_data_audit_action.sql",
+  "041_add_beneficiary_suspension_dates.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

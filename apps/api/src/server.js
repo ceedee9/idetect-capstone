@@ -11,6 +11,9 @@ const {
 } = require("./services/slaEscalationScheduler");
 const { startFlagDecayScheduler } = require("./services/flagDecayScheduler");
 const {
+  startSuspensionReminderScheduler,
+} = require("./services/suspensionReminderScheduler");
+const {
   startExpiredStatusScheduler,
 } = require("./services/expiredStatusScheduler");
 const PORT = process.env.PORT || 3000;
@@ -151,6 +154,11 @@ async function runStartupMigrations() {
     await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'sensitive_data_revealed';
     `);
+    await pool.query(`
+      ALTER TABLE beneficiaries
+        ADD COLUMN IF NOT EXISTS suspension_start_date DATE,
+        ADD COLUMN IF NOT EXISTS suspension_end_date DATE;
+    `);
     console.log("✅ Startup migrations applied.");
   } catch (err) {
     console.warn("⚠️  Startup migration warning:", err.message);
@@ -263,6 +271,7 @@ async function startServer() {
 
     // Start daily stale-flag auto-expiry scheduler
     startFlagDecayScheduler();
+    startSuspensionReminderScheduler();
 
     // Start nightly job to set beneficiary status = 'expired' for lapsed IDs
     startExpiredStatusScheduler();

@@ -30,7 +30,8 @@ router.get("/me", async (req, res, next) => {
          b.id, b.id_number, b.full_name, b.birthdate,
          b.beneficiary_type, b.issuing_office,
          b.validity_start, b.validity_end,
-         b.status, b.status_reason, b.registered_mobile,
+         b.status, b.status_reason, b.suspension_start_date,
+         b.suspension_end_date, b.registered_mobile,
          b.created_at, b.updated_at,
          (SELECT COUNT(*) FROM verification_logs vl WHERE vl.beneficiary_id = b.id) AS total_verifications,
          (SELECT COUNT(*) FROM fraud_flags ff WHERE ff.beneficiary_id = b.id AND ff.flag_status = 'pending') AS pending_flags,
@@ -52,6 +53,19 @@ router.get("/me", async (req, res, next) => {
       effectiveStatus = "expired";
     }
 
+    const suspensionEnd = b.suspension_end_date
+      ? new Date(b.suspension_end_date)
+      : null;
+    const today = new Date();
+    const todayDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const suspensionDaysRemaining = suspensionEnd
+      ? Math.ceil((suspensionEnd - todayDate) / 86400000)
+      : null;
+
     res.json(maskBeneficiary({
       id: b.id,
       id_number: b.id_number,
@@ -63,6 +77,9 @@ router.get("/me", async (req, res, next) => {
       validity_end: b.validity_end,
       status: effectiveStatus,
       status_reason: b.status_reason,
+      suspension_start_date: b.suspension_start_date,
+      suspension_end_date: b.suspension_end_date,
+      suspension_days_remaining: suspensionDaysRemaining,
       registered_mobile: b.registered_mobile,
       stats: {
         total_verifications: parseInt(b.total_verifications),

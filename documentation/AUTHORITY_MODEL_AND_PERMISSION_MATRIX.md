@@ -350,6 +350,11 @@ After approval, implementation should proceed in this order:
   they require a separate establishment-user schema and invitation workflow.
 - Each Agency Super Admin must be provisioned through a controlled
   deployment/database process; no default Super Admin password is seeded.
+- Beneficiary suspensions require a reason and start/end dates. The system
+  keeps an expired suspension in suspended status for manual review, sends
+  staff reminders from seven days before the end date, and tells the
+  beneficiary how many days remain when they try to log in. Staff must choose
+  whether to reinstate, extend, or revoke the record.
 - F-05/F-06 privacy baseline is enforced on beneficiary-facing API responses,
   staff beneficiary/fraud/dispute/dashboard views, and CSV exports. ID values
   expose only the final two characters, while exact birth dates are omitted
