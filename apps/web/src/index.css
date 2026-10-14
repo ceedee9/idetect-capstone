@@ -5,6 +5,13 @@
 @layer base {
   * {
     box-sizing: border-box;
+    caret-color: transparent;
+  }
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    caret-color: auto;
   }
   html {
     -webkit-font-smoothing: antialiased;
