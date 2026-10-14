@@ -196,6 +196,12 @@ cleanup workflow. The API rejects deletion of pending or confirmed flags,
 limits the operation to the matching OSCA/PDAO scope, requires a confirmation
 in the portal, and records the deletion in the immutable audit log.
 
+The next Phase 2 user-management slice exposes establishment-scoped endpoints
+for Super Users to list, create, activate, deactivate, suspend, and reset
+Regular User accounts. The authenticated establishment relationship is always
+taken from the token; client-supplied establishment IDs are not used for
+authorization. Regular Users cannot manage accounts or change roles.
+
 ### Establishment Super User
 
 #### Allowed

@@ -410,6 +410,91 @@ class ApiService {
     }
   }
 
+  // ── Establishment Super User account management ─────────────────────────
+
+  static Future<Map<String, dynamic>> getEstablishmentUsers() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/establishment-users'),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) return data;
+      return {'error': data['error'] ?? 'Could not load establishment users.'};
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> createEstablishmentUser({
+    required String email,
+    required String fullName,
+    required String password,
+  }) async {
+    return _establishmentUserRequest(
+      method: 'POST',
+      body: {'email': email, 'full_name': fullName, 'password': password},
+    );
+  }
+
+  static Future<Map<String, dynamic>> updateEstablishmentUserStatus(
+    String id,
+    String accountStatus,
+  ) async {
+    return _establishmentUserRequest(
+      method: 'PATCH',
+      path: '$id/status',
+      body: {'account_status': accountStatus},
+    );
+  }
+
+  static Future<Map<String, dynamic>> updateEstablishmentUserRole(
+    String id,
+    String role,
+  ) async {
+    return _establishmentUserRequest(
+      method: 'PATCH',
+      path: '$id/role',
+      body: {'role': role},
+    );
+  }
+
+  static Future<Map<String, dynamic>> resetEstablishmentUserPassword(
+    String id,
+    String password,
+  ) async {
+    return _establishmentUserRequest(
+      method: 'PATCH',
+      path: '$id/reset-password',
+      body: {'password': password},
+    );
+  }
+
+  static Future<Map<String, dynamic>> _establishmentUserRequest({
+    required String method,
+    String? path,
+    required Map<String, dynamic> body,
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '$baseUrl/establishment-users${path == null ? '' : '/$path'}',
+      );
+      final request = http.Request(method, uri)
+        ..headers.addAll(_authHeaders())
+        ..body = jsonEncode(body);
+      final response =
+          await http.Client().send(request).timeout(const Duration(seconds: 10));
+      final responseBody = await response.stream.bytesToString();
+      final data = jsonDecode(responseBody);
+      if (response.statusCode >= 200 && response.statusCode < 300) return data;
+      return {'error': data['error'] ?? 'Could not update the user account.'};
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
   // ── Verification History (REQ-2.16.5) ─────────────────────────────────────
   //
   // Calls GET /verification/history. The route originally only read `page`

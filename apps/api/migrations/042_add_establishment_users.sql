@@ -65,7 +65,9 @@ CREATE INDEX IF NOT EXISTS idx_fraud_flags_establishment_user
   ON fraud_flags(establishment_user_id);
 
 ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_user_login';
+ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_user_login_failed';
 ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_user_logout';
+ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_user_invited';
 ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_user_created';
 ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_user_activated';
 ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_user_deactivated';

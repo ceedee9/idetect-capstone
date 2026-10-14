@@ -21,6 +21,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/api_service.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/change_password_screen.dart';
+import '../screens/home/establishment_users_screen.dart';
 
 class AccountProfileDrawer extends StatefulWidget {
   const AccountProfileDrawer({super.key, this.user});
@@ -239,6 +240,20 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
               label: 'Change Password',
               onTap: () => _openChangePassword(context),
             ),
+            if (sourceUser?['role'] == 'establishment_super_user')
+              _ActionRow(
+                icon: Icons.manage_accounts_outlined,
+                label: 'Manage Establishment Users',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EstablishmentUsersScreen(),
+                    ),
+                  );
+                },
+              ),
 
             const Spacer(),
 

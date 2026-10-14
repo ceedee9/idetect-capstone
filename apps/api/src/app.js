@@ -36,6 +36,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const auditLogRoutes = require("./routes/auditLogs");
 const reportRoutes = require("./routes/reports");
 const staffRoutes = require("./routes/staff");
+const establishmentUserRoutes = require("./routes/establishmentUsers");
 
 const app = express();
 
@@ -149,6 +150,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/audit-logs", auditLogRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/establishment-users", establishmentUserRoutes);
 
 // ── Test email endpoint (admin only — requires valid JWT) ──────
 app.post("/api/test-email", async (req, res) => {
