@@ -231,6 +231,7 @@ router.post(
         `SELECT
            e.*,
            eu.id AS establishment_user_id,
+           eu.email AS user_email,
            eu.full_name AS user_full_name,
            eu.role AS user_role,
            eu.account_status AS user_account_status,
@@ -332,7 +333,7 @@ router.post(
             [
               establishment.id,
               JSON.stringify({
-                email: establishment.email,
+                email: establishment.user_email || establishment.email,
                 reason: "failed_login_attempts",
               }),
               req.ip,

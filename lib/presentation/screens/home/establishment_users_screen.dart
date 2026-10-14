@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 
 class EstablishmentUsersScreen extends StatefulWidget {
@@ -10,6 +11,7 @@ class EstablishmentUsersScreen extends StatefulWidget {
 }
 
 class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
+  static const _navy = AppDesignSystem.primaryBlue;
   List<Map<String, dynamic>> _users = [];
   bool _loading = true;
   String? _error;
@@ -164,22 +166,38 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
       );
     }
     return Scaffold(
+      backgroundColor: AppDesignSystem.backgroundLight,
       appBar: AppBar(
-        title: const Text('Establishment Users'),
+        backgroundColor: _navy,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Manage Users',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         actions: [
-          IconButton(onPressed: _loadUsers, icon: const Icon(Icons.refresh)),
+          IconButton(
+            onPressed: _loadUsers,
+            tooltip: 'Refresh users',
+            icon: const Icon(Icons.refresh_rounded),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createUser,
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add user'),
+        backgroundColor: _navy,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: const Text('Add Regular User'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: _navy),
+            )
           : _error != null
-              ? Center(child: Text(_error!))
+              ? _ErrorState(message: _error!, onRetry: _loadUsers)
               : RefreshIndicator(
+                  color: _navy,
                   onRefresh: _loadUsers,
                   child: _users.isEmpty
                       ? ListView(
@@ -190,64 +208,149 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
                           ],
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 110),
                           itemCount: _users.length,
                           separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                           itemBuilder: (_, index) {
                             final user = _users[index];
                             final active = user['account_status'] == 'active';
+                            final isCurrentUser =
+                                user['id'] == ApiService.currentUser?['id'];
+                            final isSuperUser =
+                                user['role'] == 'establishment_super_user';
                             return Card(
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  child: Icon(
-                                      active ? Icons.person : Icons.person_off),
+                              elevation: 0,
+                              color: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(
+                                  color: AppDesignSystem.borderLight,
                                 ),
-                                title:
-                                    Text(user['full_name']?.toString() ?? ''),
-                                subtitle: Text(
-                                  '${user['email']}\n${user['role'] == 'establishment_super_user' ? 'Super User' : 'Regular User'} · ${user['account_status']}',
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                leading: CircleAvatar(
+                                  backgroundColor: active
+                                      ? _navy.withValues(alpha: 0.10)
+                                      : AppDesignSystem.backgroundLight,
+                                  foregroundColor: active
+                                      ? _navy
+                                      : AppDesignSystem.textTertiary,
+                                  child: Icon(
+                                    active
+                                        ? Icons.person_outline_rounded
+                                        : Icons.person_off_outlined,
+                                  ),
+                                ),
+                                title: Text(
+                                  user['full_name']?.toString() ?? '',
+                                  style: const TextStyle(
+                                    color: AppDesignSystem.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    '${user['email']}\n${isSuperUser ? 'Super User' : 'Regular User'} · ${user['account_status']}',
+                                    style: const TextStyle(
+                                      color: AppDesignSystem.textSecondary,
+                                      height: 1.35,
+                                    ),
+                                  ),
                                 ),
                                 isThreeLine: true,
-                                trailing:
-                                    user['id'] == ApiService.currentUser?['id']
-                                        ? const Chip(label: Text('You'))
-                                        : PopupMenuButton<String>(
-                                            onSelected: (action) {
-                                              if (action == 'status') {
-                                                _toggleStatus(user);
-                                              } else if (action == 'password') {
-                                                _resetPassword(user);
-                                              } else if (action == 'role') {
-                                                _changeRole(user);
-                                              }
-                                            },
-                                            itemBuilder: (_) => [
-                                              if (user['role'] ==
-                                                  'establishment_regular_user')
-                                                PopupMenuItem(
-                                                  value: 'status',
-                                                  child: Text(
-                                                    active
-                                                        ? 'Deactivate'
-                                                        : 'Activate',
-                                                  ),
-                                                ),
-                                              const PopupMenuItem(
-                                                value: 'password',
-                                                child: Text('Reset password'),
+                                trailing: isCurrentUser
+                                    ? const Chip(
+                                        label: Text('You'),
+                                        labelStyle: TextStyle(color: _navy),
+                                        backgroundColor:
+                                            AppDesignSystem.backgroundLightBlue,
+                                      )
+                                    : PopupMenuButton<String>(
+                                        icon: const Icon(
+                                          Icons.more_vert_rounded,
+                                          color: _navy,
+                                        ),
+                                        onSelected: (action) {
+                                          if (action == 'status') {
+                                            _toggleStatus(user);
+                                          } else if (action == 'password') {
+                                            _resetPassword(user);
+                                          } else if (action == 'role') {
+                                            _changeRole(user);
+                                          }
+                                        },
+                                        itemBuilder: (_) => [
+                                          if (user['role'] ==
+                                              'establishment_regular_user')
+                                            PopupMenuItem(
+                                              value: 'status',
+                                              child: Text(
+                                                active
+                                                    ? 'Deactivate'
+                                                    : 'Activate',
                                               ),
-                                              const PopupMenuItem(
-                                                value: 'role',
-                                                child: Text('Change role'),
-                                              ),
-                                            ],
+                                            ),
+                                          const PopupMenuItem(
+                                            value: 'password',
+                                            child: Text('Reset password'),
                                           ),
+                                          const PopupMenuItem(
+                                            value: 'role',
+                                            child: Text('Change role'),
+                                          ),
+                                        ],
+                                      ),
                               ),
                             );
                           },
                         ),
                 ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 42,
+              color: AppDesignSystem.textTertiary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppDesignSystem.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: onRetry,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppDesignSystem.primaryBlue,
+              ),
+              child: const Text('Try again'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -263,6 +366,7 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -274,22 +378,50 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Add Regular User'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text(
+          'Add Regular User',
+          style: TextStyle(
+            color: AppDesignSystem.primaryBlue,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                   controller: _name,
-                  decoration: const InputDecoration(labelText: 'Full name')),
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    prefixIcon: Icon(Icons.person_outline_rounded),
+                  )),
               TextField(
                   controller: _email,
-                  decoration: const InputDecoration(labelText: 'Email')),
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  )),
               TextField(
                 controller: _password,
-                obscureText: true,
-                decoration:
-                    const InputDecoration(labelText: 'Temporary password'),
+                obscureText: !_showPassword,
+                decoration: InputDecoration(
+                  labelText: 'Temporary password',
+                  helperText: 'At least 8 characters',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    tooltip: _showPassword ? 'Hide password' : 'Show password',
+                    onPressed: () =>
+                        setState(() => _showPassword = !_showPassword),
+                    icon: Icon(
+                      _showPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -299,6 +431,10 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel')),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppDesignSystem.primaryBlue,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               if (_name.text.trim().isEmpty ||
                   _email.text.trim().isEmpty ||
