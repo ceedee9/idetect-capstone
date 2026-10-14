@@ -14,6 +14,7 @@ import {
   X,
   Eye,
   RotateCcw,
+  Trash2,
   Keyboard,
   Maximize2,
   ChevronLeft,
@@ -266,6 +267,11 @@ export default function FraudFlagsPage() {
         showToast(
           "Beneficiary restored to active. ID verifications will now return VALID.",
         );
+      } else if (modal.action === "delete") {
+        await fraudFlagsAPI.delete(modal.flag.id);
+        setSelectedFlag(null);
+        setLightboxOpen(false);
+        showToast("Dismissed fraud flag permanently deleted.");
       } else {
         await fraudFlagsAPI.review(modal.flag.id, modal.action, notes);
         showToast(
@@ -836,6 +842,19 @@ export default function FraudFlagsPage() {
                 </button>
               </div>
             )}
+            {selectedFlag.status === "dismissed" && (
+              <div className="flex flex-shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4 sm:px-8">
+                <button
+                  onClick={() =>
+                    setModal({ flag: selectedFlag, action: "delete" })
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-registry-lg border border-danger-200 bg-danger-50 px-4 py-2.5 text-sm font-semibold text-danger-700 transition-colors hover:bg-danger-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete permanently
+                </button>
+              </div>
+            )}
           </div>
         </div>,
         document.body,
@@ -936,6 +955,27 @@ export default function FraudFlagsPage() {
       </ConfirmModal>
 
       {/* Restore modal */}
+      <ConfirmModal
+        open={modal?.action === "delete"}
+        onClose={() => {
+          setModal(null);
+          setActionError("");
+        }}
+        onConfirm={handleAction}
+        title="Permanently Delete Fraud Flag?"
+        description="This will permanently remove the dismissed fraud flag, its review details, and its list entry. This action cannot be undone. The deletion will remain recorded in the audit log."
+        confirmLabel="Delete Permanently"
+        variant="danger"
+        loading={actionLoading}
+      >
+        {actionError && (
+          <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-3">
+            <AlertCircle className="w-4 h-4" />
+            {actionError}
+          </p>
+        )}
+      </ConfirmModal>
+
       <ConfirmModal
         open={modal?.action === "restore"}
         onClose={() => {

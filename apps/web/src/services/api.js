@@ -247,6 +247,7 @@ export const fraudFlagsAPI = {
     }),
   restore: (id, staff_notes) =>
     api.patch(`/fraud-flags/${id}/restore`, { staff_notes }),
+  delete: (id) => api.delete(`/fraud-flags/${id}`),
 };
 
 // ─── Disputes ─────────────────────────────────────────────────────────────────

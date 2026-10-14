@@ -78,6 +78,7 @@ const MIGRATIONS = [
   "040_add_sensitive_data_audit_action.sql",
   "041_add_beneficiary_suspension_dates.sql",
   "042_add_establishment_users.sql",
+  "043_add_flag_deleted_audit_action.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

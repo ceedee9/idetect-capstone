@@ -191,6 +191,11 @@ The migration is intentionally compatibility-backed: the legacy
 rollout. Password changes synchronize both records until the legacy login is
 retired.
 
+Dismissed fraud flags may be permanently removed only through the dedicated
+cleanup workflow. The API rejects deletion of pending or confirmed flags,
+limits the operation to the matching OSCA/PDAO scope, requires a confirmation
+in the portal, and records the deletion in the immutable audit log.
+
 ### Establishment Super User
 
 #### Allowed

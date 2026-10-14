@@ -523,6 +523,72 @@ router.patch(
   },
 );
 
+// ── DELETE /api/fraud-flags/:id ───────────────────────────────
+// Permanently remove only a dismissed flag. The deletion itself remains
+// auditable, while active and confirmed evidence cannot be removed here.
+router.delete(
+  "/:id",
+  authenticate,
+  requireRole(["osca_admin", "pdao_admin"]),
+  async (req, res, next) => {
+    const client = await pool.connect();
+    try {
+      const typeMap = {
+        osca_admin: "senior_citizen",
+        osca_super_admin: "senior_citizen",
+        pdao_admin: "pwd",
+        pdao_super_admin: "pwd",
+      };
+      const allowedType = typeMap[req.user.role];
+
+      await client.query("BEGIN");
+      const flagResult = await client.query(
+        `SELECT id, reference_no, flag_status, beneficiary_type
+         FROM fraud_flags
+         WHERE id = $1 AND beneficiary_type = $2
+         FOR UPDATE`,
+        [req.params.id, allowedType],
+      );
+      const flag = flagResult.rows[0];
+
+      if (!flag) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Flag not found" });
+      }
+      if (flag.flag_status !== "dismissed") {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          message: "Only dismissed fraud flags can be permanently deleted.",
+        });
+      }
+
+      await client.query(
+        `INSERT INTO audit_logs
+         (user_id, action, target_table, target_id, metadata)
+         VALUES ($1, 'flag_deleted', 'fraud_flags', $2, $3)`,
+        [
+          req.user.id,
+          flag.id,
+          JSON.stringify({
+            reference_no: flag.reference_no,
+            beneficiary_type: flag.beneficiary_type,
+            reason: "dismissed_flag_cleanup",
+          }),
+        ],
+      );
+      await client.query("DELETE FROM fraud_flags WHERE id = $1", [flag.id]);
+      await client.query("COMMIT");
+
+      return res.json({ message: "Dismissed fraud flag permanently deleted." });
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {});
+      next(err);
+    } finally {
+      client.release();
+    }
+  },
+);
+
 // ── PATCH /api/fraud-flags/:id/restore ────────────────────────
 // REQ-2.7.2: Restore a beneficiary to active status after a successful dispute.
 // Only allowed on confirmed flags where the beneficiary is currently revoked.
