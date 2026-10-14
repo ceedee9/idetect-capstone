@@ -164,10 +164,7 @@ export const beneficiariesAPI = {
 
   getById: (id) => api.get(`/beneficiaries/${id}`),
 
-  revealId: (id, stepUpToken) =>
-    api.get(`/beneficiaries/${id}/sensitive`, {
-      headers: { "X-Step-Up-Token": stepUpToken },
-    }),
+  revealId: (id) => api.get(`/beneficiaries/${id}/sensitive`),
   getSensitiveDetail: (id, stepUpToken) =>
     api.get(`/beneficiaries/${id}/sensitive-detail`, {
       headers: { "X-Step-Up-Token": stepUpToken },

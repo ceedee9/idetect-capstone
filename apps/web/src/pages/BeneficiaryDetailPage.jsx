@@ -106,6 +106,7 @@ export default function BeneficiaryDetailPage() {
   const [revealLoading, setRevealLoading] = useState(false);
   const [revealError, setRevealError] = useState("");
   const [reauthPassword, setReauthPassword] = useState("");
+  const [showReauthPassword, setShowReauthPassword] = useState(false);
   const [stepUpToken, setStepUpToken] = useState(null);
 
   // Edit record state
@@ -255,27 +256,6 @@ export default function BeneficiaryDetailPage() {
       if (!birthdate) {
         throw new Error("The API returned no date of birth.");
       }
-
-      async function revealSensitiveId() {
-        if (!stepUpToken) {
-          setModal("reveal_sensitive");
-          return;
-        }
-        try {
-          const response = await beneficiariesAPI.revealId(id, stepUpToken);
-          const fullId = response.data?.id_number;
-          if (!fullId) throw new Error("The API returned no ID number.");
-          setRevealedId(fullId);
-          setRevealError("");
-        } catch (err) {
-          setRevealError(
-            err.response?.data?.error ||
-              err.response?.data?.message ||
-              err.message ||
-              "Unable to reveal the ID number.",
-          );
-        }
-      }
       setDetailBirthdate(birthdate);
       return true;
     } catch (err) {
@@ -288,6 +268,23 @@ export default function BeneficiaryDetailPage() {
       return false;
     } finally {
       setRevealLoading(false);
+    }
+  }
+
+  async function revealSensitiveId() {
+    try {
+      const response = await beneficiariesAPI.revealId(id);
+      const fullId = response.data?.id_number;
+      if (!fullId) throw new Error("The API returned no ID number.");
+      setRevealedId(fullId);
+      setRevealError("");
+    } catch (err) {
+      setRevealError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "Unable to reveal the ID number.",
+      );
     }
   }
 
@@ -737,7 +734,7 @@ export default function BeneficiaryDetailPage() {
         loading={revealLoading}
       >
         <input
-          type="password"
+          type={showReauthPassword ? "text" : "password"}
           value={reauthPassword}
           onChange={(event) => setReauthPassword(event.target.value)}
           placeholder="Enter your current password"
@@ -745,6 +742,19 @@ export default function BeneficiaryDetailPage() {
           className="input w-full"
           disabled={revealLoading}
         />
+        <button
+          type="button"
+          onClick={() => setShowReauthPassword((visible) => !visible)}
+          className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700"
+          disabled={revealLoading}
+        >
+          {showReauthPassword ? (
+            <EyeOff className="w-4 h-4" />
+          ) : (
+            <Eye className="w-4 h-4" />
+          )}
+          {showReauthPassword ? "Hide password" : "Show password"}
+        </button>
         {revealError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />

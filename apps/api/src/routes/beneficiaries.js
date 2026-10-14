@@ -179,7 +179,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // ── GET /api/beneficiaries/:id ─────────────────────────────────
-router.get("/:id([0-9a-fA-F-]{36})/sensitive", requireStepUp, async (req, res, next) => {
+router.get("/:id([0-9a-fA-F-]{36})/sensitive", async (req, res, next) => {
   try {
     const type = getTypeForRole(req.user.role);
     const result = await pool.query(

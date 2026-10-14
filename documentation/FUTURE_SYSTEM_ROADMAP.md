@@ -242,9 +242,11 @@ control. The implementation status belongs in
 
 Implementation is deliberately phased: verify the existing staff behavior,
 the API absolute lifetime is now implemented, and step-up protection phase 1
-now covers exact beneficiary details and full ID reveal with a five-minute
-password-verified proof. The next step-up phase covers sensitive exports and
-case files, followed by Remember me safeguards and the beneficiary-app lock.
+now covers exact beneficiary details with a five-minute password-verified
+proof. The full ID unmask button remains available within that authorized
+detail page without a second password prompt. The next step-up phase covers
+sensitive exports and case files, followed by Remember me safeguards and the
+beneficiary-app lock.
 The two-minute expert
 recommendation was not adopted as the global portal timeout because its
 security benefit would be outweighed by operational disruption for normal
