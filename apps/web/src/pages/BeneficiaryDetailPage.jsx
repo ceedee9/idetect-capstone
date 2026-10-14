@@ -221,7 +221,7 @@ export default function BeneficiaryDetailPage() {
 
   if (loading)
     return (
-      <div className="px-6 lg:px-8 py-8 max-w-4xl mx-auto space-y-6">
+      <div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-6">
         <div className="skeleton h-5 w-40 rounded" />
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 card space-y-4">
@@ -299,16 +299,16 @@ export default function BeneficiaryDetailPage() {
       </div>
 
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-5">
+        <div className="flex items-start gap-4">
           <div className="w-16 h-16 bg-gov-100 rounded-2xl flex items-center justify-center flex-shrink-0">
             <span className="text-xl font-bold text-gov-700">
               {initials || "?"}
             </span>
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="font-heading font-bold text-2xl text-slate-900">
+              <h1 className="font-heading font-bold text-3xl leading-tight text-slate-900 break-words">
                 {fullName}
               </h1>
               <StatusBadge status={b.status} />
@@ -324,7 +324,7 @@ export default function BeneficiaryDetailPage() {
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap pl-20">
           <button onClick={openEdit} className="btn-secondary">
             <Pencil className="w-4 h-4" />
             Edit Record

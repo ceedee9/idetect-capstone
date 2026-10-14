@@ -72,7 +72,7 @@ This document brings together the changes made so far in response to the IT expe
   reveal the full ID from the beneficiary detail page when necessary; the
   reveal uses a separate authenticated endpoint and creates a
   `sensitive_data_revealed` audit event, while the normal detail response
-  remains masked.
+  remains masked. The audit action is registered by migration 040.
 - **Authority model implementation:** Phase 1 is documented and the initial staff API foundation is implemented. The database recognizes agency-scoped Super Admin roles; each can manage only its own office-admin accounts, the final active agency Super Admin cannot be deactivated, and role changes are audited. There is no overall Super Admin. Phase 0 now includes middleware tests for role normalization, regular-admin denial, cross-agency denial, retired-role rejection, and database-backed role refresh. Establishment Super User/Regular User accounts, controlled overrides, and broader route-level authorization tests remain pending.
 - Regular BPLO, OSCA, and PDAO Admin accounts now have read-only staff-directory access. Staff creation and account-management mutations are restricted server-side to the matching agency Super Admin.
 - **Phase 0 authority verification:** Added automated middleware and staff-route tests for regular-admin denial, matching-agency Super Admin access, cross-agency denial, agency-scoped UUID lookups, database-backed role refresh, deactivated-account rejection, and rejection of the retired global `super_admin` role. The old enum label remains only for PostgreSQL migration compatibility; it is not accepted or provisioned.
