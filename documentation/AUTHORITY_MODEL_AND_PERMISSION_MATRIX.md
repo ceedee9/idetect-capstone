@@ -206,6 +206,11 @@ Regular User creation now uses an invitation workflow. The account starts as
 inactive with a pending invitation, and the system stores only a hash of the
 single-use 24-hour invitation token. The invited user sets their own password
 through the public acceptance page; only then does the account become active.
+Super Users can resend pending or expired invitations, or revoke pending
+invitations. Resending replaces the token and its expiry; revoking clears the
+token permanently. The list view computes expired status from the token expiry
+so it remains accurate without a background job. All lifecycle actions are
+tenant-scoped and audited.
 
 ### Establishment Super User
 
@@ -380,8 +385,10 @@ After approval, implementation should proceed in this order:
 - The API prevents deactivating the final active Agency Super Admin and
   prevents a Super Admin from changing their own role.
 - Role changes are recorded as `staff_role_changed`.
-- Establishment Super User and Regular User accounts are not implemented yet;
-  they require a separate establishment-user schema and invitation workflow.
+- Establishment Super User and Regular User accounts are implemented through
+  the establishment-user schema, scoped management API, and invitation
+  workflow. Deployment still requires applying the corresponding migrations
+  and configuring the invitation email provider.
 - Each Agency Super Admin must be provisioned through a controlled
   deployment/database process; no default Super Admin password is seeded.
 - Beneficiary suspensions require a reason and start/end dates. The system

@@ -149,6 +149,46 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
     }
   }
 
+  Future<void> _resendInvitation(Map<String, dynamic> user) async {
+    final response = await ApiService.resendEstablishmentUserInvitation(
+      user['id'].toString(),
+    );
+    if (!mounted) return;
+    _showMessage(
+      response['error']?.toString() ?? 'Invitation resent successfully.',
+    );
+    if (response['error'] == null) _loadUsers();
+  }
+
+  Future<void> _revokeInvitation(Map<String, dynamic> user) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Revoke invitation?'),
+        content: Text(
+          'This will permanently invalidate the invitation link for ${user['full_name']}. They will not be able to use it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Revoke invitation'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final response = await ApiService.revokeEstablishmentUserInvitation(
+      user['id'].toString(),
+    );
+    if (!mounted) return;
+    _showMessage(response['error']?.toString() ?? 'Invitation revoked.');
+    if (response['error'] == null) _loadUsers();
+  }
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
@@ -218,6 +258,11 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
                                 user['id'] == ApiService.currentUser?['id'];
                             final isSuperUser =
                                 user['role'] == 'establishment_super_user';
+                            final invitationStatus =
+                                user['invitation_status']?.toString();
+                            final invitationPending =
+                                invitationStatus == 'pending' ||
+                                    invitationStatus == 'expired';
                             return Card(
                               elevation: 0,
                               color: Colors.white,
@@ -255,7 +300,7 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
                                 subtitle: Padding(
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(
-                                    '${user['email']}\n${isSuperUser ? 'Super User' : 'Regular User'} · ${user['account_status']}',
+                                    '${user['email']}\n${isSuperUser ? 'Super User' : 'Regular User'} · ${user['account_status']}${invitationStatus == null ? '' : ' · Invitation: $invitationStatus'}',
                                     style: const TextStyle(
                                       color: AppDesignSystem.textSecondary,
                                       height: 1.35,
@@ -282,6 +327,10 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
                                             _resetPassword(user);
                                           } else if (action == 'role') {
                                             _changeRole(user);
+                                          } else if (action == 'resend') {
+                                            _resendInvitation(user);
+                                          } else if (action == 'revoke') {
+                                            _revokeInvitation(user);
                                           }
                                         },
                                         itemBuilder: (_) => [
@@ -294,6 +343,17 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
                                                     ? 'Deactivate'
                                                     : 'Activate',
                                               ),
+                                            ),
+                                          if (invitationPending)
+                                            const PopupMenuItem(
+                                              value: 'resend',
+                                              child: Text('Resend invitation'),
+                                            ),
+                                          if (user['invitation_status'] ==
+                                              'pending')
+                                            const PopupMenuItem(
+                                              value: 'revoke',
+                                              child: Text('Revoke invitation'),
                                             ),
                                           const PopupMenuItem(
                                             value: 'password',

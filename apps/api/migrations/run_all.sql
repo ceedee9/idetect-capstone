@@ -106,5 +106,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 \echo '>>> Running migration 045: establishment user invitations'
 \i 045_add_establishment_user_invitations.sql
 
+\echo '>>> Running migration 046: establishment invitation audit actions'
+\i 046_add_establishment_invitation_audit_actions.sql
+
 \echo ''
 \echo '=== iDetect schema ready ==='

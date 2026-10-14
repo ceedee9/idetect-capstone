@@ -1,11 +1,15 @@
 const express = require("express");
 
 jest.mock("../src/config/database", () => ({ query: jest.fn() }));
+jest.mock("../src/services/emailService", () => ({
+  sendEstablishmentUserInvitation: jest.fn(),
+}));
 jest.mock("../src/middleware/auth", () => ({
   authenticateEstablishment: (req, res, next) => next(),
 }));
 
 const pool = require("../src/config/database");
+const { sendEstablishmentUserInvitation } = require("../src/services/emailService");
 const router = require("../src/routes/establishmentUsers");
 
 const ESTABLISHMENT_A = "11111111-1111-4111-8111-111111111111";
@@ -61,6 +65,8 @@ function run(handler, body = {}, params = {}, role = "establishment_super_user")
 describe("establishment user management", () => {
   beforeEach(() => {
     pool.query.mockReset();
+    sendEstablishmentUserInvitation.mockReset();
+    sendEstablishmentUserInvitation.mockResolvedValue({ success: true });
   });
 
   test("lists only users from the authenticated establishment", async () => {
@@ -151,5 +157,55 @@ describe("establishment user management", () => {
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe("Cannot change your own role");
     expect(pool.query).toHaveBeenCalledTimes(1);
+  });
+
+  test("resends an invitation only within the authenticated establishment", async () => {
+    const handler = routeHandler("/:id/resend-invitation", "post");
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{
+          id: REGULAR_USER,
+          email: "cashier@example.com",
+          full_name: "Cashier One",
+          role: "establishment_regular_user",
+          invitation_status: "expired",
+        }],
+      })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
+    sendEstablishmentUserInvitation.mockResolvedValueOnce({ success: true });
+
+    const res = await run(handler, {}, { id: REGULAR_USER });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Invitation resent successfully");
+    expect(pool.query.mock.calls[1][1]).toEqual([
+      expect.any(String),
+      REGULAR_USER,
+      ESTABLISHMENT_A,
+    ]);
+    expect(pool.query.mock.calls[2][0]).toContain(
+      "establishment_user_invitation_resent",
+    );
+  });
+
+  test("revokes a pending invitation and invalidates its token", async () => {
+    const handler = routeHandler("/:id/revoke-invitation", "post");
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: REGULAR_USER, email: "cashier@example.com" }],
+      })
+      .mockResolvedValueOnce({});
+
+    const res = await run(handler, {}, { id: REGULAR_USER });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Invitation revoked");
+    expect(pool.query.mock.calls[0][0]).toContain(
+      "invitation_token_hash = NULL",
+    );
+    expect(pool.query.mock.calls[1][0]).toContain(
+      "establishment_user_invitation_revoked",
+    );
   });
 });

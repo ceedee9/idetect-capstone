@@ -471,6 +471,26 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> resendEstablishmentUserInvitation(
+    String id,
+  ) async {
+    return _establishmentUserRequest(
+      method: 'POST',
+      path: '$id/resend-invitation',
+      body: const {},
+    );
+  }
+
+  static Future<Map<String, dynamic>> revokeEstablishmentUserInvitation(
+    String id,
+  ) async {
+    return _establishmentUserRequest(
+      method: 'POST',
+      path: '$id/revoke-invitation',
+      body: const {},
+    );
+  }
+
   static Future<Map<String, dynamic>> _establishmentUserRequest({
     required String method,
     String? path,
@@ -483,8 +503,9 @@ class ApiService {
       final request = http.Request(method, uri)
         ..headers.addAll(_authHeaders())
         ..body = jsonEncode(body);
-      final response =
-          await http.Client().send(request).timeout(const Duration(seconds: 10));
+      final response = await http.Client()
+          .send(request)
+          .timeout(const Duration(seconds: 10));
       final responseBody = await response.stream.bytesToString();
       final data = jsonDecode(responseBody);
       if (response.statusCode >= 200 && response.statusCode < 300) return data;

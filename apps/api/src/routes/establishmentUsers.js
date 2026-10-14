@@ -39,7 +39,12 @@ function actorId(req) {
 router.get("/", async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, email, full_name, role, account_status, invitation_status,
+      `SELECT id, email, full_name, role, account_status,
+              CASE
+                WHEN invitation_status = 'pending'
+                 AND invitation_token_expires <= NOW() THEN 'expired'
+                ELSE invitation_status
+              END AS invitation_status,
               password_reset_required, last_login_at, created_at, updated_at
          FROM establishment_users
         WHERE establishment_id = $1
@@ -202,6 +207,134 @@ router.patch(
         ],
       );
       res.json({ user: updated.rows[0] });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Replace a pending or expired invitation with a fresh single-use token.
+router.post(
+  "/:id/resend-invitation",
+  requireSuperUser,
+  [param("id").isUUID()],
+  async (req, res, next) => {
+    try {
+      const errorResponse = validationError(req, res);
+      if (errorResponse) return errorResponse;
+
+      const existing = await pool.query(
+        `SELECT id, email, full_name, role, invitation_status
+           FROM establishment_users
+          WHERE id = $1 AND establishment_id = $2`,
+        [req.params.id, establishmentId(req)],
+      );
+      if (!existing.rows.length) {
+        return res.status(404).json({ error: "Establishment user not found" });
+      }
+      const user = existing.rows[0];
+      if (user.role !== "establishment_regular_user") {
+        return res.status(400).json({ error: "Only Regular Users can receive invitations" });
+      }
+      if (user.invitation_status === "accepted") {
+        return res.status(400).json({ error: "This invitation has already been accepted" });
+      }
+      if (user.invitation_status === "revoked") {
+        return res.status(400).json({ error: "This invitation has been revoked" });
+      }
+
+      const invitationToken = crypto.randomBytes(32).toString("hex");
+      const invitationTokenHash = crypto
+        .createHash("sha256")
+        .update(invitationToken)
+        .digest("hex");
+      await pool.query(
+        `UPDATE establishment_users
+            SET invitation_status = 'pending',
+                invitation_token_hash = $1,
+                invitation_token_expires = NOW() + INTERVAL '24 hours',
+                account_status = 'inactive'
+          WHERE id = $2 AND establishment_id = $3`,
+        [invitationTokenHash, req.params.id, establishmentId(req)],
+      );
+
+      const invitationOrigin =
+        process.env.ESTABLISHMENT_PORTAL_ORIGIN ||
+        process.env.ALLOWED_PORTAL_ORIGINS?.split(",")[0] ||
+        "https://idetect.it.com";
+      const invitationUrl =
+        `${invitationOrigin.replace(/\/$/, "")}/establishment/accept-invitation` +
+        `?token=${invitationToken}&email=${encodeURIComponent(user.email)}`;
+      const emailResult = await sendEstablishmentUserInvitation({
+        business_name: req.establishment.name || "your establishment",
+        full_name: user.full_name,
+        email: user.email,
+        invitationUrl,
+      });
+      if (!emailResult.success) {
+        return res.status(502).json({
+          error: "The invitation was renewed, but the email could not be sent.",
+        });
+      }
+
+      await pool.query(
+        `INSERT INTO audit_logs
+          (establishment_id, action, target_table, target_id, metadata, ip_address)
+         VALUES ($1, 'establishment_user_invitation_resent', 'establishment_users', $2, $3, $4)`,
+        [
+          establishmentId(req),
+          req.params.id,
+          JSON.stringify({ actor_user_id: actorId(req), email: user.email }),
+          req.ip,
+        ],
+      );
+      res.json({ message: "Invitation resent successfully" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Revoke an unused invitation and invalidate its token.
+router.post(
+  "/:id/revoke-invitation",
+  requireSuperUser,
+  [param("id").isUUID()],
+  async (req, res, next) => {
+    try {
+      const errorResponse = validationError(req, res);
+      if (errorResponse) return errorResponse;
+
+      const updated = await pool.query(
+        `UPDATE establishment_users
+            SET invitation_status = 'revoked',
+                invitation_token_hash = NULL,
+                invitation_token_expires = NULL,
+                account_status = 'inactive'
+          WHERE id = $1 AND establishment_id = $2
+            AND role = 'establishment_regular_user'
+            AND invitation_status = 'pending'
+          RETURNING id, email`,
+        [req.params.id, establishmentId(req)],
+      );
+      if (!updated.rows.length) {
+        return res.status(404).json({
+          error: "Pending invitation not found",
+        });
+      }
+
+      await pool.query(
+        `INSERT INTO audit_logs
+          (establishment_id, action, target_table, target_id, metadata, ip_address)
+         VALUES ($1, 'establishment_user_invitation_revoked', 'establishment_users', $2, $3, $4)`,
+        [
+          establishmentId(req),
+          req.params.id,
+          JSON.stringify({ actor_user_id: actorId(req), email: updated.rows[0].email }),
+          req.ip,
+        ],
+      );
+      res.json({ message: "Invitation revoked" });
     } catch (err) {
       next(err);
     }

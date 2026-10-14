@@ -16,6 +16,12 @@ const loginHandler = router.stack.find(
     layer.route.methods.post,
 ).route.stack.at(-1).handle;
 
+const invitationHandler = router.stack.find(
+  (layer) =>
+    layer.route?.path === "/establishment/accept-invitation" &&
+    layer.route.methods.post,
+).route.stack.at(-1).handle;
+
 function run(body) {
   const res = {
     statusCode: 200,
@@ -91,5 +97,52 @@ describe("establishment user-compatible login", () => {
     expect(claims.id).toBe("establishment-1");
     expect(claims.establishment_user_id).toBe("est-user-1");
     expect(claims.role).toBe("establishment_regular_user");
+  });
+
+  test("accepts a valid invitation, activates the user, and clears the token", async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{
+          id: "est-user-1",
+          establishment_id: "establishment-1",
+          invitation_status: "pending",
+        }],
+      })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
+
+    const response = {
+      statusCode: 200,
+      body: null,
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(value) {
+        this.body = value;
+        return this;
+      },
+    };
+    await invitationHandler(
+      {
+        body: {
+          email: "cashier@example.com",
+          token: "invitation-token",
+          new_password: "new-password-123",
+        },
+      },
+      response,
+      (error) => {
+        throw error;
+      },
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.message).toContain("Invitation accepted");
+    expect(pool.query.mock.calls[0][0]).toContain("invitation_token_hash");
+    expect(pool.query.mock.calls[1][0]).toContain("invitation_status = 'accepted'");
+    expect(pool.query.mock.calls[1][1][0]).not.toBe("new-password-123");
+    expect(pool.query.mock.calls[2][1][0]).toBe("establishment-1");
+    expect(pool.query.mock.calls[2][1][2]).toContain("invitation_accepted");
   });
 });

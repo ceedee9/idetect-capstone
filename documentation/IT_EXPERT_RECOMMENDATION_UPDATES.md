@@ -1,6 +1,6 @@
 # IT Expert Recommendations — Implementation Updates
 
-**Updated:** October 11, 2026
+**Updated:** October 14, 2026
 
 This document brings together the changes made so far in response to the IT experts' recommendations. In simple terms, it explains what changed, how it was approached, what was delivered, and what is still pending.
 
@@ -36,6 +36,7 @@ This document brings together the changes made so far in response to the IT expe
 - **Fraud-flag cleanup:** Added a permanent-delete action for dismissed fraud flags only. OSCA/PDAO staff receive a clear irreversible-action acknowledgement before deletion, and the deletion is recorded as an immutable `flag_deleted` audit event. Pending and confirmed flags cannot be deleted through this workflow.
 - **Authority model — Phase 2C user management API:** Added establishment-scoped endpoints for Super Users to list, create, activate, deactivate, suspend, and reset Regular User accounts. Regular Users are prevented from managing accounts, and all changes are written to the establishment audit trail.
 - **Authority model — Phase 2D invitations:** Replaced direct temporary-password creation with a single-use, 24-hour invitation. The invited Regular User sets their own password through the public portal acceptance page before the account becomes active.
+- **Authority model — Phase 2E Super User hardening:** Completed the invitation lifecycle. The management screen now shows pending, accepted, expired, and revoked invitation states. Super Users can resend a pending or expired invitation, which replaces the old token with a new 24-hour token, or revoke a pending invitation, which clears the token and permanently invalidates the link. Resend and revoke actions are tenant-scoped, role-protected, and audited. Invitation acceptance is covered by an API regression test that verifies activation, password hashing, token clearing, and the acceptance audit event.
 
 ## How the changes were approached
 
@@ -43,6 +44,7 @@ This document brings together the changes made so far in response to the IT expe
 - The suspension limit is enforced in both places: the portal helps staff stay within the limit, and the API independently checks it so the rule cannot be bypassed by sending a direct request.
 - Logout auditing records the event and its reason in the existing audit log.
 - Audit reports use server-side validation, role/action scoping, bounded result sizes, safe CSV serialization, and an export audit entry rather than relying only on portal controls.
+- Establishment invitation lifecycle operations are enforced by the API rather than only by the Flutter controls. Expired invitations are computed as expired when listed, tokens are stored only as SHA-256 hashes, and accepted or revoked links cannot be reused.
 - Audit list and report queries resolve affected-record references from the related tables; the technical target fields remain available for investigations.
 - Existing behaviors were preserved where possible; recommendations that need a policy decision or more detail were left unchanged.
 
@@ -60,6 +62,7 @@ This document brings together the changes made so far in response to the IT expe
 - The staff portal production build passed after the report modal layout and selected-report UI updates.
 - The staff portal production build passed after the audit action updates; the affected API file passed `node --check`.
 - The audit portal build and API syntax checks passed after the affected-record display update.
+- API tests cover establishment invitation acceptance, resend, and revoke behavior. Migration `046_add_establishment_invitation_audit_actions.sql` registers the resend and revoke audit actions; run the API migrations before deploying the hardened management screen.
 
 ## Recommendations still pending
 
@@ -83,6 +86,7 @@ This document brings together the changes made so far in response to the IT expe
   The API also applies this enum addition during startup so a deployed
   database is repaired automatically on the next service restart.
 - **Authority model implementation:** Phase 1 is documented and the initial staff API foundation is implemented. The database recognizes agency-scoped Super Admin roles; each can manage only its own office-admin accounts, the final active agency Super Admin cannot be deactivated, and role changes are audited. There is no overall Super Admin. Phase 0 now includes middleware tests for role normalization, regular-admin denial, cross-agency denial, retired-role rejection, and database-backed role refresh. Establishment Super User/Regular User accounts, controlled overrides, and broader route-level authorization tests remain pending.
+- **Super User phase remaining operational work:** Apply migrations 042-046 to the deployed database, configure the email provider (`RESEND_API_KEY`, sender, and portal origin), and perform live acceptance tests for delivery, expiry, revoke, resend, tenant isolation, and audit-log visibility. Automatic invitation expiry is intentionally represented as a computed status; no background job is required to mark rows expired.
 - Regular BPLO, OSCA, and PDAO Admin accounts now have read-only staff-directory access. Staff creation and account-management mutations are restricted server-side to the matching agency Super Admin.
 - **Phase 0 authority verification:** Added automated middleware and staff-route tests for regular-admin denial, matching-agency Super Admin access, cross-agency denial, agency-scoped UUID lookups, database-backed role refresh, deactivated-account rejection, and rejection of the retired global `super_admin` role. The old enum label remains only for PostgreSQL migration compatibility; it is not accepted or provisioned.
 - **F-08:** Session timeout policy is undecided. The current two-minute recommendation has not been applied.
