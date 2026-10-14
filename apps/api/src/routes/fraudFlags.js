@@ -331,7 +331,7 @@ router.get(
          ) AS establishment,
          b.full_name AS beneficiary_name,
          vl.ocr_confidence_score,
-         vl.ocr_raw_text,
+         (vl.ocr_raw_text IS NOT NULL) AS ocr_data_available,
          vl.verified_at    AS transaction_timestamp,
          vl.reference_no   AS verification_reference_no,
          vl.manually_entered

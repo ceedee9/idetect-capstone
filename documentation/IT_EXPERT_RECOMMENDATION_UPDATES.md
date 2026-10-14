@@ -65,8 +65,10 @@ This document brings together the changes made so far in response to the IT expe
 - **F-05/F-06:** Implemented default privacy masking for beneficiary API responses,
   fraud/dispute/dashboard views, beneficiary self-service, and CSV exports.
   IDs retain only their final two characters; exact birth dates are omitted and
-  replaced with age bands. Raw values remain available only inside server-side
-  lookup and write operations.
+  replaced with age bands. Verification history/status-sync IDs are also
+  masked, and ordinary fraud-flag lists expose only whether restricted OCR data
+  exists, not its contents. Raw values remain available only inside
+  server-side lookup and write operations.
 - **Authority model implementation:** Phase 1 is documented and the initial staff API foundation is implemented. The database recognizes agency-scoped Super Admin roles; each can manage only its own office-admin accounts, the final active agency Super Admin cannot be deactivated, and role changes are audited. There is no overall Super Admin. Phase 0 now includes middleware tests for role normalization, regular-admin denial, cross-agency denial, retired-role rejection, and database-backed role refresh. Establishment Super User/Regular User accounts, controlled overrides, and broader route-level authorization tests remain pending.
 - Regular BPLO, OSCA, and PDAO Admin accounts now have read-only staff-directory access. Staff creation and account-management mutations are restricted server-side to the matching agency Super Admin.
 - **Phase 0 authority verification:** Added automated middleware and staff-route tests for regular-admin denial, matching-agency Super Admin access, cross-agency denial, agency-scoped UUID lookups, database-backed role refresh, deactivated-account rejection, and rejection of the retired global `super_admin` role. The old enum label remains only for PostgreSQL migration compatibility; it is not accepted or provisioned.

@@ -16,6 +16,7 @@ const { authenticateEstablishment } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
 const { sendSms } = require("../services/smsService");
+const { maskIdNumber } = require("../utils/privacy");
 const {
   uploadIdCaptureBase64,
   buildAbsoluteApiUploadUrl,
@@ -626,7 +627,10 @@ router.get(
       );
 
       res.json({
-        updates: result.rows,
+        updates: result.rows.map((row) => ({
+          ...row,
+          id_number: maskIdNumber(row.id_number),
+        })),
         server_time: Date.now(),
       });
     } catch (err) {
@@ -708,7 +712,10 @@ router.get("/history", authenticateEstablishment, async (req, res, next) => {
     );
 
     res.json({
-      data: dataResult.rows,
+      data: dataResult.rows.map((row) => ({
+        ...row,
+        id_number_scanned: maskIdNumber(row.id_number_scanned),
+      })),
       pagination: {
         page,
         limit,

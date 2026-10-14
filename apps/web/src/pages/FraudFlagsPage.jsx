@@ -734,7 +734,7 @@ export default function FraudFlagsPage() {
               </section>
 
               {/* OCR Extracted Data */}
-              {selectedFlag.ocr_raw_text && (
+              {selectedFlag.ocr_data_available && (
                 <details className="group border-t border-slate-200 pt-3">
                   <summary className="cursor-pointer list-none text-xs font-semibold text-slate-500 hover:text-slate-700">
                     <span className="flex items-center justify-between">
@@ -747,9 +747,10 @@ export default function FraudFlagsPage() {
                       </span>
                     </span>
                   </summary>
-                  <pre className="mt-2 bg-slate-50 border border-slate-200 rounded-registry-lg p-3 text-xs text-slate-600 whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
-                    {selectedFlag.ocr_raw_text}
-                  </pre>
+                  <p className="mt-2 bg-slate-50 border border-slate-200 rounded-registry-lg p-3 text-xs text-slate-600">
+                    OCR data is retained for restricted review and is not
+                    displayed in the ordinary fraud-flag view.
+                  </p>
                 </details>
               )}
 
