@@ -31,7 +31,9 @@ import StatusBadge from "../components/StatusBadge";
 import EmptyState from "../components/EmptyState";
 import { fmtRelative, fmtDate, calcAge } from "../utils/date";
 import EstablishmentStatusDonut from "../components/charts/EstablishmentStatusDonut";
-import EstablishmentTrendChart from "../components/charts/EstablishmentTrendChart";
+import RegistrationTrendChart from "../components/charts/RegistrationTrendChart";
+import PortalBreakdownChart from "../components/charts/PortalBreakdownChart";
+import { PORTAL_TONES } from "../constants/statusTheme";
 
 function downloadBlob(blob, name) {
   const url = URL.createObjectURL(blob);
@@ -464,6 +466,65 @@ function BeneficiaryDashboard({ user }) {
         </div>
       </div>
 
+      {/* Portal Analytics */}
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${colors.sectionBg}`}>
+              <TrendingUp className={`w-4 h-4 ${colors.sectionIcon}`} />
+            </div>
+            <div>
+              <h2 className="font-heading font-semibold text-slate-900 text-sm">
+                Registrations — Last 12 Months
+              </h2>
+              <p className="text-xs text-slate-400 font-medium">
+                New {isOsca ? "senior citizen" : "PWD"} registrations per month
+              </p>
+            </div>
+          </div>
+          {statsLoading ? (
+            <div className="skeleton h-40 sm:h-44 rounded-xl" />
+          ) : (
+            <RegistrationTrendChart
+              data={dashStats?.registrationTrend ?? []}
+              tone={isOsca ? PORTAL_TONES.osca.hex : PORTAL_TONES.pdao.hex}
+              noun={isOsca ? "senior citizens" : "PWD records"}
+            />
+          )}
+        </div>
+
+        <div className="card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${colors.sectionBg}`}>
+              <BarChart3 className={`w-4 h-4 ${colors.sectionIcon}`} />
+            </div>
+            <div>
+              <h2 className="font-heading font-semibold text-slate-900 text-sm">
+                {isOsca ? "Senior Citizens by Age Band" : "PWD by Disability Type"}
+              </h2>
+              <p className="text-xs text-slate-400 font-medium">
+                {isOsca ? "Registered 60 years and above" : "Top disability categories on file"}
+              </p>
+            </div>
+          </div>
+          {statsLoading ? (
+            <div className="skeleton h-48 rounded-xl" />
+          ) : (
+            <PortalBreakdownChart
+              data={
+                (isOsca ? dashStats?.ageBands : dashStats?.disabilityTypes)?.map(
+                  (d) => ({ label: d.label, count: d.count }),
+                ) ?? []
+              }
+              tone={isOsca ? PORTAL_TONES.osca.hex : PORTAL_TONES.pdao.hex}
+              horizontal={!isOsca}
+              emptyTitle="No records yet"
+              emptyDescription="Breakdowns appear once registrations are on file."
+            />
+          )}
+        </div>
+      </div>
+
       {/* Fraud & Verification Analytics */}
       <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Fraud flags overview */}
@@ -819,17 +880,21 @@ function EstablishmentDashboard({ user }) {
             </div>
             <div>
               <h2 className="font-heading font-semibold text-gray-900 text-sm">
-                Registrations — Last 6 Months
+                Registrations — Last 12 Months
               </h2>
               <p className="text-xs text-gray-500">
                 New establishments registered monthly
               </p>
             </div>
           </div>
-          {loading ? (
+          {statsLoading ? (
             <div className="skeleton h-40 sm:h-52 rounded-xl" />
           ) : (
-            <EstablishmentTrendChart establishments={establishments} />
+            <RegistrationTrendChart
+              data={dashStats?.registrationTrend ?? []}
+              tone={PORTAL_TONES.bplo.hex}
+              noun="establishments"
+            />
           )}
         </div>
 

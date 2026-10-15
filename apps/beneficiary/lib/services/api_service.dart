@@ -215,42 +215,78 @@ class ApiService {
     }
   }
 
+  /// Returns the decoded JSON object, or null when the body is not JSON
+  /// (for example a gateway page sent while the API container is starting).
+  static Map<String, dynamic>? _tryDecodeJsonObject(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
   /// Login with ID number + 4-digit PIN.
+  ///
+  /// The API can take several seconds to wake up after idle, and the host may
+  /// answer with a non-JSON page until it is ready. Those gateway responses
+  /// never reach the PIN check, so they are retried instead of counted.
   static Future<BeneficiaryAuthResult> loginWithPin({
     required String idNumber,
     required String pin,
   }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/auth/beneficiary/login-pin'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'id_number': idNumber, 'pin': pin}),
-          )
-          .timeout(const Duration(seconds: 10));
+    const maxAttempts = 3;
+    for (var attempt = 1; ; attempt++) {
+      try {
+        final response = await http
+            .post(
+              Uri.parse('$baseUrl/auth/beneficiary/login-pin'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({'id_number': idNumber, 'pin': pin}),
+            )
+            .timeout(const Duration(seconds: 25));
 
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['token'] != null) {
-        setToken(
-          data['token'],
-          user: {...?data['beneficiary'], 'type': 'beneficiary'},
-        );
+        final data = _tryDecodeJsonObject(response.body);
+        if (data == null) {
+          if (attempt < maxAttempts) {
+            await Future<void>.delayed(Duration(seconds: 2 * attempt));
+            continue;
+          }
+          return BeneficiaryAuthResult(
+            success: false,
+            errorMessage:
+                'The server is starting up. Please try again in a moment.',
+          );
+        }
+        return _completePinLogin(response.statusCode, data);
+      } catch (e) {
         return BeneficiaryAuthResult(
-          success: true,
-          fullName: data['beneficiary']?['full_name'],
-          beneficiaryType: data['beneficiary']?['beneficiary_type'],
+          success: false,
+          errorMessage: 'Cannot reach server: $e',
         );
       }
-      return BeneficiaryAuthResult(
-        success: false,
-        errorMessage: data['error'] ?? data['message'] ?? 'PIN login failed',
+    }
+  }
+
+  static BeneficiaryAuthResult _completePinLogin(
+    int statusCode,
+    Map<String, dynamic> data,
+  ) {
+    if (statusCode == 200 && data['token'] != null) {
+      setToken(
+        data['token'],
+        user: {...?data['beneficiary'], 'type': 'beneficiary'},
       );
-    } catch (e) {
       return BeneficiaryAuthResult(
-        success: false,
-        errorMessage: 'Cannot reach server: $e',
+        success: true,
+        fullName: data['beneficiary']?['full_name'],
+        beneficiaryType: data['beneficiary']?['beneficiary_type'],
       );
     }
+    return BeneficiaryAuthResult(
+      success: false,
+      errorMessage: data['error'] ?? data['message'] ?? 'PIN login failed',
+    );
   }
 
   // ── Profile / ID Status (REQ-2.12) ────────────────────────────────────────

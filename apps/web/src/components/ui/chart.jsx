@@ -8,9 +8,8 @@ import * as RechartsPrimitive from "recharts";
 // Colors are driven by a per-chart `config` object mapping each data key to
 // a `color` (or `theme: { light, dark }`), rendered as CSS custom properties
 // scoped to the chart's own id — e.g. var(--color-total). This replaces the
-// pattern in EstablishmentTrendChart.jsx where the stroke hex was hardcoded
-// and had already drifted out of sync with tailwind.config.js once this
-// session (osca/pdao sparkline colors). One config object per chart is now
+// pattern of hardcoding the stroke hex, which had already drifted out of sync with
+// tailwind.config.js once this session (osca/pdao sparkline colors). One config object per chart is now
 // the single source of truth for that chart's colors.
 
 const THEMES = { light: "", dark: ".dark" };

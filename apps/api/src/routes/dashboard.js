@@ -123,9 +123,24 @@ async function getBeneficiaryPortalStats(beneficiaryType) {
     [beneficiaryType],
   );
 
+  // 6. Registrations per month (last 12 months)
+  const registrationTrend = await getRegistrationTrend(
+    "beneficiaries",
+    "AND beneficiary_type = $1",
+    [beneficiaryType],
+  );
+
+  // 7. Tailored breakdown: OSCA → age bands, PDAO → disability types
+  const breakdown =
+    beneficiaryType === "senior_citizen"
+      ? { ageBands: await getAgeBands() }
+      : { disabilityTypes: await getDisabilityTypes() };
+
   return {
     fraudFlags: fraudResult.rows[0],
     disputes: disputeResult.rows[0],
+    registrationTrend,
+    ...breakdown,
     verifications: verificationResult.rows[0],
     verificationTrend: trendResult.rows.map((r) => ({
       date: r.date,
@@ -136,6 +151,69 @@ async function getBeneficiaryPortalStats(beneficiaryType) {
       id_number: maskIdNumber(row.id_number),
     })),
   };
+}
+
+// ── Portal analytics helpers ──────────────────────────────────
+// Registrations per calendar month for the last 12 months (oldest first).
+// `table` and `whereSql` are internal constants, never user input.
+async function getRegistrationTrend(table, whereSql = "", params = []) {
+  const result = await pool.query(
+    `SELECT to_char(m, 'YYYY-MM') AS month, COALESCE(c.cnt, 0)::int AS count
+     FROM generate_series(
+       date_trunc('month', CURRENT_DATE) - INTERVAL '11 months',
+       date_trunc('month', CURRENT_DATE),
+       INTERVAL '1 month'
+     ) AS m
+     LEFT JOIN (
+       SELECT date_trunc('month', created_at) AS mon, COUNT(*)::int AS cnt
+       FROM ${table}
+       WHERE created_at >= date_trunc('month', CURRENT_DATE) - INTERVAL '11 months'
+       ${whereSql}
+       GROUP BY 1
+     ) c ON c.mon = m
+     ORDER BY m`,
+    params,
+  );
+  return result.rows;
+}
+
+// OSCA: senior citizens by age band (fixed bands, zero-filled)
+async function getAgeBands() {
+  const result = await pool.query(
+    `SELECT
+       CASE WHEN a >= 90 THEN '90+'
+            WHEN a >= 80 THEN '80-89'
+            WHEN a >= 70 THEN '70-79'
+            ELSE '60-69' END AS band,
+       COUNT(*)::int AS count
+     FROM (
+       SELECT date_part('year', age(birthdate))::int AS a
+       FROM beneficiaries
+       WHERE beneficiary_type = 'senior_citizen' AND birthdate IS NOT NULL
+     ) ages
+     WHERE a >= 60
+     GROUP BY 1`,
+  );
+  const counts = new Map(result.rows.map((r) => [r.band, r.count]));
+  return ["60-69", "70-79", "80-89", "90+"].map((band) => ({
+    label: band,
+    count: counts.get(band) ?? 0,
+  }));
+}
+
+// PDAO: PWD records grouped by disability type (top 6)
+async function getDisabilityTypes() {
+  const result = await pool.query(
+    `SELECT
+       INITCAP(LOWER(TRIM(COALESCE(NULLIF(TRIM(disability_type), ''), 'unspecified')))) AS label,
+       COUNT(*)::int AS count
+     FROM beneficiaries
+     WHERE beneficiary_type = 'pwd'
+     GROUP BY 1
+     ORDER BY count DESC, label
+     LIMIT 6`,
+  );
+  return result.rows;
 }
 
 // ── BPLO stats ────────────────────────────────────────────────
@@ -208,8 +286,11 @@ async function getBploStats() {
      WHERE dispute_type = 'business_refusal'`,
   );
 
+  const registrationTrend = await getRegistrationTrend("establishments");
+
   return {
     establishments: estResult.rows[0],
+    registrationTrend,
     verifications: verificationResult.rows[0],
     verificationTrend: trendResult.rows.map((r) => ({
       date: r.date,

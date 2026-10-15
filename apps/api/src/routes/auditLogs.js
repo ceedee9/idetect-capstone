@@ -572,10 +572,11 @@ router.get("/case", requireStepUpForDownload, async (req, res, next) => {
       const [d] = await q(
         `SELECT d.id, d.reference_no, d.dispute_type, d.status, d.explanation, d.staff_response,
                 d.submitted_at, d.acknowledged_at, d.resolved_at, d.verification_log_id,
-                u.full_name AS handled_by, vl.beneficiary_type_detected AS btype
+                u.full_name AS handled_by, b.beneficiary_type AS btype
          FROM disputes d
          LEFT JOIN users u ON u.id = d.handled_by
-         LEFT JOIN verification_logs vl ON vl.id = d.verification_log_id
+         LEFT JOIN beneficiary_accounts ba ON ba.id = d.beneficiary_account_id
+         LEFT JOIN beneficiaries b ON b.id = ba.beneficiary_id
          WHERE d.reference_no = $1`,
         [ref],
       );
