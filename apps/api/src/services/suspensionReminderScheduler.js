@@ -5,9 +5,12 @@ const INTERVAL_MS = 24 * 60 * 60 * 1000;
 async function runSuspensionReminderSync() {
   try {
     await pool.query(`
-      INSERT INTO staff_alerts (target_role, title, body, related_beneficiary_id)
+      INSERT INTO staff_alerts
+        (target_role, alert_type, severity, title, body, target_route, related_beneficiary_id)
       SELECT CASE WHEN b.beneficiary_type = 'pwd' THEN 'pdao_admin'::user_role
                   ELSE 'osca_admin'::user_role END,
+             'suspension_review_due',
+             'medium',
              'Suspension review due',
              CASE
                WHEN b.suspension_end_date < CURRENT_DATE
@@ -16,6 +19,7 @@ async function runSuspensionReminderSync() {
                  (b.suspension_end_date - CURRENT_DATE)::text ||
                  ' day(s). Review the beneficiary before the end date.'
              END,
+             '/beneficiaries/' || b.id::text,
              b.id
       FROM beneficiaries b
       WHERE b.status = 'suspended'

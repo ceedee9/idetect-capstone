@@ -10,6 +10,11 @@
 // dispute within the same SLA window (tracked via audit_logs).
 
 const pool = require("../config/database");
+const {
+  createStaffAlert,
+  getDisputeAlertRoles,
+  getDisputeAlertRoute,
+} = require("./staffAlerts");
 
 const ACK_SLA_HOURS = 24;
 const RESOLVE_SLA_HOURS = 72;
@@ -53,24 +58,22 @@ async function runSlaCheck() {
         ],
       );
 
-      // Alert the responsible admin staff so they can act on the overdue dispute
-      const targetRole =
-        row.dispute_type === "business_refusal"
-          ? "bplo_admin"
-          : row.beneficiary_type === "senior_citizen"
-            ? "osca_admin"
-            : "pdao_admin";
-
-      await pool.query(
-        `INSERT INTO staff_alerts (target_role, title, body, related_beneficiary_id)
-         VALUES ($1, $2, $3, $4)`,
-        [
+      // Alert every office that can act on the overdue dispute
+      for (const targetRole of getDisputeAlertRoles(
+        row.dispute_type,
+        row.beneficiary_type,
+      )) {
+        await createStaffAlert({
           targetRole,
-          `⏰ SLA Breach — Dispute Unacknowledged (Ref: ${ref})`,
-          `Dispute ${ref} was submitted more than ${ACK_SLA_HOURS} hours ago and has not been acknowledged. Please review it immediately.`,
-          row.beneficiary_id,
-        ],
-      );
+          alertType: "sla_ack_breach",
+          severity: "high",
+          title: `⏰ SLA Breach — Dispute Unacknowledged (Ref: ${ref})`,
+          body: `Dispute ${ref} was submitted more than ${ACK_SLA_HOURS} hours ago and has not been acknowledged. Please review it immediately.`,
+          targetRoute: getDisputeAlertRoute(targetRole),
+          relatedBeneficiaryId: row.beneficiary_id,
+          relatedDisputeId: row.id,
+        });
+      }
 
       // Record escalation in audit log to prevent re-escalating
       await pool.query(
@@ -125,24 +128,22 @@ async function runSlaCheck() {
         ],
       );
 
-      // Alert the responsible admin staff
-      const targetRole =
-        row.dispute_type === "business_refusal"
-          ? "bplo_admin"
-          : row.beneficiary_type === "senior_citizen"
-            ? "osca_admin"
-            : "pdao_admin";
-
-      await pool.query(
-        `INSERT INTO staff_alerts (target_role, title, body, related_beneficiary_id)
-         VALUES ($1, $2, $3, $4)`,
-        [
+      // Alert every office that can act on the overdue dispute
+      for (const targetRole of getDisputeAlertRoles(
+        row.dispute_type,
+        row.beneficiary_type,
+      )) {
+        await createStaffAlert({
           targetRole,
-          `⏰ SLA Breach — Dispute Unresolved (Ref: ${ref})`,
-          `Dispute ${ref} has been open for more than ${RESOLVE_SLA_HOURS} hours without resolution. Please resolve or reject it immediately.`,
-          row.beneficiary_id,
-        ],
-      );
+          alertType: "sla_resolve_breach",
+          severity: "high",
+          title: `⏰ SLA Breach — Dispute Unresolved (Ref: ${ref})`,
+          body: `Dispute ${ref} has been open for more than ${RESOLVE_SLA_HOURS} hours without resolution. Please resolve or reject it immediately.`,
+          targetRoute: getDisputeAlertRoute(targetRole),
+          relatedBeneficiaryId: row.beneficiary_id,
+          relatedDisputeId: row.id,
+        });
+      }
 
       await pool.query(
         `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)

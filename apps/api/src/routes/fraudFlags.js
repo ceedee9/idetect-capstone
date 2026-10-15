@@ -16,6 +16,7 @@ const {
 } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { maskBeneficiary } = require("../utils/privacy");
+const { createStaffAlert } = require("../services/staffAlerts");
 
 const router = express.Router();
 
@@ -211,23 +212,18 @@ router.post(
               beneficiary_type === "senior_citizen"
                 ? "osca_admin"
                 : "pdao_admin";
-            pool
-              .query(
-                `INSERT INTO staff_alerts (target_role, title, body, related_beneficiary_id)
-                 VALUES ($1, $2, $3, $4)`,
-                [
-                  alertRole,
-                  "⚠️ ID Auto-Suspended",
-                  `ID ${id_number_flagged} was automatically suspended after flags from ${distinctFlaggers} distinct establishment(s). Please review the active fraud flags.`,
-                  beneficiary_id,
-                ],
-              )
-              .catch((err) =>
-                console.error(
-                  "⚠️  Staff alert insert failed (migration 022 applied?):",
-                  err.message,
-                ),
-              );
+            createStaffAlert({
+              targetRole: alertRole,
+              alertType: "auto_suspended",
+              severity: "high",
+              title: "⚠️ ID Auto-Suspended",
+              body: `A beneficiary ID was automatically suspended after flags from ${distinctFlaggers} distinct establishment(s). Please review the active fraud flags.`,
+              targetRoute: "/fraud-flags",
+              relatedBeneficiaryId: beneficiary_id,
+              dedupeKey: `auto_suspended:${result.rows[0].id}`,
+            }).catch((err) =>
+              console.error("⚠️  Staff alert insert failed:", err.message),
+            );
           }
         }
       }

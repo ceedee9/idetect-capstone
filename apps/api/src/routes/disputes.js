@@ -26,10 +26,6 @@ const {
   uploadDisputeDocument,
   buildAbsoluteApiUploadUrl,
 } = require("../services/storageService");
-const {
-  createStaffAlert,
-  getDisputeTargetRole,
-} = require("../services/staffAlerts");
 
 const router = express.Router();
 
@@ -197,7 +193,6 @@ router.post(
       if (!contextResult.rows.length) {
         throw createError(404, "Beneficiary account not found");
       }
-      const beneficiaryContext = contextResult.rows[0];
 
       const result = await pool.query(
         `INSERT INTO disputes
@@ -215,12 +210,6 @@ router.post(
       );
 
       const dispute = result.rows[0];
-      const disputeReference =
-        dispute.reference_no || `DSP-${dispute.id.slice(0, 8).toUpperCase()}`;
-      const targetRole = getDisputeTargetRole(
-        dispute_type,
-        beneficiaryContext.beneficiary_type,
-      );
 
       // Notify beneficiary of receipt (submission confirmation)
       await pool.query(
@@ -235,21 +224,8 @@ router.post(
         ],
       );
 
-      try {
-        await createStaffAlert({
-          targetRole,
-          alertType: "dispute_submitted",
-          severity: "high",
-          title: "New dispute submitted",
-          body: `A beneficiary submitted dispute ${disputeReference}. Please review the dispute queue.`,
-          targetRoute: "/disputes",
-          relatedBeneficiaryId: beneficiaryContext.beneficiary_id,
-          relatedDisputeId: dispute.id,
-          dedupeKey: `dispute_submitted:${dispute.id}`,
-        });
-      } catch (alertError) {
-        console.error("Staff dispute alert insert failed:", alertError.message);
-      }
+      // Staff alerts for new disputes are created by the database trigger
+      // (migration 049), so every submission path notifies the right offices.
 
       // Log the audit trail
       await pool.query(

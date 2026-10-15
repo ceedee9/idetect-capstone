@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
+const { openStaffAlertStream } = require("../services/staffAlertStream");
 
 const router = express.Router();
 const SALT_ROUNDS = 12;
@@ -79,7 +80,11 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// Keep this static route before "/:id" so "alerts" is not validated as a UUID.
+// Live alert stream (Server-Sent Events). Static routes stay before "/:id".
+router.get("/alerts/stream", (req, res) => {
+  openStaffAlertStream(req, res, ownRole(req));
+});
+
 router.get("/alerts", async (req, res, next) => {
   try {
     const { rows } = await pool.query(

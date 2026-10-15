@@ -64,7 +64,10 @@ app.use(
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  skip: (req) => req.path.startsWith("/auth/"),
+  // Alert checks are lightweight and automatic; counting them would exhaust
+  // the budget for the staff member's own actions.
+  skip: (req) =>
+    req.path.startsWith("/auth/") || req.path.startsWith("/staff/alerts"),
   message: { error: "Too many requests. Please try again later." },
 });
 app.use("/api/", limiter);

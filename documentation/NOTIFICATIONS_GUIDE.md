@@ -70,25 +70,34 @@ All notifications are also saved to the `notifications` table in the database, s
 
 ## Staff Portal Alerts
 
-Important beneficiary and workflow events can also appear in the relevant staff
-portal through the in-portal alert bell. These alerts are separate from
-beneficiary mobile notifications and are targeted by office:
+Important events appear in the staff portal in real time through the notification
+bell. These are separate from beneficiary mobile notifications and are targeted
+by office:
 
 | Event | Target office | Portal action |
 | --- | --- | --- |
-| Business-refusal dispute submitted | BPLO | Open the dispute queue |
-| Senior-citizen dispute submitted | OSCA | Open the dispute queue |
-| PWD dispute submitted | PDAO | Open the dispute queue |
+| Dispute submitted (any type) | Beneficiary's office (OSCA or PDAO) | Open the dispute queue |
+| Business-refusal dispute submitted | BPLO, plus the beneficiary's office | BPLO opens Refusal Reports |
+| Fraud flag created (establishment flag, unauthorized-use report, self-report) | OSCA or PDAO by beneficiary type | Open Fraud Flags |
+| Establishment self-registration awaiting approval | BPLO | Open Establishments |
+| ID auto-suspended after repeated flags | OSCA or PDAO | Open Fraud Flags |
+| Dispute SLA breach (24h acknowledgment / 72h resolution) | Every office that can act on it | Open the dispute queue |
+| Suspension ending or overdue | OSCA or PDAO | Open the beneficiary record |
 
-Staff alerts are polled while the portal is open, show an unread count, and can
-be marked read individually or all at once. They are deduplicated by the
-underlying event so retries do not create duplicate alerts. The alert body
-contains only a short, privacy-safe reference; sensitive explanations and
-personal details remain in the protected workflow.
+**How delivery works.** Alerts are created by database triggers (and the existing
+schedulers), then pushed to every signed-in portal session of the matching office
+over a Server-Sent Events stream (`GET /api/staff/alerts/stream`, authenticated
+with the staff token and scoped to the staff member's office). A new alert shows
+a pop-up, increments the bell and the browser-tab title, and can raise a desktop
+notification when the tab is in the background (opt in from the bell). Streams are
+recycled every 10 minutes so they cannot outlive a token or a deactivated
+account. If the stream is blocked, the portal falls back to checking every 30
+seconds and catches up when it reconnects.
 
-The current phase intentionally uses in-portal alerts only. Browser push and
-email escalation can be added later for high-priority events without changing
-the beneficiary FCM flow.
+Alerts are deduplicated per event, can be marked read individually or all at once,
+and contain only short, privacy-safe references — never ID numbers, birth dates,
+or dispute explanations. Email and SMS escalation for high-priority events remain
+future work.
 
 ---
 

@@ -12,6 +12,7 @@ const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/$/, "");
 export const getStaffToken = () =>
   localStorage.getItem("staff_token") ||
   sessionStorage.getItem("staff_token");
+export const getApiBaseUrl = () => normalizedApiBaseUrl;
 const buildApiPath = (path) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   if (normalizedPath.startsWith("/api")) {

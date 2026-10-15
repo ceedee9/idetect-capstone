@@ -16,12 +16,13 @@ import {
   Store,
   Landmark,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import StepUpHost from "./StepUpHost";
 import { useAuth } from "../context/AuthContext";
 import { useSessionTimeout } from "../hooks/useSessionTimeout";
 import BreachReportModal from "./BreachReportModal";
 import { staffAlertsAPI } from "../services/api";
+import { connectStaffAlertStream } from "../utils/staffAlertStream";
 import { fmtRelative } from "../utils/date";
 import { CivicStripe } from "./CivicChrome";
 
@@ -127,24 +128,88 @@ export default function AppShell() {
   const [bellOpen, setBellOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [alertsError, setAlertsError] = useState("");
+  const [liveStatus, setLiveStatus] = useState("connecting");
+  const [toast, setToast] = useState(null);
+  const [desktopPermission, setDesktopPermission] = useState(() =>
+    typeof Notification === "undefined" ? "unsupported" : Notification.permission,
+  );
   const bellRef = useRef(null);
+  const knownAlertIds = useRef(new Set());
+  const toastTimer = useRef(null);
+  // Refs keep the live handler stable so route changes never reset the stream.
+  const navigateRef = useRef(navigate);
+  const desktopPermissionRef = useRef(desktopPermission);
+  navigateRef.current = navigate;
+  desktopPermissionRef.current = desktopPermission;
 
-  async function loadAlerts() {
+  const loadAlerts = useCallback(async () => {
     try {
       const res = await staffAlertsAPI.list();
-      setAlerts(res.data?.alerts ?? []);
+      const list = res.data?.alerts ?? [];
+      list.forEach((a) => knownAlertIds.current.add(a.id));
+      setAlerts(list);
       setAlertsError("");
     } catch (error) {
       console.error("Failed to load staff notifications:", error);
       setAlertsError("Notifications could not be loaded. Please try again.");
     }
-  }
+  }, []);
+
+  // Alerts pushed over the live stream appear instantly, with no refresh.
+  const handleLiveAlert = useCallback((alert) => {
+    if (knownAlertIds.current.has(alert.id)) return;
+    knownAlertIds.current.add(alert.id);
+    setAlerts((prev) =>
+      prev.some((a) => a.id === alert.id) ? prev : [alert, ...prev].slice(0, 50),
+    );
+    setToast(alert);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 10000);
+
+    if (document.hidden && desktopPermissionRef.current === "granted") {
+      const desktopNotice = new Notification(alert.title, {
+        body: alert.body,
+        tag: alert.id,
+      });
+      desktopNotice.onclick = () => {
+        window.focus();
+        if (alert.target_route) navigateRef.current(alert.target_route);
+        desktopNotice.close();
+      };
+    }
+  }, []);
 
   useEffect(() => {
     loadAlerts();
-    const interval = setInterval(loadAlerts, 15000);
-    return () => clearInterval(interval);
-  }, []);
+    // Safety net in case the live stream is blocked by a proxy.
+    const interval = setInterval(loadAlerts, 30000);
+    const refreshWhenVisible = () => {
+      if (!document.hidden) loadAlerts();
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadAlerts]);
+
+  useEffect(() => {
+    return connectStaffAlertStream({
+      onAlert: handleLiveAlert,
+      onStatus: (status) => {
+        setLiveStatus(status);
+        // Catch up on anything created while the stream was disconnected.
+        if (status === "live") loadAlerts();
+      },
+    });
+  }, [handleLiveAlert, loadAlerts]);
+
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  async function enableDesktopAlerts() {
+    if (typeof Notification === "undefined") return;
+    setDesktopPermission(await Notification.requestPermission());
+  }
 
   useEffect(() => {
     if (!bellOpen) return;
@@ -158,6 +223,14 @@ export default function AppShell() {
   }, [bellOpen]);
 
   const unreadCount = alerts.filter((a) => !a.is_read).length;
+
+  useEffect(() => {
+    const baseTitle = "iDetect — Staff Portal";
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${baseTitle}` : baseTitle;
+    return () => {
+      document.title = baseTitle;
+    };
+  }, [unreadCount]);
 
   async function handleMarkAllRead() {
     try {
@@ -195,6 +268,27 @@ export default function AppShell() {
     : role;
   const nav = NAV_BY_ROLE[portalRole] ?? NAV_BY_ROLE.osca_admin;
   const theme = THEME[portalRole] ?? THEME.osca_admin;
+
+  const alertsStatusBar = (
+    <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-slate-100 bg-slate-50/60">
+      <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${
+            liveStatus === "live" ? "bg-emerald-500" : "bg-amber-400"
+          }`}
+        />
+        {liveStatus === "live" ? "Live updates on" : "Reconnecting…"}
+      </span>
+      {desktopPermission === "default" && (
+        <button
+          onClick={enableDesktopAlerts}
+          className={`text-[11px] font-medium ${theme.viewBtn}`}
+        >
+          Enable desktop alerts
+        </button>
+      )}
+    </div>
+  );
 
   function handleLogout() {
     logout();
@@ -386,6 +480,7 @@ export default function AppShell() {
                       </button>
                     )}
                   </div>
+                  {alertsStatusBar}
                   <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
                     {alertsError ? (
                       <div className="py-6 px-4 text-center text-danger-600 text-sm">
@@ -457,6 +552,7 @@ export default function AppShell() {
                         </button>
                       )}
                     </div>
+                    {alertsStatusBar}
                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
                       {alertsError ? (
                         <div className="py-6 px-4 text-center text-danger-600 text-sm">
@@ -554,6 +650,47 @@ export default function AppShell() {
                   Stay logged in
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="page-enter fixed top-4 right-4 z-[60] w-80 max-w-[calc(100vw-2rem)]"
+        >
+          <div
+            onClick={() => {
+              setToast(null);
+              handleAlertClick(toast);
+            }}
+            className="cursor-pointer rounded-xl border border-slate-200 bg-white p-4 shadow-xl hover:bg-slate-50"
+          >
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-danger-50 text-danger-600">
+                <Bell className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-900">{toast.title}</p>
+                <p className="mt-0.5 text-xs leading-snug text-slate-500">
+                  {toast.body}
+                </p>
+                <p className={`mt-1.5 text-[11px] font-medium ${theme.viewBtn}`}>
+                  View now
+                </p>
+              </div>
+              <button
+                aria-label="Dismiss notification"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setToast(null);
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>

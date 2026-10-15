@@ -1,8 +1,17 @@
 const pool = require("../config/database");
 
-function getDisputeTargetRole(disputeType, beneficiaryType) {
-  if (disputeType === "business_refusal") return "bplo_admin";
-  return beneficiaryType === "senior_citizen" ? "osca_admin" : "pdao_admin";
+// Business-refusal disputes are visible to BPLO and to the beneficiary's own
+// office; every other dispute belongs to the beneficiary's office only.
+function getDisputeAlertRoles(disputeType, beneficiaryType) {
+  const officeRole =
+    beneficiaryType === "senior_citizen" ? "osca_admin" : "pdao_admin";
+  return disputeType === "business_refusal"
+    ? ["bplo_admin", officeRole]
+    : [officeRole];
+}
+
+function getDisputeAlertRoute(role) {
+  return role === "bplo_admin" ? "/business-refusals" : "/disputes";
 }
 
 async function createStaffAlert({
@@ -38,4 +47,8 @@ async function createStaffAlert({
   return rows[0] || null;
 }
 
-module.exports = { createStaffAlert, getDisputeTargetRole };
+module.exports = {
+  createStaffAlert,
+  getDisputeAlertRoles,
+  getDisputeAlertRoute,
+};
