@@ -6,6 +6,10 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
+// Hosted Postgres (Supabase pooler) can take several seconds to hand out a
+// connection after idle periods; 5s caused intermittent login 500s.
+const CONNECTION_TIMEOUT_MS = 15000;
+
 function getPoolConfig() {
   const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
@@ -18,7 +22,7 @@ function getPoolConfig() {
       ssl: { rejectUnauthorized: false },
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
     };
   }
 
@@ -30,7 +34,7 @@ function getPoolConfig() {
     password: process.env.DB_PASSWORD,
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
     ssl:
       process.env.NODE_ENV === "production"
         ? { rejectUnauthorized: false }
@@ -39,6 +43,11 @@ function getPoolConfig() {
 }
 
 const pool = new Pool(getPoolConfig());
+
+// Without this listener, an idle client dropped by the hosted pooler would crash the process.
+pool.on("error", (err) => {
+  console.warn(`[DB] Idle client error (will reconnect on next query): ${err.message}`);
+});
 
 async function waitForDatabaseConnection(retries = 10, delayMs = 5000) {
   for (let attempt = 1; attempt <= retries; attempt += 1) {
