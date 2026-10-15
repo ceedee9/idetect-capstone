@@ -1,7 +1,7 @@
 import { X, AlertTriangle, Loader2 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
-export default function ConfirmModal({ open, onClose, onConfirm, title, description, confirmLabel = 'Confirm', variant = 'danger', loading = false, children }) {
+export default function ConfirmModal({ open, onClose, onConfirm, title, description, confirmLabel = 'Confirm', variant = 'danger', loading = false, confirmDisabled = false, children }) {
   if (!open) return null
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -22,7 +22,7 @@ export default function ConfirmModal({ open, onClose, onConfirm, title, descript
         {children && <div className="mb-4">{children}</div>}
         <div className="flex gap-3 justify-end">
           <button onClick={onClose} disabled={loading} className="btn-secondary">Cancel</button>
-          <button onClick={onConfirm} disabled={loading}
+          <button onClick={onConfirm} disabled={loading || confirmDisabled}
             className={variant === 'danger' ? 'btn-danger' : 'btn-primary'}>
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {confirmLabel}

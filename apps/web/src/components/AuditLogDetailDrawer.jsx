@@ -4,6 +4,7 @@
 // click, the X button, or Escape.
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Calendar, User, Building2, Tag } from "lucide-react";
 import { fmtDateTime } from "../utils/date";
 import {
@@ -28,7 +29,7 @@ export default function AuditLogDetailDrawer({ log, onClose }) {
 
   const entries = isOpen ? formatMetadataEntries(log.metadata) : [];
 
-  return (
+  return createPortal((
     <>
       {/* Backdrop */}
       <div
@@ -151,5 +152,5 @@ export default function AuditLogDetailDrawer({ log, onClose }) {
         )}
       </div>
     </>
-  );
+  ), document.body);
 }

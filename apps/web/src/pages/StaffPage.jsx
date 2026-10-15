@@ -21,6 +21,7 @@ import { fmtDateTime } from "../utils/date";
 import StatusBadge from "../components/StatusBadge";
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function StaffPage() {
   const { user } = useAuth();
@@ -34,6 +35,7 @@ export default function StaffPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(null); // staff object
   const [showResetPw, setShowResetPw] = useState(null); // staff object
+  const [pendingAction, setPendingAction] = useState(null); // { member, action }
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
@@ -71,6 +73,13 @@ export default function StaffPage() {
     }
   }
 
+  async function confirmToggleActive() {
+    if (!pendingAction) return;
+    const { member } = pendingAction;
+    setPendingAction(null);
+    await handleToggleActive(member);
+  }
+
   async function handleUnlock(member) {
     try {
       await staffAPI.unlock(member.id);
@@ -79,6 +88,13 @@ export default function StaffPage() {
     } catch (err) {
       setError(err.response?.data?.error || "Failed to unlock account.");
     }
+  }
+
+  async function confirmUnlock() {
+    if (!pendingAction) return;
+    const { member } = pendingAction;
+    setPendingAction(null);
+    await handleUnlock(member);
   }
 
   return (
@@ -249,7 +265,7 @@ export default function StaffPage() {
                         </button>
                         <button
                           title={m.is_active ? "Deactivate" : "Activate"}
-                          onClick={() => handleToggleActive(m)}
+                          onClick={() => setPendingAction({ member: m, action: m.is_active ? "deactivate" : "activate" })}
                           className={`p-1.5 rounded-lg transition-colors ${
                             m.is_active
                               ? "hover:bg-danger-50 text-slate-400 hover:text-danger-600"
@@ -266,7 +282,7 @@ export default function StaffPage() {
                           new Date() < new Date(m.locked_until) && (
                             <button
                               title="Unlock account"
-                              onClick={() => handleUnlock(m)}
+                              onClick={() => setPendingAction({ member: m, action: "unlock" })}
                               className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-500 hover:text-amber-700 transition-colors"
                             >
                               <LockOpen className="w-4 h-4" />
@@ -322,6 +338,23 @@ export default function StaffPage() {
           }}
         />
       )}
+      <ConfirmModal
+        open={!!pendingAction}
+        onClose={() => setPendingAction(null)}
+        onConfirm={pendingAction?.action === "unlock" ? confirmUnlock : confirmToggleActive}
+        title={pendingAction?.action === "unlock" ? "Unlock staff account" : `${pendingAction?.action === "deactivate" ? "Deactivate" : "Activate"} staff account`}
+        description={
+          pendingAction?.action === "unlock"
+            ? `Unlock ${pendingAction?.member?.full_name}'s account so they can sign in again.`
+            : `${pendingAction?.action === "deactivate" ? "Deactivate" : "Activate"} ${pendingAction?.member?.full_name}'s staff account?`
+        }
+        confirmLabel={pendingAction?.action === "unlock" ? "Unlock account" : pendingAction?.action === "deactivate" ? "Deactivate" : "Activate"}
+        variant={pendingAction?.action === "deactivate" ? "danger" : "primary"}
+      >
+        <p className="text-xs text-slate-500">
+          This action will be recorded in the audit log.
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

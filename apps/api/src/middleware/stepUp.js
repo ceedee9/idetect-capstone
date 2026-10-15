@@ -27,4 +27,10 @@ function requireStepUp(req, res, next) {
   }
 }
 
-module.exports = { requireStepUp };
+// Previews (format=json) stay open; only file downloads need fresh proof.
+function requireStepUpForDownload(req, res, next) {
+  if (req.query.format === "json") return next();
+  return requireStepUp(req, res, next);
+}
+
+module.exports = { requireStepUp, requireStepUpForDownload };

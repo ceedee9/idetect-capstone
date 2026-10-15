@@ -14,6 +14,10 @@ const {
   resolvePeriod,
   csvLine,
 } = require("../services/auditReports");
+const {
+  requireStepUp,
+  requireStepUpForDownload,
+} = require("../middleware/stepUp");
 const { appendAuditScope } = require("../services/auditLogScope");
 
 const router = express.Router();
@@ -141,7 +145,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // ── GET /api/audit-logs/export ─────────────────────────────────
-router.get("/export", async (req, res, next) => {
+router.get("/export", requireStepUp, async (req, res, next) => {
   try {
     const { action, start_date, end_date, search } = req.query;
 
@@ -289,7 +293,7 @@ const REPORT_ROLES = new Set([
   "bplo_admin",
 ]);
 
-router.get("/report", async (req, res, next) => {
+router.get("/report", requireStepUpForDownload, async (req, res, next) => {
   try {
     const q = req.query;
     const type = q.type || "summary";
@@ -498,7 +502,7 @@ const maskId = (v) =>
   v ? "*".repeat(Math.max(String(v).length - 2, 0)) + String(v).slice(-2) : "";
 const iso = (d) => (d ? new Date(d).toISOString() : "");
 
-router.get("/case", async (req, res, next) => {
+router.get("/case", requireStepUpForDownload, async (req, res, next) => {
   try {
     const ref = String(req.query.ref || "").trim().toUpperCase();
     if (!REF_RE.test(ref)) {

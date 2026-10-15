@@ -42,6 +42,7 @@ export default function BeneficiariesPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [actionReason, setActionReason] = useState("");
+  const [actionAcknowledged, setActionAcknowledged] = useState(false);
   const [suspensionStartDate, setSuspensionStartDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
   );
@@ -145,6 +146,7 @@ export default function BeneficiariesPage() {
       );
       setModal(null);
       setActionReason("");
+      setActionAcknowledged(false);
       setSuspensionStartDate(new Date().toISOString().slice(0, 10));
       setSuspensionEndDate("");
       await refetch();
@@ -500,6 +502,7 @@ export default function BeneficiariesPage() {
           setModal(null);
           setActionError("");
           setActionReason("");
+          setActionAcknowledged(false);
           setSuspensionStartDate(new Date().toISOString().slice(0, 10));
           setSuspensionEndDate("");
         }}
@@ -509,7 +512,12 @@ export default function BeneficiariesPage() {
         confirmLabel="Activate"
         variant="primary"
         loading={actionLoading}
+        confirmDisabled={!actionAcknowledged}
       >
+        <label className="flex items-start gap-2 text-sm text-slate-600">
+          <input type="checkbox" checked={actionAcknowledged} onChange={(e) => setActionAcknowledged(e.target.checked)} className="mt-1" />
+          <span>I understand that this will reinstate the beneficiary and restore active eligibility.</span>
+        </label>
         {actionError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4" />
@@ -525,6 +533,7 @@ export default function BeneficiariesPage() {
           setModal(null);
           setActionError("");
           setActionReason("");
+          setActionAcknowledged(false);
           setSuspensionStartDate(new Date().toISOString().slice(0, 10));
           setSuspensionEndDate("");
         }}
@@ -534,7 +543,12 @@ export default function BeneficiariesPage() {
         confirmLabel="Suspend"
         variant="warn"
         loading={actionLoading}
+        confirmDisabled={!actionAcknowledged}
       >
+        <label className="flex items-start gap-2 text-sm text-slate-600">
+          <input type="checkbox" checked={actionAcknowledged} onChange={(e) => setActionAcknowledged(e.target.checked)} className="mt-1" />
+          <span>I understand that this will suspend the beneficiary and affect establishment scan results.</span>
+        </label>
         <textarea
           className="input mt-3 min-h-20 resize-y"
           placeholder="Suspension reason (required)"

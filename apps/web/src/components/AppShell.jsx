@@ -17,6 +17,7 @@ import {
   Landmark,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import StepUpHost from "./StepUpHost";
 import { useAuth } from "../context/AuthContext";
 import { useSessionTimeout } from "../hooks/useSessionTimeout";
 import BreachReportModal from "./BreachReportModal";
@@ -125,20 +126,23 @@ export default function AppShell() {
   // ── Notification bell ─────────────────────────────────────
   const [bellOpen, setBellOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
+  const [alertsError, setAlertsError] = useState("");
   const bellRef = useRef(null);
 
   async function loadAlerts() {
     try {
       const res = await staffAlertsAPI.list();
       setAlerts(res.data?.alerts ?? []);
-    } catch {
-      // silently ignore
+      setAlertsError("");
+    } catch (error) {
+      console.error("Failed to load staff notifications:", error);
+      setAlertsError("Notifications could not be loaded. Please try again.");
     }
   }
 
   useEffect(() => {
     loadAlerts();
-    const interval = setInterval(loadAlerts, 30000);
+    const interval = setInterval(loadAlerts, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -159,9 +163,30 @@ export default function AppShell() {
     try {
       await staffAlertsAPI.markAllRead();
       setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
-    } catch {
-      // silently ignore
+    } catch (error) {
+      console.error("Failed to mark staff notifications as read:", error);
+      setAlertsError("Could not mark notifications as read. Please try again.");
     }
+  }
+
+  async function handleAlertClick(alert) {
+    if (!alert.is_read) {
+      try {
+        await staffAlertsAPI.markRead(alert.id);
+        setAlerts((prev) =>
+          prev.map((item) =>
+            item.id === alert.id
+              ? { ...item, is_read: true, read_at: new Date().toISOString() }
+              : item,
+          ),
+        );
+      } catch (error) {
+        console.error("Failed to mark staff notification as read:", error);
+        setAlertsError("Could not mark this notification as read.");
+      }
+    }
+    setBellOpen(false);
+    if (alert.target_route) navigate(alert.target_route);
   }
 
   const role = user?.role ?? "osca_admin";
@@ -362,7 +387,11 @@ export default function AppShell() {
                     )}
                   </div>
                   <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                    {alerts.length === 0 ? (
+                    {alertsError ? (
+                      <div className="py-6 px-4 text-center text-danger-600 text-sm">
+                        {alertsError}
+                      </div>
+                    ) : alerts.length === 0 ? (
                       <div className="py-8 text-center text-slate-400 text-sm">
                         <Bell className="w-7 h-7 mx-auto mb-2 opacity-25" />
                         No notifications
@@ -371,7 +400,8 @@ export default function AppShell() {
                       alerts.map((a) => (
                         <div
                           key={a.id}
-                          className={`px-4 py-3 ${a.is_read ? "" : theme.alertBg}`}
+                          onClick={() => handleAlertClick(a)}
+                          className={`px-4 py-3 cursor-pointer hover:bg-slate-50 ${a.is_read ? "" : theme.alertBg}`}
                         >
                           <p className="text-xs font-semibold text-slate-800">
                             {a.title}
@@ -428,7 +458,11 @@ export default function AppShell() {
                       )}
                     </div>
                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                      {alerts.length === 0 ? (
+                      {alertsError ? (
+                        <div className="py-6 px-4 text-center text-danger-600 text-sm">
+                          {alertsError}
+                        </div>
+                      ) : alerts.length === 0 ? (
                         <div className="py-8 text-center text-slate-400 text-sm">
                           <Bell className="w-7 h-7 mx-auto mb-2 opacity-25" />
                           No notifications
@@ -437,7 +471,8 @@ export default function AppShell() {
                         alerts.map((a) => (
                           <div
                             key={a.id}
-                            className={`px-4 py-3 ${a.is_read ? "" : theme.alertBg}`}
+                            onClick={() => handleAlertClick(a)}
+                            className={`px-4 py-3 cursor-pointer hover:bg-slate-50 ${a.is_read ? "" : theme.alertBg}`}
                           >
                             <p className="text-xs font-semibold text-slate-800">
                               {a.title}
@@ -469,11 +504,12 @@ export default function AppShell() {
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
             <div className="page-enter">
               <Outlet />
             </div>
           </main>
+          <StepUpHost />
 
           {/* ── Shared footer ── */}
           <footer className="border-t border-slate-100 bg-white px-8 py-2.5 flex-shrink-0">

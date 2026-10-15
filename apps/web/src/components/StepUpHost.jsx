@@ -1,0 +1,73 @@
+import { useEffect, useState } from "react";
+import { registerStepUpHost } from "../utils/stepUp";
+
+export default function StepUpHost() {
+  const [req, setReq] = useState(null);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(
+    () =>
+      registerStepUpHost(
+        (reason, verify) =>
+          new Promise((resolve, reject) => {
+            setPassword("");
+            setError("");
+            setReq({ reason, verify, resolve, reject });
+          }),
+      ),
+    [],
+  );
+
+  if (!req) return null;
+
+  function cancel() {
+    req.reject(new Error("cancelled"));
+    setReq(null);
+  }
+
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const proof = await req.verify(password);
+      req.resolve(proof);
+      setReq(null);
+    } catch {
+      setError("Incorrect password. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+      <form onSubmit={submit} className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <h2 className="font-heading font-bold text-lg text-slate-900">Confirm your password</h2>
+        <p className="text-sm text-slate-500">
+          {req.reason || "This action involves sensitive data."}
+        </p>
+        <input
+          type="password"
+          autoFocus
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+          placeholder="Password"
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" className="btn-secondary" onClick={cancel}>
+            Cancel
+          </button>
+          <button type="submit" className="btn-primary" disabled={busy || !password}>
+            {busy ? "Checking…" : "Confirm"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

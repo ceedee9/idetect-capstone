@@ -82,6 +82,8 @@ const MIGRATIONS = [
   "044_add_establishment_user_audit_actions.sql",
   "045_add_establishment_user_invitations.sql",
   "046_add_establishment_invitation_audit_actions.sql",
+  "047_expand_staff_alerts.sql",
+  "048_notify_staff_on_dispute_insert.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

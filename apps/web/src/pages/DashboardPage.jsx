@@ -25,6 +25,7 @@ import { useEstablishments } from "../hooks/useEstablishments";
 import { useExpiringPermits } from "../hooks/useExpiringPermits";
 import { useAuth } from "../context/AuthContext";
 import { reportsAPI } from "../services/api";
+import { getStepUpToken } from "../utils/stepUp";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import EmptyState from "../components/EmptyState";
@@ -50,7 +51,8 @@ function ExportDropdown() {
     setBusy(true);
     setOpen(false);
     try {
-      const r = await fn();
+      const token = await getStepUpToken("Confirm your password to export this data.");
+      const r = await fn(token);
       downloadBlob(new Blob([r.data]), name);
     } catch {
       /* silent */
@@ -76,7 +78,7 @@ function ExportDropdown() {
               className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
               onClick={() =>
                 doExport(
-                  () => reportsAPI.exportVerifications(),
+                  (t) => reportsAPI.exportVerifications(t),
                   `verifications-${new Date().toISOString().slice(0, 10)}.csv`,
                 )
               }
@@ -87,7 +89,7 @@ function ExportDropdown() {
               className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
               onClick={() =>
                 doExport(
-                  () => reportsAPI.exportFraudFlags(),
+                  (t) => reportsAPI.exportFraudFlags(t),
                   `fraud-flags-${new Date().toISOString().slice(0, 10)}.csv`,
                 )
               }
@@ -98,7 +100,7 @@ function ExportDropdown() {
               className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
               onClick={() =>
                 doExport(
-                  () => reportsAPI.exportDisputes(),
+                  (t) => reportsAPI.exportDisputes(t),
                   `disputes-${new Date().toISOString().slice(0, 10)}.csv`,
                 )
               }

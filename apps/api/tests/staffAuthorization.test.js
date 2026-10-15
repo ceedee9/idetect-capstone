@@ -74,6 +74,46 @@ test.each([
 );
 
 test.each([
+  ["bplo_admin", "bplo_admin"],
+  ["osca_super_admin", "osca_admin"],
+  ["pdao_super_admin", "pdao_admin"],
+])(
+  "%s can read alerts for %s",
+  async (role, expectedTargetRole) => {
+    const alertRouteIndex = router.stack.findIndex(
+      (entry) => entry.route?.path === "/alerts" && entry.route.methods.get,
+    );
+    const staffIdRouteIndex = router.stack.findIndex(
+      (entry) => entry.route?.path === "/:id" && entry.route.methods.get,
+    );
+
+    expect(alertRouteIndex).toBeGreaterThanOrEqual(0);
+    expect(alertRouteIndex).toBeLessThan(staffIdRouteIndex);
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: "alert-1", is_read: false }],
+    });
+    const res = response();
+    const handlers = route("/alerts", "get");
+    await handlers[handlers.length - 1].handle(
+      { user: { role } },
+      res,
+      () => {},
+    );
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE target_role = $1"),
+      [expectedTargetRole],
+    );
+    expect(res.body).toEqual({
+      alerts: [{ id: "alert-1", is_read: false }],
+      unread_count: 1,
+    });
+    mockQuery.mockReset();
+  },
+);
+
+test.each([
   ["bplo_super_admin", "bplo_admin"],
   ["osca_super_admin", "osca_admin"],
   ["pdao_super_admin", "pdao_admin"],

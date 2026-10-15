@@ -19,6 +19,7 @@
   }
   body {
     @apply font-sans text-slate-800 bg-paper;
+    overflow-x: hidden;
   }
   h1,
   h2,

@@ -311,28 +311,42 @@ export const dashboardAPI = {
 // ─── Audit logs ───────────────────────────────────────────────────────────────
 export const auditLogsAPI = {
   list: (params = {}) => api.get("/audit-logs", { params }),
-  exportCsv: (params = {}) =>
-    api.get("/audit-logs/export", { params, responseType: "blob" }),
-  report: (params = {}, asBlob = false) =>
+  exportCsv: (params = {}, stepUpToken) =>
+    api.get("/audit-logs/export", {
+      params,
+      responseType: "blob",
+      headers: { "X-Step-Up-Token": stepUpToken },
+    }),
+  report: (params = {}, asBlob = false, stepUpToken) =>
     api.get("/audit-logs/report", {
       params,
-      ...(asBlob ? { responseType: "blob" } : {}),
+      ...(asBlob
+        ? { responseType: "blob", headers: { "X-Step-Up-Token": stepUpToken } }
+        : {}),
     }),
-  caseFile: (ref, asBlob = false) =>
+  caseFile: (ref, asBlob = false, stepUpToken) =>
     api.get("/audit-logs/case", {
       params: { ref, format: asBlob ? "csv" : "json" },
-      ...(asBlob ? { responseType: "blob" } : {}),
+      ...(asBlob
+        ? { responseType: "blob", headers: { "X-Step-Up-Token": stepUpToken } }
+        : {}),
     }),
 };
 
 // ─── Reports / CSV export ─────────────────────────────────────────────────────
+const stepUpGet = (url, params, token) =>
+  api.get(url, {
+    params,
+    responseType: "blob",
+    headers: { "X-Step-Up-Token": token },
+  });
 export const reportsAPI = {
-  exportVerifications: (params = {}) =>
-    api.get("/reports/verifications/export", { params, responseType: "blob" }),
-  exportFraudFlags: (params = {}) =>
-    api.get("/reports/fraud-flags/export", { params, responseType: "blob" }),
-  exportDisputes: (params = {}) =>
-    api.get("/reports/disputes/export", { params, responseType: "blob" }),
+  exportVerifications: (token, params = {}) =>
+    stepUpGet("/reports/verifications/export", params, token),
+  exportFraudFlags: (token, params = {}) =>
+    stepUpGet("/reports/fraud-flags/export", params, token),
+  exportDisputes: (token, params = {}) =>
+    stepUpGet("/reports/disputes/export", params, token),
 };
 
 // ─── Staff management ─────────────────────────────────────────────────────────
@@ -353,6 +367,7 @@ export const staffAPI = {
 export const staffAlertsAPI = {
   list: () => api.get("/staff/alerts"),
   markAllRead: () => api.post("/staff/alerts/mark-all-read"),
+  markRead: (id) => api.patch(`/staff/alerts/${id}/read`),
 };
 
 // ─── Breach incident report (REQ-2.17.6) ─────────────────────────────────────

@@ -79,36 +79,21 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// ── GET /staff/alerts ─────────────────────────────────────────
-// Returns the 50 most recent staff alerts for the logged-in admin's role.
+// Keep this static route before "/:id" so "alerts" is not validated as a UUID.
 router.get("/alerts", async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, title, body, related_beneficiary_id, is_read, created_at
+      `SELECT id, alert_type, severity, title, body, target_route,
+              related_beneficiary_id, related_dispute_id, is_read, read_at,
+              created_at
          FROM staff_alerts
         WHERE target_role = $1
         ORDER BY created_at DESC
         LIMIT 50`,
-      [req.user.role],
+      [ownRole(req)],
     );
-    res.json({ alerts: rows });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// ── POST /staff/alerts/mark-all-read ──────────────────────────
-// Marks every unread alert for the logged-in admin's role as read.
-router.post("/alerts/mark-all-read", async (req, res, next) => {
-  try {
-    await pool.query(
-      `UPDATE staff_alerts
-          SET is_read = TRUE
-        WHERE target_role = $1
-          AND is_read = FALSE`,
-      [req.user.role],
-    );
-    res.json({ message: "All alerts marked as read." });
+    const unread_count = rows.filter((r) => !r.is_read).length;
+    res.json({ alerts: rows, unread_count });
   } catch (err) {
     next(err);
   }
@@ -520,33 +505,32 @@ router.patch(
   },
 );
 
-// ── GET /alerts — unread staff alerts for the logged-in admin's role ──────────
-router.get("/alerts", async (req, res, next) => {
+// ── POST /alerts/mark-all-read — dismiss all alerts for the admin's role ─────
+router.post("/alerts/mark-all-read", async (req, res, next) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT id, title, body, related_beneficiary_id, is_read, created_at
-         FROM staff_alerts
-        WHERE target_role = $1
-        ORDER BY created_at DESC
-        LIMIT 50`,
-      [req.user.role],
+    await pool.query(
+      `UPDATE staff_alerts SET is_read = TRUE, read_at = COALESCE(read_at, NOW())
+        WHERE target_role = $1 AND is_read = FALSE`,
+      [ownRole(req)],
     );
-    const unread_count = rows.filter((r) => !r.is_read).length;
-    res.json({ alerts: rows, unread_count });
+    res.json({ message: "All alerts marked as read." });
   } catch (err) {
     next(err);
   }
 });
 
-// ── POST /alerts/mark-all-read — dismiss all alerts for the admin's role ─────
-router.post("/alerts/mark-all-read", async (req, res, next) => {
+// ── PATCH /alerts/:id/read ─────────────────────────────────────
+router.patch("/alerts/:id/read", async (req, res, next) => {
   try {
-    await pool.query(
-      `UPDATE staff_alerts SET is_read = TRUE
-        WHERE target_role = $1 AND is_read = FALSE`,
-      [req.user.role],
+    const { rows } = await pool.query(
+      `UPDATE staff_alerts
+          SET is_read = TRUE, read_at = COALESCE(read_at, NOW())
+        WHERE id = $1 AND target_role = $2
+        RETURNING id`,
+      [req.params.id, ownRole(req)],
     );
-    res.json({ message: "All alerts marked as read." });
+    if (!rows.length) return res.status(404).json({ error: "Alert not found" });
+    res.json({ message: "Alert marked as read." });
   } catch (err) {
     next(err);
   }

@@ -26,6 +26,10 @@ const {
   uploadDisputeDocument,
   buildAbsoluteApiUploadUrl,
 } = require("../services/storageService");
+const {
+  createStaffAlert,
+  getDisputeTargetRole,
+} = require("../services/staffAlerts");
 
 const router = express.Router();
 
@@ -183,6 +187,18 @@ router.post(
         supporting_doc_path,
       } = req.body;
 
+      const contextResult = await pool.query(
+        `SELECT b.id AS beneficiary_id, b.beneficiary_type, b.reference_no
+           FROM beneficiary_accounts ba
+           JOIN beneficiaries b ON b.id = ba.beneficiary_id
+          WHERE ba.id = $1`,
+        [accountId],
+      );
+      if (!contextResult.rows.length) {
+        throw createError(404, "Beneficiary account not found");
+      }
+      const beneficiaryContext = contextResult.rows[0];
+
       const result = await pool.query(
         `INSERT INTO disputes
          (beneficiary_account_id, verification_log_id, dispute_type, explanation, reported_establishment_name, supporting_doc_path)
@@ -199,6 +215,12 @@ router.post(
       );
 
       const dispute = result.rows[0];
+      const disputeReference =
+        dispute.reference_no || `DSP-${dispute.id.slice(0, 8).toUpperCase()}`;
+      const targetRole = getDisputeTargetRole(
+        dispute_type,
+        beneficiaryContext.beneficiary_type,
+      );
 
       // Notify beneficiary of receipt (submission confirmation)
       await pool.query(
@@ -212,6 +234,22 @@ router.post(
           dispute.id,
         ],
       );
+
+      try {
+        await createStaffAlert({
+          targetRole,
+          alertType: "dispute_submitted",
+          severity: "high",
+          title: "New dispute submitted",
+          body: `A beneficiary submitted dispute ${disputeReference}. Please review the dispute queue.`,
+          targetRoute: "/disputes",
+          relatedBeneficiaryId: beneficiaryContext.beneficiary_id,
+          relatedDisputeId: dispute.id,
+          dedupeKey: `dispute_submitted:${dispute.id}`,
+        });
+      } catch (alertError) {
+        console.error("Staff dispute alert insert failed:", alertError.message);
+      }
 
       // Log the audit trail
       await pool.query(

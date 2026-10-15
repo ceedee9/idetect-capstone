@@ -132,7 +132,8 @@ Future operational improvements:
   affected record.
 - Add saved filters and recurring report schedules for authorized staff.
 - Add a formal workflow for suspension start/end dates and automatic
-  reinstatement after the policy is approved.
+  reinstatement only after a separate policy is approved; the current
+  workflow requires an acknowledged manual reinstatement.
 - Add record-history links from establishments, beneficiaries, disputes, and
   fraud flags.
 
@@ -211,7 +212,8 @@ measured usage rather than premature complexity.
 ## Open policy decisions
 
 - F-03 retention duration and archive period.
-- F-09 suspension start/end dates and automatic reinstatement policy.
+- F-09 automatic reinstatement policy; the current implementation uses
+  acknowledged manual reinstatement after staff review.
 - Whether report previews require their own audit events.
 - Whether beneficiary OTP and logout events need additional auditing.
 - Which future features require formal approval, notification, or legal review.

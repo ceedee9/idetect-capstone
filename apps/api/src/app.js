@@ -64,16 +64,19 @@ app.use(
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  skip: (req) => req.path.startsWith("/auth/"),
   message: { error: "Too many requests. Please try again later." },
 });
 app.use("/api/", limiter);
 
-//const loginLimiter = rateLimit({
-//windowMs: 15 * 60 * 1000,
-// max: 10,
-// message: { error: "Too many login attempts. Please wait 15 minutes." },
-//});
-//app.use("/api/auth", loginLimiter);
+// Authentication has its own limit so normal portal activity cannot consume
+// the budget needed to sign in again after a session expires.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: "Too many sign-in attempts. Please wait 15 minutes." },
+});
+app.use("/api/auth", loginLimiter);
 
 // ── General middleware ─────────────────────────────────────────
 app.use(express.json({ limit: "10mb" }));

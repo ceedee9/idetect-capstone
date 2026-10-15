@@ -7,7 +7,7 @@ jest.mock("../src/middleware/auth", () => ({
 
 const router = require("../src/routes/auditLogs");
 const layer = router.stack.find((l) => l.route && l.route.path === "/case");
-const handler = layer.route.stack[0].handle;
+const handler = layer.route.stack[layer.route.stack.length - 1].handle;
 
 function run(ref) {
   const res = {

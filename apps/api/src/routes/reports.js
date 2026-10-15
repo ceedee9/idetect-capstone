@@ -8,6 +8,7 @@
 const express = require("express");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
+const { requireStepUp } = require("../middleware/stepUp");
 const { maskIdNumber } = require("../utils/privacy");
 
 const router = express.Router();
@@ -51,7 +52,7 @@ const logExport = async (userId, table, filters, rowCount) => {
 };
 
 // ── GET /api/reports/verifications/export ──────────────────────
-router.get("/verifications/export", async (req, res, next) => {
+router.get("/verifications/export", requireStepUp, async (req, res, next) => {
   try {
     const { start_date, end_date, result: resultFilter } = req.query;
     const role = req.user.role;
@@ -131,7 +132,7 @@ router.get("/verifications/export", async (req, res, next) => {
 });
 
 // ── GET /api/reports/fraud-flags/export ────────────────────────
-router.get("/fraud-flags/export", async (req, res, next) => {
+router.get("/fraud-flags/export", requireStepUp, async (req, res, next) => {
   try {
     const { start_date, end_date, status } = req.query;
     const role = req.user.role;
@@ -213,7 +214,7 @@ router.get("/fraud-flags/export", async (req, res, next) => {
 });
 
 // ── GET /api/reports/disputes/export ──────────────────────────
-router.get("/disputes/export", async (req, res, next) => {
+router.get("/disputes/export", requireStepUp, async (req, res, next) => {
   try {
     const { start_date, end_date, status: statusFilter } = req.query;
     const role = req.user.role;

@@ -12,6 +12,7 @@ import {
   Keyboard,
 } from "lucide-react";
 import { auditLogsAPI } from "../services/api";
+import { getStepUpToken } from "../utils/stepUp";
 import { fmtDateTime } from "../utils/date";
 import {
   humanizeAuditLog,
@@ -277,7 +278,8 @@ export default function AuditLogsPage() {
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
       if (activeActions.length === 1) params.action = activeActions[0];
-      const res = await auditLogsAPI.exportCsv(params);
+      const token = await getStepUpToken("Confirm your password to export audit logs.");
+      const res = await auditLogsAPI.exportCsv(params, token);
       downloadBlob(
         new Blob([res.data]),
         `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`,

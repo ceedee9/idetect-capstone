@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Download, Eye, AlertCircle, Check } from "lucide-react";
 import { auditLogsAPI } from "../services/api";
+import { getStepUpToken } from "../utils/stepUp";
 
 const TYPES = [
   { value: "summary", label: "Activity summary", hint: "Counts of every action, grouped by month, action or user." },
@@ -42,7 +44,8 @@ export default function AuditReportModal({ onClose }) {
     setCaseError("");
     try {
       const ref = refNo.trim().toUpperCase();
-      const res = await auditLogsAPI.caseFile(ref, download);
+      const token = await getStepUpToken("Confirm your password to download this report.");
+      const res = await auditLogsAPI.caseFile(ref, download, token);
       if (download) {
         downloadBlob(new Blob([res.data], { type: "text/csv" }), `case-${ref}.csv`);
       } else {
@@ -113,7 +116,8 @@ export default function AuditReportModal({ onClose }) {
     setError("");
     try {
       if (download) {
-        const res = await auditLogsAPI.report(buildParams({ format: "csv" }), true);
+        const token = await getStepUpToken("Confirm your password to download this report.");
+        const res = await auditLogsAPI.report(buildParams({ format: "csv" }), true, token);
         downloadBlob(new Blob([res.data], { type: "text/csv" }), `audit-${type}-${effectiveMode}-${new Date().toISOString().slice(0, 10)}.csv`);
       } else {
         const res = await auditLogsAPI.report(buildParams({ format: "json" }), false);
@@ -129,9 +133,9 @@ export default function AuditReportModal({ onClose }) {
   const label = "block text-xs font-semibold text-slate-600 mb-1";
   const input = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white";
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 p-4">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+  return createPortal((
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="mx-auto my-auto bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h2 className="font-heading font-bold text-lg text-slate-900">Generate audit report</h2>
           <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-slate-700">
@@ -367,5 +371,5 @@ export default function AuditReportModal({ onClose }) {
         )}
       </div>
     </div>
-  );
+  ), document.body);
 }

@@ -12,6 +12,10 @@ const pool = require("../config/database");
 const { authenticateBeneficiary } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { maskBeneficiary } = require("../utils/privacy");
+const {
+  createStaffAlert,
+  getDisputeTargetRole,
+} = require("../services/staffAlerts");
 
 const router = express.Router();
 
@@ -188,6 +192,28 @@ router.post(
       );
 
       const dispute = result.rows[0];
+      const beneficiaryResult = await pool.query(
+        "SELECT beneficiary_type FROM beneficiaries WHERE id = $1",
+        [beneficiaryId],
+      );
+      const beneficiaryType = beneficiaryResult.rows[0]?.beneficiary_type;
+      const targetRole = getDisputeTargetRole(disputeType, beneficiaryType);
+
+      try {
+        await createStaffAlert({
+          targetRole,
+          alertType: "dispute_submitted",
+          severity: "high",
+          title: "New dispute submitted",
+          body: `A beneficiary submitted dispute ${dispute.id.slice(0, 8).toUpperCase()}. Please review the dispute queue.`,
+          targetRoute: "/disputes",
+          relatedBeneficiaryId: beneficiaryId,
+          relatedDisputeId: dispute.id,
+          dedupeKey: `dispute_submitted:${dispute.id}`,
+        });
+      } catch (alertError) {
+        console.error("Staff dispute alert insert failed:", alertError.message);
+      }
 
       // Also create a fraud flag if there's a verification log
       if (verification_log_id) {

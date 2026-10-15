@@ -68,6 +68,30 @@ All notifications are also saved to the `notifications` table in the database, s
 
 ---
 
+## Staff Portal Alerts
+
+Important beneficiary and workflow events can also appear in the relevant staff
+portal through the in-portal alert bell. These alerts are separate from
+beneficiary mobile notifications and are targeted by office:
+
+| Event | Target office | Portal action |
+| --- | --- | --- |
+| Business-refusal dispute submitted | BPLO | Open the dispute queue |
+| Senior-citizen dispute submitted | OSCA | Open the dispute queue |
+| PWD dispute submitted | PDAO | Open the dispute queue |
+
+Staff alerts are polled while the portal is open, show an unread count, and can
+be marked read individually or all at once. They are deduplicated by the
+underlying event so retries do not create duplicate alerts. The alert body
+contains only a short, privacy-safe reference; sensitive explanations and
+personal details remain in the protected workflow.
+
+The current phase intentionally uses in-portal alerts only. Browser push and
+email escalation can be added later for high-priority events without changing
+the beneficiary FCM flow.
+
+---
+
 ## What Happens Without Firebase Credentials
 
 The system is designed to work safely even without Firebase set up. If the `FIREBASE_KEY_PATH` is not configured in `.env`, the API simply logs the notification message to the server console instead of sending it to the phone. This is useful during development and demos.
