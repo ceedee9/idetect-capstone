@@ -89,7 +89,11 @@ schedulers), then pushed to every signed-in portal session of the matching offic
 over a Server-Sent Events stream (`GET /api/staff/alerts/stream`, authenticated
 with the staff token and scoped to the staff member's office). A new alert shows
 a pop-up, increments the bell and the browser-tab title, and can raise a desktop
-notification when the tab is in the background (opt in from the bell). Streams are
+notification when the tab is in the background (opt in from the bell). Pop-ups
+stay on screen until the admin clicks them (which opens the related record) or
+closes them with the X button. Several pop-ups stack, up to four at a time. The
+bell lists only unread alerts. Clicking an alert or its X marks it read and removes
+it from the list, and "Mark all read" clears the list. Streams are
 recycled every 10 minutes so they cannot outlive a token or a deactivated
 account. If the stream is blocked, the portal falls back to checking every 30
 seconds and catches up when it reconnects.

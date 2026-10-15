@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import '../screens/app_lock_screen.dart';
 import '../screens/login_screen.dart';
 
 /// Duration of inactivity before showing the warning dialog.
@@ -14,6 +15,10 @@ const Duration _idleTimeout = Duration(minutes: 15);
 
 /// Duration of the warning countdown before auto-logout.
 const Duration _warnDuration = Duration(minutes: 2);
+
+/// Inactivity before the protected-screen lock appears (F-08). The session
+/// stays alive; the user unlocks with PIN or biometrics.
+const Duration _lockTimeout = Duration(minutes: 5);
 
 class SessionActivityWrapper extends StatefulWidget {
   final Widget child;
@@ -24,28 +29,48 @@ class SessionActivityWrapper extends StatefulWidget {
   State<SessionActivityWrapper> createState() => _SessionActivityWrapperState();
 }
 
-class _SessionActivityWrapperState extends State<SessionActivityWrapper> {
+class _SessionActivityWrapperState extends State<SessionActivityWrapper>
+    with WidgetsBindingObserver {
   Timer? _idleTimer;
   Timer? _countdownTimer;
+  Timer? _lockTimer;
   int _secondsLeft = _warnDuration.inSeconds;
   bool _warningShown = false;
+  bool _lockShown = false;
+  DateTime _lastActivity = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _resetTimer();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _idleTimer?.cancel();
     _countdownTimer?.cancel();
+    _lockTimer?.cancel();
     super.dispose();
+  }
+
+  // Dart timers may pause while the app is backgrounded, so compare against
+  // wall-clock time of the last activity when the app returns to foreground.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    if (!ApiService.isLoggedIn) return;
+    final idleFor = DateTime.now().difference(_lastActivity);
+    if (idleFor >= _lockTimeout) _onLockIdle();
+    if (idleFor >= _idleTimeout) _onIdle();
   }
 
   void _resetTimer() {
     _idleTimer?.cancel();
     _countdownTimer?.cancel();
+    _lockTimer?.cancel();
+    _lastActivity = DateTime.now();
 
     if (_warningShown && mounted) {
       try {
@@ -55,6 +80,7 @@ class _SessionActivityWrapperState extends State<SessionActivityWrapper> {
     _warningShown = false;
     _secondsLeft = _warnDuration.inSeconds;
     _idleTimer = Timer(_idleTimeout, _onIdle);
+    _lockTimer = Timer(_lockTimeout, _onLockIdle);
   }
 
   void _onIdle() {
@@ -64,8 +90,43 @@ class _SessionActivityWrapperState extends State<SessionActivityWrapper> {
     _showWarningDialog();
   }
 
+  void _onLockIdle() {
+    if (!mounted || _lockShown || !ApiService.isLoggedIn) return;
+    _showLock();
+  }
+
+  // Opaque route on the root navigator so the lock covers pushed screens too.
+  // Touches on the lock screen are outside this wrapper, so they don't reset
+  // the idle timers.
+  void _showLock() {
+    _lockShown = true;
+    _lockTimer?.cancel();
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder<void>(
+        opaque: true,
+        pageBuilder: (_, _, _) => AppLockScreen(
+          onUnlocked: _unlock,
+          onSignInAgain: _logout,
+        ),
+        transitionsBuilder: (_, animation, _, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
+  void _unlock() {
+    if (!mounted) return;
+    if (_lockShown && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    _lockShown = false;
+    _resetTimer();
+  }
+
   void _logout() {
     _countdownTimer?.cancel();
+    _lockTimer?.cancel();
+    _lockShown = false;
     if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
     }

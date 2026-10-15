@@ -40,6 +40,35 @@ class AppLocalizationsFil extends AppLocalizations {
       'I-enable ang mabilisang pag-sign in sa susunod';
 
   @override
+  String get lockTitle => 'Naka-lock ang Screen';
+
+  @override
+  String get lockSubtitle =>
+      'Para sa iyong seguridad, na-lock ang app matapos ang 5 minutong walang aktibidad.';
+
+  @override
+  String get lockEnterPin => 'Ilagay ang iyong PIN para magpatuloy';
+
+  @override
+  String get lockIncorrectPin => 'Mali ang PIN. Subukan muli.';
+
+  @override
+  String get lockBiometricReason => 'I-unlock ang iDetect para magpatuloy';
+
+  @override
+  String get lockBiometricButton => 'Gumamit ng fingerprint o mukha';
+
+  @override
+  String get lockSignInAgain => 'Mag-sign in ulit na lang';
+
+  @override
+  String get lockNoUnlockMethod =>
+      'Walang naka-set na PIN o biometric sa device na ito. Mag-sign in ulit para magpatuloy.';
+
+  @override
+  String get lockSessionMissing => 'Mag-sign in ulit para magpatuloy.';
+
+  @override
   String get loginWelcomeBack => 'Maligayang pagbabalik,';
 
   @override

@@ -1,8 +1,10 @@
 // src/routes/auditLogs.js
 // Immutable audit trail viewer for OSCA, PDAO, and BPLO admins.
 //
-//   GET  /api/audit-logs          — List with filtering (action, date range, search)
+//   GET  /api/audit-logs          — List with filtering (action, date range, search,
+//                                    and target_table + target_id for per-record history)
 //   GET  /api/audit-logs/export   — CSV download
+//   GET  /api/audit-logs/report   — period report (format=csv|pdf|json)
 
 const express = require("express");
 const pool = require("../config/database");
@@ -14,6 +16,7 @@ const {
   resolvePeriod,
   csvLine,
 } = require("../services/auditReports");
+const { buildReportPdf } = require("../services/auditReportPdf");
 const {
   requireStepUp,
   requireStepUpForDownload,
@@ -21,6 +24,16 @@ const {
 const { appendAuditScope } = require("../services/auditLogScope");
 
 const router = express.Router();
+
+const RECORD_HISTORY_TABLES = [
+  "establishments",
+  "beneficiaries",
+  "disputes",
+  "fraud_flags",
+  "verification_logs",
+];
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 router.use(authenticate);
 router.use(requireRole([
@@ -38,7 +51,8 @@ router.get("/", async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = Math.min(parseInt(req.query.limit) || 30, 100);
     const offset = (page - 1) * limit;
-    const { action, search, start_date, end_date } = req.query;
+    const { action, search, start_date, end_date, target_table, target_id } =
+      req.query;
 
     let query = `
       SELECT al.id, al.action, al.target_table, al.target_id,
@@ -102,6 +116,20 @@ router.get("/", async (req, res, next) => {
       query += ` AND al.created_at < ($${idx}::date + INTERVAL '1 day')`;
       params.push(end_date);
       idx++;
+    }
+
+    // Per-record history: exact match on one record. Values are validated
+    // (allowlisted table, UUID id) before they reach SQL.
+    if (target_table !== undefined || target_id !== undefined) {
+      if (!RECORD_HISTORY_TABLES.includes(target_table)) {
+        return res.status(400).json({ error: "Unsupported target_table." });
+      }
+      if (!UUID_PATTERN.test(String(target_id || ""))) {
+        return res.status(400).json({ error: "Invalid target_id." });
+      }
+      query += ` AND al.target_table = $${idx} AND al.target_id = $${idx + 1}::uuid`;
+      params.push(target_table, target_id);
+      idx += 2;
     }
 
     if (search) {
@@ -317,7 +345,7 @@ router.get("/report", requireStepUpForDownload, async (req, res, next) => {
     if (q.role && !REPORT_ROLES.has(String(q.role))) {
       return res.status(400).json({ error: "Invalid role" });
     }
-    const format = q.format === "json" ? "json" : "csv";
+    const format = ["json", "pdf"].includes(q.format) ? q.format : "csv";
 
     const params = [period.start, period.end];
     const agencyAdminRole = {
@@ -458,7 +486,7 @@ router.get("/report", requireStepUpForDownload, async (req, res, next) => {
       [
         req.user.id,
         JSON.stringify({
-          format: "csv",
+          format,
           report_type: type,
           mode,
           period: period.label,
@@ -481,6 +509,17 @@ router.get("/report", requireStepUpForDownload, async (req, res, next) => {
     if (mode === "detail" && total > rows.length) {
       cover.splice(7, 0, ["Note", `Truncated to the newest ${rows.length} records`]);
     }
+
+    if (format === "pdf") {
+      const pdf = await buildReportPdf({ title: `Audit report - ${def.label}`, cover, columns, rows });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="audit_${type}_${mode}_${period.label.replace(/\s+/g, "_")}.pdf"`,
+      );
+      return res.send(pdf);
+    }
+
     const csv = [...cover, columns, ...rows].map(csvLine).join("\n");
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");

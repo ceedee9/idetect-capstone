@@ -27,6 +27,7 @@ import { useBeneficiary } from "../hooks/useBeneficiaries";
 import { authAPI, beneficiariesAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
+import RecordHistoryPanel from "../components/RecordHistoryPanel";
 import ConfirmModal from "../components/ConfirmModal";
 import {
   calcAge,
@@ -722,6 +723,7 @@ export default function BeneficiaryDetailPage() {
               )}
             </div>
           </div>
+          <RecordHistoryPanel targetTable="beneficiaries" targetId={b.id} />
         </div>
       </div>
 

@@ -23,6 +23,7 @@ import {
 import { useEstablishment } from "../hooks/useEstablishments";
 import { establishmentsAPI } from "../services/api";
 import StatusBadge from "../components/StatusBadge";
+import RecordHistoryPanel from "../components/RecordHistoryPanel";
 import ConfirmModal from "../components/ConfirmModal";
 import { fmtDate, fmtDateTime } from "../utils/date";
 
@@ -465,6 +466,7 @@ export default function EstablishmentDetailPage() {
               </p>
             </div>
           </div>
+          <RecordHistoryPanel targetTable="establishments" targetId={est.id} />
         </div>
       </div>
 

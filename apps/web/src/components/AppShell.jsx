@@ -129,13 +129,12 @@ export default function AppShell() {
   const [alerts, setAlerts] = useState([]);
   const [alertsError, setAlertsError] = useState("");
   const [liveStatus, setLiveStatus] = useState("connecting");
-  const [toast, setToast] = useState(null);
+  const [toasts, setToasts] = useState([]);
   const [desktopPermission, setDesktopPermission] = useState(() =>
     typeof Notification === "undefined" ? "unsupported" : Notification.permission,
   );
   const bellRef = useRef(null);
   const knownAlertIds = useRef(new Set());
-  const toastTimer = useRef(null);
   // Refs keep the live handler stable so route changes never reset the stream.
   const navigateRef = useRef(navigate);
   const desktopPermissionRef = useRef(desktopPermission);
@@ -162,9 +161,10 @@ export default function AppShell() {
     setAlerts((prev) =>
       prev.some((a) => a.id === alert.id) ? prev : [alert, ...prev].slice(0, 50),
     );
-    setToast(alert);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 10000);
+    // Pop-ups stay until the admin clicks or closes them.
+    setToasts((prev) =>
+      [alert, ...prev.filter((t) => t.id !== alert.id)].slice(0, 4),
+    );
 
     if (document.hidden && desktopPermissionRef.current === "granted") {
       const desktopNotice = new Notification(alert.title, {
@@ -204,8 +204,6 @@ export default function AppShell() {
     });
   }, [handleLiveAlert, loadAlerts]);
 
-  useEffect(() => () => clearTimeout(toastTimer.current), []);
-
   async function enableDesktopAlerts() {
     if (typeof Notification === "undefined") return;
     setDesktopPermission(await Notification.requestPermission());
@@ -236,28 +234,39 @@ export default function AppShell() {
     try {
       await staffAlertsAPI.markAllRead();
       setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
+      setToasts([]);
     } catch (error) {
       console.error("Failed to mark staff notifications as read:", error);
       setAlertsError("Could not mark notifications as read. Please try again.");
     }
   }
 
-  async function handleAlertClick(alert) {
-    if (!alert.is_read) {
-      try {
-        await staffAlertsAPI.markRead(alert.id);
-        setAlerts((prev) =>
-          prev.map((item) =>
-            item.id === alert.id
-              ? { ...item, is_read: true, read_at: new Date().toISOString() }
-              : item,
-          ),
-        );
-      } catch (error) {
-        console.error("Failed to mark staff notification as read:", error);
-        setAlertsError("Could not mark this notification as read.");
-      }
+  async function markAlertRead(alert) {
+    if (alert.is_read) return;
+    try {
+      await staffAlertsAPI.markRead(alert.id);
+      setAlerts((prev) =>
+        prev.map((item) =>
+          item.id === alert.id
+            ? { ...item, is_read: true, read_at: new Date().toISOString() }
+            : item,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to mark staff notification as read:", error);
+      setAlertsError("Could not mark this notification as read.");
     }
+  }
+
+  // Closing an alert acknowledges it without navigating away.
+  function dismissAlert(alert) {
+    setToasts((prev) => prev.filter((t) => t.id !== alert.id));
+    markAlertRead(alert);
+  }
+
+  async function handleAlertClick(alert) {
+    setToasts((prev) => prev.filter((t) => t.id !== alert.id));
+    await markAlertRead(alert);
     setBellOpen(false);
     if (alert.target_route) navigate(alert.target_route);
   }
@@ -289,6 +298,68 @@ export default function AppShell() {
       )}
     </div>
   );
+
+  // Shared bell dropdown; each header passes its own anchor position.
+  const bellPanel = (positionClass) => {
+    const unread = alerts.filter((a) => !a.is_read);
+    return (
+      <div
+        className={`${positionClass} z-50 w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl`}
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">Notifications</h3>
+            <p className="mt-0.5 text-xs text-slate-400">{unread.length} unread</p>
+          </div>
+          {unread.length > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              className={`text-sm font-medium ${theme.viewBtn}`}
+            >
+              Mark all read
+            </button>
+          )}
+        </div>
+        {alertsStatusBar}
+        <div className="max-h-[28rem] overflow-y-auto divide-y divide-slate-100">
+          {alertsError ? (
+            <div className="px-5 py-8 text-center text-sm text-danger-600">
+              {alertsError}
+            </div>
+          ) : unread.length === 0 ? (
+            <div className="px-5 py-12 text-center text-slate-400">
+              <Bell className="mx-auto mb-3 h-9 w-9 opacity-25" />
+              <p className="text-sm font-medium text-slate-500">You're all caught up</p>
+              <p className="mt-1 text-xs">New alerts will appear here in real time.</p>
+            </div>
+          ) : (
+            unread.map((a) => (
+              <div
+                key={a.id}
+                onClick={() => handleAlertClick(a)}
+                className={`group relative cursor-pointer py-4 pl-5 pr-12 hover:bg-slate-50 ${theme.alertBg}`}
+              >
+                <p className="text-sm font-semibold text-slate-800">{a.title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">{a.body}</p>
+                <p className="mt-2 text-xs text-slate-400">{fmtRelative(a.created_at)}</p>
+                <button
+                  aria-label="Dismiss notification"
+                  title="Dismiss"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    dismissAlert(a);
+                  }}
+                  className="absolute right-3 top-3 rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
 
   function handleLogout() {
     logout();
@@ -465,54 +536,7 @@ export default function AppShell() {
                   </span>
                 )}
               </button>
-              {bellOpen && (
-                <div className="absolute right-4 top-14 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                    <h3 className="text-sm font-semibold text-slate-800">
-                      Notifications
-                    </h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={handleMarkAllRead}
-                        className={`text-xs font-medium ${theme.viewBtn}`}
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-                  {alertsStatusBar}
-                  <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                    {alertsError ? (
-                      <div className="py-6 px-4 text-center text-danger-600 text-sm">
-                        {alertsError}
-                      </div>
-                    ) : alerts.length === 0 ? (
-                      <div className="py-8 text-center text-slate-400 text-sm">
-                        <Bell className="w-7 h-7 mx-auto mb-2 opacity-25" />
-                        No notifications
-                      </div>
-                    ) : (
-                      alerts.map((a) => (
-                        <div
-                          key={a.id}
-                          onClick={() => handleAlertClick(a)}
-                          className={`px-4 py-3 cursor-pointer hover:bg-slate-50 ${a.is_read ? "" : theme.alertBg}`}
-                        >
-                          <p className="text-xs font-semibold text-slate-800">
-                            {a.title}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5 leading-snug">
-                            {a.body}
-                          </p>
-                          <p className="text-[10px] text-slate-300 mt-1">
-                            {fmtRelative(a.created_at)}
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
+              {bellOpen && bellPanel("absolute right-4 top-14")}
             </div>
           </header>
 
@@ -537,54 +561,7 @@ export default function AppShell() {
                     </span>
                   )}
                 </button>
-                {bellOpen && (
-                  <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                      <h3 className="text-sm font-semibold text-slate-800">
-                        Notifications
-                      </h3>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={handleMarkAllRead}
-                          className={`text-xs font-medium ${theme.viewBtn}`}
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                    </div>
-                    {alertsStatusBar}
-                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                      {alertsError ? (
-                        <div className="py-6 px-4 text-center text-danger-600 text-sm">
-                          {alertsError}
-                        </div>
-                      ) : alerts.length === 0 ? (
-                        <div className="py-8 text-center text-slate-400 text-sm">
-                          <Bell className="w-7 h-7 mx-auto mb-2 opacity-25" />
-                          No notifications
-                        </div>
-                      ) : (
-                        alerts.map((a) => (
-                          <div
-                            key={a.id}
-                            onClick={() => handleAlertClick(a)}
-                            className={`px-4 py-3 cursor-pointer hover:bg-slate-50 ${a.is_read ? "" : theme.alertBg}`}
-                          >
-                            <p className="text-xs font-semibold text-slate-800">
-                              {a.title}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5 leading-snug">
-                              {a.body}
-                            </p>
-                            <p className="text-[10px] text-slate-300 mt-1">
-                              {fmtRelative(a.created_at)}
-                            </p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
+                {bellOpen && bellPanel("absolute right-0 top-10")}
               </div>
               <div className="w-px h-5 bg-slate-200" />
               <span className="text-sm text-slate-600 font-medium">
@@ -655,44 +632,45 @@ export default function AppShell() {
         </div>
       )}
 
-      {toast && (
+      {toasts.length > 0 && (
         <div
-          role="status"
           aria-live="polite"
-          className="page-enter fixed top-4 right-4 z-[60] w-80 max-w-[calc(100vw-2rem)]"
+          className="fixed top-4 right-4 z-[60] flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-3"
         >
-          <div
-            onClick={() => {
-              setToast(null);
-              handleAlertClick(toast);
-            }}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-white p-4 shadow-xl hover:bg-slate-50"
-          >
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-danger-50 text-danger-600">
-                <Bell className="h-4 w-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-900">{toast.title}</p>
-                <p className="mt-0.5 text-xs leading-snug text-slate-500">
-                  {toast.body}
-                </p>
-                <p className={`mt-1.5 text-[11px] font-medium ${theme.viewBtn}`}>
-                  View now
-                </p>
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              role="alert"
+              onClick={() => handleAlertClick(toast)}
+              className="page-enter cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 shadow-xl hover:bg-slate-50"
+            >
+              <div className="flex items-start gap-3.5">
+                <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-50 text-danger-600">
+                  <Bell className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-900">{toast.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                    {toast.body}
+                  </p>
+                  <p className={`mt-2 text-xs font-semibold ${theme.viewBtn}`}>
+                    View now →
+                  </p>
+                </div>
+                <button
+                  aria-label="Dismiss notification"
+                  title="Dismiss"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    dismissAlert(toast);
+                  }}
+                  className="-mr-1 -mt-1 rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                aria-label="Dismiss notification"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setToast(null);
-                }}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
-          </div>
+          ))}
         </div>
       )}
 

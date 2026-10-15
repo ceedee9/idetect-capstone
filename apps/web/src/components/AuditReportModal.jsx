@@ -107,7 +107,7 @@ export default function AuditReportModal({ onClose }) {
     return p;
   }
 
-  async function run(download) {
+  async function run(download, format = "csv") {
     if (period === "custom" && (!startDate || !endDate)) {
       setError("Choose a start and end date.");
       return;
@@ -117,8 +117,9 @@ export default function AuditReportModal({ onClose }) {
     try {
       if (download) {
         const token = await getStepUpToken("Confirm your password to download this report.");
-        const res = await auditLogsAPI.report(buildParams({ format: "csv" }), true, token);
-        downloadBlob(new Blob([res.data], { type: "text/csv" }), `audit-${type}-${effectiveMode}-${new Date().toISOString().slice(0, 10)}.csv`);
+        const res = await auditLogsAPI.report(buildParams({ format }), true, token);
+        const mime = format === "pdf" ? "application/pdf" : "text/csv";
+        downloadBlob(new Blob([res.data], { type: mime }), `audit-${type}-${effectiveMode}-${new Date().toISOString().slice(0, 10)}.${format}`);
       } else {
         const res = await auditLogsAPI.report(buildParams({ format: "json" }), false);
         setPreview(res.data);
@@ -363,9 +364,13 @@ export default function AuditReportModal({ onClose }) {
           <button className="btn-secondary" disabled={busy} onClick={() => run(false)}>
             <Eye className="w-4 h-4" /> Preview
           </button>
-          <button className="btn-primary" disabled={busy} onClick={() => run(true)}>
+          <button className="btn-secondary" disabled={busy} onClick={() => run(true, "csv")}>
             <Download className="w-4 h-4" /> Download CSV
           </button>
+          <button className="btn-primary" disabled={busy} onClick={() => run(true, "pdf")}>
+            <Download className="w-4 h-4" /> Download PDF
+          </button>
+
         </div>
           </>
         )}

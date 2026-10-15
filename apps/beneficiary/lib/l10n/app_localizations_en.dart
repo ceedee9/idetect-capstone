@@ -39,6 +39,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginBiometricReasonEnable => 'Enable quick sign-in for next time';
 
   @override
+  String get lockTitle => 'Screen Locked';
+
+  @override
+  String get lockSubtitle =>
+      'For your security, the app locked after 5 minutes of inactivity.';
+
+  @override
+  String get lockEnterPin => 'Enter your PIN to continue';
+
+  @override
+  String get lockIncorrectPin => 'Incorrect PIN. Please try again.';
+
+  @override
+  String get lockBiometricReason => 'Unlock iDetect to continue';
+
+  @override
+  String get lockBiometricButton => 'Use fingerprint or face';
+
+  @override
+  String get lockSignInAgain => 'Sign in again instead';
+
+  @override
+  String get lockNoUnlockMethod =>
+      'No PIN or biometric is set up on this device. Sign in again to continue.';
+
+  @override
+  String get lockSessionMissing => 'Please sign in again to continue.';
+
+  @override
   String get loginWelcomeBack => 'Welcome back,';
 
   @override

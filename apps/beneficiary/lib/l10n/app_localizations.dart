@@ -152,6 +152,60 @@ abstract class AppLocalizations {
   /// **'Enable quick sign-in for next time'**
   String get loginBiometricReasonEnable;
 
+  /// No description provided for @lockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen Locked'**
+  String get lockTitle;
+
+  /// No description provided for @lockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, the app locked after 5 minutes of inactivity.'**
+  String get lockSubtitle;
+
+  /// No description provided for @lockEnterPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your PIN to continue'**
+  String get lockEnterPin;
+
+  /// No description provided for @lockIncorrectPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect PIN. Please try again.'**
+  String get lockIncorrectPin;
+
+  /// No description provided for @lockBiometricReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock iDetect to continue'**
+  String get lockBiometricReason;
+
+  /// No description provided for @lockBiometricButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fingerprint or face'**
+  String get lockBiometricButton;
+
+  /// No description provided for @lockSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again instead'**
+  String get lockSignInAgain;
+
+  /// No description provided for @lockNoUnlockMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'No PIN or biometric is set up on this device. Sign in again to continue.'**
+  String get lockNoUnlockMethod;
+
+  /// No description provided for @lockSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again to continue.'**
+  String get lockSessionMissing;
+
   /// No description provided for @loginWelcomeBack.
   ///
   /// In en, this message translates to:
