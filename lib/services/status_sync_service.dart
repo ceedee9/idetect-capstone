@@ -1,7 +1,7 @@
 // lib/services/status_sync_service.dart
 //
 // REQ-2.9.1: Propagate credential status changes to all connected Client Portal
-//            instances within 10 seconds of the database update.
+//            instances within seconds of the database update.
 // REQ-2.9.3: Synchronize pending status updates to offline Client Portals
 //            automatically upon connectivity restoration.
 //
@@ -28,14 +28,15 @@ class StatusSyncService {
 
   /// Call once from main() after LocalDatabase.init() and ApiService.loadToken().
   static Future<void> init() async {
-    // Restore last sync cursor from persistent storage so we don't re-request
-    // all updates from the beginning after every cold start.
+    // Clear the blocked-ID cache once if its key format changed, then restore
+    // the sync cursor so we don't re-request all updates after every cold start.
+    await LocalDatabase.migrateBlockedIdKeysIfNeeded();
     _lastSyncMs = await LocalDatabase.loadLastSyncMs();
 
     // Attempt an immediate sync on startup (catches any changes while offline)
     await _sync();
 
-    // Poll every 8 seconds (satisfies ≤10s propagation — REQ-2.9.1)
+    // Poll every 8 seconds (propagation within seconds — REQ-2.9.1)
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(_pollInterval, (_) => _sync());
 
@@ -68,16 +69,24 @@ class StatusSyncService {
 
     _isSyncing = true;
     try {
-      final uri = Uri.parse(
-        '${ApiService.baseUrl}/verification/status-updates?since=$_lastSyncMs',
-      );
+      var hasMore = true;
+      while (hasMore) {
+        final uri = Uri.parse(
+          '${ApiService.baseUrl}/verification/status-updates?since=$_lastSyncMs',
+        );
 
-      final response = await http.get(uri, headers: {
-        'Authorization': 'Bearer $token'
-      }).timeout(const Duration(seconds: 10));
+        final response = await http.get(uri, headers: {
+          'Authorization': 'Bearer $token'
+        }).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        if (response.statusCode == 401) {
+          // Token expired — stop polling until re-login
+          stop();
+          return;
+        }
+        if (response.statusCode != 200) return;
+
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
         final updates = (data['updates'] as List?)
             ?.map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
@@ -88,16 +97,14 @@ class StatusSyncService {
               '✅ StatusSync: applied ${updates.length} status update(s)');
         }
 
-        // Advance the cursor to the server's current time and persist it
-        // so it survives app restarts (fixes M-2: stale cache after cold start).
-        final serverTime = data['server_time'];
-        if (serverTime is int) {
-          _lastSyncMs = serverTime;
-          await LocalDatabase.saveLastSyncMs(_lastSyncMs);
-        }
-      } else if (response.statusCode == 401) {
-        // Token expired — stop polling until re-login
-        stop();
+        // Advance the cursor and persist it so it survives app restarts. While
+        // has_more is true, next_since is the last row's timestamp, so the next
+        // request continues from there instead of skipping rows past the page.
+        final nextSince = data['next_since'];
+        if (nextSince is! int || nextSince <= _lastSyncMs) return;
+        _lastSyncMs = nextSince;
+        await LocalDatabase.saveLastSyncMs(_lastSyncMs);
+        hasMore = data['has_more'] == true;
       }
     } catch (e) {
       // Network errors are expected when offline — silently ignore

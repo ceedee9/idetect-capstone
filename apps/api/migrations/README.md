@@ -40,7 +40,7 @@ All portals connect to the single `api` backend.
 - **Mobile Apps:** Flutter (Android 8.0+ / iOS 12.0+)
 - **Auth:** JWT + OTP (SMS)
 - **OCR:** Tesseract.js (server-side)
-- **Storage:** Cloudinary (ID images, dispute documents)
+- **Storage:** Supabase Storage (ID images, dispute documents)
 
 ## Getting Started
 

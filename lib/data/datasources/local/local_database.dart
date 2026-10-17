@@ -1,12 +1,20 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class LocalDatabase {
   static const String _scannedIDsBox = 'scanned_ids';
-  // REQ-2.9.1 / REQ-2.9.3: local cache of revoked/suspended beneficiary IDs
+  // REQ-2.9.1 / REQ-2.9.3: local cache of revoked/suspended beneficiary IDs,
+  // keyed by SHA-256 hash of the ID number (see cacheKeyFor).
   static const String _blockedIDsBox = 'blocked_ids';
   // Key-value store for internal metadata (sync timestamps, etc.)
   static const String _metaBox = 'meta';
   static const String _lastSyncMsKey = 'status_last_sync_ms';
+  // Bump when the blocked_ids key format changes (see migrateBlockedIdKeysIfNeeded).
+  static const String _blockedIdKeyVersionKey = 'blocked_id_key_version';
+  static const int _blockedIdKeyVersion = 2;
+  static final RegExp _hashKeyPattern = RegExp(r'^[0-9a-f]{64}$');
 
   static Future init() async {
     await Hive.initFlutter();
@@ -134,6 +142,18 @@ class LocalDatabase {
 
   // ── Blocked IDs cache (REQ-2.9.1 / REQ-2.9.3) ────────────────────────────
 
+  /// Rebuilds the blocked_ids cache once when its key format changes.
+  /// Older builds stored masked IDs, which never match a full ID, so the cache
+  /// is cleared and the sync cursor reset to re-fetch every blocked ID hashed.
+  static Future<void> migrateBlockedIdKeysIfNeeded() async {
+    final meta = await Hive.openBox(_metaBox);
+    if (meta.get(_blockedIdKeyVersionKey) == _blockedIdKeyVersion) return;
+    final blocked = await Hive.openBox(_blockedIDsBox);
+    await blocked.clear();
+    await meta.delete(_lastSyncMsKey);
+    await meta.put(_blockedIdKeyVersionKey, _blockedIdKeyVersion);
+  }
+
   /// Persist the last successful sync timestamp (Unix ms) so it survives
   /// app restarts. Without this, _lastSyncMs resets to 0 on every cold start
   /// and the blocked-IDs cache is served with no age awareness.
@@ -162,24 +182,30 @@ class LocalDatabase {
       List<Map<String, dynamic>> updates) async {
     final box = await Hive.openBox(_blockedIDsBox);
     for (final update in updates) {
-      final raw = (update['id_number'] ?? '').toString();
-      final normalized = raw.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-      if (normalized.isEmpty) continue;
+      // The server already sends a SHA-256 hash, so store it as-is.
+      final key = (update['id_number'] ?? '').toString();
+      if (!_hashKeyPattern.hasMatch(key)) continue;
       final status = (update['status'] ?? '').toString();
       // Store all statuses so we can also clear a previously-blocked ID
       // that has been restored to 'active'.
-      await box.put(normalized, status);
+      await box.put(key, status);
     }
   }
 
   /// Check whether an ID number is locally known to be blocked (revoked or suspended).
   /// Returns the cached status string, or null if not in cache.
   static Future<String?> getCachedStatus(String idNumber) async {
-    final normalized =
-        idNumber.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-    if (normalized.isEmpty) return null;
+    if (_normalizeId(idNumber).isEmpty) return null;
     final box = await Hive.openBox(_blockedIDsBox);
-    final status = box.get(normalized);
+    final status = box.get(cacheKeyFor(idNumber));
     return status?.toString();
   }
+
+  static String _normalizeId(String idNumber) =>
+      idNumber.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+
+  /// One-way key for the blocked_ids cache: SHA-256 of the normalized ID.
+  /// Must match idCacheKey in apps/api/src/routes/verification.js.
+  static String cacheKeyFor(String idNumber) =>
+      sha256.convert(utf8.encode(_normalizeId(idNumber))).toString();
 }

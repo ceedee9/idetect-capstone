@@ -34,7 +34,7 @@ CREATE TABLE disputes (
   -- Dispute details
   dispute_type            dispute_type    NOT NULL,
   explanation             TEXT            NOT NULL,
-  supporting_doc_path     VARCHAR(500),    -- Cloudinary URL (ID photo, barangay cert, etc.)
+  supporting_doc_path     VARCHAR(500),    -- Supabase Storage URL (ID photo, barangay cert, etc.)
 
   -- Resolution
   status                  dispute_status  NOT NULL DEFAULT 'submitted',

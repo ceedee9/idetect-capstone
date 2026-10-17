@@ -56,6 +56,8 @@ dependencies:
 
   shared_preferences: ^2.2.3
   google_fonts: ^8.2.1
+  crypto: ^3.0.7
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:

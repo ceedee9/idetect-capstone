@@ -9,6 +9,7 @@
 //   GET  /api/verification/history
 //     Called by Client Portal to show past scans for this establishment.
 
+const crypto = require("crypto");
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const pool = require("../config/database");
@@ -115,6 +116,9 @@ router.post(
     body("extracted_dob").optional().isString().trim(),
     body("id_format").optional().isIn(["old", "new"]),
     body("seal_detected").optional().isBoolean(),
+    body("client_scan_id").optional().isString().isLength({ min: 8, max: 64 }),
+    body("scanned_at").optional().isISO8601(),
+    body("offline_queued").optional().isBoolean(),
   ],
   async (req, res, next) => {
     try {
@@ -134,7 +138,31 @@ router.post(
         extracted_dob = null,
         id_format = "old",
         seal_detected = null,
+        client_scan_id = null,
+        scanned_at = null,
+        offline_queued = false,
       } = req.body;
+
+      // A replayed offline scan that the server already recorded is returned
+      // as-is, so a retry never creates a second log entry.
+      if (client_scan_id) {
+        const prior = await pool.query(
+          `SELECT id, reference_no, verified_at, result FROM verification_logs
+           WHERE establishment_id = $1 AND client_scan_id = $2`,
+          [req.establishment.id, client_scan_id],
+        );
+        if (prior.rows[0]) {
+          const p = prior.rows[0];
+          return res.status(200).json({
+            result: p.result,
+            message: "This scan was already recorded.",
+            verification_id: p.id,
+            reference_no: p.reference_no,
+            verified_at: p.verified_at,
+            duplicate: true,
+          });
+        }
+      }
 
       // Cross-validation state — populated below when result is VALID.
       let crossNameMatchScore = null;
@@ -340,8 +368,9 @@ router.post(
          (establishment_id, establishment_user_id, beneficiary_id, id_number_scanned,
           beneficiary_type_detected, result, ocr_confidence_score,
           ocr_raw_text, image_path, manually_entered,
-          extracted_name, extracted_dob, name_match_score, fields_matched,id_format)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+          extracted_name, extracted_dob, name_match_score, fields_matched,id_format,
+          client_scan_id, scanned_at, offline_queued)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
        RETURNING id, reference_no, verified_at`,
         [
           establishment_id,
@@ -359,6 +388,9 @@ router.post(
           crossNameMatchScore,
           crossFieldsMatched,
           id_format,
+          client_scan_id,
+          scanned_at ? new Date(scanned_at).toISOString() : null,
+          offline_queued === true || offline_queued === "true",
         ],
       );
 
@@ -596,12 +628,23 @@ router.post(
 
 // ── GET /api/verification/status-updates ──────────────────────
 // REQ-2.9.1 / REQ-2.9.3: Poll for beneficiary status changes since a given
-// timestamp. The establishment app calls this every ~8 seconds to detect
-// revoked/suspended IDs within 10 seconds of the DB change.
+// timestamp. The establishment app calls this every 8 seconds to detect
+// revoked/suspended IDs within seconds of the DB change.
 //
 // Query params:
 //   since            — Unix ms timestamp (default 0 = all time)
 //   beneficiary_type — "senior_citizen" | "pwd"
+// Response: updates[] (id_number is a one-way hash, never plain or masked),
+// has_more, and next_since (the cursor for the next request).
+//
+// One-way SHA-256 key for the device blocked-ID cache. Must match
+// LocalDatabase.cacheKeyFor in the Flutter app.
+const idCacheKey = (value) =>
+  crypto
+    .createHash("sha256")
+    .update(String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, ""))
+    .digest("hex");
+
 router.get(
   "/status-updates",
   authenticateEstablishment,
@@ -624,17 +667,25 @@ router.get(
         FROM beneficiaries
         WHERE updated_at > $1
           AND ($2::text IS NULL OR beneficiary_type = $2::beneficiary_type)
-        ORDER BY updated_at DESC
+        ORDER BY updated_at ASC
         LIMIT 1000`,
         [since, beneficiary_type || null],
       );
 
+      const serverTime = Date.now();
+      const rows = result.rows;
+      const hasMore = rows.length === 1000;
       res.json({
-        updates: result.rows.map((row) => ({
-          ...row,
-          id_number: maskIdNumber(row.id_number),
+        updates: rows.map((row) => ({
+          id_number: idCacheKey(row.id_number),
+          status: row.status,
+          updated_at: row.updated_at,
         })),
-        server_time: Date.now(),
+        has_more: hasMore,
+        next_since: hasMore
+          ? new Date(rows[rows.length - 1].updated_at).getTime()
+          : serverTime,
+        server_time: serverTime,
       });
     } catch (err) {
       next(err);

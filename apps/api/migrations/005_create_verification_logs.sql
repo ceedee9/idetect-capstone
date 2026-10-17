@@ -31,7 +31,7 @@ CREATE TABLE verification_logs (
   -- OCR metadata
   ocr_confidence_score  NUMERIC(5, 2),         -- 0.00 to 100.00
   ocr_raw_text          TEXT,                  -- Full raw OCR output for debugging
-  image_path            VARCHAR(500),          -- Path/URL to stored ID image (Cloudinary)
+  image_path            VARCHAR(500),          -- Path/URL to stored ID image (Supabase Storage)
   manually_entered      BOOLEAN               NOT NULL DEFAULT FALSE,
     -- TRUE when staff typed ID number instead of scanning
 
@@ -50,4 +50,4 @@ CREATE INDEX idx_verification_logs_est_date         ON verification_logs(establi
 COMMENT ON TABLE  verification_logs                     IS 'Immutable log of every verification attempt. Never delete rows.';
 COMMENT ON COLUMN verification_logs.beneficiary_id      IS 'NULL when no matching record was found in the database.';
 COMMENT ON COLUMN verification_logs.ocr_confidence_score IS 'Extraction quality score (0-100): heuristic indicator based on text length, character ratios, and keyword presence. Not a true statistical OCR confidence. Below OCR_CONFIDENCE_THRESHOLD triggers manual_review.';
-COMMENT ON COLUMN verification_logs.image_path          IS 'Cloudinary URL of the captured ID image. Retained for fraud investigation.';
+COMMENT ON COLUMN verification_logs.image_path          IS 'Supabase Storage URL of the captured ID image. Retained for fraud investigation.';

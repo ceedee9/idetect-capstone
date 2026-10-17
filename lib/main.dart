@@ -18,13 +18,12 @@ void main() async {
   // REQ-2.6.4: Initialize offline fraud flag sync service
   await FraudFlagSyncService.init();
 
-  // Problem A fix: Initialize offline scan sync service.
-  // Replays scans that occurred while the API was unreachable back to
-  // PostgreSQL verification_logs when connectivity is restored.
+  // Initialize offline scan sync service. Replays scans queued while the API
+  // was unreachable to verification_logs when connectivity is restored.
   await OfflineScanSyncService.init();
 
   // REQ-2.9.1 / REQ-2.9.3: Start polling for credential status changes.
-  // Propagates revoked/suspended IDs to this device within 10 seconds.
+  // Propagates revoked/suspended IDs to this device within seconds.
   await StatusSyncService.init();
 
   runApp(const MyApp());
@@ -37,6 +36,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'iDetect',
+      scaffoldMessengerKey: OfflineScanSyncService.messengerKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,

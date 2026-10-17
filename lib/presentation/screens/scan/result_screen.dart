@@ -41,6 +41,17 @@ class _ResultScreenState extends State<ResultScreen> {
 
   bool get _isOffline => widget.verificationResult?.isOffline == true;
 
+  late final Future<int> _blockListSyncFuture = LocalDatabase.loadLastSyncMs();
+
+  static String _formatSyncAge(int ms) {
+    if (ms < 0) return '0 min';
+    final minutes = ms ~/ 60000;
+    if (minutes < 60) return '$minutes min';
+    final hours = minutes ~/ 60;
+    if (hours < 24) return '$hours hr';
+    return '${hours ~/ 24} day(s)';
+  }
+
   bool get _canFlag =>
       _status == VerificationStatus.invalid ||
       _status == VerificationStatus.suspicious ||
@@ -514,14 +525,6 @@ class _ResultScreenState extends State<ResultScreen> {
   /// Problem B fix: prominent full-width banner that makes offline results
   /// visually unmistakable from live server results.
   Widget _buildOfflineBanner() {
-    final syncedAt = widget.verificationResult?.offlineSyncedAt;
-    final age = syncedAt != null ? DateTime.now().difference(syncedAt) : null;
-    final ageText = age == null
-        ? 'an unknown time'
-        : age.inHours > 0
-            ? '${age.inHours}h ${age.inMinutes.remainder(60)}m ago'
-            : '${age.inMinutes}m ago';
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -549,14 +552,32 @@ class _ResultScreenState extends State<ResultScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            'This result is based on a cached scan from $ageText. '
-            'It may NOT reflect the ID\'s current status on the server.',
-            style: const TextStyle(
+          const Text(
+            'The server could not be reached, so this ID was not checked '
+            'against its current status. The scan is saved and will sync '
+            'automatically when the connection returns.',
+            style: TextStyle(
               color: Colors.white,
               fontSize: 12.5,
               height: 1.45,
             ),
+          ),
+          FutureBuilder<int>(
+            future: _blockListSyncFuture,
+            builder: (context, snapshot) {
+              final syncedMs = snapshot.data ?? 0;
+              final text = syncedMs == 0
+                  ? 'Block list: this device has never synced the list of revoked and suspended IDs.'
+                  : 'Block list last synced ${_formatSyncAge(DateTime.now().millisecondsSinceEpoch - syncedMs)} ago.';
+              return Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12.5,
+                  height: 1.45,
+                ),
+              );
+            },
           ),
           const SizedBox(height: 6),
           const Text(
