@@ -640,7 +640,8 @@ router.put(
     body("disability_type").optional({ nullable: true }).isString().trim(),
     body("address").optional({ nullable: true }).isString().trim(),
     body("contact_number").optional({ nullable: true }).isString().trim(),
-    body("email").optional({ nullable: true }).isEmail().normalizeEmail(),
+    body("email").optional({ values: "falsy" }).isEmail().normalizeEmail(),
+    body("notes").optional({ nullable: true }).isString().trim(),
   ],
   async (req, res, next) => {
     try {
@@ -667,7 +668,13 @@ router.put(
         address,
         contact_number,
         email,
+        notes,
       } = req.body;
+
+      // Optional fields use an explicit "provided" flag so an empty value clears the field
+      // while an omitted value leaves it unchanged.
+      const provided = (value) => value !== undefined;
+      const isPwd = type === "pwd";
 
       const updated = await pool.query(
         `UPDATE beneficiaries
@@ -675,12 +682,13 @@ router.put(
              birthdate         = COALESCE($2, birthdate),
              issuing_office    = COALESCE($3, issuing_office),
              registered_mobile = COALESCE($4, registered_mobile),
-             disability_type   = COALESCE($5, disability_type),
-             address           = COALESCE($6, address),
-             contact_number    = COALESCE($7, contact_number),
-             email             = COALESCE($8, email),
-             updated_by        = $9
-         WHERE id = $10
+             disability_type   = CASE WHEN $5::boolean THEN $6 ELSE disability_type END,
+             address           = CASE WHEN $7::boolean THEN $8 ELSE address END,
+             contact_number    = CASE WHEN $9::boolean THEN $10 ELSE contact_number END,
+             email             = CASE WHEN $11::boolean THEN $12 ELSE email END,
+             notes             = CASE WHEN $13::boolean THEN $14 ELSE notes END,
+             updated_by        = $15
+         WHERE id = $16
          RETURNING *`,
         [
           full_name || null,
@@ -689,10 +697,16 @@ router.put(
           registered_mobile !== undefined
             ? normalizeMobile(registered_mobile)
             : null,
-          disability_type !== undefined ? disability_type || null : null,
-          address !== undefined ? address || null : null,
-          contact_number !== undefined ? contact_number || null : null,
-          email !== undefined ? email || null : null,
+          isPwd && provided(disability_type),
+          disability_type || null,
+          provided(address),
+          address || null,
+          provided(contact_number),
+          contact_number || null,
+          provided(email),
+          email || null,
+          provided(notes),
+          notes || null,
           req.user.id,
           req.params.id,
         ],
@@ -709,8 +723,22 @@ router.put(
               full_name: old.full_name,
               birthdate: old.birthdate,
               issuing_office: old.issuing_office,
+              disability_type: old.disability_type,
+              address: old.address,
+              contact_number: old.contact_number,
+              email: old.email,
+              notes: old.notes,
             },
-            new: { full_name, birthdate, issuing_office },
+            new: {
+              full_name,
+              birthdate,
+              issuing_office,
+              disability_type,
+              address,
+              contact_number,
+              email,
+              notes,
+            },
           }),
         ],
       );

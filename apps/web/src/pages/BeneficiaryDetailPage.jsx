@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -29,6 +30,7 @@ import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 import RecordHistoryPanel from "../components/RecordHistoryPanel";
 import ConfirmModal from "../components/ConfirmModal";
+import { PDAO_DISABILITY_OPTIONS } from "../constants/disabilityTypes";
 import {
   calcAge,
   fmtDate,
@@ -197,7 +199,11 @@ export default function BeneficiaryDetailPage() {
     setEditForm({
       full_name: b.full_name || "",
       issuing_office: b.issuing_office || "",
-      registered_mobile: b.contact_number || b.registered_mobile || "",
+      contact_number: b.contact_number || b.registered_mobile || "",
+      email: b.email || "",
+      address: b.address || "",
+      notes: b.notes || "",
+      disability_type: (b.disability_type || "").toLowerCase(),
     });
   }
 
@@ -205,16 +211,37 @@ export default function BeneficiaryDetailPage() {
     e.preventDefault();
     setEditLoading(true);
     setEditError("");
+    const contact = editForm.contact_number.trim();
+    const payload = {
+      full_name: editForm.full_name.trim(),
+      issuing_office: editForm.issuing_office.trim() || undefined,
+      contact_number: contact || null,
+      email: editForm.email.trim() || null,
+      address: editForm.address.trim() || null,
+      notes: editForm.notes.trim() || null,
+    };
+    // registered_mobile is the OTP number; keep it in step with the displayed contact number.
+    if (contact) payload.registered_mobile = contact;
+    if (!isOsca) payload.disability_type = editForm.disability_type || null;
     try {
-      await beneficiariesAPI.update(id, editForm);
+      await beneficiariesAPI.update(id, payload);
       setSuccessMsg("Record updated successfully.");
       setEditForm(null);
       await refetch();
     } catch (err) {
-      setEditError(err.response?.data?.message || "Update failed.");
+      const data = err.response?.data;
+      setEditError(data?.message || data?.errors?.[0]?.msg || "Update failed.");
     } finally {
       setEditLoading(false);
     }
+  }
+
+  // Keeps a stored disability value selectable even if it is not in the standard list.
+  function editDisabilityOptions() {
+    const current = editForm?.disability_type;
+    if (!current || PDAO_DISABILITY_OPTIONS.some((o) => o.value === current))
+      return PDAO_DISABILITY_OPTIONS;
+    return [...PDAO_DISABILITY_OPTIONS, { value: current, label: current }];
   }
 
   function openRenew() {
@@ -743,28 +770,30 @@ export default function BeneficiaryDetailPage() {
         variant="warn"
         loading={revealLoading}
       >
-        <input
-          type={showReauthPassword ? "text" : "password"}
-          value={reauthPassword}
-          onChange={(event) => setReauthPassword(event.target.value)}
-          placeholder="Enter your current password"
-          autoComplete="current-password"
-          className="input w-full"
-          disabled={revealLoading}
-        />
-        <button
-          type="button"
-          onClick={() => setShowReauthPassword((visible) => !visible)}
-          className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700"
-          disabled={revealLoading}
-        >
-          {showReauthPassword ? (
-            <EyeOff className="w-4 h-4" />
-          ) : (
-            <Eye className="w-4 h-4" />
-          )}
-          {showReauthPassword ? "Hide password" : "Show password"}
-        </button>
+        <div className="relative">
+          <input
+            type={showReauthPassword ? "text" : "password"}
+            value={reauthPassword}
+            onChange={(event) => setReauthPassword(event.target.value)}
+            placeholder="Enter your current password"
+            autoComplete="current-password"
+            className="input w-full pr-10"
+            disabled={revealLoading}
+          />
+          <button
+            type="button"
+            onClick={() => setShowReauthPassword((visible) => !visible)}
+            aria-label={showReauthPassword ? "Hide password" : "Show password"}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            disabled={revealLoading}
+          >
+            {showReauthPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        </div>
         {revealError && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5 mt-2">
             <AlertCircle className="w-4 h-4" />
@@ -918,63 +947,120 @@ export default function BeneficiaryDetailPage() {
         )}
       </ConfirmModal>
 
-      {/* Edit Record modal */}
-      {editForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-            <div className="px-6 pt-6 pb-2">
-              <h2 className="font-heading font-bold text-lg text-slate-900">
-                Edit Record
-              </h2>
-              <p className="text-sm text-slate-500 mt-0.5">
-                Correct beneficiary information. ID number cannot be changed.
-              </p>
-            </div>
-            <form onSubmit={handleEdit} className="px-6 py-4 space-y-4">
-              <div>
-                <label className="label">Full Name</label>
-                <input
-                  className="input"
-                  value={editForm.full_name}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, full_name: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <label className="label">Issuing Office</label>
-                <input
-                  className="input"
-                  value={editForm.issuing_office}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      issuing_office: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <label className="label">Contact Number</label>
-                <input
-                  className="input"
-                  value={editForm.registered_mobile}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      registered_mobile: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              {editError && (
-                <p className="text-sm text-danger-600 flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4" />
-                  {editError}
+      {/* Edit Record modal (portaled to body so it centers in the viewport) */}
+      {editForm &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <form
+              onSubmit={handleEdit}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col"
+            >
+              <div className="px-6 pt-6 pb-2 shrink-0">
+                <h2 className="font-heading font-bold text-lg text-slate-900">
+                  Edit Record
+                </h2>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Correct beneficiary information. ID number cannot be changed.
                 </p>
-              )}
-              <div className="flex justify-end gap-2 pt-2">
+              </div>
+              <div className="px-6 py-4 space-y-4 overflow-y-auto">
+                <div>
+                  <label className="label">Full Name</label>
+                  <input
+                    className="input"
+                    value={editForm.full_name}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, full_name: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Issuing Office</label>
+                  <input
+                    className="input"
+                    value={editForm.issuing_office}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        issuing_office: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="label">Contact Number</label>
+                  <input
+                    className="input"
+                    value={editForm.contact_number}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        contact_number: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="label">Email</label>
+                  <input
+                    type="email"
+                    className="input"
+                    value={editForm.email}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, email: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="label">Address</label>
+                  <textarea
+                    className="input min-h-[72px]"
+                    value={editForm.address}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, address: e.target.value }))
+                    }
+                  />
+                </div>
+                {!isOsca && (
+                  <div>
+                    <label className="label">Disability Type</label>
+                    <select
+                      className="input"
+                      value={editForm.disability_type}
+                      onChange={(e) =>
+                        setEditForm((f) => ({
+                          ...f,
+                          disability_type: e.target.value,
+                        }))
+                      }
+                    >
+                      {editDisabilityOptions().map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="label">Notes</label>
+                  <textarea
+                    className="input min-h-[96px]"
+                    value={editForm.notes}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, notes: e.target.value }))
+                    }
+                  />
+                </div>
+                {editError && (
+                  <p className="text-sm text-danger-600 flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4" />
+                    {editError}
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   className="btn-ghost"
@@ -992,12 +1078,13 @@ export default function BeneficiaryDetailPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
-      {/* Process Renewal modal */}
-      {renewForm && (
+      {/* Process Renewal modal (portaled to body so it centers in the viewport) */}
+      {renewForm &&
+        createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="px-6 pt-6 pb-2">
@@ -1065,7 +1152,8 @@ export default function BeneficiaryDetailPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
