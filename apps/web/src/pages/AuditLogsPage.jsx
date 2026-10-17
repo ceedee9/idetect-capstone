@@ -10,6 +10,7 @@ import {
   Calendar,
   Filter,
   Keyboard,
+  Archive,
 } from "lucide-react";
 import { auditLogsAPI } from "../services/api";
 import { getStepUpToken } from "../utils/stepUp";
@@ -19,7 +20,9 @@ import {
   actionLabel,
   formatAffectedRecord,
 } from "../utils/auditLog";
+import { useAuth } from "../context/AuthContext";
 import AuditLogDetailDrawer from "../components/AuditLogDetailDrawer";
+import ConfirmModal from "../components/ConfirmModal";
 import EmptyState from "../components/EmptyState";
 import AuditReportModal from "../components/AuditReportModal";
 
@@ -217,6 +220,22 @@ export default function AuditLogsPage() {
   const [showReport, setShowReport] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
 
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role?.endsWith("_super_admin");
+  const [retention, setRetention] = useState(null);
+  const [retentionError, setRetentionError] = useState(null);
+  const [archiveMessage, setArchiveMessage] = useState(null);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [archiveAcknowledged, setArchiveAcknowledged] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedLogs, setArchivedLogs] = useState([]);
+  const [archivedPage, setArchivedPage] = useState(1);
+  const [archivedPagination, setArchivedPagination] = useState({
+    total: 0,
+    pages: 1,
+  });
+  const [archivedLoading, setArchivedLoading] = useState(false);
   const activeActions = useMemo(() => {
     const grp = ACTION_GROUPS.find((g) => g.value === actionGroup);
     return grp?.actions ?? [];
@@ -291,6 +310,74 @@ export default function AuditLogsPage() {
     }
   }
 
+  const fetchRetention = useCallback(async () => {
+    if (!isSuperAdmin) return;
+    try {
+      const res = await auditLogsAPI.retention();
+      setRetention(res.data);
+    } catch (err) {
+      setRetentionError(
+        err.response?.data?.error || "Failed to load retention status.",
+      );
+    }
+  }, [isSuperAdmin]);
+
+  const fetchArchived = useCallback(async () => {
+    setArchivedLoading(true);
+    try {
+      const res = await auditLogsAPI.archived({ page: archivedPage, limit: 20 });
+      setArchivedLogs(res.data?.data ?? []);
+      setArchivedPagination(res.data?.pagination ?? { total: 0, pages: 1 });
+    } catch (err) {
+      setRetentionError(
+        err.response?.data?.error || "Failed to load archived logs.",
+      );
+    } finally {
+      setArchivedLoading(false);
+    }
+  }, [archivedPage]);
+
+  useEffect(() => {
+    fetchRetention();
+  }, [fetchRetention]);
+
+  useEffect(() => {
+    if (showArchived) fetchArchived();
+  }, [showArchived, fetchArchived]);
+
+  function closeArchiveConfirm() {
+    setShowArchiveConfirm(false);
+    setArchiveAcknowledged(false);
+  }
+
+  async function handleArchive() {
+    setArchiving(true);
+    setRetentionError(null);
+    setArchiveMessage(null);
+    try {
+      const token = await getStepUpToken(
+        "Confirm your password to archive old audit logs.",
+      );
+      const res = await auditLogsAPI.archive(token);
+      const count = res.data?.archived_count ?? 0;
+      setArchiveMessage(
+        count
+          ? `${count} log${count === 1 ? "" : "s"} moved to the archive.`
+          : "No logs were old enough to archive.",
+      );
+      closeArchiveConfirm();
+      fetchRetention();
+      fetchLogs();
+      if (showArchived) fetchArchived();
+    } catch (err) {
+      setRetentionError(
+        err.response?.data?.error || "Archive failed. Nothing was moved.",
+      );
+    } finally {
+      setArchiving(false);
+    }
+  }
+
   return (
     <div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-6">
       {showReport && <AuditReportModal onClose={() => setShowReport(false)} />}
@@ -334,6 +421,159 @@ export default function AuditLogsPage() {
           </button>
         </div>
       </div>
+
+      {isSuperAdmin && (
+        <div className="card p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className="font-heading font-semibold text-slate-900 flex items-center gap-2">
+                <Archive className="w-4 h-4" />
+                Retention archive
+              </h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Logs older than {retention?.retention_years ?? 5} years are moved
+                to the archive. They are never deleted.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 self-start">
+              <button
+                onClick={() => setShowArchived((v) => !v)}
+                className="btn-secondary"
+              >
+                {showArchived ? "Hide archived logs" : "View archived logs"}
+              </button>
+              <button
+                onClick={() => setShowArchiveConfirm(true)}
+                disabled={!retention?.eligible_count || archiving}
+                className="btn-primary"
+              >
+                <Archive className="w-4 h-4" />
+                Archive old logs
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl border border-slate-200 p-3">
+              <p className="text-xs text-slate-500">Ready to archive</p>
+              <p className="font-heading font-bold text-xl text-slate-900">
+                {retention?.eligible_count ?? "—"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-3">
+              <p className="text-xs text-slate-500">Archived so far</p>
+              <p className="font-heading font-bold text-xl text-slate-900">
+                {retention?.archived_count ?? "—"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-3">
+              <p className="text-xs text-slate-500">Cutoff (logs before this date)</p>
+              <p className="font-medium text-sm text-slate-900">
+                {retention?.cutoff ? fmtDateTime(retention.cutoff) : "—"}
+              </p>
+            </div>
+          </div>
+
+          {archiveMessage && (
+            <p className="text-sm text-slate-700">{archiveMessage}</p>
+          )}
+          {retentionError && (
+            <p className="text-sm text-danger-700">{retentionError}</p>
+          )}
+
+          {showArchived && (
+            <div className="space-y-3">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-slate-500 border-b border-slate-200">
+                      <th className="py-2 pr-3 font-medium">Logged at</th>
+                      <th className="py-2 pr-3 font-medium">Archived at</th>
+                      <th className="py-2 pr-3 font-medium">Action</th>
+                      <th className="py-2 pr-3 font-medium">User</th>
+                      <th className="py-2 font-medium">Record</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {archivedLogs.map((log) => (
+                      <tr key={log.id} className="border-b border-slate-100">
+                        <td className="py-2 pr-3 whitespace-nowrap">
+                          {fmtDateTime(log.created_at)}
+                        </td>
+                        <td className="py-2 pr-3 whitespace-nowrap">
+                          {fmtDateTime(log.archived_at)}
+                        </td>
+                        <td className="py-2 pr-3">{actionLabel(log.action)}</td>
+                        <td className="py-2 pr-3">{log.user_name || "System"}</td>
+                        <td className="py-2">{log.target_table || "—"}</td>
+                      </tr>
+                    ))}
+                    {!archivedLoading && archivedLogs.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-4 text-center text-slate-500">
+                          No archived logs yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {archivedPagination.pages > 1 && (
+                <div className="flex items-center justify-end gap-2 text-sm">
+                  <button
+                    onClick={() => setArchivedPage((p) => Math.max(1, p - 1))}
+                    disabled={archivedPage <= 1}
+                    className="btn-secondary"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-slate-600">
+                    Page {archivedPage} of {archivedPagination.pages}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setArchivedPage((p) =>
+                        Math.min(archivedPagination.pages, p + 1),
+                      )
+                    }
+                    disabled={archivedPage >= archivedPagination.pages}
+                    className="btn-secondary"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <ConfirmModal
+            open={showArchiveConfirm}
+            onClose={closeArchiveConfirm}
+            onConfirm={handleArchive}
+            title="Archive old audit logs?"
+            description={`${retention?.eligible_count ?? 0} log(s) created before ${
+              retention?.cutoff ? fmtDateTime(retention.cutoff) : "the cutoff"
+            } will be moved to the archive. They are not deleted and stay visible to you in the archived view.`}
+            confirmLabel="Archive logs"
+            variant="warn"
+            loading={archiving}
+            confirmDisabled={!archiveAcknowledged}
+          >
+            <label className="flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={archiveAcknowledged}
+                onChange={(e) => setArchiveAcknowledged(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                I understand these logs will leave the live audit trail and
+                cannot be deleted.
+              </span>
+            </label>
+          </ConfirmModal>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center gap-2.5 px-4 py-3 bg-danger-50 border border-danger-100 rounded-xl text-danger-700 text-sm">

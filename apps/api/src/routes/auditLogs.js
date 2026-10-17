@@ -5,6 +5,9 @@
 //                                    and target_table + target_id for per-record history)
 //   GET  /api/audit-logs/export   — CSV download
 //   GET  /api/audit-logs/report   — period report (format=csv|pdf|json)
+//   GET  /api/audit-logs/retention — Super Admin: logs eligible for archive (5-year rule)
+//   POST /api/audit-logs/archive  — Super Admin: move eligible logs to the archive
+//   GET  /api/audit-logs/archive  — Super Admin: list archived logs
 
 const express = require("express");
 const pool = require("../config/database");
@@ -748,6 +751,187 @@ router.get("/case", requireStepUpForDownload, async (req, res, next) => {
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="case_${ref}.csv"`);
     res.send(lines.map(csvLine).join("\n"));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Retention archive (policy F-03) ────────────────────────────
+// Logs older than RETENTION_YEARS are moved to audit_logs_archive, never deleted.
+// Only the agency Super Admin may archive, and only within their agency's scope.
+const RETENTION_YEARS = 5;
+const RETENTION_ROLES = [
+  "bplo_super_admin",
+  "osca_super_admin",
+  "pdao_super_admin",
+];
+
+function requireRetentionRole(req, res, next) {
+  if (!RETENTION_ROLES.includes(req.user?.role)) {
+    return res.status(403).json({
+      error: "Only the agency Super Admin can manage audit-log retention.",
+    });
+  }
+  next();
+}
+
+function eligibleSql(role, params) {
+  const base = `
+    SELECT al.id, al.user_id, al.establishment_id, al.action, al.target_table,
+           al.target_id, al.metadata, al.ip_address, al.user_agent, al.created_at
+    FROM audit_logs al
+    LEFT JOIN users u ON u.id = al.user_id
+    WHERE al.created_at < NOW() - INTERVAL '${RETENTION_YEARS} years'`;
+  return appendAuditScope(base, params, params.length + 1, role).query;
+}
+
+function archivedSql(role, params) {
+  const base = `
+    SELECT al.id, al.action, al.target_table, al.target_id, al.metadata,
+           al.ip_address, al.created_at, al.archived_at,
+           u.full_name AS user_name, u.role AS user_role
+    FROM audit_logs_archive al
+    LEFT JOIN users u ON u.id = al.user_id
+    WHERE 1=1`;
+  return appendAuditScope(base, params, params.length + 1, role).query;
+}
+
+// ── GET /api/audit-logs/retention — eligible and archived counts ──
+router.get("/retention", requireRetentionRole, async (req, res, next) => {
+  try {
+    const liveParams = [];
+    const live = await pool.query(
+      `SELECT COUNT(*)::int AS eligible_count,
+              MIN(created_at) AS oldest_created_at,
+              NOW() - INTERVAL '${RETENTION_YEARS} years' AS cutoff
+       FROM (${eligibleSql(req.user.role, liveParams)}) eligible`,
+      liveParams,
+    );
+
+    const archivedParams = [];
+    const archived = await pool.query(
+      `SELECT COUNT(*)::int AS archived_count
+       FROM (${archivedSql(req.user.role, archivedParams)}) archived`,
+      archivedParams,
+    );
+
+    res.json({
+      retention_years: RETENTION_YEARS,
+      cutoff: live.rows[0].cutoff,
+      eligible_count: live.rows[0].eligible_count,
+      oldest_created_at: live.rows[0].oldest_created_at,
+      archived_count: archived.rows[0].archived_count,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── POST /api/audit-logs/archive — move eligible logs to the archive ──
+router.post(
+  "/archive",
+  requireRetentionRole,
+  requireStepUp,
+  async (req, res, next) => {
+    if (req.body?.acknowledged !== true) {
+      return res.status(400).json({
+        error: "Confirm the archive action before continuing.",
+      });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        "SELECT set_config('idetect.audit_archive', 'on', true)",
+      );
+
+      const params = [];
+      const sql = eligibleSql(req.user.role, params);
+      params.push(req.user.id);
+      const archivedBy = `$${params.length}::uuid`;
+
+      const moved = await client.query(
+        `WITH eligible AS (${sql}),
+         moved AS (
+           DELETE FROM audit_logs
+           WHERE id IN (SELECT id FROM eligible)
+           RETURNING id, user_id, establishment_id, action, target_table,
+                     target_id, metadata, ip_address, user_agent, created_at
+         ),
+         archived AS (
+           INSERT INTO audit_logs_archive (
+             id, user_id, establishment_id, action, target_table, target_id,
+             metadata, ip_address, user_agent, created_at, archived_by
+           )
+           SELECT id, user_id, establishment_id, action, target_table, target_id,
+                  metadata, ip_address, user_agent, created_at, ${archivedBy}
+           FROM moved
+           RETURNING id
+         )
+         SELECT COUNT(*)::int AS archived_count FROM archived`,
+        params,
+      );
+
+      const archivedCount = moved.rows[0].archived_count;
+      if (archivedCount > 0) {
+        await client.query(
+          `INSERT INTO audit_logs (user_id, action, target_table, metadata, ip_address, user_agent)
+           VALUES ($1, 'audit_logs_archived', 'audit_logs_archive', $2, $3, $4)`,
+          [
+            req.user.id,
+            JSON.stringify({
+              archived_count: archivedCount,
+              retention_years: RETENTION_YEARS,
+            }),
+            req.ip,
+            req.get("user-agent") || null,
+          ],
+        );
+      }
+
+      await client.query("COMMIT");
+      res.json({ archived_count: archivedCount, retention_years: RETENTION_YEARS });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      next(err);
+    } finally {
+      client.release();
+    }
+  },
+);
+
+// ── GET /api/audit-logs/archive — archived logs (Super Admin only) ──
+router.get("/archive", requireRetentionRole, async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 30, 100);
+    const offset = (page - 1) * limit;
+
+    const params = [];
+    const sql = archivedSql(req.user.role, params);
+    const count = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM (${sql}) archived`,
+      params,
+    );
+    const total = count.rows[0].total;
+
+    const rows = await pool.query(
+      `${sql}
+       ORDER BY al.created_at DESC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, offset],
+    );
+
+    res.json({
+      data: rows.rows,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
   } catch (err) {
     next(err);
   }

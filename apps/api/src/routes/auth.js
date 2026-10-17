@@ -304,9 +304,11 @@ router.post(
            eu.locked_until AS user_locked_until,
            eu.password_reset_required
          FROM establishments e
-         LEFT JOIN establishment_users eu ON eu.establishment_id = e.id
-         WHERE lower(e.email) = lower($1) OR lower(eu.email) = lower($1)
-         ORDER BY CASE WHEN lower(eu.email) = lower($1) THEN 0 ELSE 1 END
+         LEFT JOIN establishment_users eu
+           ON eu.establishment_id = e.id AND lower(eu.email) = lower($1)
+         WHERE lower(e.email) = lower($1) OR eu.id IS NOT NULL
+         ORDER BY CASE WHEN lower(e.email) = lower($1) THEN 0 ELSE 1 END,
+                  CASE WHEN eu.id IS NOT NULL THEN 0 ELSE 1 END
          LIMIT 1`,
         [email],
       );
@@ -1314,6 +1316,14 @@ router.post(
       );
 
       await pool.query(
+        `UPDATE establishment_users
+         SET password_hash = $1, failed_attempts = 0, locked_until = NULL,
+             updated_at = NOW()
+         WHERE establishment_id = $2 AND role = 'establishment_super_user'`,
+        [password_hash, est.id],
+      );
+
+      await pool.query(
         `INSERT INTO audit_logs (establishment_id, action, metadata)
         VALUES ($1, 'password_reset', $2)`,
         [
@@ -1377,6 +1387,13 @@ router.post(
          SET password_hash = $1, password_setup_token = NULL,
              password_setup_token_expires = NULL, updated_at = NOW()
          WHERE id = $2`,
+        [password_hash, est.id],
+      );
+
+      await pool.query(
+        `UPDATE establishment_users
+         SET password_hash = $1, updated_at = NOW()
+         WHERE establishment_id = $2 AND role = 'establishment_super_user'`,
         [password_hash, est.id],
       );
 

@@ -353,7 +353,7 @@ Before coding these roles:
 - Define recovery and second-approval procedures.
 - Define establishment user invitation and identity-verification rules.
 - Decide which overrides require BPLO or second-person approval.
-- Define retention and review rules for account and privilege audits.
+- Define retention and review rules for account and privilege audits. Decided and implemented: audit logs stay live for 5 years, then only the agency's Super Admin may archive them (never delete). See [AUDIT_LOG_RETENTION_POLICY.md](./AUDIT_LOG_RETENTION_POLICY.md).
 
 After approval, implementation should proceed in this order:
 

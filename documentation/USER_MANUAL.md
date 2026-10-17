@@ -511,7 +511,7 @@ A. No. They submit disputes; authorized OSCA/PDAO personnel adjudicate and corre
 A. A new report can be linked as a supplementary report to an existing open investigation.
 
 **Q. How long are audit logs retained?**
-A. The manuscript specifies at least five years before archival may occur under policy.
+A. Audit logs stay in the live Audit Logs page for five years. After that, the agency's Super Admin can archive them. Archived logs are moved, never deleted, and remain viewable by that Super Admin. See [AUDIT_LOG_RETENTION_POLICY.md](./AUDIT_LOG_RETENTION_POLICY.md).
 
 **Q. Is there one URL or several for BPLO/OSCA/PDAO?**
 A. One unified URL, https://idetect.it.com. The system routes each account to its dashboard based on role after login.

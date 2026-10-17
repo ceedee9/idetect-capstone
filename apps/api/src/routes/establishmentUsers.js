@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { sendEstablishmentUserInvitation } = require("../services/emailService");
+const { isEstablishmentEmailTaken } = require("../utils/emailAvailability");
 const {
   authenticateEstablishment,
 } = require("../middleware/auth");
@@ -71,11 +72,8 @@ router.post(
       if (errorResponse) return errorResponse;
 
       const { email, full_name } = req.body;
-      const duplicate = await pool.query(
-        "SELECT id FROM establishment_users WHERE lower(email) = lower($1)",
-        [email],
-      );
-      if (duplicate.rows.length) {
+      const duplicate = await isEstablishmentEmailTaken(pool, email);
+      if (duplicate) {
         return res.status(409).json({ error: "Email already registered" });
       }
 

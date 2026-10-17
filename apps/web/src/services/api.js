@@ -332,6 +332,14 @@ export const auditLogsAPI = {
         ? { responseType: "blob", headers: { "X-Step-Up-Token": stepUpToken } }
         : {}),
     }),
+  retention: () => api.get("/audit-logs/retention"),
+  archive: (stepUpToken) =>
+    api.post(
+      "/audit-logs/archive",
+      { acknowledged: true },
+      { headers: { "X-Step-Up-Token": stepUpToken } },
+    ),
+  archived: (params = {}) => api.get("/audit-logs/archive", { params }),
 };
 
 // ─── Reports / CSV export ─────────────────────────────────────────────────────

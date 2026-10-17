@@ -82,8 +82,9 @@ every page load, search keystroke, polling request, or history request.
 
 Future operational improvements:
 
-- Define and approve an F-03 retention period, with an initial recommendation
-  of three years online followed by an archive strategy.
+- F-03 retention is decided: five years live, then archive only (never delete).
+  The archive feature is built. Remaining: the agency's records officer confirms
+  the period. See [AUDIT_LOG_RETENTION_POLICY.md](./AUDIT_LOG_RETENTION_POLICY.md).
 - Add monitoring for audit-table growth, storage usage, slow report queries,
   export duration, and failed audit inserts.
 - Keep report result limits and CSV size limits bounded.
@@ -151,8 +152,9 @@ Future operational improvements:
 ## Data protection and security
 
 - Complete ID and age masking reviews for all API responses and exports.
-- Define audit-log and personal-data retention policies, including archival and
-  approved deletion procedures.
+- Audit-log retention and archival are defined and implemented (see
+  [AUDIT_LOG_RETENTION_POLICY.md](./AUDIT_LOG_RETENTION_POLICY.md)). Audit logs are
+  never deleted. Define a personal-data retention policy for beneficiary records.
 - Add periodic access reviews for staff accounts and administrative roles.
 - Add stronger abuse detection for repeated failed logins and suspicious
   establishment activity.
@@ -211,7 +213,8 @@ measured usage rather than premature complexity.
 
 ## Open policy decisions
 
-- F-03 retention duration and archive period.
+- F-03 retention period: decided as five years live, then archive. Pending the
+  agency's records officer's confirmation.
 - F-09 automatic reinstatement policy; the current implementation uses
   acknowledged manual reinstatement after staff review.
 - Whether report previews require their own audit events.

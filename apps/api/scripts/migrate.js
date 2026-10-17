@@ -86,6 +86,7 @@ const MIGRATIONS = [
   "048_notify_staff_on_dispute_insert.sql",
   "049_staff_alert_event_triggers.sql",
   "050_add_beneficiary_notes.sql",
+  "051_create_audit_log_archive.sql",
 ];
 
 // Migration files are co-located inside apps/api/migrations/

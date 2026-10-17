@@ -19,6 +19,7 @@ const { authenticate, requireRole } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { sendSms } = require("../services/smsService");
 const { sendEstablishmentSetupLink } = require("../services/emailService");
+const { isEstablishmentEmailTaken } = require("../utils/emailAvailability");
 
 const router = express.Router();
 
@@ -67,6 +68,12 @@ router.post(
         address,
         contact_number,
       } = req.body;
+
+      if (await isEstablishmentEmailTaken(pool, email)) {
+        return res.status(409).json({
+          message: "An establishment with this email already exists.",
+        });
+      }
 
       const password_hash = await bcrypt.hash(password, 12);
 
@@ -280,12 +287,8 @@ router.post("/bulk-import", async (req, res, next) => {
         }
 
         // Skip duplicate email (auto-generated emails could collide on very similar permit nos)
-        const dupEmail = await client.query(
-          "SELECT id FROM establishments WHERE email = $1",
-          [row.email],
-        );
         let finalEmail = row.email;
-        if (dupEmail.rows.length) {
+        if (await isEstablishmentEmailTaken(client, row.email)) {
           // Append a short suffix to make it unique
           finalEmail = row.email.replace(
             "@",
@@ -483,12 +486,8 @@ router.post(
         });
       }
 
-      // Check for duplicate email
-      const existingEmail = await pool.query(
-        "SELECT id FROM establishments WHERE email = $1",
-        [email],
-      );
-      if (existingEmail.rows.length) {
+      // Check for duplicate email across establishments and establishment users
+      if (await isEstablishmentEmailTaken(pool, email)) {
         return res.status(409).json({
           message: "An establishment with this email already exists.",
         });
@@ -896,6 +895,20 @@ router.patch(
         return res.status(400).json({ message: "No fields to update." });
       }
 
+      if (email) {
+        const current = await pool.query(
+          "SELECT email FROM establishments WHERE id = $1",
+          [id],
+        );
+        const unchanged =
+          current.rows[0]?.email?.toLowerCase() === email.toLowerCase();
+        if (!unchanged && (await isEstablishmentEmailTaken(pool, email))) {
+          return res.status(409).json({
+            message: "An establishment with this email already exists.",
+          });
+        }
+      }
+
       const setClauses = [];
       const values = [];
       let idx = 1;
@@ -981,7 +994,14 @@ router.patch(
 
       const est = result.rows[0];
 
-      // Notify establishment of the forced reset
+      await pool.query(
+        `UPDATE establishment_users
+         SET password_hash = $1, failed_attempts = 0, locked_until = NULL,
+             updated_at = NOW()
+         WHERE establishment_id = $2 AND role = 'establishment_super_user'`,
+        [password_hash, id],
+      );
+
       if (est.contact_number) {
         await sendSms(
           est.contact_number,
