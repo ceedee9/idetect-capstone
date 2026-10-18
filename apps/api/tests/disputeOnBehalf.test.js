@@ -179,7 +179,8 @@ describe("establishment-filed disputes on behalf of a beneficiary", () => {
     expect(notifSql).toMatch(/INSERT INTO notifications/);
     expect(notifSql).toMatch(/'general'/);
     expect(notifParams[0]).toBe("acc-existing");
-    expect(notifParams[1]).toBe("Dispute Filed For You");
+    expect(notifParams[1]).toMatch(/^Dispute Filed For You/);
+    expect(notifParams[1]).toMatch(/Reklamo/);
     expect(notifParams[2]).toMatch(/DSP-2026-000004/);
     expect(notifParams[3]).toBe("d-4");
   });

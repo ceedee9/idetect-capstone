@@ -730,8 +730,8 @@ router.post(
 
       // Beneficiary notice. A placeholder account has no device or mobile yet,
       // so the notice waits in the app and shows once they complete sign-up.
-      const notifTitle = "Dispute Filed For You";
-      const notifBody = `A dispute (Ref: ${dispute.reference_no}) was filed for you by an establishment you contacted. If you did not ask for this, please contact the staff office.`;
+      const notifTitle = "Dispute Filed For You / Reklamo Para Sa Iyo";
+      const notifBody = `A dispute (Ref: ${dispute.reference_no}) was filed for you by an establishment you contacted. If you did not ask for this, please contact the staff office. / Isang reklamo (Ref: ${dispute.reference_no}) ang inihain para sa iyo ng establisimyentong kinontak mo. Kung hindi mo ito hiniling, makipag-ugnayan sa staff office.`;
       await pool.query(
         `INSERT INTO notifications
          (beneficiary_account_id, notification_type, title, body, channel, dispute_id)
