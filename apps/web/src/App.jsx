@@ -234,16 +234,7 @@ export default function App() {
                 <Route
                   path="callback-requests"
                   element={
-                    <RoleRoute
-                      roles={[
-                        "osca_admin",
-                        "osca_super_admin",
-                        "pdao_admin",
-                        "pdao_super_admin",
-                        "bplo_admin",
-                        "bplo_super_admin",
-                      ]}
-                    >
+                    <RoleRoute roles={["bplo_admin", "bplo_super_admin"]}>
                       <CallbackRequestsPage />
                     </RoleRoute>
                   }

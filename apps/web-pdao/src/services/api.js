@@ -165,10 +165,6 @@ export const fraudFlagsAPI = {
 };
 
 // ── Disputes ──────────────────────────────────────────────────────────────────
-export const callbackRequestsAPI = {
-  list: (params = {}) => api.get("/callback-requests", { params }),
-};
-
 export const disputesAPI = {
   list: (params = {}) => api.get("/disputes", { params }),
   acknowledge: (id) => api.patch(`/disputes/${id}/acknowledge`),

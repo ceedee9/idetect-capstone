@@ -73,32 +73,44 @@ class _EstablishmentUsersScreenState extends State<EstablishmentUsersScreen> {
 
   Future<void> _resetPassword(Map<String, dynamic> user) async {
     final controller = TextEditingController();
+    var obscure = true;
     final password = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Reset password'),
-        content: TextField(
-          controller: controller,
-          obscureText: true,
-          decoration: const InputDecoration(
-            labelText: 'New temporary password',
-            helperText: 'At least 8 characters',
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Reset password'),
+          content: TextField(
+            controller: controller,
+            obscureText: obscure,
+            decoration: InputDecoration(
+              labelText: 'New temporary password',
+              helperText: 'At least 8 characters',
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscure
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                ),
+                tooltip: obscure ? 'Show password' : 'Hide password',
+                onPressed: () => setDialogState(() => obscure = !obscure),
+              ),
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (controller.text.length >= 8) {
+                  Navigator.pop(dialogContext, controller.text);
+                }
+              },
+              child: const Text('Reset'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (controller.text.length >= 8) {
-                Navigator.pop(dialogContext, controller.text);
-              }
-            },
-            child: const Text('Reset'),
-          ),
-        ],
       ),
     );
     controller.dispose();

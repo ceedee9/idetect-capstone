@@ -289,33 +289,34 @@ export default function CallbackRequestsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-accent-100 rounded-xl">
+          <PhoneCall className="w-6 h-6 text-accent-600" />
+        </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <PhoneCall className="w-6 h-6 text-accent-600" />
-            Callback Requests
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900">Callback Requests</h1>
+          <p className="text-sm text-slate-500">
             Beneficiaries asking BPLO to contact an establishment they
             transacted with.
           </p>
         </div>
-        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.value || "all"}
-              type="button"
-              onClick={() => changeFilter(tab.value)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md ${
-                statusFilter === tab.value
-                  ? "bg-accent-600 text-white"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      </div>
+
+      <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.value || "all"}
+            type="button"
+            onClick={() => changeFilter(tab.value)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              statusFilter === tab.value
+                ? "bg-white text-slate-800 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {error && (

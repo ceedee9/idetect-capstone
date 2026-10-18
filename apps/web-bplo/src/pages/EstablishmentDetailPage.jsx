@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PasswordInput from "../components/PasswordInput";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -611,12 +612,11 @@ export default function EstablishmentDetailPage() {
         onConfirm={handleAction}
         loading={actionLoading}
       >
-        <div className="mt-1">
+        <div className="relative mt-1">
           <label className="label text-xs">
             New Password (min 8 characters)
           </label>
-          <input
-            type="password"
+          <PasswordInput
             className="input text-sm"
             placeholder="Enter new password"
             value={newPassword}

@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Users,
   Flag,
-  PhoneCall,
   Scale,
   ScrollText,
   UserCog,
@@ -27,7 +26,6 @@ const NAV = [
   { to: "/beneficiaries", icon: Users, label: "Senior Citizens" },
   { to: "/fraud-flags", icon: Flag, label: "Fraud Flags" },
   { to: "/disputes", icon: Scale, label: "Disputes" },
-  { to: "/callback-requests", icon: PhoneCall, label: "Callback Requests" },
   { to: "/audit-logs", icon: ScrollText, label: "Audit Logs" },
   { to: "/staff", icon: UserCog, label: "Staff" },
 ];
