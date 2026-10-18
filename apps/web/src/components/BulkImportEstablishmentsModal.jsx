@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { parseEstablishmentImportFile } from "../utils/establishmentImport";
 import { establishmentsAPI } from "../services/api";
+import { getStepUpToken } from "../utils/stepUp";
 
 // ── Template CSV download ──────────────────────────────────────
 function downloadTemplate() {
@@ -116,8 +117,12 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
     if (!importResult?.credentialToken) return;
     setDownloadingCreds(true);
     try {
+      const stepUpToken = await getStepUpToken(
+        "Confirm your password to download the one-time credentials file.",
+      );
       const res = await establishmentsAPI.downloadCredentials(
         importResult.credentialToken,
+        stepUpToken,
       );
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");

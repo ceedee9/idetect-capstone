@@ -16,6 +16,7 @@ const crypto = require("crypto");
 const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
+const { requireStepUp } = require("../middleware/stepUp");
 const { createError } = require("../middleware/errorHandler");
 const { sendSms } = require("../services/smsService");
 const { sendEstablishmentSetupLink } = require("../services/emailService");
@@ -37,7 +38,7 @@ setInterval(
     }
   },
   5 * 60 * 1000,
-); // GC every 5 minutes
+).unref(); // GC every 5 minutes
 
 // ── POST /api/establishments/register (PUBLIC) ─────────────────
 // Businesses self-register. Account starts as 'pending'.
@@ -402,46 +403,62 @@ router.get(
   "/bulk-credentials/:token",
   authenticate,
   requireRole(["bplo_admin"]),
-  (req, res) => {
-    const { token } = req.params;
-    const entry = _credentialTokens.get(token);
+  requireStepUp,
+  async (req, res, next) => {
+    try {
+      const { token } = req.params;
+      const entry = _credentialTokens.get(token);
 
-    if (!entry) {
-      return res
-        .status(404)
-        .json({ error: "Token not found or already used." });
-    }
-    if (entry.expiresAt < Date.now()) {
-      _credentialTokens.delete(token);
-      return res.status(410).json({ error: "Token has expired." });
-    }
+      if (!entry) {
+        return res
+          .status(404)
+          .json({ error: "Token not found or already used." });
+      }
+      if (entry.expiresAt < Date.now()) {
+        _credentialTokens.delete(token);
+        return res.status(410).json({ error: "Token has expired." });
+      }
 
-    // Consume the token immediately (single-use)
-    _credentialTokens.delete(token);
-
-    const { credentials } = entry;
-
-    // Return as CSV for direct browser download
-    const header =
-      "business_name,business_permit_no,email,password,email_auto_generated\n";
-    const rows = credentials
-      .map((c) =>
+      // Audit before release: if the log write fails, the token is kept
+      // so the officer can retry, and no plaintext leaves unlogged.
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, action, target_table, metadata)
+         VALUES ($1, 'credentials_downloaded', 'establishments', $2)`,
         [
-          `"${c.business_name}"`,
-          c.business_permit_no,
-          c.email,
-          c.password,
-          c.email_auto_generated,
-        ].join(","),
-      )
-      .join("\n");
+          req.user.id,
+          JSON.stringify({ count: entry.credentials.length }),
+        ],
+      );
 
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="idetect_credentials_${Date.now()}.csv"`,
-    );
-    res.send(header + rows);
+      // Consume the token immediately (single-use)
+      _credentialTokens.delete(token);
+
+      const { credentials } = entry;
+
+      // Return as CSV for direct browser download
+      const header =
+        "business_name,business_permit_no,email,password,email_auto_generated\n";
+      const rows = credentials
+        .map((c) =>
+          [
+            `"${c.business_name}"`,
+            c.business_permit_no,
+            c.email,
+            c.password,
+            c.email_auto_generated,
+          ].join(","),
+        )
+        .join("\n");
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="idetect_credentials_${Date.now()}.csv"`,
+      );
+      res.send(header + rows);
+    } catch (err) {
+      next(err);
+    }
   },
 );
 
@@ -1094,3 +1111,5 @@ router.delete(
 );
 
 module.exports = router;
+// Exposed so tests can seed one-time credential tokens without a full import.
+module.exports.credentialTokenStore = _credentialTokens;

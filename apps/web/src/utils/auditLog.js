@@ -168,6 +168,8 @@ export function humanizeAuditLog(log) {
       return `Created establishment "${m.business_name || "—"}" (Permit #${m.business_permit_no || "—"})${m.bulk_import ? " via bulk import" : ""}`;
     case "establishment_bulk_import":
       return `Bulk-imported establishments: ${m.inserted ?? 0} added of ${m.total ?? 0} rows${m.duplicates ? `, ${m.duplicates} duplicate(s) skipped` : ""}`;
+    case "credentials_downloaded":
+      return `Downloaded ${m.count ?? 0} one-time bulk-import credential(s) (step-up confirmed)`;
     case "establishment_updated":
       return `Updated establishment fields: ${fmtList(m.updated_fields)}`;
     case "establishment_deleted":

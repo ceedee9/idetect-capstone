@@ -272,9 +272,10 @@ export const establishmentsAPI = {
 
   importBulk: (records) => api.post("/establishments/bulk-import", { records }),
 
-  downloadCredentials: (token) =>
+  downloadCredentials: (token, stepUpToken) =>
     api.get(`/establishments/bulk-credentials/${token}`, {
       responseType: "blob",
+      headers: { "X-Step-Up-Token": stepUpToken },
     }),
 };
 

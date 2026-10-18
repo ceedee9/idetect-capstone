@@ -71,6 +71,9 @@ async function runStartupMigrations() {
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_bulk_import';
     `);
     await pool.query(`
+      ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'credentials_downloaded';
+    `);
+    await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'establishment_created';
     `);
     await pool.query(`

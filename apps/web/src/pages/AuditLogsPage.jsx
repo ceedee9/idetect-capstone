@@ -67,6 +67,7 @@ const ACTION_GROUPS = [
       "establishment_self_registered",
       "establishment_created",
       "establishment_bulk_import",
+      "credentials_downloaded",
       "establishment_updated",
       "establishment_deleted",
     ],
@@ -154,6 +155,7 @@ const ACTION_STYLES = {
   establishment_self_registered: "bg-purple-100 text-purple-800",
   establishment_created: "bg-blue-200 text-blue-900",
   establishment_bulk_import: "bg-indigo-200 text-indigo-900",
+  credentials_downloaded: "bg-indigo-100 text-indigo-800",
   establishment_updated: "bg-violet-200 text-violet-900",
   establishment_deleted: "bg-rose-200 text-rose-900",
   // Fraud flags
