@@ -227,6 +227,31 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           _originalIdType = _resolvedIdType;
           _resolvedIdType = detected;
           _typeWasCorrected = true;
+
+          // The first parse used the wrong layout, so parse again as the
+          // corrected type. The seal calibration is also type-specific.
+          final bytes = await imageFile.readAsBytes();
+          final image = img.decodeImage(bytes);
+          if (image != null) {
+            final sealResult = await SealPresenceDetector.checkSeal(
+              imagePath: imageFile.path,
+              imageWidth: image.width,
+              imageHeight: image.height,
+              beneficiaryType: _resolvedIdType,
+            );
+            _resolvedSealDetected = sealResult.sealDetected;
+            _resolvedIdFormat = sealResult.sealDetected == true ? 'new' : 'old';
+          }
+          _parsedData = await _hybridParser.parseIDWithHybridApproach(
+            imageFile: imageFile,
+            idType: _resolvedIdType,
+            idFormat: _resolvedIdFormat,
+          );
+          if (!_parsedData!.success) {
+            _handleError(_parsedData!.errorMessage ??
+                'Re-parsing as $_resolvedIdType failed');
+            return;
+          }
         }
       }
 
@@ -851,8 +876,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               style: AppDesignSystem.bodyMedium
                   .copyWith(color: AppDesignSystem.textSecondary)),
           SizedBox(height: AppDesignSystem.spaceMD),
-          _buildInfoRow(
-              'ID Type', _parsedData?.idType?.name.toUpperCase() ?? 'Unknown'),
+          _buildInfoRow('ID Type', isPWD ? 'PWD' : 'Senior Citizen'),
           SizedBox(height: AppDesignSystem.spaceSM),
           _buildEditableField('Full Name', 'fullName', Icons.person),
           SizedBox(height: AppDesignSystem.spaceSM),
