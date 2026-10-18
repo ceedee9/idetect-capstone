@@ -625,9 +625,8 @@ class _ResultScreenState extends State<ResultScreen> {
           SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Low extraction quality score — the ID image may have been unclear. '
-              'Verify the result manually against the physical card.',
-              style: TextStyle(fontSize: 12, color: Color(0xFFE65100)),
+              'Low extraction quality — the ID image may have been unclear.',
+              style: TextStyle(fontSize: 13, color: Color(0xFFE65100)),
             ),
           ),
         ],
@@ -640,67 +639,49 @@ class _ResultScreenState extends State<ResultScreen> {
     final isSuspicious = _status == VerificationStatus.suspicious;
 
     final Color color;
-    final Color borderColor;
-    final Color bgColor;
     if (isManualReview && _isManualReviewWithRecord) {
-      // ID is in database — use a warning-amber tone to signal "valid but check person"
-      color = const Color(0xFF6A3E00);
-      borderColor = const Color(0xFFFFCC02);
-      bgColor = const Color(0xFFFFF9E6);
+      color = AppDesignSystem.statusManualReview;
     } else if (isManualReview) {
-      color = const Color(0xFF455A64);
-      borderColor = const Color(0xFF90A4AE);
-      bgColor = const Color(0xFFECEFF1);
+      color = AppDesignSystem.textSecondary;
     } else if (isSuspicious) {
-      color = Colors.orange.shade700;
-      borderColor = Colors.orange.shade300;
-      bgColor = const Color(0xFFFFF8E1);
+      color = AppDesignSystem.statusSuspicious;
     } else {
-      color = const Color(0xFFD32F2F);
-      borderColor = Colors.red.shade200;
-      bgColor = const Color(0xFFFFEBEE);
+      color = AppDesignSystem.statusInvalid;
     }
+    final Color borderColor = color.withOpacity(0.35);
+    final Color bgColor = color.withOpacity(0.07);
 
     final List<String> steps;
     if (isManualReview && _isManualReviewWithRecord) {
       steps = [
-        'This ID is registered and VALID in the database.',
-        'Compare the name shown above against the physical card.',
-        'If the person matches the card, tap "Approve Anyway" to grant the discount.',
-        'If anything looks wrong, tap "Deny Discount" or "Report This ID".',
+        'The ID is registered in our records.',
+        'Compare the name and details with the physical card.',
+        'If the cardholder matches, approving the discount is reasonable: tap "Approve Anyway".',
+        'If something doesn\'t match, consider "Deny Discount" or "Report This ID".',
       ];
     } else if (isManualReview) {
       steps = [
-        'Manually check the cardholder\'s name and date of birth against the physical card.',
-        'If the card appears legitimate, you may approve the discount.',
-        'If anything looks wrong or suspicious, tap "Flag & Save" to report it.',
+        'Check the cardholder\'s name and date of birth against the physical card.',
+        'If the card looks legitimate, approving the discount is reasonable: tap "Approve Anyway".',
+        'If something doesn\'t match, consider "Report This ID".',
       ];
     } else if (isSuspicious) {
       steps = [
-        'Do NOT approve the discount.',
-        'Ask the customer for a secondary ID.',
-        'Contact your supervisor or manager.',
-        'Tap "Flag & Save" below to report this ID.',
+        'Holding off on approving the discount is recommended.',
+        'Consider asking the customer for a secondary ID.',
+        'Consider checking with your supervisor or manager.',
+        'If something doesn\'t match, consider "Report This ID".',
       ];
     } else {
       steps = [
-        'Do NOT approve the discount.',
-        'This ID number is not in our database.',
-        'It may be forged, expired, or belong to another system.',
-        'Tap "Flag & Save" below to report this ID.',
+        'Not approving the discount is recommended.',
+        'This ID number was not found in our records.',
+        'Consider asking the customer for another valid ID.',
+        'If you believe the card isn\'t genuine, use "Flag & Save" to report it.',
       ];
     }
 
-    final String panelTitle;
-    if (isManualReview && _isManualReviewWithRecord) {
-      panelTitle = 'Physical Verification Required';
-    } else if (isManualReview) {
-      panelTitle = 'Manual Verification Required';
-    } else if (isSuspicious) {
-      panelTitle = 'Action Required';
-    } else {
-      panelTitle = 'Invalid ID Detected';
-    }
+    const String panelTitle = 'Recommended course of action';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -727,17 +708,40 @@ class _ResultScreenState extends State<ResultScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          ...steps.map((step) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+          ...steps.asMap().entries.map((entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.circle, size: 6, color: color),
-                    const SizedBox(width: 8),
-                    Expanded(
+                    Container(
+                      width: 20,
+                      height: 20,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
                       child: Text(
-                        step,
-                        style: TextStyle(fontSize: 12, color: color),
+                        '${entry.key + 1}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          entry.value,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.35,
+                            color: AppDesignSystem.textPrimary,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -752,12 +756,11 @@ class _ResultScreenState extends State<ResultScreen> {
   /// The cashier must tap one option; the choice is logged to the audit trail.
   Widget _buildMandatoryActionPanel() {
     final isSuspicious = _status == VerificationStatus.suspicious;
-    final accentColor =
-        isSuspicious ? Colors.orange.shade800 : const Color(0xFF1565C0);
-    final borderColor =
-        isSuspicious ? const Color(0xFFFFA726) : const Color(0xFF90CAF9);
-    final bgColor =
-        isSuspicious ? const Color(0xFFFFF3E0) : const Color(0xFFE3F2FD);
+    final accentColor = isSuspicious
+        ? AppDesignSystem.statusSuspicious
+        : AppDesignSystem.statusManualReview;
+    final borderColor = accentColor.withOpacity(0.35);
+    final bgColor = accentColor.withOpacity(0.07);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -775,7 +778,7 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'You must select an action before proceeding',
+                  "Choose how you'd like to proceed",
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
@@ -1093,7 +1096,7 @@ class _ResultScreenState extends State<ResultScreen> {
       case VerificationStatus.suspicious:
         return _StatusConfig(
           label: 'SUSPICIOUS ID',
-          subtitle: _cleanMessage ?? 'Record found but requires review.',
+          subtitle: _cleanMessage ?? 'The scanned details need a closer review.',
           icon: Icons.warning_amber_rounded,
           background: AppDesignSystem.statusSuspicious,
           border: const Color(0xFF8A3D00),
@@ -1121,17 +1124,17 @@ class _ResultScreenState extends State<ResultScreen> {
         // manual verification is still needed.
         if (_isManualReviewWithRecord) {
           return _StatusConfig(
-            label: 'VALID ID',
-            subtitle: 'ID found in database — physical verification required.',
-            icon: Icons.verified_user_rounded,
-            background: AppDesignSystem.statusValid,
-            border: const Color(0xFF0A6000),
+            label: 'RECORD FOUND',
+            subtitle: 'Found in our records. Physical verification is still required.',
+            icon: Icons.person_search_rounded,
+            background: AppDesignSystem.statusManualReview,
+            border: const Color(0xFF0D3B8E),
           );
         }
         // No database record found (e.g. ID number wasn't extracted at all).
         return _StatusConfig(
           label: 'MANUAL REVIEW',
-          subtitle: _cleanMessage ?? 'Unable to verify — check ID manually.',
+          subtitle: _cleanMessage ?? 'Could not confirm this ID from the scan. Check it manually.',
           icon: Icons.manage_search_rounded,
           background: AppDesignSystem.statusManualReview,
           border: const Color(0xFF0D3B8E),
