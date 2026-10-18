@@ -69,5 +69,5 @@ high-value transactions online.
 
 ## Setup notes for developers
 
-- Run migration `apps/api/migrations/051_add_offline_scan_replay_columns.sql` on the database before deploying the API.
+- Run migration `apps/api/migrations/056_add_offline_scan_replay_columns.sql` on the database before deploying the API.
 - The new columns are `client_scan_id`, `scanned_at`, and `offline_queued`. The API's scan insert needs them.

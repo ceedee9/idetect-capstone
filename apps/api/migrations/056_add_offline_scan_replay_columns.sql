@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration 051: columns for replaying offline scans
+-- Migration 056: columns for replaying offline scans
 -- client_scan_id: ID the device generates when it queues a scan.
 --   A replay with an ID already stored is not recorded again,
 --   so retries after a lost response are safe.
