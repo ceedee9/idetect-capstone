@@ -185,6 +185,27 @@ describe("establishment-filed disputes on behalf of a beneficiary", () => {
     expect(notifParams[3]).toBe("d-4");
   });
 
+  test("sends one short SMS (single segment) when the beneficiary has a mobile", async () => {
+    const { sendSms } = require("../src/services/smsService");
+    pool.query
+      .mockResolvedValueOnce({ rows: [{ id: "b-1", account_id: "acc-existing" }] })
+      .mockResolvedValueOnce({
+        rows: [{ id: "d-5", reference_no: "DSP-2026-000005", dispute_type: "wrong_denial", status: "submitted" }],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ device_token: null, registered_mobile: "09171234567" }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const res = makeRes();
+    await runRoute(stack, makeReq(), res);
+
+    expect(sendSms).toHaveBeenCalledTimes(1);
+    const [to, smsBody] = sendSms.mock.calls[0];
+    expect(to).toBe("09171234567");
+    expect(smsBody).toMatch(/DSP-2026-000005/);
+    expect(smsBody.length).toBeLessThanOrEqual(160);
+  });
+
   test("writes an audit row that records the request channel", async () => {
     pool.query
       .mockResolvedValueOnce({ rows: [{ id: "b-1", account_id: "acc-existing" }] })
