@@ -36,6 +36,36 @@ function actorId(req) {
   return req.establishment.establishment_user_id || null;
 }
 
+// The logged-in user's own account changes from the last 7 days, for the
+// in-app banner. Read-only; the audit log is the delivery record.
+router.get("/my-recent-changes", async (req, res, next) => {
+  try {
+    const userId = actorId(req);
+    if (!userId) return res.json({ changes: [] });
+
+    const { rows } = await pool.query(
+      `SELECT id, action, created_at
+         FROM audit_logs
+        WHERE establishment_id = $1
+          AND target_table = 'establishment_users'
+          AND target_id = $2
+          AND action IN (
+            'establishment_user_role_changed',
+            'establishment_user_password_reset',
+            'establishment_user_activated',
+            'establishment_user_deactivated'
+          )
+          AND created_at > NOW() - INTERVAL '7 days'
+        ORDER BY created_at DESC
+        LIMIT 10`,
+      [establishmentId(req), userId],
+    );
+    res.json({ changes: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // List only users belonging to the authenticated establishment.
 router.get("/", async (req, res, next) => {
   try {

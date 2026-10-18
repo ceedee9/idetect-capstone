@@ -26,6 +26,9 @@ async function runStartupMigrations() {
       ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'dispute_escalated';
     `);
     await pool.query(`
+      ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'fraud_report_received';
+    `);
+    await pool.query(`
       ALTER TYPE audit_action ADD VALUE IF NOT EXISTS 'account_locked';
     `);
     await pool.query(`

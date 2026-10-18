@@ -428,6 +428,22 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getMyAccountChanges() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/establishment-users/my-recent-changes'),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) return data;
+      return {'error': data['error'] ?? 'Could not load account changes.'};
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> createEstablishmentUser({
     required String email,
     required String fullName,

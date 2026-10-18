@@ -14,6 +14,8 @@ const { authenticate, requireRole } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { requireStepUp } = require("../middleware/stepUp");
 const { maskBeneficiary } = require("../utils/privacy");
+const { sendSms } = require("../services/smsService");
+const { sendPushNotification } = require("../services/fcmService");
 
 const router = express.Router();
 const DEFAULT_MAX_IMPORT_ROWS = 20000;
@@ -825,6 +827,47 @@ router.post(
   },
 );
 
+// Tells the beneficiary when their ID is suspended or reinstated (push + SMS).
+// Messages carry no ID number.
+async function notifyBeneficiaryStatusChange(beneficiaryId, newStatus) {
+  const suspended = newStatus === "suspended";
+  const title = suspended ? "Your ID Has Been Suspended" : "Your ID Has Been Reinstated";
+  const body = suspended
+    ? "Your iDetect ID has been suspended. Please contact your LGU office for details."
+    : "Your iDetect ID has been reinstated and can be used again.";
+
+  const accounts = await pool.query(
+    `SELECT ba.id, ba.device_token, b.registered_mobile
+       FROM beneficiary_accounts ba
+       JOIN beneficiaries b ON b.id = ba.beneficiary_id
+      WHERE b.id = $1`,
+    [beneficiaryId],
+  );
+
+  for (const acct of accounts.rows) {
+    await pool.query(
+      `INSERT INTO notifications
+         (beneficiary_account_id, notification_type, title, body, channel)
+       VALUES ($1, 'general', $2, $3, 'push')`,
+      [acct.id, title, body],
+    );
+    if (acct.device_token) {
+      sendPushNotification(acct.device_token, title, body, {
+        type: "beneficiary_status_changed",
+      }).catch(() => {});
+    }
+    if (acct.registered_mobile) {
+      await pool.query(
+        `INSERT INTO notifications
+           (beneficiary_account_id, notification_type, title, body, channel)
+         VALUES ($1, 'general', $2, $3, 'sms')`,
+        [acct.id, title, body],
+      );
+      sendSms(acct.registered_mobile, `${title}: ${body}`).catch(() => {});
+    }
+  }
+}
+
 // ── PATCH /api/beneficiaries/:id/status ───────────────────────
 router.patch(
   "/:id/status",
@@ -916,6 +959,15 @@ router.patch(
           }),
         ],
       );
+
+      const suspensionChanged =
+        (status === "suspended" && old_status !== "suspended") ||
+        (old_status === "suspended" && status !== "suspended");
+      if (suspensionChanged) {
+        notifyBeneficiaryStatusChange(req.params.id, status).catch((err) =>
+          console.error("Beneficiary status notice failed:", err.message),
+        );
+      }
 
       res.json({ message: `Status updated to ${status}` });
     } catch (err) {

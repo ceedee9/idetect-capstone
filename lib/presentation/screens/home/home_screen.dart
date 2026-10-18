@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../widgets/account_profile_drawer.dart';
+import '../../widgets/account_change_banner.dart';
 import 'info_detail_screen.dart';
 import '../scan/camera_screen.dart';
 import '../history/history_screen.dart';
@@ -425,6 +426,7 @@ class _HomePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(context),
+            const AccountChangeBanner(),
             _buildBannerSection(),
             _buildContentSection(),
             _buildCampaignImageSection(),
