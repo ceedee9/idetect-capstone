@@ -439,6 +439,9 @@ class AppLocalizationsFil extends AppLocalizations {
   String get disputesEstablishmentLabel => 'Saan ito nangyari?';
 
   @override
+  String get disputesFiledOnBehalfLabel => 'Isinampa para sa iyo ng';
+
+  @override
   String get disputesEstablishmentHint =>
       'Opsyonal — ilagay ang pangalan ng establisyemento o tanggapan, kung naaangkop';
 

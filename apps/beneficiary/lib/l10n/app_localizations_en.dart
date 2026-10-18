@@ -437,6 +437,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disputesEstablishmentLabel => 'Where did this happen?';
 
   @override
+  String get disputesFiledOnBehalfLabel => 'Filed for you by';
+
+  @override
   String get disputesEstablishmentHint =>
       'Optional — name the establishment or office, if applicable';
 

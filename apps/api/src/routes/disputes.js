@@ -2,6 +2,7 @@
 // Dispute endpoints for beneficiary-submitted challenges.
 //
 //   POST  /api/disputes                 — Beneficiary submits a dispute
+//   POST  /api/disputes/on-behalf       — Establishment files a dispute for a beneficiary who cannot use the app
 //   POST  /api/disputes/upload-doc      — Upload supporting document (image)
 //   GET   /api/disputes                 — OSCA/PDAO lists disputes in their queue
 //   GET   /api/disputes/mine            — Beneficiary views their own disputes
@@ -16,6 +17,7 @@ const pool = require("../config/database");
 const {
   authenticate,
   authenticateBeneficiary,
+  authenticateEstablishment,
   requireRole,
 } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
@@ -263,10 +265,12 @@ router.get("/mine", authenticateBeneficiary, async (req, res, next) => {
       `SELECT
          d.*,
          vl.result            AS verification_result,
-         COALESCE(e.business_name, d.reported_establishment_name) AS establishment_name
+         COALESCE(e.business_name, d.reported_establishment_name) AS establishment_name,
+         fe.business_name     AS filed_by_establishment_name
        FROM disputes d
        LEFT JOIN verification_logs vl ON vl.id = d.verification_log_id
        LEFT JOIN establishments e ON e.id = vl.establishment_id
+       LEFT JOIN establishments fe ON fe.id = d.filed_by_establishment_id
        WHERE d.beneficiary_account_id = $1
        ORDER BY d.submitted_at DESC
        LIMIT $2 OFFSET $3`,
@@ -331,13 +335,15 @@ router.get(
          b.beneficiary_type,
          vl.result            AS verification_result,
          COALESCE(e.business_name, d.reported_establishment_name) AS establishment_name,
-         u.email              AS handled_by_email
+         u.email              AS handled_by_email,
+         fe.business_name     AS filed_by_establishment_name
        FROM disputes d
        JOIN beneficiary_accounts ba ON ba.id = d.beneficiary_account_id
        JOIN beneficiaries b ON b.id = ba.beneficiary_id
        LEFT JOIN verification_logs vl ON vl.id = d.verification_log_id
        LEFT JOIN establishments e ON e.id = vl.establishment_id
        LEFT JOIN users u ON u.id = d.handled_by
+       LEFT JOIN establishments fe ON fe.id = d.filed_by_establishment_id
        WHERE ${typeFilter} ${statusClause}
        ORDER BY
          CASE d.status
@@ -631,6 +637,155 @@ router.patch(
       );
 
       res.json({ message: `Dispute ${decision} successfully.` });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Dispute types an establishment may file on a beneficiary's behalf.
+// business_refusal is excluded: it describes the establishment's own refusal.
+const ON_BEHALF_DISPUTE_TYPES = [
+  "wrong_denial",
+  "unauthorized_use",
+  "incorrect_db_info",
+  "other",
+];
+
+router.post(
+  "/on-behalf",
+  authenticateEstablishment,
+  [
+    body("id_number").isString().trim().notEmpty(),
+    body("birthdate").isISO8601(),
+    body("dispute_type").isIn(ON_BEHALF_DISPUTE_TYPES),
+    body("explanation").isString().trim().notEmpty(),
+    body("request_channel").isIn(["in_person", "phone", "written"]),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const {
+        id_number,
+        birthdate,
+        dispute_type,
+        explanation,
+        request_channel,
+      } = req.body;
+
+      // Same check as the beneficiary sign-up: ID number and birthdate must match.
+      const bResult = await pool.query(
+        `SELECT b.id, ba.id AS account_id
+         FROM beneficiaries b
+         LEFT JOIN beneficiary_accounts ba ON ba.beneficiary_id = b.id
+         WHERE b.id_number = $1 AND b.birthdate = $2`,
+        [id_number, birthdate],
+      );
+      const beneficiary = bResult.rows[0];
+      if (!beneficiary) {
+        throw createError(404, "ID number and birthdate do not match our records.");
+      }
+
+      // A beneficiary without the app gets an inactive placeholder account.
+      // It cannot log in until the beneficiary completes sign-up, which reuses this row.
+      let accountId = beneficiary.account_id;
+      if (!accountId) {
+        const placeholder = await pool.query(
+          `INSERT INTO beneficiary_accounts (beneficiary_id, is_active)
+           VALUES ($1, FALSE)
+           ON CONFLICT (beneficiary_id) DO NOTHING
+           RETURNING id`,
+          [beneficiary.id],
+        );
+        accountId =
+          placeholder.rows[0]?.id ??
+          (
+            await pool.query(
+              "SELECT id FROM beneficiary_accounts WHERE beneficiary_id = $1",
+              [beneficiary.id],
+            )
+          ).rows[0].id;
+      }
+
+      const result = await pool.query(
+        `INSERT INTO disputes
+           (beneficiary_account_id, dispute_type, explanation,
+            filed_by_establishment_id, filed_by_user_id, filed_on_behalf, request_channel)
+         VALUES ($1, $2, $3, $4, $5, TRUE, $6)
+         RETURNING id, reference_no, dispute_type, status, submitted_at`,
+        [
+          accountId,
+          dispute_type,
+          explanation,
+          req.establishment.id,
+          req.establishment.establishment_user_id || null,
+          request_channel,
+        ],
+      );
+      const dispute = result.rows[0];
+
+      // Beneficiary notice. A placeholder account has no device or mobile yet,
+      // so the notice waits in the app and shows once they complete sign-up.
+      const notifTitle = "Dispute Filed For You";
+      const notifBody = `A dispute (Ref: ${dispute.reference_no}) was filed for you by an establishment you contacted. If you did not ask for this, please contact the staff office.`;
+      await pool.query(
+        `INSERT INTO notifications
+         (beneficiary_account_id, notification_type, title, body, channel, dispute_id)
+       VALUES ($1, 'general', $2, $3, 'push', $4)`,
+        [accountId, notifTitle, notifBody, dispute.id],
+      );
+
+      const tokenResult = await pool.query(
+        `SELECT ba.device_token, b.registered_mobile
+         FROM beneficiary_accounts ba
+         JOIN beneficiaries b ON b.id = ba.beneficiary_id
+         WHERE ba.id = $1`,
+        [accountId],
+      );
+      const deviceToken = tokenResult.rows[0]?.device_token;
+      const mobile = tokenResult.rows[0]?.registered_mobile;
+      if (deviceToken) {
+        sendPushNotification(deviceToken, notifTitle, notifBody, {
+          type: "general",
+          dispute_id: dispute.id,
+        })
+          .then((fcmResult) => {
+            if (fcmResult.invalidToken) {
+              pool
+                .query(
+                  "UPDATE beneficiary_accounts SET device_token = NULL WHERE id = $1",
+                  [accountId],
+                )
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
+      }
+      if (mobile) {
+        sendSms(mobile, `${notifTitle}: ${notifBody}`).catch(() => {});
+      }
+
+      // Staff alerts are created by the database trigger (migration 049).
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, establishment_id, action, target_table, target_id, metadata)
+         VALUES (NULL, $1, 'dispute_submitted', 'disputes', $2, $3)`,
+        [
+          req.establishment.id,
+          dispute.id,
+          JSON.stringify({
+            filed_on_behalf: true,
+            request_channel,
+            dispute_type,
+            establishment_user_id: req.establishment.establishment_user_id || null,
+          }),
+        ],
+      );
+
+      res.status(201).json({ success: true, dispute });
     } catch (err) {
       next(err);
     }

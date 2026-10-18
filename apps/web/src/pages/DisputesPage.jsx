@@ -80,6 +80,12 @@ const DISPUTE_TYPE_LABELS = {
   incorrect_db_info: "Incorrect DB Info",
 };
 
+const REQUEST_CHANNEL_LABELS = {
+  in_person: "in person",
+  phone: "by phone",
+  written: "in writing",
+};
+
 function TypeBadge({ type }) {
   const map = {
     wrong_denial: "bg-purple-50 text-purple-700 border-purple-100",
@@ -280,6 +286,11 @@ export default function DisputesPage() {
                   <TypeBadge type={d.dispute_type} />
                   <StatusBadge status={d.status} />
                 </div>
+                {d.filed_on_behalf && (
+                  <p className="inline-block text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mb-2">
+                    On behalf · {REQUEST_CHANNEL_LABELS[d.request_channel] || d.request_channel}
+                  </p>
+                )}
                 <p className="text-sm font-medium text-slate-800 truncate">
                   <User className="w-3.5 h-3.5 inline mr-1" />
                   {d.beneficiary_name || "Unknown"}
@@ -328,9 +339,23 @@ export default function DisputesPage() {
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Establishment</p>
                   <p className="font-medium">
-                    {selected.establishment_name || "N/A"}
+                    {selected.establishment_name ||
+                      selected.filed_by_establishment_name ||
+                      "N/A"}
                   </p>
                 </div>
+                {selected.filed_on_behalf && (
+                  <div className="col-span-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                    <p className="text-xs font-medium text-amber-800 mb-1">
+                      Filed on behalf of the beneficiary
+                    </p>
+                    <p className="text-sm text-amber-900">
+                      {selected.filed_by_establishment_name || "An establishment"}{" "}
+                      filed this {REQUEST_CHANNEL_LABELS[selected.request_channel] || ""} request
+                      because the beneficiary could not file it in the app.
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Submitted</p>
                   <p className="font-medium font-mono">

@@ -902,6 +902,12 @@ abstract class AppLocalizations {
   /// **'Where did this happen?'**
   String get disputesEstablishmentLabel;
 
+  /// No description provided for @disputesFiledOnBehalfLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Filed for you by'**
+  String get disputesFiledOnBehalfLabel;
+
   /// No description provided for @disputesEstablishmentHint.
   ///
   /// In en, this message translates to:

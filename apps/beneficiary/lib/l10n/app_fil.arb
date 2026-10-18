@@ -152,6 +152,7 @@
   "disputesTypeSectionLabel": "Uri ng Reklamo",
   "disputesDescriptionHint": "Ilarawan ang iyong reklamo...",
   "disputesEstablishmentLabel": "Saan ito nangyari?",
+  "disputesFiledOnBehalfLabel": "Isinampa para sa iyo ng",
   "disputesEstablishmentHint": "Opsyonal — ilagay ang pangalan ng establisyemento o tanggapan, kung naaangkop",
   "disputesEstablishmentRequiredHint": "Pangalan ng establisyemento o tanggapang kinasangkutan",
   "disputesEstablishmentPlaceholder": "hal. Valenzuela City Hall, ABC Store",

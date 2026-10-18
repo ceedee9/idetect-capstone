@@ -839,6 +839,8 @@ class DisputeRecord {
   final String? verificationResult;
   final String? establishmentName;
   final String? referenceNo;
+  final bool filedOnBehalf;
+  final String? filedByEstablishmentName;
 
   DisputeRecord({
     required this.id,
@@ -852,6 +854,8 @@ class DisputeRecord {
     this.resolvedAt,
     this.verificationResult,
     this.establishmentName,
+    this.filedOnBehalf = false,
+    this.filedByEstablishmentName,
   });
 
   factory DisputeRecord.fromJson(Map<String, dynamic> json) {
@@ -871,6 +875,8 @@ class DisputeRecord {
           : null,
       verificationResult: json['verification_result'],
       establishmentName: json['establishment_name'],
+      filedOnBehalf: json['filed_on_behalf'] == true,
+      filedByEstablishmentName: json['filed_by_establishment_name'],
     );
   }
 

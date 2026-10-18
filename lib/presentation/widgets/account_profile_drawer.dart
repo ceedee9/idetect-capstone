@@ -22,6 +22,7 @@ import '../../services/api_service.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/change_password_screen.dart';
 import '../screens/home/establishment_users_screen.dart';
+import '../screens/home/on_behalf_dispute_screen.dart';
 
 class AccountProfileDrawer extends StatefulWidget {
   const AccountProfileDrawer({super.key, this.user});
@@ -275,6 +276,19 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
                   );
                 },
               ),
+            _ActionRow(
+              icon: Icons.gavel_outlined,
+              label: 'File Dispute for Beneficiary',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const OnBehalfDisputeScreen(),
+                  ),
+                );
+              },
+            ),
 
             const Spacer(),
 

@@ -409,6 +409,11 @@ class _DisputesScreenState extends State<DisputesScreen> {
             // portals' dispute detail view.
             if (d.establishmentName != null && d.establishmentName!.isNotEmpty)
               _detailRow(loc.disputesEstablishmentLabel, d.establishmentName!),
+            if (d.filedOnBehalf && d.filedByEstablishmentName != null)
+              _detailRow(
+                loc.disputesFiledOnBehalfLabel,
+                d.filedByEstablishmentName!,
+              ),
             const SizedBox(height: 12),
 
             Text(loc.disputesDescriptionLabel, style: AppDesignSystem.heading4),

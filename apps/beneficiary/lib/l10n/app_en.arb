@@ -163,6 +163,7 @@
   "disputesTypeSectionLabel": "Dispute Type",
   "disputesDescriptionHint": "Describe your dispute...",
   "disputesEstablishmentLabel": "Where did this happen?",
+  "disputesFiledOnBehalfLabel": "Filed for you by",
   "disputesEstablishmentHint": "Optional — name the establishment or office, if applicable",
   "disputesEstablishmentRequiredHint": "Name of the establishment or office involved",
   "disputesEstablishmentPlaceholder": "e.g. Valenzuela City Hall, ABC Store",

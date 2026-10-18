@@ -1080,6 +1080,46 @@ class ApiService {
     }
   }
 
+  /// Files a dispute for a beneficiary who cannot use the app (A-10).
+  /// [requestChannel] is how the beneficiary asked: in_person, phone, or written.
+  static Future<Map<String, dynamic>> submitOnBehalfDispute({
+    required String idNumber,
+    required String birthdate,
+    required String disputeType,
+    required String explanation,
+    required String requestChannel,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/disputes/on-behalf'),
+            headers: _authHeaders(),
+            body: jsonEncode({
+              'id_number': idNumber,
+              'birthdate': birthdate,
+              'dispute_type': disputeType,
+              'explanation': explanation,
+              'request_channel': requestChannel,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 201) {
+        return data;
+      }
+      final errors = data['errors'] as List?;
+      final msg = errors != null && errors.isNotEmpty
+          ? errors.map((e) => e['msg'] ?? e.toString()).join(', ')
+          : data['error'] ??
+              data['message'] ??
+              'Submission failed (${response.statusCode})';
+      return {'error': msg};
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
   /// Upload a supporting document for a dispute.
   /// Returns `{'path': '/uploads/dispute-docs/...'}` on success,
   /// or `{'error': '...'}` on failure.
