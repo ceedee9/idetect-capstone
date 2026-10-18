@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   Store,
   Landmark,
+  PhoneCall,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import StepUpHost from "./StepUpHost";
@@ -33,6 +34,7 @@ const NAV_BY_ROLE = {
     { to: "/beneficiaries", icon: Users, label: "Senior Citizens" },
     { to: "/fraud-flags", icon: Flag, label: "Fraud Flags" },
     { to: "/disputes", icon: Scale, label: "Disputes" },
+    { to: "/callback-requests", icon: PhoneCall, label: "Callback Requests" },
     { to: "/audit-logs", icon: ScrollText, label: "Audit Logs" },
     { to: "/staff", icon: UserCog, label: "Staff" },
   ],
@@ -41,6 +43,7 @@ const NAV_BY_ROLE = {
     { to: "/beneficiaries", icon: Users, label: "PWD Records" },
     { to: "/fraud-flags", icon: Flag, label: "Fraud Flags" },
     { to: "/disputes", icon: Scale, label: "Disputes" },
+    { to: "/callback-requests", icon: PhoneCall, label: "Callback Requests" },
     { to: "/audit-logs", icon: ScrollText, label: "Audit Logs" },
     { to: "/staff", icon: UserCog, label: "Staff" },
   ],
@@ -48,6 +51,7 @@ const NAV_BY_ROLE = {
     { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
     { to: "/establishments", icon: Store, label: "Establishments" },
     { to: "/business-refusals", icon: Scale, label: "Refusal Reports" },
+    { to: "/callback-requests", icon: PhoneCall, label: "Callback Requests" },
     { to: "/audit-logs", icon: ScrollText, label: "Audit Logs" },
     { to: "/staff", icon: UserCog, label: "Staff" },
   ],

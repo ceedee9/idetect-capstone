@@ -195,6 +195,38 @@
   "notificationsEmptySubtitle": "Pull down to refresh",
   "notificationsLoadMoreError": "Couldn't load more notifications.",
 
-  "notificationFallbackTitle": "Notification"
+  "notificationFallbackTitle": "Notification",
+
+  "callbackRequestButton": "Request callback",
+  "callbackRequestsEntryTitle": "My callback requests",
+  "callbackRequestsEntrySubtitle": "Track requests you sent to BPLO",
+  "callbackSheetTitle": "Request a callback",
+  "callbackSheetIntro": "Send a request to the BPLO office about this establishment. For privacy, the business phone number is not shared. BPLO staff will review your request and reply here.",
+  "callbackEstablishmentLabel": "Establishment",
+  "callbackReasonLabel": "Reason",
+  "callbackReasonTransaction": "Question about this transaction",
+  "callbackReasonCorrection": "Record needs correction",
+  "callbackReasonOther": "Other",
+  "callbackNoteLabel": "Additional details (optional)",
+  "callbackNoteHint": "Describe what you need help with",
+  "callbackSubmit": "Send request",
+  "callbackSuccessMessage": "Request sent. Reference: {reference}",
+  "@callbackSuccessMessage": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "callbackErrorNotAllowed": "You can only request a callback for an establishment you have transacted with.",
+  "callbackErrorDuplicate": "You already have an open request for this establishment.",
+  "callbackErrorGeneric": "Could not send your request. Please try again.",
+  "callbackRequestsTitle": "Callback requests",
+  "callbackRequestsEmpty": "You have no callback requests yet.",
+  "callbackStatusOpen": "Pending",
+  "callbackStatusHandled": "Replied",
+  "callbackNoReplyYet": "No reply yet",
+  "callbackReplyLabel": "BPLO reply",
+  "callbackRequestedOn": "Requested"
 
 }

@@ -113,6 +113,7 @@ router.get("/transactions", async (req, res, next) => {
       `SELECT
          vl.id, vl.reference_no, vl.result, vl.ocr_confidence_score,
          vl.manually_entered, vl.verified_at,
+         vl.establishment_id,
          e.business_name AS establishment_name,
          e.address AS establishment_address
        FROM verification_logs vl
@@ -258,6 +259,132 @@ router.post(
     }
   },
 );
+
+// ── POST /api/beneficiary-portal/callback-requests ─────────────
+// A-18: Beneficiary asks BPLO to contact an establishment they transacted with.
+// The establishment's phone number is never returned to the beneficiary app.
+router.post(
+  "/callback-requests",
+  [
+    body("establishment_id").isUUID().withMessage("Invalid establishment"),
+    body("reason")
+      .isIn(["transaction_question", "record_correction", "other"])
+      .withMessage("Invalid reason"),
+    body("note").optional().isString().trim().isLength({ max: 500 }),
+    body("verification_log_id").optional().isUUID(),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const beneficiaryId =
+        req.beneficiary.beneficiary_id || req.beneficiary.beneficiaryId;
+      const accountId = req.beneficiary.id || req.beneficiary.accountId;
+      const { establishment_id, verification_log_id, reason } = req.body;
+      const note = req.body.note || null;
+
+      const establishmentResult = await pool.query(
+        "SELECT id FROM establishments WHERE id = $1 AND status = 'approved'",
+        [establishment_id],
+      );
+      if (establishmentResult.rows.length === 0) {
+        return res.status(404).json({ error: "Establishment not found" });
+      }
+
+      // Only establishments the beneficiary has transacted with can be contacted.
+      const transactionResult = await pool.query(
+        `SELECT id FROM verification_logs
+         WHERE beneficiary_id = $1
+           AND establishment_id = $2
+           AND ($3::uuid IS NULL OR id = $3::uuid)
+         LIMIT 1`,
+        [beneficiaryId, establishment_id, verification_log_id || null],
+      );
+      if (transactionResult.rows.length === 0) {
+        return res.status(403).json({
+          error: "You can only contact an establishment you have transacted with",
+        });
+      }
+
+      let result;
+      try {
+        result = await pool.query(
+          `INSERT INTO establishment_callback_requests
+           (beneficiary_account_id, establishment_id, verification_log_id, reason, note)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, created_at`,
+          [
+            accountId,
+            establishment_id,
+            verification_log_id || null,
+            reason,
+            note,
+          ],
+        );
+      } catch (err) {
+        if (err.code === "23505") {
+          return res.status(409).json({
+            error: "You already have an open request for this establishment",
+          });
+        }
+        throw err;
+      }
+
+      const request = result.rows[0];
+
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, establishment_id, action, target_table, target_id, metadata)
+       VALUES (NULL, $1, 'callback_requested', 'establishment_callback_requests', $2, $3)`,
+        [
+          establishment_id,
+          request.id,
+          JSON.stringify({
+            reason,
+            beneficiary_account_id: accountId,
+            verification_log_id: verification_log_id || null,
+          }),
+        ],
+      );
+
+      res.status(201).json({
+        message:
+          "Request sent. BPLO will contact the establishment and update you here.",
+        request_id: request.id,
+        reference: request.id.slice(0, 8).toUpperCase(),
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── GET /api/beneficiary-portal/callback-requests ──────────────
+// A-18: Beneficiary sees the status of their own requests and any BPLO note.
+router.get("/callback-requests", async (req, res, next) => {
+  try {
+    const accountId = req.beneficiary.id || req.beneficiary.accountId;
+
+    const result = await pool.query(
+      `SELECT
+         r.id, r.reason, r.status, r.staff_note, r.created_at, r.handled_at,
+         UPPER(LEFT(r.id::text, 8)) AS reference,
+         e.business_name AS establishment_name
+       FROM establishment_callback_requests r
+       JOIN establishments e ON e.id = r.establishment_id
+       WHERE r.beneficiary_account_id = $1
+       ORDER BY r.created_at DESC
+       LIMIT 50`,
+      [accountId],
+    );
+
+    res.json({ data: result.rows });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── PATCH /api/beneficiary-portal/device-token ─────────────────
 // Called by Flutter app on launch to register/refresh the FCM token.

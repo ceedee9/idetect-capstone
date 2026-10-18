@@ -292,6 +292,12 @@ export const fraudFlagsAPI = {
   delete: (id) => api.delete(`/fraud-flags/${id}`),
 };
 
+// ─── Callback requests (A-18) ─────────────────────────────────────────────────
+export const callbackRequestsAPI = {
+  list: (params = {}) => api.get("/callback-requests", { params }),
+  update: (id, body) => api.patch(`/callback-requests/${id}`, body),
+};
+
 // ─── Disputes ─────────────────────────────────────────────────────────────────
 export const disputesAPI = {
   list: (params = {}) => api.get("/disputes", { params }),

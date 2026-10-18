@@ -199,6 +199,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.flag_outlined;
       case 'id_expiring_soon':
         return Icons.timer_outlined;
+      case 'callback_request_handled':
+        return Icons.phone_callback_outlined;
       default:
         return Icons.notifications_outlined;
     }
@@ -222,6 +224,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return AppDesignSystem.accentRed;
       case 'id_expiring_soon':
         return Colors.amber.shade700;
+      case 'callback_request_handled':
+        return AppDesignSystem.interactiveBlue;
       default:
         return AppDesignSystem.textSecondary;
     }

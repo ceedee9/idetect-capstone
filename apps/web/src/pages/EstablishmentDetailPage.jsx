@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Store,
+  User,
   MapPin,
   Phone,
   Mail,
@@ -81,6 +82,7 @@ export default function EstablishmentDetailPage() {
     contact_number: "",
     email: "",
     owner_name: "",
+    contact_person: "",
     address: "",
   });
   const [actionLoading, setActionLoading] = useState(false);
@@ -94,6 +96,7 @@ export default function EstablishmentDetailPage() {
         contact_number: est?.contact_number || "",
         email: est?.email || "",
         owner_name: est?.owner_name || "",
+        contact_person: est?.contact_person || "",
         address: est?.address || "",
       });
     }
@@ -138,6 +141,8 @@ export default function EstablishmentDetailPage() {
           payload.email = contactFields.email;
         if (contactFields.owner_name !== est.owner_name)
           payload.owner_name = contactFields.owner_name;
+        if (contactFields.contact_person !== (est.contact_person || ""))
+          payload.contact_person = contactFields.contact_person;
         if (contactFields.address !== est.address)
           payload.address = contactFields.address;
         if (!Object.keys(payload).length) {
@@ -355,6 +360,16 @@ export default function EstablishmentDetailPage() {
                 value={est.business_type?.replace(/_/g, " ")}
               />
               <InfoRow icon={MapPin} label="Address" value={est.address} />
+              <InfoRow
+                icon={User}
+                label="Registered Owner"
+                value={est.owner_name}
+              />
+              <InfoRow
+                icon={User}
+                label="Contact Person (on-site)"
+                value={est.contact_person}
+              />
               <InfoRow
                 icon={Phone}
                 label="Contact Phone"
@@ -670,13 +685,30 @@ export default function EstablishmentDetailPage() {
             />
           </div>
           <div>
-            <label className="label text-xs">Owner Name</label>
+            <label className="label text-xs">Registered Owner (as on permit)</label>
             <input
               type="text"
               className="input text-sm"
               value={contactFields.owner_name}
               onChange={(e) =>
                 setContactFields((f) => ({ ...f, owner_name: e.target.value }))
+              }
+              disabled={actionLoading}
+            />
+          </div>
+          <div>
+            <label className="label text-xs">Contact Person (on-site)</label>
+            <input
+              type="text"
+              className="input text-sm"
+              placeholder="Optional. Leave empty to clear"
+              maxLength={255}
+              value={contactFields.contact_person}
+              onChange={(e) =>
+                setContactFields((f) => ({
+                  ...f,
+                  contact_person: e.target.value,
+                }))
               }
               disabled={actionLoading}
             />

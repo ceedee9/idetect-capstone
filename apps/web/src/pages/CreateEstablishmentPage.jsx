@@ -23,6 +23,7 @@ const INITIAL = {
   business_permit_no: "",
   business_permit_expiry: "",
   owner_name: "",
+  contact_person: "",
   address: "",
   contact_number: "",
   email: "",
@@ -93,6 +94,7 @@ export default function CreateEstablishmentPage() {
         business_name: form.business_name.trim(),
         business_permit_no: form.business_permit_no.trim(),
         owner_name: form.owner_name.trim(),
+        contact_person: form.contact_person.trim() || undefined,
         address: form.address.trim(),
         contact_number: form.contact_number.trim(),
         email: form.email.trim(),
@@ -262,14 +264,26 @@ export default function CreateEstablishmentPage() {
               </FormField>
             </div>
 
-            <FormField icon={User} label="Owner Name" required>
+            <FormField icon={User} label="Registered Owner (as on permit)" required>
               <input
                 type="text"
                 className="input"
-                placeholder="Full name of the business owner"
+                placeholder="Owner name as shown on the business permit"
                 value={form.owner_name}
                 onChange={set("owner_name")}
                 disabled={loading}
+              />
+            </FormField>
+
+            <FormField icon={User} label="Contact Person (on-site)">
+              <input
+                type="text"
+                className="input"
+                placeholder="Optional. Person to contact at the branch, e.g. the manager"
+                value={form.contact_person}
+                onChange={set("contact_person")}
+                disabled={loading}
+                maxLength={255}
               />
             </FormField>
 

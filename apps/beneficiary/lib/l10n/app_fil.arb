@@ -181,5 +181,30 @@
   "notificationsEmptySubtitle": "I-pull pababa para mag-refresh",
   "notificationsLoadMoreError": "Hindi ma-load ang karagdagang abiso.",
 
-  "notificationFallbackTitle": "Abiso"
+  "notificationFallbackTitle": "Abiso",
+
+  "callbackRequestButton": "Humiling ng tawag",
+  "callbackRequestsEntryTitle": "Mga hiling ko na tawag",
+  "callbackRequestsEntrySubtitle": "Subaybayan ang mga hiling mo sa BPLO",
+  "callbackSheetTitle": "Humiling ng tawag",
+  "callbackSheetIntro": "Magpadala ng hiling sa tanggapan ng BPLO tungkol sa establisimyentong ito. Para sa privacy, hindi ibinabahagi ang numero ng telepono ng negosyo. Susuriin ng staff ng BPLO ang hiling mo at sasagot dito.",
+  "callbackEstablishmentLabel": "Establisimyento",
+  "callbackReasonLabel": "Dahilan",
+  "callbackReasonTransaction": "Tanong tungkol sa transaksyong ito",
+  "callbackReasonCorrection": "Kailangang itama ang talaan",
+  "callbackReasonOther": "Iba pa",
+  "callbackNoteLabel": "Karagdagang detalye (opsyonal)",
+  "callbackNoteHint": "Ilarawan kung ano ang kailangan mo ng tulong",
+  "callbackSubmit": "Ipadala ang hiling",
+  "callbackSuccessMessage": "Naipadala ang hiling. Reference: {reference}",
+  "callbackErrorNotAllowed": "Para lang sa establisimyentong pinagtransaksyunan mo maaaring humiling ng tawag.",
+  "callbackErrorDuplicate": "May bukas ka nang hiling para sa establisimyentong ito.",
+  "callbackErrorGeneric": "Hindi naipadala ang hiling mo. Subukan muli.",
+  "callbackRequestsTitle": "Mga hiling na tawag",
+  "callbackRequestsEmpty": "Wala ka pang hiling na tawag.",
+  "callbackStatusOpen": "Nakabinbin",
+  "callbackStatusHandled": "Sinagot na",
+  "callbackNoReplyYet": "Wala pang sagot",
+  "callbackReplyLabel": "Sagot ng BPLO",
+  "callbackRequestedOn": "Hiniling"
 }

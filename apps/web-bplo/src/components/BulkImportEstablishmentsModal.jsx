@@ -18,9 +18,9 @@ import { establishmentsAPI } from "../services/api";
 // ── Template CSV download ──────────────────────────────────────
 function downloadTemplate() {
   const csv = [
-    "business_name,business_permit_no,owner_name,address,contact_number,email,business_permit_expiry",
-    "Juan's Restaurant,VP-2026-00001,Juan Dela Cruz,123 Maysan Road Valenzuela City,09171234567,juan@restaurant.com,2027-01-01",
-    "Maria's Catering,VP-2026-00002,Maria Santos,456 Gen. T. de Leon Valenzuela City,09281234567,,",
+    "business_name,business_permit_no,owner_name,address,contact_number,email,business_permit_expiry,contact_person",
+    "Juan's Restaurant,VP-2026-00001,Juan Dela Cruz,123 Maysan Road Valenzuela City,09171234567,juan@restaurant.com,2027-01-01,",
+    "Maria's Catering,VP-2026-00002,Maria Santos,456 Gen. T. de Leon Valenzuela City,09281234567,,,Maria Santos",
   ].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -281,6 +281,9 @@ export default function BulkImportEstablishmentsModal({ onClose, onSuccess }) {
                   <code className="bg-gray-200 px-1 rounded">email</code>{" "}
                   <code className="bg-gray-200 px-1 rounded">
                     business_permit_expiry
+                  </code>{" "}
+                  <code className="bg-gray-200 px-1 rounded">
+                    contact_person
                   </code>
                 </p>
               </div>

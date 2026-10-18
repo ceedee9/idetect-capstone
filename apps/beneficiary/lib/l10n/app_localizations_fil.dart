@@ -536,4 +536,83 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get notificationFallbackTitle => 'Abiso';
+
+  @override
+  String get callbackRequestButton => 'Humiling ng tawag';
+
+  @override
+  String get callbackRequestsEntryTitle => 'Mga hiling ko na tawag';
+
+  @override
+  String get callbackRequestsEntrySubtitle =>
+      'Subaybayan ang mga hiling mo sa BPLO';
+
+  @override
+  String get callbackSheetTitle => 'Humiling ng tawag';
+
+  @override
+  String get callbackSheetIntro =>
+      'Magpadala ng hiling sa tanggapan ng BPLO tungkol sa establisimyentong ito. Para sa privacy, hindi ibinabahagi ang numero ng telepono ng negosyo. Susuriin ng staff ng BPLO ang hiling mo at sasagot dito.';
+
+  @override
+  String get callbackEstablishmentLabel => 'Establisimyento';
+
+  @override
+  String get callbackReasonLabel => 'Dahilan';
+
+  @override
+  String get callbackReasonTransaction => 'Tanong tungkol sa transaksyong ito';
+
+  @override
+  String get callbackReasonCorrection => 'Kailangang itama ang talaan';
+
+  @override
+  String get callbackReasonOther => 'Iba pa';
+
+  @override
+  String get callbackNoteLabel => 'Karagdagang detalye (opsyonal)';
+
+  @override
+  String get callbackNoteHint => 'Ilarawan kung ano ang kailangan mo ng tulong';
+
+  @override
+  String get callbackSubmit => 'Ipadala ang hiling';
+
+  @override
+  String callbackSuccessMessage(String reference) {
+    return 'Naipadala ang hiling. Reference: $reference';
+  }
+
+  @override
+  String get callbackErrorNotAllowed =>
+      'Para lang sa establisimyentong pinagtransaksyunan mo maaaring humiling ng tawag.';
+
+  @override
+  String get callbackErrorDuplicate =>
+      'May bukas ka nang hiling para sa establisimyentong ito.';
+
+  @override
+  String get callbackErrorGeneric =>
+      'Hindi naipadala ang hiling mo. Subukan muli.';
+
+  @override
+  String get callbackRequestsTitle => 'Mga hiling na tawag';
+
+  @override
+  String get callbackRequestsEmpty => 'Wala ka pang hiling na tawag.';
+
+  @override
+  String get callbackStatusOpen => 'Nakabinbin';
+
+  @override
+  String get callbackStatusHandled => 'Sinagot na';
+
+  @override
+  String get callbackNoReplyYet => 'Wala pang sagot';
+
+  @override
+  String get callbackReplyLabel => 'Sagot ng BPLO';
+
+  @override
+  String get callbackRequestedOn => 'Hiniling';
 }

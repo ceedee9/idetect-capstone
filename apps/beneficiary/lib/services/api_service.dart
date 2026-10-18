@@ -491,6 +491,70 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> submitCallbackRequest({
+    required String establishmentId,
+    required String reason,
+    String? note,
+    String? verificationLogId,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/beneficiary-portal/callback-requests'),
+            headers: _authHeaders(),
+            body: jsonEncode({
+              'establishment_id': establishmentId,
+              'reason': reason,
+              if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+              if (verificationLogId != null)
+                'verification_log_id': verificationLogId,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 201) {
+        return {'success': true, 'reference': data['reference']};
+      }
+      // Status code lets the UI show a localized message for known cases.
+      final errors = data['errors'] as List?;
+      final msg = errors != null && errors.isNotEmpty
+          ? errors.map((e) => e['msg'] ?? e.toString()).join(', ')
+          : data['error'] ?? 'Request failed (${response.statusCode})';
+      return {'error': msg, 'status': response.statusCode};
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
+  static Future<CallbackRequestListResult> getMyCallbackRequests() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/beneficiary-portal/callback-requests'),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final list = (data['data'] as List? ?? [])
+            .map((j) => CallbackRequestRecord.fromJson(j as Map<String, dynamic>))
+            .toList();
+        return CallbackRequestListResult(success: true, requests: list);
+      }
+      return CallbackRequestListResult(
+        success: false,
+        errorMessage: data['error'] ?? 'Failed to load callback requests.',
+      );
+    } catch (e) {
+      return CallbackRequestListResult(
+        success: false,
+        errorMessage: 'Cannot reach server: $e',
+      );
+    }
+  }
+
   static Future<Map<String, dynamic>> submitDispute({
     String? verificationLogId,
     required String disputeType,
@@ -718,6 +782,7 @@ class TransactionRecord {
   final double? ocrConfidence;
   final bool manuallyEntered;
   final DateTime verifiedAt;
+  final String? establishmentId;
   final String? establishmentName;
   final String? establishmentAddress;
 
@@ -728,6 +793,7 @@ class TransactionRecord {
     this.ocrConfidence,
     required this.manuallyEntered,
     required this.verifiedAt,
+    this.establishmentId,
     this.establishmentName,
     this.establishmentAddress,
   });
@@ -742,6 +808,7 @@ class TransactionRecord {
           : null,
       manuallyEntered: json['manually_entered'] ?? false,
       verifiedAt: DateTime.parse(json['verified_at']),
+      establishmentId: json['establishment_id'],
       establishmentName: json['establishment_name'],
       establishmentAddress: json['establishment_address'],
     );
@@ -894,6 +961,57 @@ class DisputeListResult {
     required this.success,
     this.disputes = const [],
     this.total = 0,
+    this.errorMessage,
+  });
+}
+
+class CallbackRequestRecord {
+  final String id;
+  final String reason;
+  final String status;
+  final String? staffNote;
+  final DateTime createdAt;
+  final DateTime? handledAt;
+  final String reference;
+  final String? establishmentName;
+
+  CallbackRequestRecord({
+    required this.id,
+    required this.reason,
+    required this.status,
+    this.staffNote,
+    required this.createdAt,
+    this.handledAt,
+    required this.reference,
+    this.establishmentName,
+  });
+
+  factory CallbackRequestRecord.fromJson(Map<String, dynamic> json) {
+    return CallbackRequestRecord(
+      id: json['id'],
+      reason: json['reason'] ?? '',
+      status: json['status'] ?? 'open',
+      staffNote: json['staff_note'],
+      createdAt: DateTime.parse(json['created_at']),
+      handledAt: json['handled_at'] != null
+          ? DateTime.parse(json['handled_at'])
+          : null,
+      reference: json['reference'] ?? '',
+      establishmentName: json['establishment_name'],
+    );
+  }
+
+  bool get isHandled => status == 'handled';
+}
+
+class CallbackRequestListResult {
+  final bool success;
+  final List<CallbackRequestRecord> requests;
+  final String? errorMessage;
+
+  CallbackRequestListResult({
+    required this.success,
+    this.requests = const [],
     this.errorMessage,
   });
 }

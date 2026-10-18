@@ -530,4 +530,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationFallbackTitle => 'Notification';
+
+  @override
+  String get callbackRequestButton => 'Request callback';
+
+  @override
+  String get callbackRequestsEntryTitle => 'My callback requests';
+
+  @override
+  String get callbackRequestsEntrySubtitle => 'Track requests you sent to BPLO';
+
+  @override
+  String get callbackSheetTitle => 'Request a callback';
+
+  @override
+  String get callbackSheetIntro =>
+      'Send a request to the BPLO office about this establishment. For privacy, the business phone number is not shared. BPLO staff will review your request and reply here.';
+
+  @override
+  String get callbackEstablishmentLabel => 'Establishment';
+
+  @override
+  String get callbackReasonLabel => 'Reason';
+
+  @override
+  String get callbackReasonTransaction => 'Question about this transaction';
+
+  @override
+  String get callbackReasonCorrection => 'Record needs correction';
+
+  @override
+  String get callbackReasonOther => 'Other';
+
+  @override
+  String get callbackNoteLabel => 'Additional details (optional)';
+
+  @override
+  String get callbackNoteHint => 'Describe what you need help with';
+
+  @override
+  String get callbackSubmit => 'Send request';
+
+  @override
+  String callbackSuccessMessage(String reference) {
+    return 'Request sent. Reference: $reference';
+  }
+
+  @override
+  String get callbackErrorNotAllowed =>
+      'You can only request a callback for an establishment you have transacted with.';
+
+  @override
+  String get callbackErrorDuplicate =>
+      'You already have an open request for this establishment.';
+
+  @override
+  String get callbackErrorGeneric =>
+      'Could not send your request. Please try again.';
+
+  @override
+  String get callbackRequestsTitle => 'Callback requests';
+
+  @override
+  String get callbackRequestsEmpty => 'You have no callback requests yet.';
+
+  @override
+  String get callbackStatusOpen => 'Pending';
+
+  @override
+  String get callbackStatusHandled => 'Replied';
+
+  @override
+  String get callbackNoReplyYet => 'No reply yet';
+
+  @override
+  String get callbackReplyLabel => 'BPLO reply';
+
+  @override
+  String get callbackRequestedOn => 'Requested';
 }

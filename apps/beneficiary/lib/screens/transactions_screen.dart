@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../core/constants/app_design_system.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import 'callback_request_sheet.dart';
+import 'callback_requests_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -203,9 +205,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         controller: _scrollCtrl,
         padding: const EdgeInsets.all(AppDesignSystem.screenPaddingHorizontal),
         itemCount:
-            entries.length + (_hasMore ? 1 : 0) + (_loadError != null ? 1 : 0),
+            entries.length +
+            (_hasMore ? 1 : 0) +
+            (_loadError != null ? 1 : 0) +
+            1,
         itemBuilder: (_, i) {
-          if (_loadError != null && i == 0) {
+          if (i == 0) return _callbackRequestsEntry(loc);
+          final listIndex = i - 1;
+          if (_loadError != null && listIndex == 0) {
             return Padding(
               padding: const EdgeInsets.only(bottom: AppDesignSystem.spaceSM),
               child: Row(
@@ -227,7 +234,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ),
             );
           }
-          final entryIndex = i - (_loadError != null ? 1 : 0);
+          final entryIndex = listIndex - (_loadError != null ? 1 : 0);
           if (entryIndex == entries.length) {
             return const Padding(
               padding: EdgeInsets.all(24),
@@ -345,6 +352,65 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
+  void _openCallbackSheet(TransactionRecord tx) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDesignSystem.radiusLG),
+        ),
+      ),
+      builder: (_) => CallbackRequestSheet(transaction: tx),
+    );
+  }
+
+  Widget _callbackRequestsEntry(AppLocalizations loc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppDesignSystem.spaceSM),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppDesignSystem.radiusMD),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const CallbackRequestsScreen()),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.phone_callback_outlined,
+                  color: AppDesignSystem.primaryBlue,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        loc.callbackRequestsEntryTitle,
+                        style: AppDesignSystem.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        loc.callbackRequestsEntrySubtitle,
+                        style: AppDesignSystem.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppDesignSystem.textHint),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showDetail(TransactionRecord tx, AppLocalizations loc) {
     final formatted = DateFormat(
       'MMMM d, yyyy  •  h:mm a',
@@ -358,7 +424,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           top: Radius.circular(AppDesignSystem.radiusLG),
         ),
       ),
-      builder: (_) => Padding(
+      builder: (sheetContext) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -400,6 +466,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 loc.transactionsEntryManual,
               ),
             const SizedBox(height: 16),
+            if (tx.establishmentId != null)
+              SizedBox(
+                width: double.infinity,
+                height: AppDesignSystem.touchTargetMin,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _openCallbackSheet(tx);
+                  },
+                  icon: const Icon(Icons.phone_callback_outlined),
+                  label: Text(loc.callbackRequestButton),
+                ),
+              ),
           ],
         ),
       ),

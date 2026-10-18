@@ -458,16 +458,14 @@ export default function FraudFlagsPage() {
                           Manual Entry
                         </span>
                       )}
-                      <span className="text-xs text-slate-400 font-medium">
-                        {fmtRelative(flag.created_at)}
-                      </span>
                     </div>
 
-                    {/* ID Number */}
-                    <p className="font-mono text-sm font-bold text-slate-900">
-                      {flag.id_number_flagged ??
-                        flag.beneficiary?.id_number ??
-                        "Unknown ID"}
+                    {/* Reference number and age */}
+                    <p className="flex items-baseline gap-2 font-mono text-sm font-bold text-slate-900">
+                      {flag.reference_no}
+                      <span className="font-sans text-xs font-medium text-slate-400">
+                        {fmtRelative(flag.created_at)}
+                      </span>
                     </p>
 
                     {/* Establishment */}
@@ -674,6 +672,16 @@ export default function FraudFlagsPage() {
                       <OutcomeBadge
                         outcome={selectedFlag.verification_outcome}
                       />
+                    </div>
+                    <div className="mt-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        ID number
+                      </p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-slate-900">
+                        {selectedFlag.id_number_flagged ??
+                          selectedFlag.beneficiary?.id_number ??
+                          "Unknown ID"}
+                      </p>
                     </div>
                   </div>
                   <div className="min-w-0 flex-1 max-w-[16rem]">

@@ -195,8 +195,14 @@ router.post("/bulk-import", async (req, res, next) => {
         .trim()
         .toUpperCase();
       const owner_name = String(row.owner_name || "").trim();
+      const contact_person = String(row.contact_person || "").trim();
       const address = String(row.address || "").trim();
       const contact_number = String(row.contact_number || "").trim();
+      if (contact_person.length > 255)
+        return invalidRows.push({
+          row: rowNum,
+          error: "contact_person must be 255 characters or fewer",
+        });
       const email = String(row.email || "")
         .trim()
         .toLowerCase();
@@ -237,6 +243,7 @@ router.post("/bulk-import", async (req, res, next) => {
         business_name,
         business_permit_no,
         owner_name,
+        contact_person: contact_person || null,
         address,
         contact_number,
         email: resolvedEmail,
@@ -301,8 +308,8 @@ router.post("/bulk-import", async (req, res, next) => {
           `INSERT INTO establishments
              (email, password_hash, business_name, business_permit_no,
               owner_name, address, contact_number, business_permit_expiry,
-              status, approved_by, approved_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'approved',$9,NOW())
+              status, approved_by, approved_at, contact_person)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'approved',$9,NOW(),$10)
            RETURNING id`,
           [
             finalEmail,
@@ -314,6 +321,7 @@ router.post("/bulk-import", async (req, res, next) => {
             row.contact_number,
             row.business_permit_expiry || null,
             req.user.id,
+            row.contact_person,
           ],
         );
 
@@ -473,6 +481,7 @@ router.post(
     body("owner_name").notEmpty().trim(),
     body("address").notEmpty().trim(),
     body("contact_number").notEmpty().trim(),
+    body("contact_person").optional().trim().isLength({ max: 255 }),
     body("business_permit_expiry").optional().isDate(),
   ],
   async (req, res, next) => {
@@ -489,6 +498,7 @@ router.post(
         owner_name,
         address,
         contact_number,
+        contact_person,
         business_permit_expiry,
       } = req.body;
 
@@ -535,8 +545,8 @@ router.post(
            (email, password_hash, business_name, business_permit_no,
             owner_name, address, contact_number, business_permit_expiry,
             status, approved_by, approved_at,
-            password_setup_token, password_setup_token_expires)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8, 'approved', $9, NOW(), $10, $11)
+            password_setup_token, password_setup_token_expires, contact_person)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8, 'approved', $9, NOW(), $10, $11, $12)
          RETURNING id, email, business_name, business_permit_no, status, created_at`,
           [
             email,
@@ -550,6 +560,7 @@ router.post(
             req.user.id,
             setupTokenHash,
             setupTokenExpires,
+            contact_person || null,
           ],
         );
 
@@ -651,7 +662,7 @@ router.get(
 router.get("/:id", async (req, res, next) => {
   try {
     const result = await pool.query(
-      `SELECT id, reference_no, email, business_name, business_permit_no, owner_name,
+      `SELECT id, reference_no, email, business_name, business_permit_no, owner_name, contact_person,
              address, contact_number, business_type, status,
              approved_by, approved_at, suspended_reason, created_at, updated_at
       FROM establishments WHERE id = $1`,
@@ -676,7 +687,7 @@ router.get("/", async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT id, reference_no, business_name, business_permit_no, owner_name,
+      SELECT id, reference_no, business_name, business_permit_no, owner_name, contact_person,
              address, contact_number, status, approved_at, created_at
       FROM establishments WHERE 1=1
     `;
@@ -895,6 +906,7 @@ router.patch(
     body("contact_number").optional().trim().notEmpty(),
     body("email").optional().isEmail().normalizeEmail(),
     body("owner_name").optional().trim().notEmpty(),
+    body("contact_person").optional().trim().isLength({ max: 255 }),
     body("address").optional().trim().notEmpty(),
   ],
   authenticate,
@@ -906,9 +918,16 @@ router.patch(
         return res.status(400).json({ errors: errors.array() });
 
       const { id } = req.params;
-      const { contact_number, email, owner_name, address } = req.body;
+      const { contact_number, email, owner_name, address, contact_person } =
+        req.body;
 
-      if (!contact_number && !email && !owner_name && !address) {
+      if (
+        !contact_number &&
+        !email &&
+        !owner_name &&
+        !address &&
+        contact_person === undefined
+      ) {
         return res.status(400).json({ message: "No fields to update." });
       }
 
@@ -945,12 +964,16 @@ router.patch(
         setClauses.push(`address = $${idx++}`);
         values.push(address);
       }
+      if (contact_person !== undefined) {
+        setClauses.push(`contact_person = $${idx++}`);
+        values.push(contact_person || null);
+      }
       values.push(id);
 
       const result = await pool.query(
         `UPDATE establishments SET ${setClauses.join(", ")}, updated_at = NOW()
          WHERE id = $${idx}
-         RETURNING id, business_name, email, contact_number, owner_name, address`,
+         RETURNING id, business_name, email, contact_number, owner_name, contact_person, address`,
         values,
       );
 

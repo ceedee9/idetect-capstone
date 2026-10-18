@@ -148,6 +148,11 @@ export const verificationAPI = {
 
 // ─── Disputes (BPLO sees business refusal disputes only) ──────────────────────
 
+export const callbackRequestsAPI = {
+  list: (params = {}) => api.get("/callback-requests", { params }),
+  update: (id, data) => api.patch(`/callback-requests/${id}`, data),
+};
+
 export const disputesAPI = {
   list: (params = {}) => api.get("/disputes", { params }),
   acknowledge: (id) => api.patch(`/disputes/${id}/acknowledge`),

@@ -28,6 +28,7 @@ const BusinessRefusalsPage = lazy(() => import("./pages/BusinessRefusalsPage"));
 // Shared pages (all roles)
 const FraudFlagsPage = lazy(() => import("./pages/FraudFlagsPage"));
 const DisputesPage = lazy(() => import("./pages/DisputesPage"));
+const CallbackRequestsPage = lazy(() => import("./pages/CallbackRequestsPage"));
 const AuditLogsPage = lazy(() => import("./pages/AuditLogsPage"));
 const StaffPage = lazy(() => import("./pages/StaffPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
@@ -230,6 +231,23 @@ export default function App() {
 
                 {/* ── Shared routes — all roles ── */}
                 <Route path="disputes" element={<DisputesPage />} />
+                <Route
+                  path="callback-requests"
+                  element={
+                    <RoleRoute
+                      roles={[
+                        "osca_admin",
+                        "osca_super_admin",
+                        "pdao_admin",
+                        "pdao_super_admin",
+                        "bplo_admin",
+                        "bplo_super_admin",
+                      ]}
+                    >
+                      <CallbackRequestsPage />
+                    </RoleRoute>
+                  }
+                />
                 <Route path="audit-logs" element={<AuditLogsPage />} />
                 <Route path="staff" element={<StaffPage />} />
               </Route>

@@ -38,6 +38,13 @@ const HEADER_ALIASES = {
     "telephone",
     "contact_phone",
   ],
+  contact_person: [
+    "contact_person",
+    "contact person",
+    "on-site contact",
+    "onsite contact",
+    "on site contact",
+  ],
   email: [
     "email",
     "email_address",
@@ -145,6 +152,7 @@ export async function parseEstablishmentImportFile(file) {
     const contact_number = String(cell(row, keyMap, "contact_number"))
       .replace(/[^\d+]/g, "")
       .trim();
+    const contact_person = String(cell(row, keyMap, "contact_person") || "").trim();
     const email = String(cell(row, keyMap, "email"))
       .trim()
       .toLowerCase();
@@ -173,6 +181,13 @@ export async function parseEstablishmentImportFile(file) {
       errors.push({ row: rowNum, error: "contact_number is required" });
       return;
     }
+    if (contact_person.length > 255) {
+      errors.push({
+        row: rowNum,
+        error: "contact_person must be 255 characters or fewer",
+      });
+      return;
+    }
     if (email && !/\S+@\S+\.\S+/.test(email)) {
       errors.push({ row: rowNum, error: "email format is invalid" });
       return;
@@ -184,6 +199,7 @@ export async function parseEstablishmentImportFile(file) {
       owner_name,
       address,
       contact_number,
+      contact_person: contact_person || undefined,
       email: email || undefined, // omit so backend knows to auto-generate
       business_permit_expiry: business_permit_expiry || undefined,
     });

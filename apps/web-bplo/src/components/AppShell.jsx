@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Store,
+  PhoneCall,
   Scale,
   ScrollText,
   UserCog,
@@ -22,6 +23,7 @@ const NAV = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/establishments", icon: Store, label: "Establishments" },
   { to: "/business-refusals", icon: Scale, label: "Refusal Reports" },
+  { to: "/callback-requests", icon: PhoneCall, label: "Callback Requests" },
   { to: "/audit-logs", icon: ScrollText, label: "Audit Logs" },
   { to: "/staff", icon: UserCog, label: "Staff" },
 ];

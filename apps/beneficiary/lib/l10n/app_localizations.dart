@@ -1069,6 +1069,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notification'**
   String get notificationFallbackTitle;
+
+  /// No description provided for @callbackRequestButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Request callback'**
+  String get callbackRequestButton;
+
+  /// No description provided for @callbackRequestsEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My callback requests'**
+  String get callbackRequestsEntryTitle;
+
+  /// No description provided for @callbackRequestsEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track requests you sent to BPLO'**
+  String get callbackRequestsEntrySubtitle;
+
+  /// No description provided for @callbackSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request a callback'**
+  String get callbackSheetTitle;
+
+  /// No description provided for @callbackSheetIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a request to the BPLO office about this establishment. For privacy, the business phone number is not shared. BPLO staff will review your request and reply here.'**
+  String get callbackSheetIntro;
+
+  /// No description provided for @callbackEstablishmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Establishment'**
+  String get callbackEstablishmentLabel;
+
+  /// No description provided for @callbackReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get callbackReasonLabel;
+
+  /// No description provided for @callbackReasonTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Question about this transaction'**
+  String get callbackReasonTransaction;
+
+  /// No description provided for @callbackReasonCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Record needs correction'**
+  String get callbackReasonCorrection;
+
+  /// No description provided for @callbackReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get callbackReasonOther;
+
+  /// No description provided for @callbackNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional details (optional)'**
+  String get callbackNoteLabel;
+
+  /// No description provided for @callbackNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what you need help with'**
+  String get callbackNoteHint;
+
+  /// No description provided for @callbackSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get callbackSubmit;
+
+  /// No description provided for @callbackSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent. Reference: {reference}'**
+  String callbackSuccessMessage(String reference);
+
+  /// No description provided for @callbackErrorNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only request a callback for an establishment you have transacted with.'**
+  String get callbackErrorNotAllowed;
+
+  /// No description provided for @callbackErrorDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have an open request for this establishment.'**
+  String get callbackErrorDuplicate;
+
+  /// No description provided for @callbackErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your request. Please try again.'**
+  String get callbackErrorGeneric;
+
+  /// No description provided for @callbackRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Callback requests'**
+  String get callbackRequestsTitle;
+
+  /// No description provided for @callbackRequestsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no callback requests yet.'**
+  String get callbackRequestsEmpty;
+
+  /// No description provided for @callbackStatusOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get callbackStatusOpen;
+
+  /// No description provided for @callbackStatusHandled.
+  ///
+  /// In en, this message translates to:
+  /// **'Replied'**
+  String get callbackStatusHandled;
+
+  /// No description provided for @callbackNoReplyYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reply yet'**
+  String get callbackNoReplyYet;
+
+  /// No description provided for @callbackReplyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'BPLO reply'**
+  String get callbackReplyLabel;
+
+  /// No description provided for @callbackRequestedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get callbackRequestedOn;
 }
 
 class _AppLocalizationsDelegate

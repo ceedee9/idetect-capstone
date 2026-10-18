@@ -10,6 +10,7 @@ import BeneficiaryDetailPage from "./pages/BeneficiaryDetailPage";
 import AddBeneficiaryPage from "./pages/AddBeneficiaryPage";
 import FraudFlagsPage from "./pages/FraudFlagsPage";
 import DisputesPage from "./pages/DisputesPage";
+import CallbackRequestsPage from "./pages/CallbackRequestsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import StaffPage from "./pages/StaffPage";
 
@@ -106,6 +107,7 @@ export default function App() {
               />
               <Route path="fraud-flags" element={<FraudFlagsPage />} />
               <Route path="disputes" element={<DisputesPage />} />
+              <Route path="callback-requests" element={<CallbackRequestsPage />} />
               <Route path="audit-logs" element={<AuditLogsPage />} />
               <Route path="staff" element={<StaffPage />} />
             </Route>

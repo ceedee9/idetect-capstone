@@ -11,6 +11,7 @@ import AppShell from "./components/AppShell";
 import BusinessRefusalsPage from "./pages/BusinessRefusalsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import StaffPage from "./pages/StaffPage";
+import CallbackRequestsPage from "./pages/CallbackRequestsPage";
 
 // Catches any render crash and shows a readable error instead of blank page
 class ErrorBoundary extends Component {
@@ -111,6 +112,7 @@ export default function App() {
                 element={<BusinessRefusalsPage />}
               />
               <Route path="audit-logs" element={<AuditLogsPage />} />
+              <Route path="callback-requests" element={<CallbackRequestsPage />} />
               <Route path="staff" element={<StaffPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
