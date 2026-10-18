@@ -159,6 +159,16 @@
   "disputesFiledLabel": "Filed",
   "disputesDescriptionLabel": "Description",
   "disputesResolutionLabel": "Resolution",
+  "disputesAcknowledgeResponse": "I have read this response",
+  "disputesResponseAcknowledgedOn": "Acknowledged on {date}",
+  "@disputesResponseAcknowledgedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "disputesAcknowledgeFailed": "Could not record your acknowledgement. Please try again.",
   "disputesFileTitle": "File a Dispute",
   "disputesTypeSectionLabel": "Dispute Type",
   "disputesDescriptionHint": "Describe your dispute...",

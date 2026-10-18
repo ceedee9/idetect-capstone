@@ -169,6 +169,29 @@ export default function DisputesPage() {
     setTimeout(() => setToast(null), 3500);
   }
 
+  async function handleClaim(claim) {
+    try {
+      if (claim) {
+        await disputesAPI.claim(selected.id);
+        showToast("Dispute claimed.");
+      } else {
+        await disputesAPI.release(selected.id);
+        showToast("Dispute released.");
+      }
+      setSelected((prev) => ({
+        ...prev,
+        claimed_by_email: claim ? user?.email : null,
+      }));
+      refetch();
+    } catch (err) {
+      showToast(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Action failed.",
+      );
+    }
+  }
+
   async function handleAction() {
     if (!modal) return;
     setActionLoading(true);
@@ -430,6 +453,40 @@ export default function DisputesPage() {
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* Claim */}
+              <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-lg">
+                <div>
+                  <p className="text-xs text-slate-400">Claimed by</p>
+                  <p className="text-sm font-medium">
+                    {selected.claimed_by_email || "Nobody yet"}
+                  </p>
+                </div>
+                {["submitted", "acknowledged", "under_review"].includes(
+                  selected.status,
+                ) &&
+                  (!selected.claimed_by_email ? (
+                    <button
+                      onClick={() => handleClaim(true)}
+                      className="px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-100 rounded-lg hover:bg-purple-200"
+                    >
+                      Claim
+                    </button>
+                  ) : selected.claimed_by_email === user?.email ? (
+                    <button
+                      onClick={() => handleClaim(false)}
+                      className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                    >
+                      Release
+                    </button>
+                  ) : null)}
+              </div>
+              {selected.beneficiary_acknowledged_at && (
+                <p className="text-xs text-green-700">
+                  Beneficiary acknowledged the response on{" "}
+                  {fmtDateTime(selected.beneficiary_acknowledged_at)}
+                </p>
               )}
 
               {/* Actions */}

@@ -425,6 +425,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disputesResolutionLabel => 'Resolution';
 
   @override
+  String get disputesAcknowledgeResponse => 'I have read this response';
+
+  @override
+  String disputesResponseAcknowledgedOn(String date) {
+    return 'Acknowledged on $date';
+  }
+
+  @override
+  String get disputesAcknowledgeFailed =>
+      'Could not record your acknowledgement. Please try again.';
+
+  @override
   String get disputesFileTitle => 'File a Dispute';
 
   @override

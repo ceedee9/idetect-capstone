@@ -878,6 +878,24 @@ abstract class AppLocalizations {
   /// **'Resolution'**
   String get disputesResolutionLabel;
 
+  /// No description provided for @disputesAcknowledgeResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read this response'**
+  String get disputesAcknowledgeResponse;
+
+  /// No description provided for @disputesResponseAcknowledgedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Acknowledged on {date}'**
+  String disputesResponseAcknowledgedOn(String date);
+
+  /// No description provided for @disputesAcknowledgeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not record your acknowledgement. Please try again.'**
+  String get disputesAcknowledgeFailed;
+
   /// No description provided for @disputesFileTitle.
   ///
   /// In en, this message translates to:

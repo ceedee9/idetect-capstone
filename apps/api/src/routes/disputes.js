@@ -336,6 +336,7 @@ router.get(
          vl.result            AS verification_result,
          COALESCE(e.business_name, d.reported_establishment_name) AS establishment_name,
          u.email              AS handled_by_email,
+         cu.email             AS claimed_by_email,
          fe.business_name     AS filed_by_establishment_name
        FROM disputes d
        JOIN beneficiary_accounts ba ON ba.id = d.beneficiary_account_id
@@ -343,6 +344,7 @@ router.get(
        LEFT JOIN verification_logs vl ON vl.id = d.verification_log_id
        LEFT JOIN establishments e ON e.id = vl.establishment_id
        LEFT JOIN users u ON u.id = d.handled_by
+       LEFT JOIN users cu ON cu.id = d.claimed_by
        LEFT JOIN establishments fe ON fe.id = d.filed_by_establishment_id
        WHERE ${typeFilter} ${statusClause}
        ORDER BY
@@ -374,6 +376,157 @@ router.get(
           total: parseInt(countResult.rows[0].count),
           pages: Math.ceil(countResult.rows[0].count / limit),
         },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Appends a row to dispute_status_logs (A-09 history).
+async function logDisputeEvent(disputeId, action, fromStatus, toStatus, actor) {
+  await pool.query(
+    `INSERT INTO dispute_status_logs
+       (dispute_id, action, from_status, to_status, actor_user_id, actor_beneficiary_account_id)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
+      disputeId,
+      action,
+      fromStatus,
+      toStatus,
+      actor.userId || null,
+      actor.beneficiaryAccountId || null,
+    ],
+  );
+}
+
+// Loads a dispute and applies the same portal scope rules as acknowledge/resolve.
+async function loadStaffScopedDispute(req, id) {
+  const result = await pool.query(
+    `SELECT d.*, b.beneficiary_type
+       FROM disputes d
+       JOIN beneficiary_accounts ba ON ba.id = d.beneficiary_account_id
+       JOIN beneficiaries b ON b.id = ba.beneficiary_id
+      WHERE d.id = $1`,
+    [id],
+  );
+  if (!result.rows.length) throw createError(404, "Dispute not found");
+
+  const dispute = result.rows[0];
+  if (
+    (req.user.portalRole === "osca_admin" &&
+      dispute.beneficiary_type !== "senior_citizen") ||
+    (req.user.portalRole === "pdao_admin" && dispute.beneficiary_type !== "pwd") ||
+    (req.user.portalRole === "bplo_admin" &&
+      dispute.dispute_type !== "business_refusal")
+  ) {
+    throw createError(403, "This dispute is outside your portal scope");
+  }
+  return dispute;
+}
+
+// ── PATCH /api/disputes/:id/claim ──────────────────────────────
+// Optional claim on a shared queue. Blocks only a second staff member's claim.
+router.patch(
+  "/:id/claim",
+  authenticate,
+  requireRole(["osca_admin", "pdao_admin", "bplo_admin"]),
+  async (req, res, next) => {
+    try {
+      const dispute = await loadStaffScopedDispute(req, req.params.id);
+      if (dispute.claimed_by === req.user.id) {
+        return res.json({ message: "Dispute already claimed by you." });
+      }
+
+      // Conditional update so two simultaneous claims cannot both succeed.
+      const claim = await pool.query(
+        `UPDATE disputes SET claimed_by = $1, claimed_at = NOW()
+          WHERE id = $2 AND claimed_by IS NULL`,
+        [req.user.id, dispute.id],
+      );
+      if (claim.rowCount === 0) {
+        throw createError(409, "Dispute is already claimed by another staff member");
+      }
+
+      await logDisputeEvent(dispute.id, "claimed", dispute.status, dispute.status, {
+        userId: req.user.id,
+      });
+      res.json({ message: "Dispute claimed." });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── PATCH /api/disputes/:id/release ────────────────────────────
+router.patch(
+  "/:id/release",
+  authenticate,
+  requireRole(["osca_admin", "pdao_admin", "bplo_admin"]),
+  async (req, res, next) => {
+    try {
+      const dispute = await loadStaffScopedDispute(req, req.params.id);
+      if (dispute.claimed_by !== req.user.id) {
+        throw createError(403, "Only the staff member who claimed this dispute can release it");
+      }
+
+      await pool.query(
+        `UPDATE disputes SET claimed_by = NULL, claimed_at = NULL WHERE id = $1`,
+        [dispute.id],
+      );
+      await logDisputeEvent(dispute.id, "released", dispute.status, dispute.status, {
+        userId: req.user.id,
+      });
+      res.json({ message: "Dispute released." });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── POST /api/disputes/:id/acknowledge-response ────────────────
+// Beneficiary confirms they read the staff response. Only the first time is recorded.
+router.post(
+  "/:id/acknowledge-response",
+  authenticateBeneficiary,
+  async (req, res, next) => {
+    try {
+      const accountId = req.beneficiary.id || req.beneficiary.accountId;
+      const result = await pool.query(
+        `SELECT id, status, beneficiary_acknowledged_at
+           FROM disputes
+          WHERE id = $1 AND beneficiary_account_id = $2`,
+        [req.params.id, accountId],
+      );
+      if (!result.rows.length) throw createError(404, "Dispute not found");
+
+      const dispute = result.rows[0];
+      if (!["resolved", "rejected"].includes(dispute.status)) {
+        throw createError(400, "There is no staff response to acknowledge yet");
+      }
+      if (dispute.beneficiary_acknowledged_at) {
+        return res.json({
+          acknowledged_at: dispute.beneficiary_acknowledged_at,
+          message: "Response already acknowledged.",
+        });
+      }
+
+      const updated = await pool.query(
+        `UPDATE disputes SET beneficiary_acknowledged_at = NOW()
+          WHERE id = $1 AND beneficiary_acknowledged_at IS NULL
+          RETURNING beneficiary_acknowledged_at`,
+        [dispute.id],
+      );
+      if (!updated.rows.length) {
+        return res.json({ message: "Response already acknowledged." });
+      }
+
+      await logDisputeEvent(dispute.id, "beneficiary_acknowledged", dispute.status, dispute.status, {
+        beneficiaryAccountId: accountId,
+      });
+      res.json({
+        acknowledged_at: updated.rows[0].beneficiary_acknowledged_at,
+        message: "Response acknowledged.",
       });
     } catch (err) {
       next(err);
@@ -435,10 +588,13 @@ router.patch(
         `UPDATE disputes SET status = 'acknowledged', acknowledged_at = NOW(), handled_by = $1 WHERE id = $2`,
         [req.user.id, id],
       );
+      await logDisputeEvent(id, "acknowledged", dispute.status, "acknowledged", {
+        userId: req.user.id,
+      });
 
       // Notify the beneficiary
       const notifTitle = "Dispute Acknowledged";
-      const notifBody = `Your dispute (Ref: ${id.slice(0, 8).toUpperCase()}) has been acknowledged and is now under review.`;
+      const notifBody = `Your dispute (Ref: ${dispute.reference_no}) has been acknowledged and is now under review.`;
 
       await pool.query(
         `INSERT INTO notifications
@@ -560,6 +716,9 @@ router.patch(
        WHERE id = $4`,
         [decision, staff_response, req.user.id, id],
       );
+      await logDisputeEvent(id, decision, dispute.status, decision, {
+        userId: req.user.id,
+      });
 
       // If the dispute is resolved in favor of the beneficiary and it was a wrong denial,
       // consider restoring their status
@@ -583,7 +742,7 @@ router.patch(
       // Notify the beneficiary of the resolution
       const resolveTitle =
         decision === "resolved" ? "Dispute Resolved" : "Dispute Decision";
-      const resolveBody = `Your dispute (Ref: ${id.slice(0, 8).toUpperCase()}) has been ${decision}. ${staff_response}`;
+      const resolveBody = `Your dispute (Ref: ${dispute.reference_no}) has been ${decision}. ${staff_response}`;
 
       await pool.query(
         `INSERT INTO notifications

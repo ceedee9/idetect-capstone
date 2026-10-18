@@ -156,6 +156,8 @@ export const callbackRequestsAPI = {
 export const disputesAPI = {
   list: (params = {}) => api.get("/disputes", { params }),
   acknowledge: (id) => api.patch(`/disputes/${id}/acknowledge`),
+  claim: (id) => api.patch(`/disputes/${id}/claim`),
+  release: (id) => api.patch(`/disputes/${id}/release`),
   resolve: (id, decision, staff_response) =>
     api.patch(`/disputes/${id}/resolve`, { decision, staff_response }),
 };

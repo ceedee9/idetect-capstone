@@ -427,6 +427,18 @@ class AppLocalizationsFil extends AppLocalizations {
   String get disputesResolutionLabel => 'Resolusyon';
 
   @override
+  String get disputesAcknowledgeResponse => 'Nabasa ko na ang sagot na ito';
+
+  @override
+  String disputesResponseAcknowledgedOn(String date) {
+    return 'Kinumpirma noong $date';
+  }
+
+  @override
+  String get disputesAcknowledgeFailed =>
+      'Hindi naitala ang iyong kumpirmasyon. Subukan muli.';
+
+  @override
   String get disputesFileTitle => 'Maghain ng Reklamo';
 
   @override

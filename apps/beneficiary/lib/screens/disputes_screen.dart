@@ -25,6 +25,60 @@ class _DisputeType {
   });
 }
 
+/// Lets the beneficiary confirm they read the staff response.
+class _AcknowledgeResponseButton extends StatefulWidget {
+  const _AcknowledgeResponseButton({
+    required this.disputeId,
+    required this.loc,
+    required this.onDone,
+  });
+
+  final String disputeId;
+  final AppLocalizations loc;
+  final VoidCallback onDone;
+
+  @override
+  State<_AcknowledgeResponseButton> createState() =>
+      _AcknowledgeResponseButtonState();
+}
+
+class _AcknowledgeResponseButtonState
+    extends State<_AcknowledgeResponseButton> {
+  bool _busy = false;
+
+  Future<void> _acknowledge() async {
+    setState(() => _busy = true);
+    final error = await ApiService.acknowledgeDisputeResponse(widget.disputeId);
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.of(context).pop();
+      widget.onDone();
+      return;
+    }
+    setState(() => _busy = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(widget.loc.disputesAcknowledgeFailed)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _busy ? null : _acknowledge,
+        child: _busy
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(widget.loc.disputesAcknowledgeResponse),
+      ),
+    );
+  }
+}
+
 class _DisputesScreenState extends State<DisputesScreen> {
   List<DisputeRecord>? _disputes;
   bool _isLoading = true;
@@ -442,6 +496,25 @@ class _DisputesScreenState extends State<DisputesScreen> {
                 ),
                 child: Text(d.resolution!, style: AppDesignSystem.bodyMedium),
               ),
+              const SizedBox(height: 12),
+              if (d.beneficiaryAcknowledgedAt != null)
+                Text(
+                  loc.disputesResponseAcknowledgedOn(
+                    DateFormat(
+                      'MMM d, yyyy  •  h:mm a',
+                      loc.localeName,
+                    ).format(d.beneficiaryAcknowledgedAt!.toLocal()),
+                  ),
+                  style: AppDesignSystem.caption.copyWith(
+                    color: AppDesignSystem.statusValid,
+                  ),
+                )
+              else
+                _AcknowledgeResponseButton(
+                  disputeId: d.id,
+                  loc: loc,
+                  onDone: _load,
+                ),
             ],
           ],
         ),

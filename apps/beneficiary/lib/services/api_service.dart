@@ -456,6 +456,24 @@ class ApiService {
 
   // ── Disputes ───────────────────────────────────────────────────────────────
 
+  /// Confirms the beneficiary read the staff response. Returns null on success,
+  /// otherwise a message to show the user.
+  static Future<String?> acknowledgeDisputeResponse(String disputeId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/disputes/$disputeId/acknowledge-response'),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) return null;
+      final data = jsonDecode(response.body);
+      return data['error'] ?? 'Could not record your acknowledgement.';
+    } catch (e) {
+      return 'Cannot reach server: $e';
+    }
+  }
+
   static Future<DisputeListResult> getMyDisputes({
     int page = 1,
     int limit = 20,
@@ -908,6 +926,7 @@ class DisputeRecord {
   final String? referenceNo;
   final bool filedOnBehalf;
   final String? filedByEstablishmentName;
+  final DateTime? beneficiaryAcknowledgedAt;
 
   DisputeRecord({
     required this.id,
@@ -923,6 +942,7 @@ class DisputeRecord {
     this.establishmentName,
     this.filedOnBehalf = false,
     this.filedByEstablishmentName,
+    this.beneficiaryAcknowledgedAt,
   });
 
   factory DisputeRecord.fromJson(Map<String, dynamic> json) {
@@ -932,7 +952,8 @@ class DisputeRecord {
       disputeType: json['dispute_type'] ?? '',
       explanation: json['explanation'] ?? '',
       status: json['status'] ?? 'submitted',
-      resolution: json['resolution'],
+      // API returns staff_response; the older 'resolution' key is kept as a fallback.
+      resolution: json['staff_response'] ?? json['resolution'],
       submittedAt: DateTime.parse(json['submitted_at'] ?? json['created_at']),
       acknowledgedAt: json['acknowledged_at'] != null
           ? DateTime.parse(json['acknowledged_at'])
@@ -944,6 +965,9 @@ class DisputeRecord {
       establishmentName: json['establishment_name'],
       filedOnBehalf: json['filed_on_behalf'] == true,
       filedByEstablishmentName: json['filed_by_establishment_name'],
+      beneficiaryAcknowledgedAt: json['beneficiary_acknowledged_at'] != null
+          ? DateTime.parse(json['beneficiary_acknowledged_at'])
+          : null,
     );
   }
 
