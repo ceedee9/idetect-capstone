@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import '../l10n/app_localizations.dart';
 import '../screens/app_lock_screen.dart';
 import '../screens/login_screen.dart';
 
@@ -44,6 +45,9 @@ class _SessionActivityWrapperState extends State<SessionActivityWrapper>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _resetTimer();
+    // Cold start: a phone whose session was taken over while closed must not
+    // open straight into the app with a stale token.
+    unawaited(_checkSessionEnded());
   }
 
   @override
@@ -61,9 +65,19 @@ class _SessionActivityWrapperState extends State<SessionActivityWrapper>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
     if (!ApiService.isLoggedIn) return;
+    unawaited(_checkSessionEnded());
     final idleFor = DateTime.now().difference(_lastActivity);
     if (idleFor >= _lockTimeout) _onLockIdle();
     if (idleFor >= _idleTimeout) _onIdle();
+  }
+
+  // Signs this phone out when another phone has activated or signed in to the
+  // same account since this session started.
+  Future<void> _checkSessionEnded() async {
+    if (!ApiService.isLoggedIn) return;
+    final ended = await ApiService.isSessionEnded();
+    if (!ended || !mounted || !ApiService.isLoggedIn) return;
+    _endSession(notice: AppLocalizations.of(context)!.sessionEndedNotice);
   }
 
   void _resetTimer() {
@@ -123,7 +137,9 @@ class _SessionActivityWrapperState extends State<SessionActivityWrapper>
     _resetTimer();
   }
 
-  void _logout() {
+  void _logout() => _endSession();
+
+  void _endSession({String? notice}) {
     _countdownTimer?.cancel();
     _lockTimer?.cancel();
     _lockShown = false;
@@ -136,6 +152,11 @@ class _SessionActivityWrapperState extends State<SessionActivityWrapper>
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
+      if (notice != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(notice), duration: const Duration(seconds: 6)),
+        );
+      }
     }
   }
 

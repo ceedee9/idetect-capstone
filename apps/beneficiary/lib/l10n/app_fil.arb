@@ -32,6 +32,7 @@
   "lockSignInAgain": "Mag-sign in ulit na lang",
   "lockNoUnlockMethod": "Walang naka-set na PIN, fingerprint, o mukha sa phone na ito. Mag-sign in ulit para magpatuloy.",
   "lockSessionMissing": "Mag-sign in ulit para magpatuloy.",
+  "sessionEndedNotice": "Na-sign out ka dahil binuksan ang account na ito sa ibang telepono.",
   "loginBiometricReasonEnable": "I-on ang mabilis na pag-sign in sa susunod",
   "loginWelcomeBack": "Maligayang pagbabalik,",
   "loginSignInFingerprint": "Mag-sign In gamit ang Fingerprint",

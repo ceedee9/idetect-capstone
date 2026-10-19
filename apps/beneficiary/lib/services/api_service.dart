@@ -309,6 +309,25 @@ class ApiService {
     }
   }
 
+  /// True only when the server has explicitly ended this session because the
+  /// account was signed in on another phone. Network errors return false so a
+  /// flaky connection never logs the user out.
+  static Future<bool> isSessionEnded() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/beneficiary-portal/me'),
+            headers: _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 401) return false;
+      final body = jsonDecode(response.body);
+      return body is Map && body['code'] == 'SESSION_ENDED';
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ── Transaction History ────────────────────────────────────────────────────
 
   static Future<TransactionListResult> getTransactions({

@@ -12,6 +12,7 @@ const crypto = require("crypto");
 const { body, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { createError } = require("../middleware/errorHandler");
+const { authenticateBeneficiary } = require("../middleware/auth");
 const { sendOtp, sendSms } = require("../services/smsService");
 
 const LOGIN_MAX_ATTEMPTS = 3;
@@ -734,12 +735,15 @@ router.post(
 
       // Clear OTP after successful use, and mark the account active —
       // this is the first-ever successful login, and login-pin's query
-      // requires is_active = TRUE to find the row at all.
-      await pool.query(
+      // requires is_active = TRUE to find the row at all. Bumping
+      // session_version signs out any other phone holding this account.
+      const session = await pool.query(
         `UPDATE beneficiary_accounts
    SET otp_hash = NULL, otp_expires_at = NULL, otp_attempts = 0,
-       last_login = NOW(), is_active = TRUE
-   WHERE id = $1`,
+       last_login = NOW(), is_active = TRUE,
+       session_version = session_version + 1, device_token = NULL
+   WHERE id = $1
+   RETURNING session_version`,
         [record.account_id],
       );
 
@@ -748,6 +752,7 @@ router.post(
           id: record.account_id,
           beneficiary_id: record.beneficiary_id,
           type: "beneficiary",
+          sv: session.rows[0].session_version,
         },
         process.env.JWT_SECRET_BENEFICIARY,
         { expiresIn: process.env.JWT_EXPIRES_IN },
@@ -863,6 +868,7 @@ router.post(
 // Authenticated beneficiary sets a 4-digit PIN for future logins.
 router.post(
   "/beneficiary/set-pin",
+  authenticateBeneficiary,
   [body("pin").isLength({ min: 4, max: 4 }).isNumeric()],
   async (req, res, next) => {
     try {
@@ -871,24 +877,12 @@ router.post(
         return res.status(400).json({ error: "PIN must be exactly 4 digits." });
       }
 
-      // Require auth token
-      const authHeader = req.headers.authorization;
-      if (!authHeader) throw createError(401, "Token required");
-      const token = authHeader.split(" ")[1];
-
-      let decoded;
-      try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET_BENEFICIARY);
-      } catch {
-        throw createError(401, "Invalid or expired token");
-      }
-
       const { pin } = req.body;
       const pinHash = await bcrypt.hash(pin, 10);
 
       await pool.query(
         "UPDATE beneficiary_accounts SET pin_hash = $1, pin_attempts = 0, pin_locked_until = NULL WHERE id = $2",
-        [pinHash, decoded.id],
+        [pinHash, req.beneficiary.id],
       );
 
       res.json({ message: "PIN set successfully.", pin_set: true });
@@ -1058,9 +1052,14 @@ router.post(
         );
       }
 
-      // Success — clear attempts, update last_login
-      await pool.query(
-        "UPDATE beneficiary_accounts SET pin_attempts = 0, pin_locked_until = NULL, last_login = NOW() WHERE id = $1",
+      // Success — clear attempts, update last_login, and sign out any
+      // other phone holding this account (see session_version).
+      const session = await pool.query(
+        `UPDATE beneficiary_accounts
+   SET pin_attempts = 0, pin_locked_until = NULL, last_login = NOW(),
+       session_version = session_version + 1, device_token = NULL
+   WHERE id = $1
+   RETURNING session_version`,
         [record.account_id],
       );
 
@@ -1069,6 +1068,7 @@ router.post(
           id: record.account_id,
           beneficiary_id: record.beneficiary_id,
           type: "beneficiary",
+          sv: session.rows[0].session_version,
         },
         process.env.JWT_SECRET_BENEFICIARY,
         { expiresIn: process.env.JWT_EXPIRES_IN },

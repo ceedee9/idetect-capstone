@@ -278,6 +278,12 @@ abstract class AppLocalizations {
   /// **'Please sign in again to continue.'**
   String get lockSessionMissing;
 
+  /// No description provided for @sessionEndedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'You were signed out because this account was opened on another phone.'**
+  String get sessionEndedNotice;
+
   /// No description provided for @loginWelcomeBack.
   ///
   /// In en, this message translates to:

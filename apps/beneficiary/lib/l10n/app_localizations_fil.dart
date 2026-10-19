@@ -109,6 +109,10 @@ class AppLocalizationsFil extends AppLocalizations {
   String get lockSessionMissing => 'Mag-sign in ulit para magpatuloy.';
 
   @override
+  String get sessionEndedNotice =>
+      'Na-sign out ka dahil binuksan ang account na ito sa ibang telepono.';
+
+  @override
   String get loginWelcomeBack => 'Maligayang pagbabalik,';
 
   @override

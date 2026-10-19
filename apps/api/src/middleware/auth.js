@@ -105,8 +105,11 @@ const authenticateEstablishment = async (req, res, next) => {
   }
 };
 
-// Verifies beneficiary token (Beneficiary mobile app)
-const authenticateBeneficiary = (req, res, next) => {
+// Verifies beneficiary token (Beneficiary mobile app).
+// The account row is checked on every request so that a newer login on
+// another phone (session_version bump) or a deactivated account ends this
+// session immediately.
+const authenticateBeneficiary = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -114,16 +117,35 @@ const authenticateBeneficiary = (req, res, next) => {
     return res.status(401).json({ error: "Access token required" });
   }
 
+  let decoded;
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_BENEFICIARY);
-    // Normalize: always expose account id as both .id and .accountId
-    decoded.id = decoded.id || decoded.accountId;
-    decoded.accountId = decoded.id;
-    req.beneficiary = decoded;
-    next();
+    decoded = jwt.verify(token, process.env.JWT_SECRET_BENEFICIARY);
   } catch (err) {
     return res.status(403).json({ error: "Invalid or expired token" });
   }
+
+  try {
+    const accountId = decoded.id || decoded.accountId;
+    const result = await pool.query(
+      "SELECT is_active, session_version FROM beneficiary_accounts WHERE id = $1",
+      [accountId],
+    );
+    const account = result.rows[0];
+    if (!account || !account.is_active || decoded.sv !== account.session_version) {
+      return res.status(401).json({
+        error: "Session ended. Sign in again.",
+        code: "SESSION_ENDED",
+      });
+    }
+  } catch (err) {
+    return next(err);
+  }
+
+  // Normalize: always expose account id as both .id and .accountId
+  decoded.id = decoded.id || decoded.accountId;
+  decoded.accountId = decoded.id;
+  req.beneficiary = decoded;
+  next();
 };
 
 // Role check — use AFTER authenticate

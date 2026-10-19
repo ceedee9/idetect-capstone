@@ -108,6 +108,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockSessionMissing => 'Please sign in again to continue.';
 
   @override
+  String get sessionEndedNotice =>
+      'You were signed out because this account was opened on another phone.';
+
+  @override
   String get loginWelcomeBack => 'Welcome back,';
 
   @override

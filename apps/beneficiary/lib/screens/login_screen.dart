@@ -1425,32 +1425,35 @@ class _LoginScreenState extends State<LoginScreen> {
         // PIN display (4 dots/circles)
         Semantics(
           label: 'PIN, ${_pinDigits.length} of 4 digits entered',
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(4, (i) {
-              final filled = i < _pinDigits.length;
-              return Container(
-                width: 52,
-                height: 52,
-                margin: EdgeInsets.only(left: i > 0 ? 12 : 0),
-                decoration: BoxDecoration(
-                  color: filled
-                      ? AppDesignSystem.primaryBlue
-                      : AppDesignSystem.backgroundInput,
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (i) {
+                final filled = i < _pinDigits.length;
+                return Container(
+                  width: 52,
+                  height: 52,
+                  margin: EdgeInsets.only(left: i > 0 ? 12 : 0),
+                  decoration: BoxDecoration(
                     color: filled
                         ? AppDesignSystem.primaryBlue
-                        : AppDesignSystem.borderLight,
-                    width: 2,
+                        : AppDesignSystem.backgroundInput,
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(
+                      color: filled
+                          ? AppDesignSystem.primaryBlue
+                          : AppDesignSystem.borderLight,
+                      width: 2,
+                    ),
                   ),
-                ),
-                alignment: Alignment.center,
-                child: filled
-                    ? const Icon(Icons.circle, size: 18, color: Colors.white)
-                    : null,
-              );
-            }),
+                  alignment: Alignment.center,
+                  child: filled
+                      ? const Icon(Icons.circle, size: 18, color: Colors.white)
+                      : null,
+                );
+              }),
+            ),
           ),
         ),
 

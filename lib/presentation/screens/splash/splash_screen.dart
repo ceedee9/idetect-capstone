@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
         ApiService.isLoggedIn ? const HomeScreen() : const LoginScreen();
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 600),
+        transitionDuration: const Duration(milliseconds: 900),
         pageBuilder: (context, animation, secondaryAnimation) => next,
         transitionsBuilder: (context, animation, secondaryAnimation, child) =>
             FadeTransition(opacity: animation, child: child),

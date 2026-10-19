@@ -35,6 +35,7 @@
   "lockSignInAgain": "Sign in again instead",
   "lockNoUnlockMethod": "No PIN or biometric is set up on this device. Sign in again to continue.",
   "lockSessionMissing": "Please sign in again to continue.",
+  "sessionEndedNotice": "You were signed out because this account was opened on another phone.",
   "loginWelcomeBack": "Welcome back,",
   "loginSignInFingerprint": "Sign In with Fingerprint",
   "loginOrSignInOtp": "— or sign in with OTP —",
