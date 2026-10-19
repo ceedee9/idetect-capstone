@@ -122,6 +122,78 @@ abstract class AppLocalizations {
   /// **'Beneficiary Portal'**
   String get loginBeneficiaryPortal;
 
+  /// No description provided for @loginWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to iDetect'**
+  String get loginWelcomeTitle;
+
+  /// No description provided for @loginWelcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how you want to continue.'**
+  String get loginWelcomeSubtitle;
+
+  /// No description provided for @loginActivateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate my account'**
+  String get loginActivateButton;
+
+  /// No description provided for @loginActivateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'First time here? Use the ID and birthdate on your record.'**
+  String get loginActivateHint;
+
+  /// No description provided for @loginSignInButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get loginSignInButton;
+
+  /// No description provided for @loginSignInHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Already activated? Sign in with your PIN or fingerprint.'**
+  String get loginSignInHint;
+
+  /// No description provided for @loginAlreadyHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'I already have an account'**
+  String get loginAlreadyHaveAccount;
+
+  /// No description provided for @loginForgotPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot PIN? Use a one-time code'**
+  String get loginForgotPin;
+
+  /// No description provided for @loginSwitchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Not you? Switch account'**
+  String get loginSwitchAccount;
+
+  /// No description provided for @loginActivateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate your account'**
+  String get loginActivateTitle;
+
+  /// No description provided for @loginActivateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the ID number and birthdate on your beneficiary record. We\'ll send a one-time code to your phone.'**
+  String get loginActivateSubtitle;
+
+  /// No description provided for @loginActivateHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'If your details match our records, you\'ll get a code within a minute. Didn\'t get it? Visit your office.'**
+  String get loginActivateHelp;
+
   /// No description provided for @loginErrorMissingIdBirthdate.
   ///
   /// In en, this message translates to:

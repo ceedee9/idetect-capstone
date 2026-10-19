@@ -21,6 +21,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginBeneficiaryPortal => 'Beneficiary Portal';
 
   @override
+  String get loginWelcomeTitle => 'Welcome to iDetect';
+
+  @override
+  String get loginWelcomeSubtitle => 'Choose how you want to continue.';
+
+  @override
+  String get loginActivateButton => 'Activate my account';
+
+  @override
+  String get loginActivateHint =>
+      'First time here? Use the ID and birthdate on your record.';
+
+  @override
+  String get loginSignInButton => 'Sign in';
+
+  @override
+  String get loginSignInHint =>
+      'Already activated? Sign in with your PIN or fingerprint.';
+
+  @override
+  String get loginAlreadyHaveAccount => 'I already have an account';
+
+  @override
+  String get loginForgotPin => 'Forgot PIN? Use a one-time code';
+
+  @override
+  String get loginSwitchAccount => 'Not you? Switch account';
+
+  @override
+  String get loginActivateTitle => 'Activate your account';
+
+  @override
+  String get loginActivateSubtitle =>
+      'Enter the ID number and birthdate on your beneficiary record. We\'ll send a one-time code to your phone.';
+
+  @override
+  String get loginActivateHelp =>
+      'If your details match our records, you\'ll get a code within a minute. Didn\'t get it? Visit your office.';
+
+  @override
   String get loginErrorMissingIdBirthdate =>
       'Please enter your ID number and birthdate.';
 

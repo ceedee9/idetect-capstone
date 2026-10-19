@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'data/datasources/local/local_database.dart';
-import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/splash/splash_screen.dart';
 import 'services/api_service.dart';
 import 'services/fraud_flag_sync_service.dart';
 import 'services/offline_scan_sync_service.dart';
@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

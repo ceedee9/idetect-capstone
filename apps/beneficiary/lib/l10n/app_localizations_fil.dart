@@ -12,24 +12,64 @@ class AppLocalizationsFil extends AppLocalizations {
   String get appBeneficiaryFallback => 'Benepisyaryo';
 
   @override
-  String get commonCancel => 'Kanselahin';
+  String get commonCancel => 'Cancel';
 
   @override
-  String get commonBack => '← Bumalik';
+  String get commonBack => '← Back';
 
   @override
   String get loginBeneficiaryPortal => 'Portal ng Benepisyaryo';
+
+  @override
+  String get loginWelcomeTitle => 'Maligayang pagdating sa iDetect';
+
+  @override
+  String get loginWelcomeSubtitle => 'Piliin kung paano ka magpapatuloy.';
+
+  @override
+  String get loginActivateButton => 'I-activate ang aking account';
+
+  @override
+  String get loginActivateHint =>
+      'Unang beses dito? Gamitin ang ID at petsa ng kapanganakan sa iyong talaan.';
+
+  @override
+  String get loginSignInButton => 'Mag-sign in';
+
+  @override
+  String get loginSignInHint =>
+      'Na-activate na? Mag-sign in gamit ang iyong PIN o fingerprint.';
+
+  @override
+  String get loginAlreadyHaveAccount => 'May account na ako';
+
+  @override
+  String get loginForgotPin => 'Nakalimutan ang PIN? Gumamit ng one-time code';
+
+  @override
+  String get loginSwitchAccount => 'Hindi ikaw ito? Magpalit ng account';
+
+  @override
+  String get loginActivateTitle => 'I-activate ang iyong account';
+
+  @override
+  String get loginActivateSubtitle =>
+      'Ilagay ang ID number at petsa ng kapanganakan sa iyong talaan ng benepisyaryo. Magpapadala kami ng one-time code sa iyong telepono.';
+
+  @override
+  String get loginActivateHelp =>
+      'Kung tugma ang iyong detalye sa aming talaan, makakatanggap ka ng code sa loob ng isang minuto. Hindi pa dumating? Bisitahin ang iyong opisina.';
 
   @override
   String get loginErrorMissingIdBirthdate =>
       'Pakilagay ang iyong ID number at petsa ng kapanganakan.';
 
   @override
-  String get loginErrorMissingMobile => 'Pakilagay ang iyong mobile number.';
+  String get loginErrorMissingMobile => 'Pakilagay ang iyong cellphone number.';
 
   @override
   String get loginErrorInvalidMobile =>
-      'Pakilagay ang wastong mobile number sa Pilipinas\n(hal. 09171234567)';
+      'Pakilagay ang valid cellphone number sa Pilipinas\n(halimbawa: 09171234567)';
 
   @override
   String get loginBiometricReasonSignIn =>
@@ -37,20 +77,20 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get loginBiometricReasonEnable =>
-      'I-enable ang mabilisang pag-sign in sa susunod';
+      'I-on ang mabilis na pag-sign in sa susunod';
 
   @override
   String get lockTitle => 'Naka-lock ang Screen';
 
   @override
   String get lockSubtitle =>
-      'Para sa iyong seguridad, na-lock ang app matapos ang 5 minutong walang aktibidad.';
+      'Para sa iyong seguridad, na-lock ang app dahil 5 minuto itong hindi ginamit.';
 
   @override
   String get lockEnterPin => 'Ilagay ang iyong PIN para magpatuloy';
 
   @override
-  String get lockIncorrectPin => 'Mali ang PIN. Subukan muli.';
+  String get lockIncorrectPin => 'Mali ang PIN. Pakisubukan ulit.';
 
   @override
   String get lockBiometricReason => 'I-unlock ang iDetect para magpatuloy';
@@ -63,7 +103,7 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get lockNoUnlockMethod =>
-      'Walang naka-set na PIN o biometric sa device na ito. Mag-sign in ulit para magpatuloy.';
+      'Walang naka-set na PIN, fingerprint, o mukha sa phone na ito. Mag-sign in ulit para magpatuloy.';
 
   @override
   String get lockSessionMissing => 'Mag-sign in ulit para magpatuloy.';
@@ -84,7 +124,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get loginSendOtp => 'Ipadala ang OTP sa Aking Cellphone';
 
   @override
-  String get loginNotYou => 'Hindi ikaw? Gumamit ng ibang ID';
+  String get loginNotYou => 'Hindi ikaw ito? Gumamit ng ibang ID';
 
   @override
   String get loginIdNumberHint => 'Ilagay ang iyong ID Number';
@@ -102,21 +142,21 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get loginMobileExplanation =>
-      'Kailangan namin ang iyong numero ng cellphone para makapagpadala ng verification code. Isang beses lang ito gagawin.';
+      'Kailangan namin ang iyong cellphone number para makapagpadala ng verification code. Isang beses lang ito kailangang gawin.';
 
   @override
   String get loginMobileHintFormat =>
-      'Numero ng cellphone sa Pilipinas (hal. 09171234567)';
+      'Cellphone number sa Pilipinas (halimbawa: 09171234567)';
 
   @override
-  String get loginRegisterSendOtp => 'Magrehistro at Ipadala ang OTP';
+  String get loginRegisterSendOtp => 'Mag-register at Ipadala ang OTP';
 
   @override
   String get loginOtpSentInstruction =>
-      'May 6-digit na code na ipinadala sa iyong telepono.\nIlagay ito sa ibaba.';
+      'Nagpadala kami ng 6-digit na code sa iyong cellphone.\nIlagay ito sa ibaba.';
 
   @override
-  String get loginResendOtp => 'Ipadalang Muli ang OTP';
+  String get loginResendOtp => 'Ipadala Ulit ang OTP';
 
   @override
   String get loginCreatePin => 'Gumawa ng 4-Digit na PIN';
@@ -126,18 +166,18 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get loginPinSetupHint =>
-      'Ang PIN na ito ay nagbibigay-daan sa iyong mag-sign in nang walang text message.';
+      'Sa PIN na ito, makakapag-sign in ka nang hindi na kailangan ng text message.';
 
   @override
   String get loginPinLoginHint =>
       'Ilagay ang iyong 4-digit na PIN para mag-sign in.';
 
   @override
-  String get loginSetPinDialogTitle => 'Magtakda ng PIN';
+  String get loginSetPinDialogTitle => 'Maglagay ng PIN';
 
   @override
   String get loginSetPinDialogContent =>
-      'Magtakda ng 4-digit na PIN upang makapag-sign in ka nang hindi na naghihintay ng text message sa susunod.';
+      'Maglagay ng 4-digit na PIN para makapag-sign in ka sa susunod nang hindi naghihintay ng text message.';
 
   @override
   String get loginNotNow => 'Huwag Muna';
@@ -146,14 +186,14 @@ class AppLocalizationsFil extends AppLocalizations {
   String get loginSetPinNow => 'Itakda ang PIN Ngayon';
 
   @override
-  String get loginQuickSignInTitle => 'Mabilisang Pag-sign In';
+  String get loginQuickSignInTitle => 'Mabilis na Pag-sign In';
 
   @override
   String get loginQuickSignInContent =>
-      'Nais mo bang gamitin ang iyong fingerprint o mukha para mag-sign in sa susunod?\n\nMas madali ito — hindi mo na kailangang i-type ang iyong OTP muli.';
+      'Gusto mo bang gamitin ang iyong fingerprint o mukha sa pag-sign in sa susunod?\n\nMas madali ito — hindi mo na kailangang ilagay ulit ang OTP.';
 
   @override
-  String get loginYesEnable => 'Oo, I-enable';
+  String get loginYesEnable => 'Oo, I-on';
 
   @override
   String get homeSignOut => 'Mag-sign Out';
@@ -168,7 +208,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get beneficiaryTypePwd => 'PWD';
 
   @override
-  String get languageToggleTooltip => 'Wika ng display';
+  String get languageToggleTooltip => 'Wika ng screen';
 
   @override
   String get languageEnglishLabel => 'Ingles';
@@ -178,19 +218,19 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get statusErrorLoadProfile =>
-      'Hindi ma-load ang iyong profile. I-pull para i-refresh.';
+      'Hindi ma-load ang iyong profile. Hilahin pababa ang screen para i-refresh.';
 
   @override
-  String get statusIdDetailsTitle => 'Mga Detalye ng ID';
+  String get statusIdDetailsTitle => 'Detalye ng ID';
 
   @override
-  String get statusIssuingOffice => 'Pinanggalingang Tanggapan';
+  String get statusIssuingOffice => 'Opisinang Nag-isyu';
 
   @override
-  String get statusValidFrom => 'Simula ng Bisa';
+  String get statusValidFrom => 'Valid Mula';
 
   @override
-  String get statusValidUntil => 'Katapusan ng Bisa';
+  String get statusValidUntil => 'Valid Hanggang';
 
   @override
   String get statusBirthdate => 'Petsa ng Kapanganakan';
@@ -202,13 +242,13 @@ class AppLocalizationsFil extends AppLocalizations {
   String get statusActivitySummaryTitle => 'Buod ng Aktibidad';
 
   @override
-  String get statusTotalVerifications => 'Kabuuang Beripikasyon';
+  String get statusTotalVerifications => 'Kabuuang Pag-verify';
 
   @override
-  String get statusPendingFlags => 'Nakabinbing Flags';
+  String get statusPendingFlags => 'Flag na Naghihintay';
 
   @override
-  String get statusActiveDisputes => 'Aktibong Reklamo';
+  String get statusActiveDisputes => 'Reklamong Bukas Pa';
 
   @override
   String get statusReportFraudSemantics => 'Mag-ulat ng panloloko sa aking ID';
@@ -229,43 +269,43 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get statusRenewInstruction =>
-      'Mangyaring bumisita sa iyong opisina ng pag-isyu upang i-renew ang iyong ID.';
+      'Pumunta sa opisinang nag-isyu ng iyong ID para i-renew ito.';
 
   @override
-  String get navStatus => 'Katayuan';
+  String get navStatus => 'Status';
 
   @override
-  String get navHistory => 'Kasaysayan';
+  String get navHistory => 'History';
 
   @override
   String get navDisputes => 'Reklamo';
 
   @override
-  String get navAlerts => 'Mga Alerto';
+  String get navAlerts => 'Mga Abiso';
 
   @override
-  String get transactionsEmptyState => 'Wala pang mga talaan ng beripikasyon';
+  String get transactionsEmptyState => 'Wala pang record ng pag-verify';
 
   @override
   String get transactionsUnknownEstablishment => 'Hindi Kilala';
 
   @override
-  String get transactionsDetailTitle => 'Mga Detalye ng Beripikasyon';
+  String get transactionsDetailTitle => 'Detalye ng Pag-verify';
 
   @override
-  String get transactionsEstablishmentLabel => 'Establisyemento';
+  String get transactionsEstablishmentLabel => 'Negosyo';
 
   @override
   String get transactionsDateTimeLabel => 'Petsa at Oras';
 
   @override
-  String get transactionsStatusLabel => 'Katayuan';
+  String get transactionsStatusLabel => 'Status';
 
   @override
-  String get transactionsEntryLabel => 'Paraan ng Pagpasok';
+  String get transactionsEntryLabel => 'Paraan ng Paglalagay';
 
   @override
-  String get transactionsEntryManual => 'Manwal';
+  String get transactionsEntryManual => 'Mano-mano';
 
   @override
   String get historyEmptyState => 'Wala pang aktibidad';
@@ -274,72 +314,72 @@ class AppLocalizationsFil extends AppLocalizations {
   String get historyDisputeLabel => 'Reklamo / Ulat';
 
   @override
-  String get serviceUnavailableTitle => 'Hindi maabot ang iDetect';
+  String get serviceUnavailableTitle => 'Hindi magamit ang iDetect ngayon';
 
   @override
   String get serviceUnavailableMessage =>
-      'Hindi namin maabot ang iDetect. Suriin ang iyong koneksyon o subukan muli mamaya.';
+      'Hindi kami makakonekta sa iDetect. Tingnan ang iyong internet connection o subukan ulit mamaya.';
 
   @override
-  String get commonRetry => 'Subukang Muli';
+  String get commonRetry => 'Subukan Ulit';
 
   @override
-  String get verificationStatusValid => 'WASTO';
+  String get verificationStatusValid => 'VALID';
 
   @override
-  String get verificationStatusInvalid => 'HINDI WASTO';
+  String get verificationStatusInvalid => 'HINDI VALID';
 
   @override
   String get verificationStatusReview => 'KAILANGAN NG PAGSUSURI';
 
   @override
-  String get verificationStatusManualReview => 'MANWAL NA PAGSUSURI';
+  String get verificationStatusManualReview => 'MANO-MANONG PAGSUSURI';
 
   @override
   String get verificationStatusUnknown => 'HINDI ALAM';
 
   @override
-  String get disputeStatusSubmitted => 'NAISUMITE';
+  String get disputeStatusSubmitted => 'NAIPADALA';
 
   @override
-  String get disputeStatusAcknowledged => 'KINILALA';
+  String get disputeStatusAcknowledged => 'NATANGGAP';
 
   @override
   String get disputeStatusUnderReview => 'SINUSURI';
 
   @override
-  String get disputeStatusResolved => 'NALUTAS';
+  String get disputeStatusResolved => 'NAAYOS NA';
 
   @override
   String get disputeStatusRejected => 'TINANGGIHAN';
 
   @override
-  String get beneficiaryStatusActive => 'Aktibo at wasto';
+  String get beneficiaryStatusActive => 'Aktibo at valid';
 
   @override
   String get beneficiaryStatusExpired => 'Nag-expire na';
 
   @override
-  String get beneficiaryStatusSuspended => 'Sinusuri';
+  String get beneficiaryStatusSuspended => 'Iniimbestigahan';
 
   @override
-  String get beneficiaryStatusRevoked => 'Binawi';
+  String get beneficiaryStatusRevoked => 'Kinansela';
 
   @override
   String get beneficiaryStatusUnknown => 'Hindi alam';
 
   @override
-  String get statusIdNumberLabel => 'Numero ng ID';
+  String get statusIdNumberLabel => 'ID Number';
 
   @override
-  String get statusShowIdNumber => 'Ipakita ang numero ng ID';
+  String get statusShowIdNumber => 'Ipakita ang ID number';
 
   @override
-  String get statusHideIdNumber => 'Itago ang numero ng ID';
+  String get statusHideIdNumber => 'Itago ang ID number';
 
   @override
   String statusIdNumberHidden(String lastTwo) {
-    return 'Nakatago ang numero ng ID. Nagtatapos sa $lastTwo.';
+    return 'Nakatago ang ID number. Nagtatapos ito sa $lastTwo.';
   }
 
   @override
@@ -347,26 +387,26 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get fraudReportWarningBanner =>
-      'Ang pagsusumite ng ulat ng panloloko ay agad na magma-flag sa iyong ID para sa pagsusuri. Nakakatulong ito na protektahan ang iyong mga benepisyo.';
+      'Kapag nagpadala ka ng ulat ng panloloko, agad na magkakaroon ng flag ang iyong ID para masuri. Makakatulong ito para maprotektahan ang iyong mga benepisyo.';
 
   @override
   String get fraudReportWhatHappened => 'Ano ang nangyari?';
 
   @override
-  String get fraudTypeUnauthorizedLabel => 'Hindi Awtorisadong Paggamit';
+  String get fraudTypeUnauthorizedLabel => 'Ginamit Nang Walang Pahintulot';
 
   @override
   String get fraudTypeUnauthorizedDesc =>
       'May gumamit ng aking ID nang wala akong pahintulot';
 
   @override
-  String get fraudTypeStolenLabel => 'Nanakaw na ID';
+  String get fraudTypeStolenLabel => 'Ninakaw na ID';
 
   @override
-  String get fraudTypeStolenDesc => 'Ninakaw ang aking pisikal na ID card';
+  String get fraudTypeStolenDesc => 'Ninakaw ang aking ID card';
 
   @override
-  String get fraudTypeFakeLabel => 'Pekeng / Ginayang ID';
+  String get fraudTypeFakeLabel => 'Peke / Kinopyang ID';
 
   @override
   String get fraudTypeFakeDesc => 'May gumawa ng kopya ng aking ID';
@@ -378,38 +418,37 @@ class AppLocalizationsFil extends AppLocalizations {
   String get fraudTypeOtherDesc => 'Ibang uri ng panloloko o maling paggamit';
 
   @override
-  String get fraudReportDescribeIncident => 'Ilarawan ang insidente';
+  String get fraudReportDescribeIncident => 'Ikuwento ang nangyari';
 
   @override
   String get fraudReportDescriptionHint =>
       'Magbigay ng detalye: kailan, saan, at paano mo nalaman ang panloloko...';
 
   @override
-  String get fraudReportErrorEmptyDescription => 'Pakilarawan ang insidente';
+  String get fraudReportErrorEmptyDescription => 'Pakisulat ang nangyari';
 
   @override
-  String get fraudReportSuccessSnackbar =>
-      'Matagumpay na naisumite ang ulat ng panloloko';
+  String get fraudReportSuccessSnackbar => 'Naipadala na ang ulat ng panloloko';
 
   @override
   String get fraudReportErrorSnackbar =>
-      'Hindi naisumite ang ulat. Pakisubukang muli.';
+      'Hindi naipadala ang ulat. Pakisubukan ulit.';
 
   @override
-  String get fraudReportSubmitting => 'Isinusumite...';
+  String get fraudReportSubmitting => 'Ipinapadala...';
 
   @override
-  String get fraudReportSubmitButton => 'Isumite ang Ulat';
+  String get fraudReportSubmitButton => 'Ipadala ang Ulat';
 
   @override
   String get disputesNewButton => 'Bagong Reklamo';
 
   @override
-  String get disputesEmptyTitle => 'Walang naisumiteng reklamo';
+  String get disputesEmptyTitle => 'Wala pang na-file na reklamo';
 
   @override
   String get disputesEmptySubtitle =>
-      'Pindutin ang button sa ibaba para maghain ng bagong reklamo';
+      'Pindutin ang button sa ibaba para mag-file ng bagong reklamo';
 
   @override
   String get disputesDetailTitle => 'Mga Detalye ng Reklamo';
@@ -418,70 +457,69 @@ class AppLocalizationsFil extends AppLocalizations {
   String get disputesTypeLabel => 'Uri';
 
   @override
-  String get disputesFiledLabel => 'Isinampa';
+  String get disputesFiledLabel => 'Na-file';
 
   @override
   String get disputesDescriptionLabel => 'Paglalarawan';
 
   @override
-  String get disputesResolutionLabel => 'Resolusyon';
+  String get disputesResolutionLabel => 'Solusyon';
 
   @override
   String get disputesAcknowledgeResponse => 'Nabasa ko na ang sagot na ito';
 
   @override
   String disputesResponseAcknowledgedOn(String date) {
-    return 'Kinumpirma noong $date';
+    return 'Nabasa noong $date';
   }
 
   @override
   String get disputesAcknowledgeFailed =>
-      'Hindi naitala ang iyong kumpirmasyon. Subukan muli.';
+      'Hindi nai-save na nabasa mo na ang sagot. Pakisubukan ulit.';
 
   @override
-  String get disputesFileTitle => 'Maghain ng Reklamo';
+  String get disputesFileTitle => 'Mag-file ng Reklamo';
 
   @override
   String get disputesTypeSectionLabel => 'Uri ng Reklamo';
 
   @override
-  String get disputesDescriptionHint => 'Ilarawan ang iyong reklamo...';
+  String get disputesDescriptionHint => 'Ikuwento ang iyong reklamo...';
 
   @override
   String get disputesEstablishmentLabel => 'Saan ito nangyari?';
 
   @override
-  String get disputesFiledOnBehalfLabel => 'Isinampa para sa iyo ng';
+  String get disputesFiledOnBehalfLabel => 'Na-file para sa iyo ng';
 
   @override
   String get disputesEstablishmentHint =>
-      'Opsyonal — ilagay ang pangalan ng establisyemento o tanggapan, kung naaangkop';
+      'Opsyonal — ilagay ang pangalan ng negosyo o opisina, kung mayroon';
 
   @override
   String get disputesEstablishmentRequiredHint =>
-      'Pangalan ng establisyemento o tanggapang kinasangkutan';
+      'Pangalan ng negosyo o opisinang may kinalaman dito';
 
   @override
   String get disputesEstablishmentPlaceholder =>
-      'hal. Valenzuela City Hall, ABC Store';
+      'Halimbawa: Valenzuela City Hall, ABC Store';
 
   @override
   String get disputesErrorEmptyEstablishment =>
       'Pakilagay kung saan ito nangyari';
 
   @override
-  String get disputesSupportingDocLabel => 'Sumusuportang Dokumento';
+  String get disputesSupportingDocLabel => 'Kasamang Dokumento';
 
   @override
   String get disputesSupportingDocHint =>
-      'Opsyonal — maglakip ng larawan ng iyong ID, sertipiko ng barangay, atbp.';
+      'Opsyonal — mag-attach ng litrato ng iyong ID, barangay certificate, at iba pa.';
 
   @override
-  String get disputesAttachButton => 'Maglakip ng Larawan / Dokumento';
+  String get disputesAttachButton => 'Mag-attach ng Litrato / Dokumento';
 
   @override
-  String get disputesErrorEmptyDescription =>
-      'Pakilagay ang isang paglalarawan';
+  String get disputesErrorEmptyDescription => 'Pakisulat ang iyong reklamo';
 
   @override
   String disputesErrorUploadFailed(String error) {
@@ -489,28 +527,27 @@ class AppLocalizationsFil extends AppLocalizations {
   }
 
   @override
-  String get disputesSuccessSnackbar => 'Naisumite ang reklamo';
+  String get disputesSuccessSnackbar => 'Naipadala na ang reklamo';
 
   @override
-  String get disputesSubmitButton => 'Isumite ang Reklamo';
+  String get disputesSubmitButton => 'Ipadala ang Reklamo';
 
   @override
   String get disputeTypeWrongDenialLabel => 'Maling Pagtanggi';
 
   @override
   String get disputeTypeWrongDenialDesc =>
-      'Maling tinanggihan ka ng isang negosyo sa diskwento';
+      'Hindi ka binigyan ng diskwento ng isang negosyo kahit dapat kang makakuha nito';
 
   @override
   String get disputeTypeBusinessRefusalLabel => 'Pagtanggi ng Negosyo';
 
   @override
   String get disputeTypeBusinessRefusalDesc =>
-      'May negosyong tumanggi kilalanin ang iyong wastong ID';
+      'May negosyong hindi tumanggap ng iyong valid na ID';
 
   @override
-  String get disputeTypeIncorrectDbInfoLabel =>
-      'Maling Impormasyon sa Database';
+  String get disputeTypeIncorrectDbInfoLabel => 'Maling Impormasyon sa Sistema';
 
   @override
   String get disputeTypeIncorrectDbInfoDesc =>
@@ -521,30 +558,29 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get disputeTypeOtherDesc =>
-      'Ibang isyung wala sa mga pagpipilian sa itaas';
+      'Ibang problemang hindi nakalista sa itaas';
 
   @override
   String get notificationsErrorFallback => 'Hindi ma-load ang mga abiso.';
 
   @override
   String get notificationsErrorGeneric =>
-      'May naganap na error. Pakisubukang muli.';
+      'May nangyaring problema. Pakisubukan ulit.';
 
   @override
-  String get notificationsRetryButton => 'Subukang Muli';
+  String get notificationsRetryButton => 'Subukan Ulit';
 
   @override
-  String get notificationsMarkAllRead => 'Markahan lahat bilang nabasa';
+  String get notificationsMarkAllRead => 'Markahang nabasa na ang lahat';
 
   @override
   String get notificationsEmptyTitle => 'Walang abiso';
 
   @override
-  String get notificationsEmptySubtitle => 'I-pull pababa para mag-refresh';
+  String get notificationsEmptySubtitle => 'Hilahin pababa para mag-refresh';
 
   @override
-  String get notificationsLoadMoreError =>
-      'Hindi ma-load ang karagdagang abiso.';
+  String get notificationsLoadMoreError => 'Hindi ma-load ang iba pang abiso.';
 
   @override
   String get notificationFallbackTitle => 'Abiso';
@@ -553,21 +589,21 @@ class AppLocalizationsFil extends AppLocalizations {
   String get callbackRequestButton => 'Humiling ng tawag';
 
   @override
-  String get callbackRequestsEntryTitle => 'Mga hiling ko na tawag';
+  String get callbackRequestsEntryTitle => 'Mga hiniling kong tawag';
 
   @override
   String get callbackRequestsEntrySubtitle =>
-      'Subaybayan ang mga hiling mo sa BPLO';
+      'Tingnan ang mga hiniling mo sa BPLO';
 
   @override
   String get callbackSheetTitle => 'Humiling ng tawag';
 
   @override
   String get callbackSheetIntro =>
-      'Magpadala ng hiling sa tanggapan ng BPLO tungkol sa establisimyentong ito. Para sa privacy, hindi ibinabahagi ang numero ng telepono ng negosyo. Susuriin ng staff ng BPLO ang hiling mo at sasagot dito.';
+      'Magpadala ng hiling sa opisina ng BPLO tungkol sa negosyong ito. Para sa privacy, hindi ibinibigay ang phone number ng negosyo. Titingnan ng staff ng BPLO ang hiling mo at sasagot dito.';
 
   @override
-  String get callbackEstablishmentLabel => 'Establisimyento';
+  String get callbackEstablishmentLabel => 'Negosyo';
 
   @override
   String get callbackReasonLabel => 'Dahilan';
@@ -576,16 +612,16 @@ class AppLocalizationsFil extends AppLocalizations {
   String get callbackReasonTransaction => 'Tanong tungkol sa transaksyong ito';
 
   @override
-  String get callbackReasonCorrection => 'Kailangang itama ang talaan';
+  String get callbackReasonCorrection => 'Kailangang itama ang record';
 
   @override
   String get callbackReasonOther => 'Iba pa';
 
   @override
-  String get callbackNoteLabel => 'Karagdagang detalye (opsyonal)';
+  String get callbackNoteLabel => 'Dagdag na detalye (opsyonal)';
 
   @override
-  String get callbackNoteHint => 'Ilarawan kung ano ang kailangan mo ng tulong';
+  String get callbackNoteHint => 'Sabihin kung anong tulong ang kailangan mo';
 
   @override
   String get callbackSubmit => 'Ipadala ang hiling';
@@ -597,24 +633,24 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get callbackErrorNotAllowed =>
-      'Para lang sa establisimyentong pinagtransaksyunan mo maaaring humiling ng tawag.';
+      'Makakahiling ka lang ng tawag sa negosyong may transaksyon ka na.';
 
   @override
   String get callbackErrorDuplicate =>
-      'May bukas ka nang hiling para sa establisimyentong ito.';
+      'May hiling ka na para sa negosyong ito na hindi pa nasasagot.';
 
   @override
   String get callbackErrorGeneric =>
-      'Hindi naipadala ang hiling mo. Subukan muli.';
+      'Hindi naipadala ang hiling mo. Subukan ulit.';
 
   @override
-  String get callbackRequestsTitle => 'Mga hiling na tawag';
+  String get callbackRequestsTitle => 'Mga hiniling na tawag';
 
   @override
-  String get callbackRequestsEmpty => 'Wala ka pang hiling na tawag.';
+  String get callbackRequestsEmpty => 'Wala ka pang hiniling na tawag.';
 
   @override
-  String get callbackStatusOpen => 'Nakabinbin';
+  String get callbackStatusOpen => 'Naghihintay';
 
   @override
   String get callbackStatusHandled => 'Sinagot na';

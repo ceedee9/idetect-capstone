@@ -8,8 +8,7 @@ import 'core/locale_provider.dart';
 import 'l10n/app_localizations.dart';
 import 'services/api_service.dart';
 import 'services/fcm_service.dart';
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -202,7 +201,7 @@ class IDetectBeneficiaryApp extends StatelessWidget {
           ),
         ),
       ),
-      home: ApiService.isLoggedIn ? const HomeScreen() : const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

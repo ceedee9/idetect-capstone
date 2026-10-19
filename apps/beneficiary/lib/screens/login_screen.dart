@@ -16,6 +16,13 @@ const _kSavedName = 'saved_full_name';
 const _kBiometricEnabled = 'biometric_enabled';
 const _kPinSet = 'pin_set';
 
+/// True if an account was activated on this phone. Used by the splash to
+/// send returning users to the PIN screen instead of straight into the app.
+Future<bool> hasRememberedAccount() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString(_kSavedId) != null;
+}
+
 /// Notice types for the shared _Notice widget below — replaces three
 /// separately hand-styled boxes (mobile-registration explainer,
 /// OTP-sent instruction, error banner) with one consistent component.
@@ -91,34 +98,6 @@ class _Notice extends StatelessWidget {
   }
 }
 
-/// Thin civic-stripe accent — same motif used across the web admin
-/// portals, so this app reads as part of the same iDetect/Valenzuela
-/// City family. Deliberately minimal: no hero panel, no texture, just
-/// enough presence to signal "official service" at the very top edge.
-class _BrandStripe extends StatelessWidget {
-  const _BrandStripe();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 7,
-          child: Container(height: 5, color: AppDesignSystem.primaryBlue),
-        ),
-        Expanded(
-          flex: 2,
-          child: Container(height: 5, color: AppDesignSystem.accentRed),
-        ),
-        Expanded(
-          flex: 1,
-          child: Container(height: 5, color: AppDesignSystem.statusWarning),
-        ),
-      ],
-    );
-  }
-}
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -127,10 +106,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 /// Login phases:
-///  0 = id entry (or welcome-back if remembered)
-///  1 = mobile registration (first-time, no mobile on file)
-///  2 = OTP entry (large numpad)
-enum _Phase { idEntry, registerMobile, otpEntry, pinEntry }
+///  welcome      = first screen: activate my account, or sign in
+///  idEntry      = ID + birthdate form (or welcome-back if remembered)
+///  registerMobile = first-time, no mobile on file
+///  otpEntry     = OTP entry (large numpad)
+///  pinEntry     = PIN entry for returning users
+enum _Phase { welcome, idEntry, registerMobile, otpEntry, pinEntry }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _idController = TextEditingController();
@@ -138,7 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _mobileController = TextEditingController();
   final _localAuth = LocalAuthentication();
 
-  _Phase _phase = _Phase.idEntry;
+  _Phase _phase = _Phase.welcome;
+  bool _loaded = false;
+  bool _isActivating = true;
   bool _isLoading = false;
   String? _errorMessage;
   DateTime? _selectedDate;
@@ -188,6 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _savedName = name;
       _biometricEnabled = bioEnabled;
       _hasPinSet = pinSet;
+      _phase = pinSet ? _Phase.pinEntry : _Phase.idEntry;
     }
 
     // Check if device supports biometrics
@@ -200,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _biometricAvailable = false;
     }
 
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _loaded = true);
 
     // Auto-attempt biometric login if everything is set up
     if (_hasSavedId && _biometricEnabled && ApiService.isLoggedIn) {
@@ -216,6 +200,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _clearSaved() async {
+    // Also drops the session token and cached profile so the next person
+    // starts clean.
+    ApiService.clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kSavedId);
     await prefs.remove(_kSavedBirthdate);
@@ -230,6 +217,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _idController.clear();
       _birthdateController.clear();
       _selectedDate = null;
+      _phase = _Phase.welcome;
+      _errorMessage = null;
     });
   }
 
@@ -647,110 +636,215 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      // Warm off-white per this file's own stated intent (reduces eye
-      // strain for elderly users) — was previously plain Colors.white,
-      // which the design system's own background tokens exist to avoid.
-      backgroundColor: AppDesignSystem.backgroundWarm,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const _BrandStripe(),
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildLogo(),
-                      const SizedBox(height: 8),
-                      Text(
-                        loc.loginBeneficiaryPortal,
-                        style: AppDesignSystem.bodyMedium.copyWith(
-                          color: AppDesignSystem.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/images/LOG IN PAGE BG.jpg', fit: BoxFit.cover),
+          SafeArea(
+            child: !_loaded
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      children: [
+                        _buildHeader(loc),
+                        const SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppDesignSystem.backgroundWhite,
+                            borderRadius: AppDesignSystem.cardRadius,
+                            boxShadow: AppDesignSystem.shadowMD,
+                          ),
+                          child: Column(
+                            children: [
+                              if (_phase == _Phase.welcome) _buildWelcome(),
+                              if (_phase == _Phase.idEntry) _buildIdEntry(),
+                              if (_phase == _Phase.registerMobile)
+                                _buildMobileRegistration(),
+                              if (_phase == _Phase.otpEntry) _buildOtpEntry(),
+                              if (_phase == _Phase.pinEntry) _buildPinEntry(),
 
-                      if (_phase == _Phase.idEntry) _buildIdEntry(),
-                      if (_phase == _Phase.registerMobile)
-                        _buildMobileRegistration(),
-                      if (_phase == _Phase.otpEntry) _buildOtpEntry(),
-                      if (_phase == _Phase.pinEntry) _buildPinEntry(),
+                              if (_errorMessage != null) ...[
+                                const SizedBox(height: 16),
+                                _Notice(
+                                  type: _NoticeType.error,
+                                  title: null,
+                                  message: _errorMessage!,
+                                ),
+                              ],
 
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        _Notice(
-                          type: _NoticeType.error,
-                          title: null,
-                          message: _errorMessage!,
+                              // Dev-mode skip login
+                              if (kDebugMode) ...[
+                                const SizedBox(height: 32),
+                                const Divider(),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    ApiService.setToken(
+                                      'dev-skip-token',
+                                      user: {
+                                        'full_name': 'Dev User',
+                                        'beneficiary_type': 'senior_citizen',
+                                        'id_number': 'DEV-0001',
+                                        'type': 'beneficiary',
+                                      },
+                                    );
+                                    _goHome();
+                                  },
+                                  icon: const Icon(
+                                    Icons.developer_mode,
+                                    size: 20,
+                                  ),
+                                  label: const Text('Skip Login (Dev Mode)'),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ],
-
-                      // Dev-mode skip login
-                      if (kDebugMode) ...[
-                        const SizedBox(height: 32),
-                        const Divider(),
-                        TextButton.icon(
-                          onPressed: () {
-                            ApiService.setToken(
-                              'dev-skip-token',
-                              user: {
-                                'full_name': 'Dev User',
-                                'beneficiary_type': 'senior_citizen',
-                                'id_number': 'DEV-0001',
-                                'type': 'beneficiary',
-                              },
-                            );
-                            _goHome();
-                          },
-                          icon: const Icon(Icons.developer_mode, size: 20),
-                          label: const Text('Skip Login (Dev Mode)'),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  // ── Logo ──────────────────────────────────────────────────────────────
+  // ── Header (logo on the brand gradient) ───────────────────────────────
 
-  Widget _buildLogo() {
-    // Soft circular backdrop anchors the logo instead of it floating
-    // bare on the background — a gentle "seal" presence without a full
-    // hero treatment, paired with the brand stripe above.
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppDesignSystem.backgroundInput,
-      ),
-      child: Image.asset(
-        'assets/images/idetect_logo.png',
-        width: 140,
-        errorBuilder: (_, __, _) => Container(
-          width: 140,
-          height: 60,
-          alignment: Alignment.center,
+  Widget _buildHeader(AppLocalizations loc) {
+    return Column(
+      children: [
+        // White disc keeps the logo readable over every band of the gradient
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppDesignSystem.backgroundWhite,
+            shape: BoxShape.circle,
+            boxShadow: AppDesignSystem.shadowMD,
+          ),
+          child: Image.asset(
+            'assets/images/Beneficiary_Logo_noBG.png',
+            width: 150,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          loc.loginBeneficiaryPortal,
+          style: AppDesignSystem.bodyLarge.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  // ── Phase: Welcome (activate vs sign in) ──────────────────────────────
+
+  Widget _buildWelcome() {
+    final loc = AppLocalizations.of(context)!;
+    return Column(
+      children: [
+        Text(
+          loc.loginWelcomeTitle,
+          style: AppDesignSystem.heading2.copyWith(
+            color: AppDesignSystem.primaryBlue,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          loc.loginWelcomeSubtitle,
+          style: AppDesignSystem.bodyLarge.copyWith(
+            color: AppDesignSystem.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 28),
+        _buildWelcomeOption(
+          icon: Icons.how_to_reg_outlined,
+          label: loc.loginActivateButton,
+          hint: loc.loginActivateHint,
+          color: AppDesignSystem.primaryBlue,
+          onTap: () => _openForm(activating: true),
+        ),
+        const SizedBox(height: 20),
+        TextButton(
+          onPressed: () => _openForm(activating: false),
           child: Text(
-            'iDETECT',
-            style: AppDesignSystem.heading2.copyWith(
-              color: AppDesignSystem.primaryBlue,
+            loc.loginAlreadyHaveAccount,
+            style: TextStyle(
+              fontSize: 16,
+              color: AppDesignSystem.interactiveBlue,
             ),
           ),
         ),
-      ),
+      ],
     );
+  }
+
+  Widget _buildWelcomeOption({
+    required IconData icon,
+    required String label,
+    required String hint,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 64,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppDesignSystem.buttonRadius,
+              ),
+              elevation: 2,
+            ),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
+            icon: Icon(icon, size: 26),
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          hint,
+          style: AppDesignSystem.caption,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  void _openForm({required bool activating}) {
+    setState(() {
+      _isActivating = activating;
+      _phase = _Phase.idEntry;
+      _errorMessage = null;
+    });
   }
 
   // ── Phase 0: ID Entry ──────────────────────────────────────────────────
@@ -924,7 +1018,25 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ] else ...[
-          // First-time user — manual ID entry
+          // First-time user — activate or sign in with ID + birthdate
+          Text(
+            _isActivating ? loc.loginActivateTitle : loc.loginSignInButton,
+            style: AppDesignSystem.heading4.copyWith(
+              color: AppDesignSystem.primaryBlue,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (_isActivating) ...[
+            const SizedBox(height: 8),
+            Text(
+              loc.loginActivateSubtitle,
+              style: AppDesignSystem.bodyMedium.copyWith(
+                color: AppDesignSystem.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          const SizedBox(height: 20),
 
           // ID Number
           TextField(
@@ -1007,6 +1119,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _Notice(type: _NoticeType.info, message: loc.loginActivateHelp),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => setState(() {
+              _phase = _Phase.welcome;
+              _errorMessage = null;
+            }),
+            child: Text(
+              loc.commonBack,
+              style: TextStyle(fontSize: 16, color: AppDesignSystem.interactiveBlue),
             ),
           ),
         ],
@@ -1313,20 +1438,52 @@ class _LoginScreenState extends State<LoginScreen> {
 
         const SizedBox(height: 16),
 
-        TextButton(
-          onPressed: () => setState(() {
-            _phase = _Phase.idEntry;
-            _pinDigits = '';
-            _errorMessage = null;
-          }),
-          child: Text(
-            loc.commonBack,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppDesignSystem.interactiveBlue,
+        if (isSetup)
+          TextButton(
+            onPressed: () => setState(() {
+              _phase = _Phase.idEntry;
+              _pinDigits = '';
+              _errorMessage = null;
+            }),
+            child: Text(
+              loc.commonBack,
+              style: TextStyle(
+                fontSize: 16,
+                color: AppDesignSystem.interactiveBlue,
+              ),
+            ),
+          )
+        else ...[
+          if (_biometricAvailable && _biometricEnabled)
+            TextButton.icon(
+              onPressed: _isLoading ? null : () => _attemptBiometric(),
+              icon: const Icon(Icons.fingerprint, size: 26),
+              label: Text(
+                loc.loginSignInFingerprint,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          TextButton(
+            onPressed: _isLoading ? null : _requestOtp,
+            child: Text(
+              loc.loginForgotPin,
+              style: TextStyle(
+                fontSize: 16,
+                color: AppDesignSystem.interactiveBlue,
+              ),
             ),
           ),
-        ),
+          TextButton(
+            onPressed: _clearSaved,
+            child: Text(
+              loc.loginSwitchAccount,
+              style: TextStyle(
+                fontSize: 16,
+                color: AppDesignSystem.interactiveBlue,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
