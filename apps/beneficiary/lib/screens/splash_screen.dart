@@ -159,7 +159,10 @@ class _SplashScreenState extends State<SplashScreen>
               child: child,
             );
           },
-          child: Image.asset(_logoAsset, width: 280),
+          child: Hero(
+            tag: kBrandLogoHeroTag,
+            child: Image.asset(_logoAsset, width: 280),
+          ),
         ),
       ),
     );

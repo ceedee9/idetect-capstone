@@ -17,6 +17,9 @@ import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 import '../home/home_screen.dart';
 
+/// Shared by the splash and the login header so the logo glides between them.
+const kBrandLogoHeroTag = 'brand-logo';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -162,12 +165,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo sits on a white disc so it stays legible over the
-                      // blue background.
+                      // Gradient disc keeps the logo legible over the blue background.
                       Container(
-                        padding: const EdgeInsets.all(18),
+                        width: 180,
+                        height: 180,
                         decoration: BoxDecoration(
-                          color: AppDesignSystem.backgroundWhite,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -177,10 +179,26 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-                        child: Image.asset(
-                          'assets/images/Business_Establishment_Logo_noBG.png',
-                          width: 150,
-                          fit: BoxFit.contain,
+                        child: ClipOval(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                'assets/images/Background_Graident.png',
+                                fit: BoxFit.cover,
+                              ),
+                              Center(
+                                child: Hero(
+                                  tag: kBrandLogoHeroTag,
+                                  child: Image.asset(
+                                    'assets/images/Business_Establishment_Logo_noBG.png',
+                                    width: 130,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),

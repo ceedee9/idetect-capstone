@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
@@ -15,6 +15,9 @@ const _kSavedBirthdate = 'saved_birthdate';
 const _kSavedName = 'saved_full_name';
 const _kBiometricEnabled = 'biometric_enabled';
 const _kPinSet = 'pin_set';
+
+/// Shared by the splash and the login header so the logo glides between them.
+const kBrandLogoHeroTag = 'brand-logo';
 
 /// True if an account was activated on this phone. Used by the splash to
 /// send returning users to the PIN screen instead of straight into the app.
@@ -316,8 +319,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final days = result['suspension_days_remaining'];
       final suspensionMessage = result['suspension_status'] != null
           ? (days is num && days > 0
-              ? '${result['error']} ${days.toInt()} day(s) remaining. End date: ${result['suspension_end_date']}.'
-              : '${result['error']} The suspension period has ended and is awaiting office review.')
+                ? '${result['error']} ${days.toInt()} day(s) remaining. End date: ${result['suspension_end_date']}.'
+                : '${result['error']} The suspension period has ended and is awaiting office review.')
           : result['error'];
       setState(() => _errorMessage = suspensionMessage);
     } else if (result['mobile_required'] == true) {
@@ -642,8 +645,19 @@ class _LoginScreenState extends State<LoginScreen> {
           Image.asset('assets/images/LOG IN PAGE BG.jpg', fit: BoxFit.cover),
           SafeArea(
             child: !_loaded
-                ? const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                // Header renders before prefs load so the logo hero has a target
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      children: [
+                        _buildHeader(loc),
+                        const SizedBox(height: 24),
+                        const CircularProgressIndicator(color: Colors.white),
+                      ],
+                    ),
                   )
                 : SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(
@@ -721,17 +735,32 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader(AppLocalizations loc) {
     return Column(
       children: [
-        // White disc keeps the logo readable over every band of the gradient
         Container(
-          padding: const EdgeInsets.all(16),
+          width: 180,
+          height: 180,
           decoration: BoxDecoration(
-            color: AppDesignSystem.backgroundWhite,
             shape: BoxShape.circle,
             boxShadow: AppDesignSystem.shadowMD,
           ),
-          child: Image.asset(
-            'assets/images/Beneficiary_Logo_noBG.png',
-            width: 150,
+          child: ClipOval(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/images/Background_Graident.png',
+                  fit: BoxFit.cover,
+                ),
+                Center(
+                  child: Hero(
+                    tag: kBrandLogoHeroTag,
+                    child: Image.asset(
+                      'assets/images/Beneficiary_Logo_noBG.png',
+                      width: 130,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -830,11 +859,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          hint,
-          style: AppDesignSystem.caption,
-          textAlign: TextAlign.center,
-        ),
+        Text(hint, style: AppDesignSystem.caption, textAlign: TextAlign.center),
       ],
     );
   }
@@ -1131,7 +1156,10 @@ class _LoginScreenState extends State<LoginScreen> {
             }),
             child: Text(
               loc.commonBack,
-              style: TextStyle(fontSize: 16, color: AppDesignSystem.interactiveBlue),
+              style: TextStyle(
+                fontSize: 16,
+                color: AppDesignSystem.interactiveBlue,
+              ),
             ),
           ),
         ],
@@ -1402,14 +1430,14 @@ class _LoginScreenState extends State<LoginScreen> {
             children: List.generate(4, (i) {
               final filled = i < _pinDigits.length;
               return Container(
-                width: 56,
-                height: 56,
-                margin: EdgeInsets.only(left: i > 0 ? 16 : 0),
+                width: 52,
+                height: 52,
+                margin: EdgeInsets.only(left: i > 0 ? 12 : 0),
                 decoration: BoxDecoration(
                   color: filled
                       ? AppDesignSystem.primaryBlue
                       : AppDesignSystem.backgroundInput,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(26),
                   border: Border.all(
                     color: filled
                         ? AppDesignSystem.primaryBlue
@@ -1526,50 +1554,50 @@ class _LoginScreenState extends State<LoginScreen> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: row.map((key) {
               if (key.isEmpty) {
-                return const SizedBox(width: 88, height: 64);
+                return const Expanded(child: SizedBox(height: 64));
               }
               final isDel = key == 'DEL';
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: SizedBox(
-                  width: 88,
-                  height: 64,
-                  child: Semantics(
-                    label: isDel ? 'Delete last digit' : 'Digit $key',
-                    button: true,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDel
-                            ? AppDesignSystem.backgroundWarm
-                            : Colors.white,
-                        foregroundColor: isDel
-                            ? AppDesignSystem.accentRed
-                            : AppDesignSystem.primaryBlue,
-                        elevation: isDel ? 0 : 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: isDel
-                                ? AppDesignSystem.borderLight
-                                : AppDesignSystem.primaryBlue.withAlpha(50),
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: SizedBox(
+                    height: 64,
+                    child: Semantics(
+                      label: isDel ? 'Delete last digit' : 'Digit $key',
+                      button: true,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDel
+                              ? AppDesignSystem.backgroundWarm
+                              : Colors.white,
+                          foregroundColor: isDel
+                              ? AppDesignSystem.accentRed
+                              : AppDesignSystem.primaryBlue,
+                          elevation: isDel ? 0 : 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isDel
+                                  ? AppDesignSystem.borderLight
+                                  : AppDesignSystem.primaryBlue.withAlpha(50),
+                            ),
                           ),
                         ),
-                      ),
-                      onPressed: isDel
-                          ? (forPin ? _onPinDelete : _onNumpadDelete)
-                          : () => forPin ? _onPinTap(key) : _onNumpadTap(key),
-                      child: isDel
-                          ? const Icon(Icons.backspace_outlined, size: 26)
-                          : Text(
-                              key,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
+                        onPressed: isDel
+                            ? (forPin ? _onPinDelete : _onNumpadDelete)
+                            : () => forPin ? _onPinTap(key) : _onNumpadTap(key),
+                        child: isDel
+                            ? const Icon(Icons.backspace_outlined, size: 26)
+                            : Text(
+                                key,
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
+                      ),
                     ),
                   ),
                 ),
