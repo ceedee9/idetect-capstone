@@ -14,10 +14,13 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticateEstablishment } = require("../middleware/auth");
+const { requireEstablishmentStepUp } = require("../middleware/stepUp");
 const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
 const { sendSms } = require("../services/smsService");
 const { maskIdNumber } = require("../utils/privacy");
+const ExcelJS = require("exceljs");
+const { buildReportPdf } = require("../services/auditReportPdf");
 const {
   uploadIdCaptureBase64,
   buildAbsoluteApiUploadUrl,
@@ -712,42 +715,66 @@ router.get(
 // because the Client Portal's history screen was already sending these
 // three params and silently getting back unfiltered results — the filters
 // are now real instead of decorative.
+// Filters shared by GET /history and GET /history/export, so the exported
+// file always contains exactly the rows the history screen shows.
+const HISTORY_RESULTS = ["valid", "suspicious", "invalid", "manual_review"];
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const resultLabel = (value) =>
+  value ? value.replace(/_/g, " ").toUpperCase() : "";
+
+function buildHistoryFilters(query, establishment_id) {
+  const { start_date, end_date, result: resultFilter } = query;
+
+  if (resultFilter && !HISTORY_RESULTS.includes(resultFilter)) {
+    return { error: `result must be one of: ${HISTORY_RESULTS.join(", ")}` };
+  }
+  if (
+    (start_date && !ISO_DATE_PATTERN.test(start_date)) ||
+    (end_date && !ISO_DATE_PATTERN.test(end_date))
+  ) {
+    return { error: "start_date and end_date must be in YYYY-MM-DD format" };
+  }
+
+  const whereClauses = ["vl.establishment_id = $1"];
+  const filterParams = [establishment_id];
+  let idx = 2;
+
+  if (start_date) {
+    whereClauses.push(`vl.verified_at >= $${idx}::date`);
+    filterParams.push(start_date);
+    idx++;
+  }
+  if (end_date) {
+    whereClauses.push(`vl.verified_at < ($${idx}::date + INTERVAL '1 day')`);
+    filterParams.push(end_date);
+    idx++;
+  }
+  if (resultFilter) {
+    whereClauses.push(`vl.result = $${idx}`);
+    filterParams.push(resultFilter);
+    idx++;
+  }
+
+  return {
+    whereSql: whereClauses.join(" AND "),
+    filterParams,
+    nextIdx: idx,
+  };
+}
+
 router.get("/history", authenticateEstablishment, async (req, res, next) => {
   try {
     const establishment_id = req.establishment.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
-    const { start_date, end_date, result: resultFilter } = req.query;
 
-    const VALID_RESULTS = ["valid", "suspicious", "invalid", "manual_review"];
-    if (resultFilter && !VALID_RESULTS.includes(resultFilter)) {
-      return res.status(400).json({
-        message: `result must be one of: ${VALID_RESULTS.join(", ")}`,
-      });
+    const filters = buildHistoryFilters(req.query, establishment_id);
+    if (filters.error) {
+      return res.status(400).json({ message: filters.error });
     }
-
-    const whereClauses = ["vl.establishment_id = $1"];
-    const filterParams = [establishment_id];
-    let idx = 2;
-
-    if (start_date) {
-      whereClauses.push(`vl.verified_at >= $${idx}::date`);
-      filterParams.push(start_date);
-      idx++;
-    }
-    if (end_date) {
-      whereClauses.push(`vl.verified_at < ($${idx}::date + INTERVAL '1 day')`);
-      filterParams.push(end_date);
-      idx++;
-    }
-    if (resultFilter) {
-      whereClauses.push(`vl.result = $${idx}`);
-      filterParams.push(resultFilter);
-      idx++;
-    }
-
-    const whereSql = whereClauses.join(" AND ");
+    const { whereSql, filterParams, nextIdx: idx } = filters;
 
     const dataResult = await pool.query(
       `SELECT
@@ -783,6 +810,143 @@ router.get("/history", authenticateEstablishment, async (req, res, next) => {
     next(err);
   }
 });
+
+// ── GET /api/verification/history/export ─────────────────────
+// Establishment audit export. Same filters as /history (start_date, end_date,
+// result), but every matching row is returned as an Excel (format=xlsx) or
+// PDF (format=pdf) file. ID numbers stay masked, as they are on screen.
+// Each export is written to audit_logs (action data_export).
+const EXPORT_MAX_ROWS = 5000;
+const EXPORT_FORMATS = {
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pdf: "application/pdf",
+};
+const EXPORT_HEADERS = [
+  "Reference No",
+  "Date & Time",
+  "ID Number (masked)",
+  "Beneficiary Type",
+  "Beneficiary Name",
+  "Result",
+  "OCR Confidence",
+  "Entry Method",
+];
+
+const formatExportDate = (value) =>
+  value
+    ? new Date(value).toLocaleString("en-PH", {
+        timeZone: "Asia/Manila",
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "";
+
+router.get(
+  "/history/export",
+  authenticateEstablishment,
+  requireEstablishmentStepUp,
+  async (req, res, next) => {
+    try {
+      const establishment_id = req.establishment.id;
+      const { format, start_date, end_date, result: resultFilter } = req.query;
+
+      if (!Object.prototype.hasOwnProperty.call(EXPORT_FORMATS, format)) {
+        return res.status(400).json({ message: "format must be xlsx or pdf" });
+      }
+      const filters = buildHistoryFilters(req.query, establishment_id);
+      if (filters.error) {
+        return res.status(400).json({ message: filters.error });
+      }
+      const { whereSql, filterParams, nextIdx } = filters;
+
+      const dataResult = await pool.query(
+        `SELECT
+           vl.reference_no, vl.id_number_scanned, vl.beneficiary_type_detected,
+           vl.result, vl.ocr_confidence_score, vl.manually_entered, vl.verified_at,
+           b.full_name AS beneficiary_name
+         FROM verification_logs vl
+         LEFT JOIN beneficiaries b ON b.id = vl.beneficiary_id
+         WHERE ${whereSql}
+         ORDER BY vl.verified_at DESC
+         LIMIT $${nextIdx}`,
+        [...filterParams, EXPORT_MAX_ROWS + 1],
+      );
+
+      if (dataResult.rows.length > EXPORT_MAX_ROWS) {
+        return res.status(400).json({
+          message: `This range has more than ${EXPORT_MAX_ROWS} scans. Narrow the date range and export again.`,
+        });
+      }
+
+      const rows = dataResult.rows.map((r) => [
+        r.reference_no ?? "",
+        formatExportDate(r.verified_at),
+        maskIdNumber(r.id_number_scanned),
+        r.beneficiary_type_detected ?? "",
+        r.beneficiary_name ?? "",
+        resultLabel(r.result),
+        r.ocr_confidence_score ?? "",
+        r.manually_entered ? "Manual" : "Scanned",
+      ]);
+
+      const generatedAt = new Date();
+      let file;
+      if (format === "xlsx") {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = "iDetect";
+        const sheet = workbook.addWorksheet("Scan History");
+        sheet.columns = EXPORT_HEADERS.map((header) => ({ header, width: 22 }));
+        sheet.getRow(1).font = { bold: true };
+        sheet.views = [{ state: "frozen", ySplit: 1 }];
+        sheet.addRows(rows);
+        file = await workbook.xlsx.writeBuffer();
+      } else {
+        file = await buildReportPdf({
+          title: "Scan History Report",
+          cover: [
+            ["Generated", formatExportDate(generatedAt)],
+            ["Date range", `${start_date || "Any start"} to ${end_date || "Any end"}`],
+            ["Result filter", resultFilter ? resultLabel(resultFilter) : "All results"],
+            ["Records", String(rows.length)],
+            ["Note", "ID numbers are masked."],
+          ],
+          columns: EXPORT_HEADERS,
+          rows,
+        });
+      }
+
+      await pool.query(
+        `INSERT INTO audit_logs
+         (establishment_id, action, target_table, metadata)
+         VALUES ($1, 'data_export', 'verification_logs', $2)`,
+        [
+          establishment_id,
+          JSON.stringify({
+            export: "establishment_scan_history",
+            format,
+            result_filter: resultFilter ?? "all",
+            start_date: start_date ?? null,
+            end_date: end_date ?? null,
+            row_count: rows.length,
+            establishment_user_id: req.establishment.establishment_user_id ?? null,
+          }),
+        ],
+      );
+
+      const datestamp = generatedAt.toLocaleDateString("en-CA", {
+        timeZone: "Asia/Manila",
+      });
+      res.setHeader("Content-Type", EXPORT_FORMATS[format]);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="scan-history-${datestamp}.${format}"`,
+      );
+      return res.send(Buffer.from(file));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // ── POST /api/verification/:id/cashier-action ────────────────────────────
 // Gap 8: Record the cashier's deliberate action on a SUSPICIOUS/MANUAL_REVIEW

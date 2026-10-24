@@ -33,4 +33,35 @@ function requireStepUpForDownload(req, res, next) {
   return requireStepUp(req, res, next);
 }
 
-module.exports = { requireStepUp, requireStepUpForDownload };
+// Establishment equivalent: the proof must come from /auth/establishment/reauth
+// and belong to the same establishment user that is calling the route.
+function requireEstablishmentStepUp(req, res, next) {
+  const reauthRequired = () =>
+    res.status(401).json({
+      error: "Reauthentication required for this sensitive action",
+    });
+
+  const token = req.headers["x-step-up-token"];
+  if (!token) return reauthRequired();
+
+  try {
+    const proof = jwt.verify(token, process.env.JWT_SECRET_ESTABLISHMENT);
+    if (
+      proof.step_up !== true ||
+      proof.id !== req.establishment.id ||
+      (proof.establishment_user_id ?? null) !==
+        (req.establishment.establishment_user_id ?? null)
+    ) {
+      return reauthRequired();
+    }
+    next();
+  } catch {
+    return reauthRequired();
+  }
+}
+
+module.exports = {
+  requireStepUp,
+  requireStepUpForDownload,
+  requireEstablishmentStepUp,
+};

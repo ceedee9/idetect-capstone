@@ -592,6 +592,80 @@ class ApiService {
   // uploadDisputeDoc. Failure to read/encode the image is non-fatal; the scan
   // still proceeds without image_data (backend just skips the upload step).
 
+  // Confirms the signed-in establishment user's password. Returns
+  // {'step_up_token': String} on success, or {'error': String, 'status': int}.
+  static Future<Map<String, dynamic>> reauthenticateEstablishment(
+      String password) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/establishment/reauth'),
+            headers: _authHeaders(),
+            body: jsonEncode({'password': password}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      Map<String, dynamic> data = {};
+      try {
+        data = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {}
+
+      final token = data['step_up_token'];
+      if (response.statusCode == 200 && token is String) {
+        return {'step_up_token': token};
+      }
+      return {
+        'error': (data['message'] ?? data['error'] ?? 'Could not confirm your password.')
+            .toString(),
+        'status': response.statusCode,
+      };
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e', 'status': 0};
+    }
+  }
+
+  // Downloads the scan history export as raw bytes (xlsx or pdf). Requires a
+  // step-up token from reauthenticateEstablishment. Returns {'bytes': Uint8List}
+  // on success or {'error': String} on failure.
+  static Future<Map<String, dynamic>> downloadVerificationHistoryExport({
+    required String format,
+    required String stepUpToken,
+    String? startDate,
+    String? endDate,
+    String? resultFilter,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'format': format,
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
+        if (resultFilter != null) 'result': resultFilter,
+      };
+      final uri = Uri.parse('$baseUrl/verification/history/export')
+          .replace(queryParameters: queryParams);
+
+      final response = await http
+          .get(uri, headers: {
+            ..._authHeaders(),
+            'x-step-up-token': stepUpToken,
+          })
+          .timeout(const Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        return {'bytes': response.bodyBytes};
+      }
+
+      var message = 'Failed to export verification history.';
+      try {
+        final data = jsonDecode(response.body);
+        message = (data['message'] ?? data['error'] ?? message).toString();
+      } catch (_) {}
+      return {'error': message};
+    } catch (e) {
+      return {'error': 'Cannot reach server: $e'};
+    }
+  }
+
   static Future<VerificationResult> verifyId({
     required String idNumber,
     required String beneficiaryType,

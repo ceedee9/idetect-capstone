@@ -4,8 +4,12 @@
 //             summary counts (VALID/SUSPICIOUS/INVALID), paginated log.
 // =============================================================================
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 
@@ -167,6 +171,292 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  static const _exportScopes = <(String, String?)>[
+    ('All', null),
+    ('Valid', 'valid'),
+    ('Suspicious', 'suspicious'),
+    ('Invalid', 'invalid'),
+    ('Manual review', 'manual_review'),
+  ];
+
+  Future<void> _showExportSheet() async {
+    final messenger = ScaffoldMessenger.of(context);
+    var format = 'xlsx';
+    String? scope = _resultFilter;
+    DateTime? start = _startDate;
+    DateTime? end = _endDate;
+    var busy = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheet) {
+            Future<void> pickDate(bool isStart) async {
+              final d = await showDatePicker(
+                context: context,
+                initialDate: (isStart ? start : end) ?? DateTime.now(),
+                firstDate: DateTime(2024),
+                lastDate: DateTime.now(),
+              );
+              if (d == null) return;
+              setSheet(() {
+                if (isStart) {
+                  start = d;
+                } else {
+                  end = d;
+                }
+              });
+            }
+
+            Future<void> runExport() async {
+              final s = start;
+              final e = end;
+              if (s != null && e != null && s.isAfter(e)) {
+                messenger.showSnackBar(const SnackBar(
+                    content: Text('The start date must be before the end date.')));
+                return;
+              }
+              final token = await _reauthenticate(
+                sheetContext,
+                (value) => setSheet(() => busy = value),
+              );
+              if (token == null) return;
+              setSheet(() => busy = true);
+              final res = await ApiService.downloadVerificationHistoryExport(
+                format: format,
+                stepUpToken: token,
+                startDate: _fmtDate(s),
+                endDate: _fmtDate(e),
+                resultFilter: scope,
+              );
+              if (!mounted) return;
+              if (res['error'] != null) {
+                if (sheetContext.mounted) setSheet(() => busy = false);
+                messenger.showSnackBar(
+                    SnackBar(content: Text(res['error'] as String)));
+                return;
+              }
+              if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+              await _shareExport(res['bytes'] as List<int>, format);
+            }
+
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Export scan history',
+                    style: GoogleFonts.sourceSerif4(
+                        fontWeight: FontWeight.w700, fontSize: 18),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('File format',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                          value: 'xlsx',
+                          label: Text('Excel'),
+                          icon: Icon(Icons.table_chart_outlined),
+                        ),
+                        ButtonSegment(
+                          value: 'pdf',
+                          label: Text('PDF'),
+                          icon: Icon(Icons.picture_as_pdf_outlined),
+                        ),
+                      ],
+                      selected: {format},
+                      onSelectionChanged: (s) =>
+                          setSheet(() => format = s.first),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Results to include',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final (label, value) in _exportScopes)
+                        ChoiceChip(
+                          label: Text(label),
+                          selected: scope == value,
+                          onSelected: (_) => setSheet(() => scope = value),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Date range (optional)',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => pickDate(true),
+                          child: Text(start == null
+                              ? 'From: Any'
+                              : 'From: ${_fmtDate(start)}'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => pickDate(false),
+                          child: Text(
+                              end == null ? 'To: Any' : 'To: ${_fmtDate(end)}'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: (start == null && end == null)
+                          ? null
+                          : () => setSheet(() {
+                                start = null;
+                                end = null;
+                              }),
+                      child: const Text('Clear dates'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton.icon(
+                      onPressed: busy ? null : runExport,
+                      icon: busy
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download_rounded),
+                      label: Text(busy ? 'Preparing…' : 'Export'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'IDs are masked in the file. Each export can include up to 5,000 scans.',
+                    style: TextStyle(fontSize: 12, color: AppDesignSystem.textTertiary),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Asks for the password again and calls the reauth endpoint. Re-prompts with
+  // the server message on a wrong password (401). Returns the step-up token,
+  // or null if the user cancelled or the request failed for another reason.
+  Future<String?> _reauthenticate(
+    BuildContext sheetContext,
+    void Function(bool busy) setBusy,
+  ) async {
+    String? passwordError;
+    while (true) {
+      if (!sheetContext.mounted) return null;
+      final password = await _promptPassword(sheetContext, passwordError);
+      if (password == null || !mounted) return null;
+
+      setBusy(true);
+      final reauth = await ApiService.reauthenticateEstablishment(password);
+      if (!mounted) return null;
+
+      final token = reauth['step_up_token'] as String?;
+      if (token != null) return token;
+
+      setBusy(false);
+      if (reauth['status'] == 401) {
+        passwordError = reauth['error'] as String?;
+        continue;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(reauth['error'] as String)));
+      return null;
+    }
+  }
+
+  Future<String?> _promptPassword(BuildContext context, String? errorText) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Confirm your password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+                'Exporting scan history requires your password. The file downloads after you confirm.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              autofocus: true,
+              onSubmitted: (value) => Navigator.pop(dialogContext, value),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                errorText: errorText,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _shareExport(List<int> bytes, String format) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final fileName = 'scan-history-${_fmtDate(DateTime.now())}.$format';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(bytes, flush: true);
+      await SharePlus.instance.share(ShareParams(
+        files: [
+          XFile(
+            file.path,
+            mimeType: format == 'pdf'
+                ? 'application/pdf'
+                : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          ),
+        ],
+        subject: fileName,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save the export: $e')));
+    }
+  }
+
   String _fmtTs(String? ts) {
     if (ts == null) return '—';
     try {
@@ -229,6 +519,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: 'Export history',
+            onPressed: _showExportSheet,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh',

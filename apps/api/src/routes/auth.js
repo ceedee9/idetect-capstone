@@ -508,6 +508,72 @@ const ESTABLISHMENT_LOGOUT_REASONS = [
   "manual",
   "idle_timeout",
 ];
+// ── Establishment Re-authentication ───────────────────────────
+// Confirms the signed-in establishment user's password and returns a
+// short-lived step-up token for sensitive actions (such as export).
+// Uses the same password rule as sign-in. Shares the /api/auth limiter.
+router.post("/establishment/reauth", async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ") || !req.body?.password) {
+      return res.status(401).json({ error: "Current password is required" });
+    }
+
+    const decoded = jwt.verify(
+      authHeader.slice(7),
+      process.env.JWT_SECRET_ESTABLISHMENT,
+    );
+    const result = await pool.query(
+      `SELECT
+         e.id,
+         e.status,
+         e.password_hash,
+         eu.id AS establishment_user_id,
+         eu.password_hash AS user_password_hash,
+         eu.account_status AS user_account_status
+       FROM establishments e
+       LEFT JOIN establishment_users eu
+         ON eu.establishment_id = e.id AND eu.id = $2
+       WHERE e.id = $1`,
+      [decoded.id, decoded.establishment_user_id || null],
+    );
+    const account = result.rows[0];
+    if (!account || account.status !== "approved") {
+      return res.status(403).json({ error: "Establishment account is not active" });
+    }
+    if (
+      account.establishment_user_id &&
+      account.user_account_status !== "active"
+    ) {
+      return res.status(403).json({ error: "Establishment user account is not active" });
+    }
+
+    const passwordMatch = await bcrypt.compare(
+      req.body.password,
+      account.user_password_hash || account.password_hash,
+    );
+    if (!passwordMatch) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    const stepUpToken = jwt.sign(
+      {
+        id: account.id,
+        establishment_user_id: account.establishment_user_id || null,
+        step_up: true,
+      },
+      process.env.JWT_SECRET_ESTABLISHMENT,
+      { expiresIn: "5m" },
+    );
+    res.json({ step_up_token: stepUpToken, expires_in: 300 });
+  } catch (err) {
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    next(err);
+  }
+});
+
 router.post("/establishment/logout", async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
