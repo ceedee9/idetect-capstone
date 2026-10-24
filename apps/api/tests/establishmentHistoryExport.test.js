@@ -174,6 +174,32 @@ describe("GET /verification/history/export", () => {
     expect(pool.query).not.toHaveBeenCalled();
   });
 
+  test("includes full ID numbers only when full_ids=true, and logs it", async () => {
+    const res = mockRes();
+    await runRoute(stack, req({ format: "xlsx", full_ids: "true" }), res);
+
+    expect(res.statusCode).toBe(200);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(res.body);
+    const sheet = workbook.getWorksheet("Scan History");
+    expect(sheet.getRow(1).getCell(3).value).toBe("ID Number");
+    expect(sheet.getRow(2).getCell(3).value).toBe("ABC123456");
+
+    const audit = auditInsertCalls();
+    expect(JSON.parse(audit[audit.length - 1][1][1])).toMatchObject({ full_ids: true });
+  });
+
+  test("keeps IDs masked when full_ids is not set", async () => {
+    const res = mockRes();
+    await runRoute(stack, req({ format: "xlsx" }), res);
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(res.body);
+    const sheet = workbook.getWorksheet("Scan History");
+    expect(sheet.getRow(1).getCell(3).value).toBe("ID Number (masked)");
+    expect(sheet.getRow(2).getCell(3).value).not.toContain("ABC123456");
+  });
+
   test("builds an Excel file with masked IDs and logs the export", async () => {
     const res = mockRes();
     await runRoute(

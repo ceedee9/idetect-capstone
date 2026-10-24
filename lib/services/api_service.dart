@@ -633,6 +633,7 @@ class ApiService {
     String? startDate,
     String? endDate,
     String? resultFilter,
+    bool fullIds = false,
   }) async {
     try {
       final queryParams = <String, String>{
@@ -640,6 +641,7 @@ class ApiService {
         if (startDate != null) 'start_date': startDate,
         if (endDate != null) 'end_date': endDate,
         if (resultFilter != null) 'result': resultFilter,
+        if (fullIds) 'full_ids': 'true',
       };
       final uri = Uri.parse('$baseUrl/verification/history/export')
           .replace(queryParameters: queryParams);

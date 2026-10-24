@@ -814,17 +814,17 @@ router.get("/history", authenticateEstablishment, async (req, res, next) => {
 // ── GET /api/verification/history/export ─────────────────────
 // Establishment audit export. Same filters as /history (start_date, end_date,
 // result), but every matching row is returned as an Excel (format=xlsx) or
-// PDF (format=pdf) file. ID numbers stay masked, as they are on screen.
-// Each export is written to audit_logs (action data_export).
+// PDF (format=pdf) file. ID numbers are masked unless full_ids=true, which
+// only super users can use. Each export is written to audit_logs (data_export).
 const EXPORT_MAX_ROWS = 5000;
 const EXPORT_FORMATS = {
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   pdf: "application/pdf",
 };
-const EXPORT_HEADERS = [
+const exportHeaders = (fullIds) => [
   "Reference No",
   "Date & Time",
-  "ID Number (masked)",
+  fullIds ? "ID Number" : "ID Number (masked)",
   "Beneficiary Type",
   "Beneficiary Name",
   "Result",
@@ -861,6 +861,7 @@ router.get(
     try {
       const establishment_id = req.establishment.id;
       const { format, start_date, end_date, result: resultFilter } = req.query;
+      const fullIds = req.query.full_ids === "true";
 
       if (!Object.prototype.hasOwnProperty.call(EXPORT_FORMATS, format)) {
         return res.status(400).json({ message: "format must be xlsx or pdf" });
@@ -893,13 +894,14 @@ router.get(
       const rows = dataResult.rows.map((r) => [
         r.reference_no ?? "",
         formatExportDate(r.verified_at),
-        maskIdNumber(r.id_number_scanned),
+        fullIds ? r.id_number_scanned ?? "" : maskIdNumber(r.id_number_scanned),
         r.beneficiary_type_detected ?? "",
         r.beneficiary_name ?? "",
         resultLabel(r.result),
         r.ocr_confidence_score ?? "",
         r.manually_entered ? "Manual" : "Scanned",
       ]);
+      const headers = exportHeaders(fullIds);
 
       const generatedAt = new Date();
       let file;
@@ -907,7 +909,7 @@ router.get(
         const workbook = new ExcelJS.Workbook();
         workbook.creator = "iDetect";
         const sheet = workbook.addWorksheet("Scan History");
-        sheet.columns = EXPORT_HEADERS.map((header) => ({ header, width: 22 }));
+        sheet.columns = headers.map((header) => ({ header, width: 22 }));
         sheet.getRow(1).font = { bold: true };
         sheet.views = [{ state: "frozen", ySplit: 1 }];
         sheet.addRows(rows);
@@ -920,9 +922,11 @@ router.get(
             ["Date range", `${start_date || "Any start"} to ${end_date || "Any end"}`],
             ["Result filter", resultFilter ? resultLabel(resultFilter) : "All results"],
             ["Records", String(rows.length)],
-            ["Note", "ID numbers are masked."],
+            fullIds
+              ? ["Note", "Full ID numbers included. Keep this file confidential."]
+              : ["Note", "ID numbers are masked."],
           ],
-          columns: EXPORT_HEADERS,
+          columns: headers,
           rows,
         });
       }
@@ -940,6 +944,7 @@ router.get(
             start_date: start_date ?? null,
             end_date: end_date ?? null,
             row_count: rows.length,
+            full_ids: fullIds,
             establishment_user_id: req.establishment.establishment_user_id ?? null,
           }),
         ],

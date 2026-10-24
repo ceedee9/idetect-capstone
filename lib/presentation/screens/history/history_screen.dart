@@ -194,6 +194,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     DateTime? start = _startDate;
     DateTime? end = _endDate;
     var busy = false;
+    var fullIds = false;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -239,6 +240,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 startDate: _fmtDate(s),
                 endDate: _fmtDate(e),
                 resultFilter: scope,
+                fullIds: fullIds,
               );
               if (!mounted) return;
               if (res['error'] != null) {
@@ -339,6 +341,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    value: fullIds,
+                    onChanged: (v) => setSheet(() => fullIds = v ?? false),
+                    title: const Text('Include full ID numbers'),
+                    subtitle: const Text(
+                        'Off by default. Only use when the full ID is needed.'),
+                  ),
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -356,9 +368,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'IDs are masked in the file. Each export can include up to 5,000 scans.',
-                    style: TextStyle(fontSize: 12, color: AppDesignSystem.textTertiary),
+                  Text(
+                    fullIds
+                        ? 'Full ID numbers are included. Keep the file confidential. Each export can include up to 5,000 scans.'
+                        : 'IDs are masked in the file. Each export can include up to 5,000 scans.',
+                    style: const TextStyle(fontSize: 12, color: AppDesignSystem.textTertiary),
                   ),
                 ],
               ),
