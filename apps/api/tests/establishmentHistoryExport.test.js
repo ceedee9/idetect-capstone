@@ -106,7 +106,11 @@ function req(query, headers = { "x-step-up-token": stepUpToken() }) {
   return {
     query,
     headers,
-    establishment: { id: ESTABLISHMENT_ID, establishment_user_id: ESTABLISHMENT_USER_ID },
+    establishment: {
+      id: ESTABLISHMENT_ID,
+      establishment_user_id: ESTABLISHMENT_USER_ID,
+      role: "establishment_super_user",
+    },
   };
 }
 
@@ -143,6 +147,16 @@ describe("GET /verification/history/export", () => {
       await runRoute(stack, req({ format: "xlsx" }, headers), res);
       expect(res.statusCode).toBe(401);
     }
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  test("refuses regular users even with a valid step-up token", async () => {
+    const res = mockRes();
+    const regularReq = req({ format: "xlsx" });
+    regularReq.establishment.role = "establishment_regular_user";
+    await runRoute(stack, regularReq, res);
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toMatch(/Super User/);
     expect(pool.query).not.toHaveBeenCalled();
   });
 

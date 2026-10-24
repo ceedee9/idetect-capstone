@@ -181,6 +181,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ('Manual review', 'manual_review'),
   ];
 
+  bool get _canExport =>
+      ApiService.currentUser?['role'] == 'establishment_super_user';
+
   Future<void> _showExportSheet() async {
     final messenger = ScaffoldMessenger.of(context);
     var format = 'xlsx';
@@ -519,11 +522,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.file_download_outlined),
-            tooltip: 'Export history',
-            onPressed: _showExportSheet,
-          ),
+          if (_canExport)
+            IconButton(
+              icon: const Icon(Icons.file_download_outlined),
+              tooltip: 'Export history',
+              onPressed: _showExportSheet,
+            ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh',

@@ -841,9 +841,21 @@ const formatExportDate = (value) =>
       })
     : "";
 
+// Checked before the step-up password prompt, so regular users are refused
+// without being asked for a password.
+const requireExportSuperUser = (req, res, next) => {
+  if (req.establishment?.role !== "establishment_super_user") {
+    return res.status(403).json({
+      message: "Only an establishment Super User can export scan history",
+    });
+  }
+  next();
+};
+
 router.get(
   "/history/export",
   authenticateEstablishment,
+  requireExportSuperUser,
   requireEstablishmentStepUp,
   async (req, res, next) => {
     try {
