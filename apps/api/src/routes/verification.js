@@ -217,7 +217,7 @@ router.post(
 
       // Query the database for this ID
       const bResult = await pool.query(
-        `SELECT id, full_name, beneficiary_type, status, validity_end, issuing_office
+        `SELECT id, full_name, beneficiary_type, status, validity_end, issuing_office, birthdate
        FROM beneficiaries
        WHERE UPPER(REGEXP_REPLACE(id_number, '[^A-Za-z0-9]', '', 'g')) = $1
          AND beneficiary_type = $2`,
@@ -314,9 +314,11 @@ router.post(
         }
 
         if (safeExtractedDob) {
-          const dbDate = new Date(beneficiary.birthdate)
-            .toISOString()
-            .slice(0, 10);
+          const dob = beneficiary.birthdate;
+          const dbDate =
+            dob instanceof Date
+              ? `${dob.getFullYear()}-${String(dob.getMonth() + 1).padStart(2, "0")}-${String(dob.getDate()).padStart(2, "0")}`
+              : String(dob).slice(0, 10);
           dobOk = safeExtractedDob === dbDate;
         }
 

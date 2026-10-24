@@ -160,12 +160,10 @@ class ReviewCaptureScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Quality-check warning — shown when the seal wasn't
-                // detected OR detection was inconclusive (null). Uses
-                // the shared AppNotice widget (same one used on
-                // change_password_screen.dart), with onDarkSurface:
-                // true since this screen sits on a dark background.
-                if (idType != 'auto' && sealDetected != true)
+                // Quality-check warning — only for new-format IDs, which
+                // carry a seal. Old-format IDs have no seal, so a missing
+                // seal there is expected and must not be flagged.
+                if (idType != 'auto' && idFormat == 'new' && sealDetected != true)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                     child: AppNotice(

@@ -229,7 +229,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           _typeWasCorrected = true;
 
           // The first parse used the wrong layout, so parse again as the
-          // corrected type. The seal calibration is also type-specific.
+          // corrected type. The seal result is still recorded, but the
+          // format the cashier chose stays as is (only auto mode derives
+          // the format from the seal).
           final bytes = await imageFile.readAsBytes();
           final image = img.decodeImage(bytes);
           if (image != null) {
@@ -240,7 +242,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               beneficiaryType: _resolvedIdType,
             );
             _resolvedSealDetected = sealResult.sealDetected;
-            _resolvedIdFormat = sealResult.sealDetected == true ? 'new' : 'old';
           }
           _parsedData = await _hybridParser.parseIDWithHybridApproach(
             imageFile: imageFile,
