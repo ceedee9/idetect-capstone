@@ -98,6 +98,8 @@ function buildReportPdf({ title, cover, columns, rows }) {
     const range = doc.bufferedPageRange();
     for (let i = range.start; i < range.start + range.count; i++) {
       doc.switchToPage(i);
+      // The footer sits inside the bottom margin; without this PDFKit adds a blank page per footer.
+      doc.page.margins.bottom = 0;
       doc
         .font("Helvetica")
         .fontSize(7)

@@ -5,9 +5,12 @@
 // =============================================================================
 
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:media_store_plus/media_store_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_design_system.dart';
@@ -245,7 +248,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 return;
               }
               if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-              await _shareExport(res['bytes'] as List<int>, format);
+              await _saveExport(res['bytes'] as List<int>, format);
             }
 
             return Padding(
@@ -399,28 +402,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<String?> _promptPassword(BuildContext context, String? errorText) {
     final controller = TextEditingController();
+    var obscure = true;
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Confirm your password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-                'Exporting scan history requires your password. The file downloads after you confirm.'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              obscureText: true,
-              autofocus: true,
-              onSubmitted: (value) => Navigator.pop(dialogContext, value),
-              decoration: InputDecoration(
-                labelText: 'Password',
-                errorText: errorText,
-              ),
-            ),
-          ],
+        content: StatefulBuilder(
+          builder: (context, setDialog) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                    'Exporting scan history requires your password. The file saves to your Downloads after you confirm.'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  obscureText: obscure,
+                  autofocus: true,
+                  onSubmitted: (value) => Navigator.pop(dialogContext, value),
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    errorText: errorText,
+                    suffixIcon: IconButton(
+                      icon: Icon(obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
+                      tooltip: obscure ? 'Show password' : 'Hide password',
+                      onPressed: () => setDialog(() => obscure = !obscure),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -436,29 +451,67 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Future<void> _shareExport(List<int> bytes, String format) async {
+  // Saves the export straight to the Downloads folder without a share sheet.
+  // iOS has no public Downloads folder, so it falls back to the share sheet.
+  Future<void> _saveExport(List<int> bytes, String format) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final fileName = 'scan-history-${_fmtDate(DateTime.now())}.$format';
     try {
-      final dir = await getTemporaryDirectory();
-      final fileName = 'scan-history-${_fmtDate(DateTime.now())}.$format';
-      final file = File('${dir.path}/$fileName');
-      await file.writeAsBytes(bytes, flush: true);
-      await SharePlus.instance.share(ShareParams(
-        files: [
-          XFile(
-            file.path,
-            mimeType: format == 'pdf'
-                ? 'application/pdf'
-                : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          ),
-        ],
-        subject: fileName,
-      ));
+      if (Platform.isIOS) {
+        await _shareExport(bytes, format);
+        return;
+      }
+
+      final String location;
+      if (Platform.isAndroid) {
+        final dir = await getTemporaryDirectory();
+        final tempFile = File('${dir.path}/$fileName');
+        await tempFile.writeAsBytes(bytes, flush: true);
+        MediaStore.appFolder = 'iDetect';
+        await MediaStore.ensureInitialized();
+        final saved = await MediaStore().saveFile(
+          tempFilePath: tempFile.path,
+          dirType: DirType.download,
+          dirName: DirName.download,
+        );
+        if (saved == null) throw Exception('Android did not save the file');
+        location = 'Downloads/iDetect/$fileName';
+      } else {
+        location = await FileSaver.instance.saveFile(
+          name: 'scan-history-${_fmtDate(DateTime.now())}',
+          bytes: Uint8List.fromList(bytes),
+          fileExtension: format,
+          mimeType: format == 'pdf' ? MimeType.pdf : MimeType.microsoftExcel,
+        );
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+          SnackBar(content: Text('Saved to $location')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
           SnackBar(content: Text('Could not save the export: $e')));
     }
   }
+
+  Future<void> _shareExport(List<int> bytes, String format) async {
+    final dir = await getTemporaryDirectory();
+    final fileName = 'scan-history-${_fmtDate(DateTime.now())}.$format';
+    final file = File('${dir.path}/$fileName');
+    await file.writeAsBytes(bytes, flush: true);
+    await SharePlus.instance.share(ShareParams(
+      files: [
+        XFile(
+          file.path,
+          mimeType: format == 'pdf'
+              ? 'application/pdf'
+              : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ),
+      ],
+      subject: fileName,
+    ));
+  }
+
 
   String _fmtTs(String? ts) {
     if (ts == null) return '—';
