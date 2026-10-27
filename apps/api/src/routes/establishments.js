@@ -18,6 +18,10 @@ const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
 const { requireStepUp } = require("../middleware/stepUp");
 const { createError } = require("../middleware/errorHandler");
+const {
+  PASSWORD_MAX_LENGTH,
+  assertPasswordPolicy,
+} = require("../utils/passwordPolicy");
 const { sendSms } = require("../services/smsService");
 const { sendEstablishmentSetupLink } = require("../services/emailService");
 const { isEstablishmentEmailTaken } = require("../utils/emailAvailability");
@@ -46,7 +50,11 @@ router.post(
   "/register",
   [
     body("email").isEmail().normalizeEmail(),
-    body("password").isLength({ min: 8 }),
+    body("password")
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
     body("business_name").notEmpty().trim(),
     body("business_permit_no").notEmpty().trim().toUpperCase(),
     body("owner_name").notEmpty().trim(),
@@ -126,14 +134,26 @@ router.use(requireRole("bplo_admin"));
 
 // ── Helpers ──────────────────────────────────────────────────
 // Generate a readable random password (no ambiguous chars: 0/O, I/1/l)
+// Generate a readable random password that always satisfies the password
+// policy (upper, lower, digit, special). Ambiguous chars (0/O, I/1/l) are excluded.
 function generatePassword(length = 12) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  const bytes = crypto.randomBytes(length);
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i] % chars.length];
+  const sets = [
+    "ABCDEFGHJKLMNPQRSTUVWXYZ",
+    "abcdefghjkmnpqrstuvwxyz",
+    "23456789",
+    "!@#$%&*?",
+  ];
+  const all = sets.join("");
+  const chars = sets.map((set) => set[crypto.randomInt(set.length)]);
+  while (chars.length < length) {
+    chars.push(all[crypto.randomInt(all.length)]);
   }
-  return result;
+  // Shuffle so the guaranteed characters aren't always at the front
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
 }
 
 // Generate a placeholder login email from the permit number when none is provided
@@ -1007,8 +1027,10 @@ router.patch(
   [
     param("id").isUUID(),
     body("new_password")
-      .isLength({ min: 8 })
-      .withMessage("Password must be at least 8 characters"),
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
   ],
   authenticate,
   requireRole("bplo_admin"),

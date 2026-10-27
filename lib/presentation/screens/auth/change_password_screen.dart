@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../services/api_service.dart';
+import '../../../services/password_policy.dart';
 import '../../widgets/app_notice.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -51,8 +52,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (current.isEmpty || next.isEmpty || confirm.isEmpty) {
       return 'Please fill in all three fields.';
     }
-    if (next.length < 8) {
-      return 'New password must be at least 8 characters.';
+    if (!isPasswordValid(next)) {
+      return 'New password does not meet all of the requirements.';
     }
     if (next != confirm) {
       return 'New password and confirmation do not match.';
@@ -126,9 +127,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     required String hintText,
     required bool obscure,
     required VoidCallback onToggle,
+    ValueChanged<String>? onChanged,
   }) {
     return TextField(
       controller: controller,
+      onChanged: onChanged,
       obscureText: !obscure,
       style: const TextStyle(fontSize: 16, color: Color(0xFF0F172A)),
       decoration: InputDecoration(
@@ -162,6 +165,41 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
+    );
+  }
+
+  Widget _passwordRequirements(String password) {
+    final hasInput = password.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final rule in passwordRules)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: _requirementRow(rule, password, hasInput),
+          ),
+      ],
+    );
+  }
+
+  Widget _requirementRow(PasswordRule rule, String password, bool hasInput) {
+    final passed = rule.test(password);
+    final color = !hasInput
+        ? const Color(0xFF94A3B8)
+        : passed
+            ? const Color(0xFF16A34A)
+            : const Color(0xFFDC2626);
+    final icon = !hasInput
+        ? Icons.radio_button_unchecked_rounded
+        : passed
+            ? Icons.check_circle_rounded
+            : Icons.cancel_rounded;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Text(rule.label, style: TextStyle(fontSize: 13, color: color)),
+      ],
     );
   }
 
@@ -211,10 +249,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               const SizedBox(height: 6),
               _passwordField(
                 controller: _newController,
-                hintText: 'At least 8 characters',
+                hintText: 'Create a strong password',
                 obscure: _showNew,
                 onToggle: () => setState(() => _showNew = !_showNew),
+                onChanged: (_) => setState(() {}),
               ),
+              const SizedBox(height: 8),
+              _passwordRequirements(_newController.text),
               const SizedBox(height: 16),
               _fieldLabel('Confirm New Password'),
               const SizedBox(height: 6),

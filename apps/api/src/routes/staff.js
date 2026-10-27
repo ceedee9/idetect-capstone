@@ -10,6 +10,10 @@ const { body, param, validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { authenticate, requireRole } = require("../middleware/auth");
 const { openStaffAlertStream } = require("../services/staffAlertStream");
+const {
+  PASSWORD_MAX_LENGTH,
+  assertPasswordPolicy,
+} = require("../utils/passwordPolicy");
 
 const router = express.Router();
 const SALT_ROUNDS = 12;
@@ -132,7 +136,11 @@ router.post(
   [
     body("email").isEmail().normalizeEmail(),
     body("full_name").trim().isLength({ min: 2, max: 255 }),
-    body("password").isLength({ min: 8, max: 128 }),
+    body("password")
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
     body("role").optional().isIn(["bplo_admin", "osca_admin", "pdao_admin"]),
   ],
   async (req, res, next) => {
@@ -370,7 +378,14 @@ router.patch(
 router.patch(
   "/:id/reset-password",
   requireOfficeSuperAdmin,
-  [param("id").isUUID(), body("password").isLength({ min: 8, max: 128 })],
+  [
+    param("id").isUUID(),
+    body("password")
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
+  ],
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
@@ -416,7 +431,11 @@ router.patch(
   "/me/change-password",
   [
     body("current_password").notEmpty(),
-    body("new_password").isLength({ min: 8, max: 128 }),
+    body("new_password")
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
   ],
   async (req, res, next) => {
     try {

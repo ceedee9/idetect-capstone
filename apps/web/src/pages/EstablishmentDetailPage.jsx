@@ -27,6 +27,8 @@ import { establishmentsAPI } from "../services/api";
 import StatusBadge from "../components/StatusBadge";
 import RecordHistoryPanel from "../components/RecordHistoryPanel";
 import ConfirmModal from "../components/ConfirmModal";
+import PasswordRequirements from "../components/PasswordRequirements";
+import { isPasswordValid } from "../utils/passwordPolicy";
 import { fmtDate, fmtDateTime } from "../utils/date";
 
 function InfoRow({ icon: Icon, label, value }) {
@@ -127,8 +129,8 @@ export default function EstablishmentDetailPage() {
         await establishmentsAPI.unlock(id);
         setSuccessMsg(`"${est.business_name}" login has been unlocked.`);
       } else if (modal === "resetPwd") {
-        if (!newPassword || newPassword.length < 8)
-          throw new Error("Password must be at least 8 characters.");
+        if (!isPasswordValid(newPassword))
+          throw new Error("Password does not meet all of the requirements.");
         await establishmentsAPI.adminResetPassword(id, newPassword);
         setSuccessMsg(
           `Password for "${est.business_name}" has been reset. They will be notified via SMS.`,
@@ -618,21 +620,20 @@ export default function EstablishmentDetailPage() {
           setNewPassword("");
           setActionError("");
         }}
+        confirmDisabled={!isPasswordValid(newPassword)}
         onConfirm={handleAction}
         loading={actionLoading}
       >
         <div className="relative mt-1">
-          <label className="label text-xs">
-            New Password (min 8 characters)
-          </label>
+          <label className="label text-xs">New Password</label>
           <PasswordInput
             className="input text-sm"
             placeholder="Enter new password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             disabled={actionLoading}
-            minLength={8}
           />
+          <PasswordRequirements password={newPassword} />
         </div>
         {actionError && (
           <p className="flex items-center gap-1.5 text-sm text-danger-600 mt-2">

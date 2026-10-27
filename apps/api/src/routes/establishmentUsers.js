@@ -6,6 +6,10 @@ const pool = require("../config/database");
 const { sendEstablishmentUserInvitation } = require("../services/emailService");
 const { isEstablishmentEmailTaken } = require("../utils/emailAvailability");
 const {
+  PASSWORD_MAX_LENGTH,
+  assertPasswordPolicy,
+} = require("../utils/passwordPolicy");
+const {
   authenticateEstablishment,
 } = require("../middleware/auth");
 
@@ -430,7 +434,14 @@ router.patch(
 router.patch(
   "/:id/reset-password",
   requireSuperUser,
-  [param("id").isUUID(), body("password").isLength({ min: 8, max: 128 })],
+  [
+    param("id").isUUID(),
+    body("password")
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
+  ],
   async (req, res, next) => {
     try {
       const errorResponse = validationError(req, res);

@@ -14,6 +14,10 @@ const pool = require("../config/database");
 const { createError } = require("../middleware/errorHandler");
 const { authenticateBeneficiary } = require("../middleware/auth");
 const { sendOtp, sendSms } = require("../services/smsService");
+const {
+  PASSWORD_MAX_LENGTH,
+  assertPasswordPolicy,
+} = require("../utils/passwordPolicy");
 
 const LOGIN_MAX_ATTEMPTS = 3;
 const LOGIN_LOCKOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -1231,8 +1235,10 @@ router.post(
     body("email").isEmail().normalizeEmail(),
     body("token").notEmpty().trim(),
     body("new_password")
-      .isLength({ min: 8 })
-      .withMessage("Password must be at least 8 characters"),
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
   ],
   async (req, res, next) => {
     try {
@@ -1342,8 +1348,10 @@ router.post(
     body("contact_number").notEmpty().trim(),
     body("otp").isLength({ min: 6, max: 6 }),
     body("new_password")
-      .isLength({ min: 8 })
-      .withMessage("Password must be at least 8 characters"),
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
   ],
   async (req, res, next) => {
     try {
@@ -1417,8 +1425,10 @@ router.post(
     body("email").isEmail().normalizeEmail(),
     body("token").notEmpty().trim(),
     body("new_password")
-      .isLength({ min: 8 })
-      .withMessage("Password must be at least 8 characters"),
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
   ],
   async (req, res, next) => {
     try {
@@ -1483,8 +1493,10 @@ router.post(
     body("email").isEmail().normalizeEmail(),
     body("token").notEmpty().trim(),
     body("new_password")
-      .isLength({ min: 8, max: 128 })
-      .withMessage("Password must be between 8 and 128 characters"),
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
   ],
   async (req, res, next) => {
     try {
@@ -1558,8 +1570,10 @@ router.post(
   [
     body("current_password").notEmpty(),
     body("new_password")
-      .isLength({ min: 8 })
-      .withMessage("Password must be at least 8 characters"),
+      .isLength({ max: PASSWORD_MAX_LENGTH })
+      .withMessage(`Password must be at most ${PASSWORD_MAX_LENGTH} characters`)
+      .bail()
+      .custom(assertPasswordPolicy),
   ],
   async (req, res, next) => {
     try {

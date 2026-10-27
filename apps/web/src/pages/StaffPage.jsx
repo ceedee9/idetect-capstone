@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PasswordInput from "../components/PasswordInput";
+import PasswordRequirements from "../components/PasswordRequirements";
+import { isPasswordValid } from "../utils/passwordPolicy";
 import { createPortal } from "react-dom";
 import {
   Users,
@@ -471,14 +473,14 @@ function CreateStaffModal({ onClose, onCreated, isSuperAdmin, currentRole }) {
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <PasswordInput
               className="input pl-9 text-sm w-full"
-              placeholder="Min 8 characters"
+              placeholder="Create a strong password"
               required
-              minLength={8}
               autoComplete="new-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </div>
+          <PasswordRequirements password={form.password} />
         </div>
         <div>
           <label className="label text-xs">Staff role</label>
@@ -514,7 +516,11 @@ function CreateStaffModal({ onClose, onCreated, isSuperAdmin, currentRole }) {
           <button type="button" onClick={onClose} className="btn-secondary">
             Cancel
           </button>
-          <button type="submit" disabled={busy} className="btn-primary">
+          <button
+            type="submit"
+            disabled={busy || !isPasswordValid(form.password)}
+            className="btn-primary"
+          >
             {busy ? "Creating…" : "Create Account"}
           </button>
         </div>
@@ -649,13 +655,13 @@ function ResetPasswordModal({ member, onClose, onReset }) {
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <PasswordInput
               className="input pl-9 text-sm w-full"
-              placeholder="Min 8 characters"
+              placeholder="Create a strong password"
               required
-              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          <PasswordRequirements password={password} />
         </div>
         {err && (
           <p className="text-sm text-danger-600 flex items-center gap-1.5">
@@ -667,7 +673,11 @@ function ResetPasswordModal({ member, onClose, onReset }) {
           <button type="button" onClick={onClose} className="btn-secondary">
             Cancel
           </button>
-          <button type="submit" disabled={busy} className="btn-primary">
+          <button
+            type="submit"
+            disabled={busy || !isPasswordValid(password)}
+            className="btn-primary"
+          >
             {busy ? "Resetting…" : "Reset Password"}
           </button>
         </div>

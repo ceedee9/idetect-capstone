@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { authAPI } from "../services/api";
+import PasswordRequirements from "../components/PasswordRequirements";
+import { isPasswordValid } from "../utils/passwordPolicy";
 
 const LOGO_SRC = "/IDETECT.png";
 
@@ -36,8 +38,8 @@ export default function ResetPasswordPage() {
       setError("Passwords do not match.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (!isPasswordValid(password)) {
+      setError("Password does not meet all of the requirements.");
       return;
     }
 
@@ -135,7 +137,7 @@ export default function ResetPasswordPage() {
                     <input
                       type={showPw ? "text" : "password"}
                       required
-                      placeholder="At least 8 characters"
+                      placeholder="Create a strong password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={loading || !token}
@@ -164,6 +166,7 @@ export default function ResetPasswordPage() {
                       )}
                     </button>
                   </div>
+                  <PasswordRequirements password={password} />
                 </div>
 
                 {/* Confirm password */}
@@ -208,15 +211,15 @@ export default function ResetPasswordPage() {
 
                 <button
                   type="submit"
-                  disabled={loading || !token || !password || !confirm}
+                  disabled={loading || !token || !isPasswordValid(password) || !confirm}
                   className="w-full flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-semibold text-white"
                   style={{
                     background:
-                      loading || !token || !password || !confirm
+                      loading || !token || !isPasswordValid(password) || !confirm
                         ? "#93c5fd"
                         : "#3b82f6",
                     cursor:
-                      loading || !token || !password || !confirm
+                      loading || !token || !isPasswordValid(password) || !confirm
                         ? "not-allowed"
                         : "pointer",
                   }}
