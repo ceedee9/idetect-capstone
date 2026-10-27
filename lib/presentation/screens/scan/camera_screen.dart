@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_design_system.dart';
 import 'review_capture_screen.dart';
 import '../../../services/seal_presence_detector.dart';
+import '../../../services/opencv_image_processor.dart';
 import '../../../services/zone_optimized_ocr.dart';
 import '../../../services/layout_based_field_extractor.dart';
 
@@ -66,9 +67,11 @@ class _CameraScreenState extends State<CameraScreen> {
 
       final selectedCamera = backCamera ?? _cameras!.first;
 
+      // Text on an ID is small: 720p ("high") leaves only ~600px across the
+      // card, too little for reliable OCR.
       _cameraController = CameraController(
         selectedCamera,
-        ResolutionPreset.high,
+        ResolutionPreset.veryHigh,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -124,11 +127,30 @@ class _CameraScreenState extends State<CameraScreen> {
         await _cameraController!.setFlashMode(FlashMode.auto);
       }
 
+      await _focusOnCenter();
+
       final XFile photo = await _cameraController!.takePicture();
       await _processImage(File(photo.path));
     } catch (e) {
       _showError('Capture failed: $e');
       setState(() => _isCapturing = false);
+    }
+  }
+
+  /// Settles autofocus/exposure on the card before the shutter fires; shots
+  /// taken mid-focus-hunt are the main source of blurry, unreadable text.
+  Future<void> _focusOnCenter() async {
+    final controller = _cameraController;
+    if (controller == null) return;
+    try {
+      const center = Offset(0.5, 0.5);
+      await Future.wait([
+        controller.setFocusPoint(center),
+        controller.setExposurePoint(center),
+      ]).timeout(const Duration(milliseconds: 1200));
+      await Future.delayed(const Duration(milliseconds: 250));
+    } catch (e) {
+      // Not supported on every device; capture anyway
     }
   }
 
@@ -148,31 +170,35 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _processImage(File imageFile) async {
     try {
-      final bytes = await imageFile.readAsBytes();
-      img.Image? image = img.decodeImage(bytes);
-
-      if (image == null) {
-        throw Exception('Failed to process image');
-      }
-
-      // Auto-crop to ID ratio
-      final croppedImage = _autoCropID(image);
-
-      // Save processed image
       final tempDir = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final processedPath = '${tempDir.path}/id_${timestamp}_processed.jpg';
-      final processedFile = File(processedPath);
-      await processedFile.writeAsBytes(
-        img.encodeJpg(croppedImage, quality: 95),
+
+      // Auto-crop to ID ratio natively (a multi-megapixel decode/encode in
+      // Dart blocks for seconds); fall back to the Dart path if it fails.
+      var size = await OpenCVImageProcessor.cropCenterToCardRatio(
+        imageFile.path,
+        processedPath,
       );
+      if (size == null) {
+        final bytes = await imageFile.readAsBytes();
+        final image = img.decodeImage(bytes);
+        if (image == null) {
+          throw Exception('Failed to process image');
+        }
+        final croppedImage = _autoCropID(image);
+        await File(processedPath).writeAsBytes(
+          img.encodeJpg(croppedImage, quality: 95),
+        );
+        size = (width: croppedImage.width, height: croppedImage.height);
+      }
 
       final sealResult = widget.idType == 'auto'
           ? SealCheckResult.unavailable('Card type not resolved yet')
           : await SealPresenceDetector.checkSeal(
               imagePath: processedPath,
-              imageWidth: croppedImage.width,
-              imageHeight: croppedImage.height,
+              imageWidth: size.width,
+              imageHeight: size.height,
               beneficiaryType: widget.idType,
             );
       debugPrint('[SEAL TEST] detected=${sealResult.sealDetected}, '

@@ -1,128 +1,164 @@
-<mxfile host="app.diagrams.net" version="24.7.0">
-  <diagram name="ERD - iDetect (10 tables)" id="erd-idetect">
-    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1300" math="0" shadow="0">
+<mxfile host="app.diagrams.net">
+  <diagram name="ERD - iDetect (14 tables)" id="erd-idetect">
+    <mxGraphModel dx="2988" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1960" pageHeight="1900" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-
-        <!-- ============ USERS ============ -->
-        <mxCell id="tbl_users" value="&lt;b&gt;USERS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;email : VARCHAR(255) UNIQUE&lt;br&gt;password_hash : VARCHAR(255)&lt;br&gt;full_name : VARCHAR(255)&lt;br&gt;role : ENUM(bplo_admin,osca_admin,pdao_admin)&lt;br&gt;is_active : BOOLEAN&lt;br&gt;failed_attempts : SMALLINT&lt;br&gt;locked_until : TIMESTAMPTZ&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="900" y="20" width="300" height="200" as="geometry" />
+        <mxCell id="tbl_users" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;USERS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;email : VARCHAR(255) UNIQUE&lt;br&gt;password_hash : VARCHAR(255)&lt;br&gt;full_name : VARCHAR(255)&lt;br&gt;role : ENUM(bplo_admin,osca_admin,pdao_admin,bplo_super_admin,osca_super_admin,pdao_super_admin)&lt;br&gt;is_active : BOOLEAN&lt;br&gt;failed_attempts : SMALLINT&lt;br&gt;locked_until : TIMESTAMPTZ&lt;br&gt;reset_token : VARCHAR(64)&lt;br&gt;reset_token_expires : TIMESTAMPTZ&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="280" width="300" x="900" y="20" as="geometry" />
         </mxCell>
-
-        <!-- ============ ESTABLISHMENTS ============ -->
-        <mxCell id="tbl_establishments" value="&lt;b&gt;ESTABLISHMENTS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;email : VARCHAR(255) UNIQUE&lt;br&gt;password_hash : VARCHAR(255)&lt;br&gt;business_name : VARCHAR(255)&lt;br&gt;business_permit_no : VARCHAR(100) UNIQUE&lt;br&gt;business_permit_expiry : DATE&lt;br&gt;owner_name : VARCHAR(255)&lt;br&gt;address : TEXT&lt;br&gt;contact_number : VARCHAR(20)&lt;br&gt;business_type : VARCHAR(100)&lt;br&gt;status : ENUM(pending,approved,suspended,revoked)&lt;br&gt;approved_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;approved_at : TIMESTAMPTZ&lt;br&gt;suspended_reason : TEXT&lt;br&gt;failed_attempts : SMALLINT&lt;br&gt;locked_until : TIMESTAMPTZ&lt;br&gt;reset_otp : VARCHAR(6)&lt;br&gt;reset_otp_expires : TIMESTAMPTZ&lt;br&gt;password_setup_token : VARCHAR(64)&lt;br&gt;password_setup_token_expires : TIMESTAMPTZ&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="420" y="280" width="340" height="380" as="geometry" />
+        <mxCell id="tbl_establishments" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;ESTABLISHMENTS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;reference_no : VARCHAR(20) UNIQUE&lt;br&gt;email : VARCHAR(255) UNIQUE&lt;br&gt;password_hash : VARCHAR(255)&lt;br&gt;business_name : VARCHAR(255)&lt;br&gt;business_permit_no : VARCHAR(100) UNIQUE&lt;br&gt;business_permit_expiry : DATE&lt;br&gt;owner_name : VARCHAR(255)&lt;br&gt;contact_person : VARCHAR(255), nullable&lt;br&gt;address : TEXT&lt;br&gt;contact_number : VARCHAR(20)&lt;br&gt;business_type : VARCHAR(100)&lt;br&gt;status : ENUM(pending,approved,suspended,revoked)&lt;br&gt;approved_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;approved_at : TIMESTAMPTZ&lt;br&gt;suspended_reason : TEXT&lt;br&gt;failed_attempts : SMALLINT&lt;br&gt;locked_until : TIMESTAMPTZ&lt;br&gt;reset_otp : VARCHAR(6)&lt;br&gt;reset_otp_expires : TIMESTAMPTZ&lt;br&gt;password_setup_token : VARCHAR(64)&lt;br&gt;password_setup_token_expires : TIMESTAMPTZ&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="440" width="340" x="420" y="20" as="geometry" />
         </mxCell>
-
-        <!-- ============ BENEFICIARIES ============ -->
-        <mxCell id="tbl_beneficiaries" value="&lt;b&gt;BENEFICIARIES&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;id_number : VARCHAR(50) UNIQUE&lt;br&gt;full_name : VARCHAR(255)&lt;br&gt;birthdate : DATE&lt;br&gt;beneficiary_type : ENUM(senior_citizen,pwd)&lt;br&gt;disability_type : VARCHAR(100), nullable&lt;br&gt;issuing_office : VARCHAR(255)&lt;br&gt;validity_start : DATE&lt;br&gt;validity_end : DATE&lt;br&gt;status : ENUM(active,expired,suspended,revoked)&lt;br&gt;status_reason : TEXT&lt;br&gt;registered_mobile : VARCHAR(20)&lt;br&gt;created_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;updated_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="840" y="280" width="320" height="310" as="geometry" />
+        <mxCell id="tbl_beneficiaries" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;BENEFICIARIES&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;reference_no : VARCHAR(20) UNIQUE&lt;br&gt;id_number : VARCHAR(50) UNIQUE&lt;br&gt;full_name : VARCHAR(255)&lt;br&gt;birthdate : DATE&lt;br&gt;beneficiary_type : ENUM(senior_citizen,pwd)&lt;br&gt;disability_type : VARCHAR(100), nullable&lt;br&gt;issuing_office : VARCHAR(255)&lt;br&gt;validity_start : DATE&lt;br&gt;validity_end : DATE&lt;br&gt;status : ENUM(active,expired,suspended,revoked)&lt;br&gt;status_reason : TEXT&lt;br&gt;registered_mobile : VARCHAR(20)&lt;br&gt;address : TEXT&lt;br&gt;contact_number : VARCHAR(20)&lt;br&gt;email : VARCHAR(255)&lt;br&gt;notes : TEXT&lt;br&gt;suspension_start_date : DATE&lt;br&gt;suspension_end_date : DATE&lt;br&gt;created_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;updated_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="400" width="320" x="840" y="340" as="geometry" />
         </mxCell>
-
-        <!-- ============ AUDIT_LOGS ============ -->
-        <mxCell id="tbl_audit_logs" value="&lt;b&gt;AUDIT_LOGS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;user_id : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS, nullable&amp;gt;&amp;gt;&lt;br&gt;action : ENUM(login, logout, beneficiary_status_changed, establishment_approved, flag_confirmed, dispute_resolved, sla_ack_escalation, ...)&lt;br&gt;target_table : VARCHAR(100)&lt;br&gt;target_id : UUID&lt;br&gt;metadata : JSONB&lt;br&gt;ip_address : INET&lt;br&gt;user_agent : TEXT&lt;br&gt;created_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="280" width="330" height="220" as="geometry" />
+        <mxCell id="tbl_audit_logs" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;AUDIT_LOGS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;user_id : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS, nullable&amp;gt;&amp;gt;&lt;br&gt;action : ENUM(login, logout, login_failed, beneficiary_status_changed, establishment_approved, flag_confirmed, flag_deleted, dispute_resolved, sla_ack_escalation, staff_created, staff_role_changed, establishment_user_*, callback_requested, callback_request_handled, sensitive_data_revealed, audit_logs_archived, ... per migrations 009-059)&lt;br&gt;target_table : VARCHAR(100)&lt;br&gt;target_id : UUID&lt;br&gt;metadata : JSONB&lt;br&gt;ip_address : INET&lt;br&gt;user_agent : TEXT&lt;br&gt;created_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="260" width="330" x="1240" y="340" as="geometry" />
         </mxCell>
-
-        <!-- ============ FRAUD_FLAGS ============ -->
-        <mxCell id="tbl_fraud_flags" value="&lt;b&gt;FRAUD_FLAGS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;verification_log_id : UUID &amp;lt;&amp;lt;FK--VERIFICATION_LOGS&amp;gt;&amp;gt;&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS&amp;gt;&amp;gt;&lt;br&gt;beneficiary_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARIES, nullable&amp;gt;&amp;gt;&lt;br&gt;id_number_flagged : VARCHAR(50)&lt;br&gt;beneficiary_type : ENUM(senior_citizen,pwd)&lt;br&gt;flag_status : ENUM(pending,reviewing,confirmed,dismissed)&lt;br&gt;establishment_notes : TEXT&lt;br&gt;staff_notes : TEXT&lt;br&gt;reviewed_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;image_path : TEXT&lt;br&gt;verification_outcome : ENUM(valid,suspicious,invalid,manual_review)&lt;br&gt;parent_flag_id : UUID &amp;lt;&amp;lt;FK--FRAUD_FLAGS, nullable&amp;gt;&amp;gt;&lt;br&gt;is_supplementary : BOOLEAN&lt;br&gt;flagged_at : TIMESTAMPTZ&lt;br&gt;reviewed_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="20" y="280" width="330" height="320" as="geometry" />
+        <mxCell id="tbl_fraud_flags" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;FRAUD_FLAGS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;reference_no : VARCHAR(20) UNIQUE&lt;br&gt;verification_log_id : UUID &amp;lt;&amp;lt;FK--VERIFICATION_LOGS&amp;gt;&amp;gt;&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS&amp;gt;&amp;gt;&lt;br&gt;establishment_user_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENT_USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;beneficiary_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARIES, nullable&amp;gt;&amp;gt;&lt;br&gt;id_number_flagged : VARCHAR(50)&lt;br&gt;beneficiary_type : ENUM(senior_citizen,pwd)&lt;br&gt;flag_status : ENUM(pending,reviewing,confirmed,dismissed)&lt;br&gt;establishment_notes : TEXT&lt;br&gt;staff_notes : TEXT&lt;br&gt;reviewed_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;image_path : TEXT&lt;br&gt;verification_outcome : ENUM(valid,suspicious,invalid,manual_review)&lt;br&gt;parent_flag_id : UUID &amp;lt;&amp;lt;FK--FRAUD_FLAGS, nullable&amp;gt;&amp;gt;&lt;br&gt;is_supplementary : BOOLEAN&lt;br&gt;flagged_at : TIMESTAMPTZ&lt;br&gt;reviewed_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="330" width="330" x="20" y="20" as="geometry" />
         </mxCell>
-
-        <!-- ============ VERIFICATION_LOGS ============ -->
-        <mxCell id="tbl_verification_logs" value="&lt;b&gt;VERIFICATION_LOGS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS&amp;gt;&amp;gt;&lt;br&gt;beneficiary_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARIES, nullable&amp;gt;&amp;gt;&lt;br&gt;id_number_scanned : VARCHAR(50)&lt;br&gt;beneficiary_type_detected : ENUM(senior_citizen,pwd), nullable&lt;br&gt;result : ENUM(valid,suspicious,invalid,manual_review)&lt;br&gt;ocr_confidence_score : NUMERIC(5,2)&lt;br&gt;ocr_raw_text : TEXT&lt;br&gt;image_path : TEXT&lt;br&gt;manually_entered : BOOLEAN&lt;br&gt;extracted_name : VARCHAR(255)&lt;br&gt;extracted_dob : DATE&lt;br&gt;name_match_score : NUMERIC(4,3)&lt;br&gt;fields_matched : BOOLEAN&lt;br&gt;verified_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="420" y="740" width="330" height="300" as="geometry" />
+        <mxCell id="tbl_verification_logs" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;VERIFICATION_LOGS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;reference_no : VARCHAR(20) UNIQUE&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS&amp;gt;&amp;gt;&lt;br&gt;establishment_user_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENT_USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;beneficiary_id : UUID, nullable (historical ref, no FK)&lt;br&gt;id_number_scanned : VARCHAR(50)&lt;br&gt;beneficiary_type_detected : ENUM(senior_citizen,pwd), nullable&lt;br&gt;result : ENUM(valid,suspicious,invalid,manual_review)&lt;br&gt;id_format : ENUM(old,new)&lt;br&gt;ocr_confidence_score : NUMERIC(5,2)&lt;br&gt;ocr_raw_text : TEXT&lt;br&gt;image_path : TEXT&lt;br&gt;manually_entered : BOOLEAN&lt;br&gt;extracted_name : VARCHAR(255)&lt;br&gt;extracted_dob : DATE&lt;br&gt;name_match_score : NUMERIC(4,3)&lt;br&gt;fields_matched : BOOLEAN&lt;br&gt;client_scan_id : TEXT, nullable&lt;br&gt;offline_queued : BOOLEAN&lt;br&gt;synced_from_offline : BOOLEAN&lt;br&gt;scanned_at : TIMESTAMPTZ, nullable&lt;br&gt;verified_at : TIMESTAMPTZ&lt;br&gt;(immutable: UPDATE is a no-op, DELETE blocked by rule)" vertex="1">
+          <mxGeometry height="440" width="330" x="420" y="880" as="geometry" />
         </mxCell>
-
-        <!-- ============ BENEFICIARY_ACCOUNTS ============ -->
-        <mxCell id="tbl_beneficiary_accounts" value="&lt;b&gt;BENEFICIARY_ACCOUNTS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;beneficiary_id : UUID UNIQUE &amp;lt;&amp;lt;FK--BENEFICIARIES&amp;gt;&amp;gt;&lt;br&gt;device_token : VARCHAR(255)&lt;br&gt;last_login : TIMESTAMPTZ&lt;br&gt;is_active : BOOLEAN&lt;br&gt;otp_hash : VARCHAR(255)&lt;br&gt;otp_expires_at : TIMESTAMPTZ&lt;br&gt;otp_attempts : SMALLINT&lt;br&gt;pin_hash : VARCHAR(255)&lt;br&gt;pin_attempts : SMALLINT&lt;br&gt;pin_locked_until : TIMESTAMPTZ&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="840" y="700" width="320" height="270" as="geometry" />
+        <mxCell id="tbl_beneficiary_accounts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;BENEFICIARY_ACCOUNTS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;beneficiary_id : UUID UNIQUE &amp;lt;&amp;lt;FK--BENEFICIARIES&amp;gt;&amp;gt;&lt;br&gt;device_token : VARCHAR(255)&lt;br&gt;last_login : TIMESTAMPTZ&lt;br&gt;is_active : BOOLEAN&lt;br&gt;otp_hash : VARCHAR(255)&lt;br&gt;otp_expires_at : TIMESTAMPTZ&lt;br&gt;otp_attempts : SMALLINT&lt;br&gt;pin_hash : VARCHAR(255)&lt;br&gt;pin_attempts : SMALLINT&lt;br&gt;pin_locked_until : TIMESTAMPTZ&lt;br&gt;session_version : INTEGER&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="270" width="320" x="840" y="780" as="geometry" />
         </mxCell>
-
-        <!-- ============ STAFF_ALERTS (NEW - was missing) ============ -->
-        <mxCell id="tbl_staff_alerts" value="&lt;b&gt;STAFF_ALERTS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;target_role : ENUM(bplo_admin,osca_admin,pdao_admin)&lt;br&gt;title : VARCHAR(255)&lt;br&gt;body : TEXT&lt;br&gt;related_beneficiary_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARIES, nullable&amp;gt;&amp;gt;&lt;br&gt;is_read : BOOLEAN&lt;br&gt;created_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="560" width="320" height="170" as="geometry" />
+        <mxCell id="tbl_staff_alerts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;STAFF_ALERTS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;target_role : ENUM(user_role values, see USERS.role)&lt;br&gt;alert_type : VARCHAR(80)&lt;br&gt;severity : VARCHAR(20)&lt;br&gt;title : VARCHAR(255)&lt;br&gt;body : TEXT&lt;br&gt;target_route : TEXT&lt;br&gt;related_beneficiary_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARIES, nullable&amp;gt;&amp;gt;&lt;br&gt;related_dispute_id : UUID &amp;lt;&amp;lt;FK--DISPUTES, nullable&amp;gt;&amp;gt;&lt;br&gt;is_read : BOOLEAN&lt;br&gt;read_at : TIMESTAMPTZ&lt;br&gt;dedupe_key : TEXT, UNIQUE nullable&lt;br&gt;created_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="260" width="320" x="1240" y="900" as="geometry" />
         </mxCell>
-
-        <!-- ============ DISPUTES ============ -->
-        <mxCell id="tbl_disputes" value="&lt;b&gt;DISPUTES&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;beneficiary_account_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARY_ACCOUNTS&amp;gt;&amp;gt;&lt;br&gt;verification_log_id : UUID &amp;lt;&amp;lt;FK--VERIFICATION_LOGS, nullable&amp;gt;&amp;gt;&lt;br&gt;dispute_type : ENUM(wrong_denial,unauthorized_use,business_refusal,incorrect_db_info)&lt;br&gt;explanation : TEXT&lt;br&gt;supporting_doc_path : VARCHAR(500)&lt;br&gt;status : ENUM(submitted,acknowledged,under_review,resolved,rejected)&lt;br&gt;staff_response : TEXT&lt;br&gt;handled_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;submitted_at : TIMESTAMPTZ&lt;br&gt;acknowledged_at : TIMESTAMPTZ&lt;br&gt;resolved_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="420" y="1090" width="330" height="240" as="geometry" />
+        <mxCell id="tbl_disputes" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;DISPUTES&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;reference_no : VARCHAR(20) UNIQUE&lt;br&gt;beneficiary_account_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARY_ACCOUNTS&amp;gt;&amp;gt;&lt;br&gt;verification_log_id : UUID &amp;lt;&amp;lt;FK--VERIFICATION_LOGS, nullable&amp;gt;&amp;gt;&lt;br&gt;reported_establishment_name : TEXT, nullable&lt;br&gt;filed_by_establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS, nullable&amp;gt;&amp;gt;&lt;br&gt;filed_by_user_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENT_USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;filed_on_behalf : BOOLEAN&lt;br&gt;request_channel : ENUM(in_person,phone,written), nullable&lt;br&gt;dispute_type : ENUM(wrong_denial,unauthorized_use,business_refusal,&lt;div&gt;incorrect_db_info,other)&lt;br&gt;explanation : TEXT&lt;br&gt;supporting_doc_path : VARCHAR(500)&lt;br&gt;status : ENUM(submitted,acknowledged,under_review,resolved,rejected)&lt;br&gt;staff_response : TEXT&lt;br&gt;handled_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;claimed_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;claimed_at : TIMESTAMPTZ&lt;br&gt;submitted_at : TIMESTAMPTZ&lt;br&gt;acknowledged_at : TIMESTAMPTZ&lt;br&gt;beneficiary_acknowledged_at : TIMESTAMPTZ&lt;br&gt;resolved_at : TIMESTAMPTZ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="420" width="330" x="420" y="1370" as="geometry" />
         </mxCell>
-
-        <!-- ============ NOTIFICATIONS ============ -->
-        <mxCell id="tbl_notifications" value="&lt;b&gt;NOTIFICATIONS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;beneficiary_account_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARY_ACCOUNTS&amp;gt;&amp;gt;&lt;br&gt;notification_type : ENUM(verification_approved,verification_denied,dispute_submitted,dispute_acknowledged,dispute_resolved,dispute_escalated,flag_confirmed,id_expiring_soon,general)&lt;br&gt;title : VARCHAR(255)&lt;br&gt;body : TEXT&lt;br&gt;channel : ENUM(push,sms)&lt;br&gt;verification_log_id : UUID &amp;lt;&amp;lt;FK--VERIFICATION_LOGS, nullable&amp;gt;&amp;gt;&lt;br&gt;dispute_id : UUID &amp;lt;&amp;lt;FK--DISPUTES, nullable&amp;gt;&amp;gt;&lt;br&gt;is_read : BOOLEAN&lt;br&gt;sent_at : TIMESTAMPTZ" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="840" y="1030" width="330" height="230" as="geometry" />
+        <mxCell id="tbl_notifications" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;NOTIFICATIONS&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;beneficiary_account_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARY_ACCOUNTS&amp;gt;&amp;gt;&lt;br&gt;notification_type : ENUM(verification_approved,verification_denied,&lt;div&gt;dispute_submitted,dispute_acknowledged,dispute_resolved,&lt;/div&gt;&lt;div&gt;dispute_escalated,flag_confirmed,fraud_report_received,&lt;/div&gt;&lt;div&gt;callback_request_handled,id_expiring_soon,general)&lt;/div&gt;&lt;div&gt;title : VARCHAR(255)&lt;br&gt;body : TEXT&lt;br&gt;channel : ENUM(push,sms)&lt;br&gt;verification_log_id : UUID &amp;lt;&amp;lt;FK--VERIFICATION_LOGS, nullable&amp;gt;&amp;gt;&lt;br&gt;dispute_id : UUID &amp;lt;&amp;lt;FK--DISPUTES, nullable&amp;gt;&amp;gt;&lt;br&gt;is_read : BOOLEAN&lt;br&gt;sent_at : TIMESTAMPTZ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="300" width="330" x="840" y="1080" as="geometry" />
         </mxCell>
-
-        <!-- ============ EDGES / RELATIONSHIPS ============ -->
-        <mxCell id="e1" value="approves (approved_by)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_users" target="tbl_establishments">
+        <mxCell id="e1" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_establishments" value="approves (approved_by)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" value="creates / updates (created_by, updated_by)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_users" target="tbl_beneficiaries">
+        <mxCell id="e2" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_beneficiaries" value="creates / updates (created_by, updated_by)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e3" value="generates (user_id)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_users" target="tbl_audit_logs">
+        <mxCell id="e3" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_audit_logs" value="generates (user_id)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e4" value="reviews (reviewed_by)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_users" target="tbl_fraud_flags">
+        <mxCell id="e4" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_fraud_flags" value="reviews (reviewed_by)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e5" value="handles (handled_by)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_users" target="tbl_disputes">
+        <mxCell id="e5" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_disputes" value="handles (handled_by)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e6" value="performs verification" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_establishments" target="tbl_verification_logs">
+        <mxCell id="e6" edge="1" parent="1" source="tbl_establishments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_verification_logs" value="performs verification">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e7" value="submits" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_establishments" target="tbl_fraud_flags">
+        <mxCell id="e7" edge="1" parent="1" source="tbl_establishments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_fraud_flags" value="submits">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e8" value="generates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_establishments" target="tbl_audit_logs">
+        <mxCell id="e8" edge="1" parent="1" source="tbl_establishments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_audit_logs" value="generates">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e9" value="is subject of" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_beneficiaries" target="tbl_verification_logs">
+        <mxCell id="e9" edge="1" parent="1" source="tbl_beneficiaries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_verification_logs" value="is subject of (historical ref, no FK)">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e10" value="has one app account" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_beneficiaries" target="tbl_beneficiary_accounts">
+        <mxCell id="e10" edge="1" parent="1" source="tbl_beneficiaries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_beneficiary_accounts" value="has one app account">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e11" value="is flagged in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_beneficiaries" target="tbl_fraud_flags">
+        <mxCell id="e11" edge="1" parent="1" source="tbl_beneficiaries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_fraud_flags" value="is flagged in">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e12" value="triggers (related_beneficiary_id)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;dashed=1;" edge="1" parent="1" source="tbl_beneficiaries" target="tbl_staff_alerts">
+        <mxCell id="e12" edge="1" parent="1" source="tbl_beneficiaries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;dashed=1;" target="tbl_staff_alerts" value="triggers (related_beneficiary_id)">
+          <mxGeometry relative="1" x="-0.1481" y="80" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="tbl_verification_logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_fraud_flags" value="is basis for">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e13" value="is basis for" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_verification_logs" target="tbl_fraud_flags">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e14" value="has supplementary flags (parent_flag_id)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;exitX=0;exitY=0.25;entryX=0;entryY=0.75;" edge="1" parent="1" source="tbl_fraud_flags" target="tbl_fraud_flags">
+        <mxCell id="e14" edge="1" parent="1" source="tbl_fraud_flags" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;exitX=0;exitY=0.25;entryX=0;entryY=0.75;" target="tbl_fraud_flags" value="has supplementary flags (parent_flag_id)">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="-40" y="330" />
-              <mxPoint x="-40" y="510" />
+              <mxPoint x="-40" y="110" />
+              <mxPoint x="-40" y="270" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e15" value="receives" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_beneficiary_accounts" target="tbl_notifications">
+        <mxCell id="e15" edge="1" parent="1" source="tbl_beneficiary_accounts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_notifications" value="receives">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e16" value="submits" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_beneficiary_accounts" target="tbl_disputes">
+        <mxCell id="e16" edge="1" parent="1" source="tbl_beneficiary_accounts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_disputes" value="submits">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="585" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="tbl_verification_logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_disputes" value="is disputed by">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e17" value="is disputed by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_verification_logs" target="tbl_disputes">
+        <mxCell id="e18" edge="1" parent="1" source="tbl_verification_logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_notifications" value="triggers">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e18" value="triggers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_verification_logs" target="tbl_notifications">
+        <mxCell id="e19" edge="1" parent="1" source="tbl_disputes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_notifications" value="triggers">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e19" value="triggers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" edge="1" parent="1" source="tbl_disputes" target="tbl_notifications">
+        <mxCell id="tbl_establishment_users" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;ESTABLISHMENT_USERS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS&amp;gt;&amp;gt;&lt;br&gt;email : VARCHAR(255) UNIQUE (case-insensitive)&lt;br&gt;password_hash : VARCHAR(255)&lt;br&gt;full_name : VARCHAR(255)&lt;br&gt;role : ENUM(establishment_super_user,establishment_regular_user)&lt;br&gt;account_status : ENUM(active,inactive,suspended,locked)&lt;br&gt;invitation_status : ENUM(pending,accepted,expired,revoked)&lt;br&gt;invitation_token_hash : VARCHAR(64)&lt;br&gt;invitation_token_expires : TIMESTAMPTZ&lt;br&gt;created_by_user_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENT_USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;approved_by_user_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENT_USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;approved_at : TIMESTAMPTZ&lt;br&gt;password_reset_required : BOOLEAN&lt;br&gt;failed_attempts : SMALLINT&lt;br&gt;locked_until : TIMESTAMPTZ&lt;br&gt;last_login_at : TIMESTAMPTZ&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;updated_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="370" width="340" x="420" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_callback_requests" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;ESTABLISHMENT_CALLBACK_REQUESTS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;beneficiary_account_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARY_ACCOUNTS&amp;gt;&amp;gt;&lt;br&gt;establishment_id : UUID &amp;lt;&amp;lt;FK--ESTABLISHMENTS&amp;gt;&amp;gt;&lt;br&gt;verification_log_id : UUID &amp;lt;&amp;lt;FK--VERIFICATION_LOGS, nullable&amp;gt;&amp;gt;&lt;br&gt;reason : ENUM(transaction_question,record_correction,other)&lt;br&gt;note : VARCHAR(500)&lt;br&gt;status : ENUM(open,handled)&lt;br&gt;staff_note : VARCHAR(300)&lt;br&gt;handled_by : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;handled_at : TIMESTAMPTZ&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;(one open request per beneficiary account and establishment)" vertex="1">
+          <mxGeometry height="240" width="330" x="1600" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_audit_logs_archive" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;AUDIT_LOGS_ARCHIVE&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;user_id : UUID&lt;br&gt;establishment_id : UUID&lt;br&gt;action : ENUM (same values as AUDIT_LOGS)&lt;br&gt;target_table : VARCHAR(100)&lt;br&gt;target_id : UUID&lt;br&gt;metadata : JSONB&lt;br&gt;ip_address : INET&lt;br&gt;user_agent : TEXT&lt;br&gt;created_at : TIMESTAMPTZ&lt;br&gt;archived_at : TIMESTAMPTZ&lt;br&gt;archived_by : UUID&lt;br&gt;(append-only; rows older than 5 years are moved here)" vertex="1">
+          <mxGeometry height="250" width="330" x="1240" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_dispute_status_logs" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ffffff;strokeColor=#000000;" value="&lt;b&gt;DISPUTE_STATUS_LOGS&lt;/b&gt;&lt;hr size=1&gt;- id : UUID &amp;lt;&amp;lt;PK&amp;gt;&amp;gt;&lt;br&gt;dispute_id : UUID &amp;lt;&amp;lt;FK--DISPUTES&amp;gt;&amp;gt;&lt;br&gt;action : VARCHAR(40)&lt;br&gt;from_status : ENUM(dispute_status), nullable&lt;br&gt;to_status : ENUM(dispute_status), nullable&lt;br&gt;actor_user_id : UUID &amp;lt;&amp;lt;FK--USERS, nullable&amp;gt;&amp;gt;&lt;br&gt;actor_beneficiary_account_id : UUID &amp;lt;&amp;lt;FK--BENEFICIARY_ACCOUNTS, nullable&amp;gt;&amp;gt;&lt;br&gt;created_at : TIMESTAMPTZ" vertex="1">
+          <mxGeometry height="220" width="300" x="1240" y="1190" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" edge="1" parent="1" source="tbl_establishments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_establishment_users" value="has staff accounts">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <mxCell id="note1" value="NOTE: Corrected from prior version — renamed FRAUD_LOGS to FRAUD_FLAGS (actual table name), added disability_type, PIN fields, OCR cross-validation fields, lockout/reset fields, and the previously-missing 10th table STAFF_ALERTS (migration 022, used by fraudFlags.js / slaEscalationScheduler.js / staff.js)." style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#B85450;fillColor=#fff2cc;strokeColor=#B85450;" vertex="1" parent="1">
-          <mxGeometry x="20" y="20" width="860" height="80" as="geometry" />
+        <mxCell id="e21" edge="1" parent="1" source="tbl_establishment_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_verification_logs" value="performs verification">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
+        <mxCell id="e22" edge="1" parent="1" source="tbl_establishment_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_fraud_flags" value="submits">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" edge="1" parent="1" source="tbl_establishment_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_disputes" value="files on behalf (filed_by_user_id)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e24" edge="1" parent="1" source="tbl_establishments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;dashed=1;" target="tbl_disputes" value="files on behalf (filed_by_establishment_id)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e25" edge="1" parent="1" source="tbl_beneficiary_accounts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_callback_requests" value="requests callback">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e26" edge="1" parent="1" source="tbl_establishments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_callback_requests" value="is contacted via">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e27" edge="1" parent="1" source="tbl_verification_logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_callback_requests" value="referenced by (verification_log_id)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e28" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_callback_requests" value="handles (handled_by)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e29" edge="1" parent="1" source="tbl_disputes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_dispute_status_logs" value="logs history">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e30" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_dispute_status_logs" value="actor (actor_user_id)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e31" edge="1" parent="1" source="tbl_beneficiary_accounts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_dispute_status_logs" value="actor (actor_beneficiary_account_id)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e32" edge="1" parent="1" source="tbl_disputes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;dashed=1;" target="tbl_staff_alerts" value="triggers (related_dispute_id)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e33" edge="1" parent="1" source="tbl_audit_logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;dashed=1;" target="tbl_audit_logs_archive" value="moved to (retention archive)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e34" edge="1" parent="1" source="tbl_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=1;fontSize=10;" target="tbl_disputes" value="claims (claimed_by)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

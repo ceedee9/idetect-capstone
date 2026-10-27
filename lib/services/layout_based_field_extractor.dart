@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'zone_optimized_ocr.dart';
+import 'ml_kit_anchor_extractor.dart';
 
 /// Layout-Based Field Extractor (Zonal OCR)
 ///
@@ -188,7 +189,11 @@ class LayoutBasedFieldExtractor {
   // MAIN EXTRACTION METHOD
   // ===========================================================================
 
-  /// Extract fields using layout-based approach
+  /// Extract fields using layout-based approach.
+  ///
+  /// [imagePath] should be the normalized (card-flattened) image the zones
+  /// were calibrated for, and [recognizedText] the ML Kit result of that same
+  /// image so both engines share one coordinate space.
   static Future<Map<String, dynamic>> extractFieldsWithLayout({
     required RecognizedText recognizedText,
     required int imageWidth,
@@ -197,6 +202,14 @@ class LayoutBasedFieldExtractor {
   }) async {
     debugPrint('🗺️  Starting LAYOUT-BASED extraction...');
     debugPrint('📐 Image dimensions: ${imageWidth}x$imageHeight');
+
+    // Keyword-based name extraction only needs ML Kit text, so do it first:
+    // when it is confident the name zone never needs a (slow) Tesseract pass.
+    final String fullText = recognizedText.text;
+    debugPrint('🔍 NAME EXTRACTION: Trying keyword-based first...');
+    final keywordName = _extractNameByKeyword(fullText);
+    final keywordNameConfident = (keywordName['value'] as String).isNotEmpty &&
+        (keywordName['confidence'] as double) > 0.70;
 
     // Step 0: Try zone-optimized OCR if image path is provided (QUICK WIN #3)
     Map<String, String>? zoneResults;
@@ -207,6 +220,7 @@ class LayoutBasedFieldExtractor {
           imagePath: imagePath,
           imageWidth: imageWidth,
           imageHeight: imageHeight,
+          skip: {if (keywordNameConfident) 'name'},
         );
         debugPrint('✅ Zone-optimized OCR completed');
       } catch (e) {
@@ -214,6 +228,7 @@ class LayoutBasedFieldExtractor {
         debugPrint('   Falling back to ML Kit extraction...');
       }
     }
+    String zoneText(String key) => zoneResults?[key] ?? '';
 
     // Step 1: Validate template
     final templateResult = _validateTemplate(
@@ -230,8 +245,8 @@ class LayoutBasedFieldExtractor {
     debugPrint('   Keywords found: $keywordsFound/${HEADER_KEYWORDS.length}');
 
     // Step 2: Extract fields from zones
-    final fullName = zoneResults != null && zoneResults['name']!.isNotEmpty
-        ? {'text': zoneResults['name']!, 'confidence': 0.95}
+    final fullName = zoneText('name').isNotEmpty
+        ? {'text': zoneText('name'), 'confidence': 0.95}
         : _extractFromZone(
             recognizedText,
             imageWidth,
@@ -243,8 +258,8 @@ class LayoutBasedFieldExtractor {
             'NAME',
           );
 
-    final dateOfBirth = zoneResults != null && zoneResults['dob']!.isNotEmpty
-        ? {'text': zoneResults['dob']!, 'confidence': 0.95}
+    final dateOfBirth = zoneText('dob').isNotEmpty
+        ? {'text': zoneText('dob'), 'confidence': 0.95}
         : _extractFromZone(
             recognizedText,
             imageWidth,
@@ -256,8 +271,8 @@ class LayoutBasedFieldExtractor {
             'DOB',
           );
 
-    final sex = zoneResults != null && zoneResults['sex']!.isNotEmpty
-        ? {'text': zoneResults['sex']!, 'confidence': 0.98}
+    final sex = zoneText('sex').isNotEmpty
+        ? {'text': zoneText('sex'), 'confidence': 0.98}
         : _extractFromZone(
             recognizedText,
             imageWidth,
@@ -269,47 +284,57 @@ class LayoutBasedFieldExtractor {
             'SEX',
           );
 
-    final dateIssued =
-        zoneResults != null && zoneResults['dateIssued']!.isNotEmpty
-            ? {'text': zoneResults['dateIssued']!, 'confidence': 0.95}
-            : _extractFromZone(
-                recognizedText,
-                imageWidth,
-                imageHeight,
-                THREE_COL_TOP,
-                THREE_COL_BOTTOM,
-                COL_RIGHT_START,
-                COL_RIGHT_END,
-                'DATE_ISSUED',
-              );
+    final dateIssued = zoneText('dateIssued').isNotEmpty
+        ? {'text': zoneText('dateIssued'), 'confidence': 0.95}
+        : _extractFromZone(
+            recognizedText,
+            imageWidth,
+            imageHeight,
+            THREE_COL_TOP,
+            THREE_COL_BOTTOM,
+            COL_RIGHT_START,
+            COL_RIGHT_END,
+            'DATE_ISSUED',
+          );
 
-    final controlNo =
-        zoneResults != null && zoneResults['controlNo']!.isNotEmpty
-            ? {'text': zoneResults['controlNo']!, 'confidence': 0.96}
-            : _extractFromZone(
-                recognizedText,
-                imageWidth,
-                imageHeight,
-                CTRL_TOP,
-                CTRL_BOTTOM,
-                CTRL_LEFT,
-                CTRL_RIGHT,
-                'CONTROL_NO',
-              );
+    final controlNo = zoneText('controlNo').isNotEmpty
+        ? {'text': zoneText('controlNo'), 'confidence': 0.96}
+        : _extractFromZone(
+            recognizedText,
+            imageWidth,
+            imageHeight,
+            CTRL_TOP,
+            CTRL_BOTTOM,
+            CTRL_LEFT,
+            CTRL_RIGHT,
+            'CONTROL_NO',
+          );
 
     // Step 3: Parse other fields (NOT name yet)
     final parsedDOB = _parseDateOfBirth(dateOfBirth['text']);
     final parsedSex = _parseSex(sex['text']);
     final parsedDateIssued = _parseDateIssued(dateIssued['text']);
-    final parsedControlNo = _parseControlNumber(controlNo['text']);
+
+    // Control No.: the Tesseract zone read and a shape-based ML Kit read
+    // (the big red number) are reconciled; agreement => high confidence,
+    // conflict => flagged for the operator.
+    final tessControlNo = _parseControlNumber(controlNo['text']);
+    final mlControlNo = MlKitAnchorExtractor.controlNumberOldFormat(
+      recognizedText,
+      imageWidth,
+      imageHeight,
+    );
+    final controlId = resolveIdentifier(
+      mlControlNo,
+      tessControlNo['value'] as String,
+    );
+    final parsedControlNo = <String, dynamic>{
+      'value': controlId.value,
+      'confidence': controlId.confidence,
+    };
 
     // Step 3.5: NAME EXTRACTION - KEYWORD FIRST, ZONE AS FALLBACK
     // This is the most critical field, so we prioritize keyword extraction
-    String fullText = recognizedText.text;
-
-    // ALWAYS try keyword-based name extraction FIRST
-    debugPrint('🔍 NAME EXTRACTION: Trying keyword-based first...');
-    final keywordName = _extractNameByKeyword(fullText);
 
     // Parse zone-based name as fallback
     final parsedZoneName = _parseName(fullName['text']);
@@ -509,58 +534,117 @@ class LayoutBasedFieldExtractor {
   }
 
   /// Extract fields for the REDESIGNED (2025+) Senior Citizen ID format.
-  /// Unlike [extractFieldsWithLayout] (the pre-2025 layout, kept fully
-  /// untouched), this format's zones already return clean, single-value
-  /// text directly — no anchor/line-search or fuzzy fallback needed, since
-  /// this layout doesn't share the old format's quirks (e.g. the name
-  /// appearing above its own label).
+  ///
+  /// Strategy (fast first, accurate where it matters):
+  /// 1. Read every field from ML Kit's positioned lines using the printed
+  ///    labels as anchors (one pass, ~1s, no fixed-crop dependence).
+  /// 2. Run Tesseract zones only for fields ML Kit could not validate, plus
+  ///    the ID number, which is always double-checked.
+  /// 3. Report honest per-field confidence: a field both engines agree on is
+  ///    high; unverified or conflicting reads are low so staff look at them.
+  ///
+  /// [imagePath] should be the normalized (card-flattened) image and
+  /// [recognizedText] the ML Kit result for that same image. Pass
+  /// `useTesseract: false` for an ML Kit-only (fast, reduced-accuracy) read.
   static Future<Map<String, dynamic>> extractFieldsNewFormat({
     required String imagePath,
     required int imageWidth,
     required int imageHeight,
+    RecognizedText? recognizedText,
+    bool useTesseract = true,
   }) async {
     debugPrint('🗺️  Starting LAYOUT-BASED extraction (NEW FORMAT)...');
 
-    Map<String, String> zoneResults;
-    try {
-      zoneResults = await ZoneOptimizedOCR.extractAllZonesNewFormat(
-        imagePath: imagePath,
-        imageWidth: imageWidth,
-        imageHeight: imageHeight,
-      );
-    } catch (e) {
-      debugPrint('❌ New-format zone OCR failed: $e');
-      zoneResults = {};
+    final anchors = recognizedText != null
+        ? MlKitAnchorExtractor.newFormatFields(
+            recognizedText, imageWidth, imageHeight)
+        : const <String, String>{};
+
+    final mlName = anchors['name'] ?? '';
+    final mlDob = _normalizeMonthNameDate(anchors['dob'] ?? '');
+    final mlIssued = _normalizeMonthNameDate(anchors['dateIssued'] ?? '');
+    final mlSex = anchors['sex'] ?? '';
+    final mlId = anchors['idNo'] ?? '';
+
+    final needTesseract = <String>{
+      if (useTesseract && !_isValidName(mlName)) 'name',
+      if (useTesseract && !_isNumericDate(mlDob)) 'dob',
+      if (useTesseract && !_isNumericDate(mlIssued)) 'dateIssued',
+      if (useTesseract && mlSex.isEmpty) 'sex',
+      // always cross-checked: the one field verification hangs on
+      if (useTesseract) 'idNo',
+    };
+    debugPrint('🎯 Tesseract needed for: $needTesseract');
+
+    Map<String, String> zoneResults = {};
+    if (needTesseract.isNotEmpty) {
+      try {
+        zoneResults = await ZoneOptimizedOCR.extractAllZonesNewFormat(
+          imagePath: imagePath,
+          imageWidth: imageWidth,
+          imageHeight: imageHeight,
+          fields: needTesseract,
+        );
+      } catch (e) {
+        debugPrint('❌ New-format zone OCR failed: $e');
+      }
     }
 
-    final fullName = (zoneResults['name'] ?? '')
-        .replaceAll(RegExp(r'^Name\s*:?\s*', caseSensitive: false), '')
-        .trim();
+    // ── Name ────────────────────────────────────────────────────────────────
+    String fullName = mlName;
+    double nameConf = _isValidName(mlName) ? 0.92 : 0.0;
+    if (nameConf == 0.0) {
+      final tess = (zoneResults['name'] ?? '')
+          .replaceAll(RegExp(r'^Name\s*:?\s*', caseSensitive: false), '')
+          .trim();
+      if (_isValidName(tess)) {
+        fullName = tess;
+        nameConf = 0.80;
+      } else if (tess.isNotEmpty) {
+        fullName = tess; // shown for editing, but flagged as unreliable
+        nameConf = 0.40;
+      }
+    }
 
-    final addressLine = (zoneResults['address'] ?? '')
-        .replaceAll(RegExp(r'^Address\s*:?\s*', caseSensitive: false), '')
-        .trim();
-    final barangay = (zoneResults['barangay'] ?? '').trim();
-    final fullAddress =
-        [addressLine, barangay].where((s) => s.isNotEmpty).join(', ');
+    // ── Sex ─────────────────────────────────────────────────────────────────
+    String sex = mlSex;
+    double sexConf = mlSex.isNotEmpty ? 0.92 : 0.0;
+    if (sex.isEmpty) {
+      // This layout prints the full word ("Female"/"Male"); normalize to F/M.
+      final rawSex = (zoneResults['sex'] ?? '')
+          .replaceAll(RegExp(r'^Sex\s*:?\s*', caseSensitive: false), '')
+          .trim()
+          .toUpperCase();
+      if (rawSex.startsWith('F')) sex = 'F';
+      if (rawSex.startsWith('M')) sex = 'M';
+      if (sex.isNotEmpty) sexConf = 0.80;
+    }
 
-    // This layout prints the full word ("Female"/"Male") rather than a
-    // single letter — normalize to 'F'/'M' to match everything downstream.
-    final rawSex = (zoneResults['sex'] ?? '')
-        .replaceAll(RegExp(r'^Sex\s*:?\s*', caseSensitive: false), '')
-        .trim()
-        .toUpperCase();
-    String sex = '';
-    if (rawSex.startsWith('F')) sex = 'F';
-    if (rawSex.startsWith('M')) sex = 'M';
+    // ── Dates ───────────────────────────────────────────────────────────────
+    String pickDate(String ml, String? tessRaw, void Function(double) conf) {
+      if (_isNumericDate(ml)) {
+        conf(0.92);
+        return ml;
+      }
+      final tess = _normalizeMonthNameDate((tessRaw ?? '').trim());
+      if (_isNumericDate(tess)) {
+        conf(0.80);
+        return tess;
+      }
+      conf(0.0); // unreadable: leave blank rather than show a garbled date
+      return '';
+    }
 
-    final dateOfBirth =
-        _normalizeMonthNameDate((zoneResults['dob'] ?? '').trim());
+    double dobConf = 0.0;
+    double issuedConf = 0.0;
+    final dateOfBirth = pickDate(mlDob, zoneResults['dob'], (c) => dobConf = c);
     final dateIssued =
-        _normalizeMonthNameDate((zoneResults['dateIssued'] ?? '').trim());
-    // "ID No." on this layout — kept under 'controlNumber' so every
-    // downstream consumer (VerifyingScreen, API payload) works unchanged.
-    final controlNumber = (zoneResults['idNo'] ?? '').trim();
+        pickDate(mlIssued, zoneResults['dateIssued'], (c) => issuedConf = c);
+
+    // ── ID No. ("ID No." on this layout — kept under 'controlNumber' so every
+    //    downstream consumer (VerifyingScreen, API payload) works unchanged) ─
+    final id = resolveIdentifier(mlId, zoneResults['idNo'] ?? '');
+    final controlNumber = id.value;
 
     final fields = <String, String>{
       'fullName': fullName,
@@ -569,19 +653,18 @@ class LayoutBasedFieldExtractor {
       'dateIssued': dateIssued,
       'controlNumber': controlNumber,
     };
-    final fieldConfidences = <String, double>{};
-    int fieldsExtracted = 0;
-    double totalConfidence = 0.0;
-    for (final entry in fields.entries) {
-      final conf = entry.value.isNotEmpty ? 0.95 : 0.0;
-      fieldConfidences[entry.key] = conf;
-      if (conf > 0) {
-        totalConfidence += conf;
-        fieldsExtracted++;
-      }
-    }
-    final overallConfidence =
-        fieldsExtracted > 0 ? totalConfidence / fieldsExtracted : 0.0;
+    final fieldConfidences = <String, double>{
+      'fullName': nameConf,
+      'dateOfBirth': dobConf,
+      'sex': sexConf,
+      'dateIssued': issuedConf,
+      'controlNumber': id.confidence,
+    };
+    final extracted = fieldConfidences.values.where((c) => c > 0).toList();
+    final overallConfidence = extracted.isEmpty
+        ? 0.0
+        : extracted.reduce((a, b) => a + b) / extracted.length;
+    final fieldsExtracted = fields.values.where((v) => v.isNotEmpty).length;
 
     debugPrint(
         '📊 Overall confidence (new format): ${(overallConfidence * 100).toInt()}%');
@@ -589,7 +672,6 @@ class LayoutBasedFieldExtractor {
 
     return {
       'fullName': fullName,
-      'fullAddress': fullAddress,
       'dateOfBirth': dateOfBirth,
       'sex': sex,
       'dateIssued': dateIssued,
@@ -600,6 +682,62 @@ class LayoutBasedFieldExtractor {
       'extractionMethod': 'layout-based-new-format',
       'fieldConfidences': fieldConfidences,
     };
+  }
+
+  static bool _isValidName(String name) {
+    if (name.isEmpty || RegExp(r'\d').hasMatch(name)) return false;
+    final words = name
+        .split(RegExp(r'\s+'))
+        .where((w) => RegExp(r'[A-Za-zñÑ]{2,}').hasMatch(w));
+    return words.length >= 2;
+  }
+
+  static bool _isNumericDate(String s) {
+    final m = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(s);
+    if (m == null) return false;
+    final month = int.parse(m.group(1)!);
+    final day = int.parse(m.group(2)!);
+    final year = int.parse(m.group(3)!);
+    return month >= 1 &&
+        month <= 12 &&
+        day >= 1 &&
+        day <= 31 &&
+        year >= 1900 &&
+        year <= DateTime.now().year + 1;
+  }
+
+  /// Combines the ML Kit and Tesseract reads of an ID / control number.
+  ///
+  /// Two independent engines agreeing is the strongest evidence we can get
+  /// from a photo; disagreement means one of them misread a digit, so the
+  /// value is returned (ML Kit's, which handles printed digits better) with
+  /// low confidence so the operator verifies it.
+  @visibleForTesting
+  static ({String value, double confidence}) resolveIdentifier(
+    String mlKit,
+    String tesseract,
+  ) {
+    String digits(String s) => s.replaceAll(RegExp(r'\D'), '');
+    bool plausible(String s) => s.length >= 4 && s.length <= 12;
+
+    final ml = digits(mlKit);
+    final tess = digits(tesseract);
+    final mlOk = plausible(ml);
+    final tessOk = plausible(tess);
+
+    if (mlOk && tessOk) {
+      return ml == tess
+          ? (value: ml, confidence: 0.97)
+          : (value: ml, confidence: 0.60);
+    }
+    if (mlOk) return (value: ml, confidence: 0.85);
+    if (tessOk) return (value: tess, confidence: 0.75);
+    // Partial read (<4 digits): surface it so the operator sees what was
+    // found, but flag it as unreliable.
+    final partial = tess.length >= ml.length ? tess : ml;
+    return partial.isEmpty
+        ? (value: '', confidence: 0.0)
+        : (value: partial, confidence: 0.30);
   }
 
   // ===========================================================================

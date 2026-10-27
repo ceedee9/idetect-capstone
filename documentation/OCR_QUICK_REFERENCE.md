@@ -92,41 +92,44 @@ final text = await EnhancedOCRService.extractFieldWithWhitelist(
 );
 ```
 
-## Zone Coordinates (Senior Citizen ID)
+## Zone Coordinates (Senior Citizen ID — old format)
+
+Zones are percentages of the **normalized card image** (the card is detected,
+flattened and resized to 1600×1009 by `OpenCVImageProcessor.normalizeCard`
+before any OCR runs), so they no longer depend on how the phone was held.
+Positions were measured on the sample cards in `assets/images/`.
 
 ```dart
 // All coordinates are percentages (0.0 to 1.0)
 
-// NAME ZONE
-top: 0.38,    // 38% from top
-bottom: 0.46,  // 46% from top
-left: 0.0,     // 0% from left
-right: 0.65,   // 65% from left
+// NAME ZONE (typed row on the "Name:" line)
+top: 0.33,  bottom: 0.43,  left: 0.145, right: 0.67,
 
-// DATE OF BIRTH (Left column)
-top: 0.58,
-bottom: 0.72,
-left: 0.0,
-right: 0.30,
+// DATE OF BIRTH (digits only, stops above the label)
+top: 0.55,  bottom: 0.645, left: 0.0,   right: 0.30,
 
-// SEX (Middle column)
-top: 0.58,
-bottom: 0.72,
-left: 0.30,
-right: 0.55,
+// SEX (just the F / M)
+top: 0.54,  bottom: 0.65,  left: 0.29,  right: 0.42,
 
-// DATE ISSUED (Right column)
-top: 0.58,
-bottom: 0.72,
-left: 0.55,
-right: 0.95,
+// DATE ISSUED (ends where the photo begins)
+top: 0.55,  bottom: 0.645, left: 0.46,  right: 0.74,
 
-// CONTROL NUMBER
-top: 0.75,
-bottom: 0.85,
-left: 0.65,
-right: 1.0,
+// CONTROL NUMBER (large red number; wider retries are tried automatically)
+top: 0.73,  bottom: 0.86,  left: 0.66,  right: 1.0,
 ```
+
+## How a scan is read now
+
+1. **Normalize** the photo (find the card, warp it flat, 1600 px wide).
+2. **ML Kit** reads the whole card once. Fields are located by their printed
+   labels / shape (`lib/services/ml_kit_anchor_extractor.dart`), e.g. the tall
+   run of digits in the lower right is the Control No.
+3. **Tesseract zones** run only for fields ML Kit could not validate, plus the
+   ID / Control number, which is always cross-checked
+   (`LayoutBasedFieldExtractor.resolveIdentifier`): both engines agree → high
+   confidence; they disagree → ML Kit's value with low confidence so the
+   operator verifies it.
+4. Identifier zones retry with wider crops / other PSM modes before giving up.
 
 ## Common OCR Issues & Solutions
 
@@ -154,6 +157,8 @@ flutter run -d windows
 ## File Reference
 
 - **Zone-Optimized OCR:** `lib/services/zone_optimized_ocr.dart`
+- **Card normalization (OpenCV):** `lib/services/opencv_image_processor.dart`
+- **ML Kit label/shape anchors:** `lib/services/ml_kit_anchor_extractor.dart`
 - **Enhanced OCR Service:** `lib/services/enhanced_ocr_service.dart`
 - **Layout Extractor:** `lib/services/layout_based_field_extractor.dart`
 - **Hybrid Parser:** `lib/services/hybrid_parser_service.dart`

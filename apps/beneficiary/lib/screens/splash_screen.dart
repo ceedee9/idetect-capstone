@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
     _controller = AnimationController(vsync: this, duration: _totalDuration);
     _logoIn = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.4, curve: Curves.easeOutBack),
+      curve: const Interval(0.0, 0.4, curve: Curves.easeOutCubic),
     );
     _sheen = CurvedAnimation(
       parent: _controller,

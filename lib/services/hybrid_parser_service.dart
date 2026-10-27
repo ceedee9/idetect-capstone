@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'enhanced_ocr_service.dart';
 import 'layout_based_field_extractor.dart';
+import 'ml_kit_anchor_extractor.dart';
 import 'opencv_image_processor.dart';
 import 'parser_service.dart';
 import 'pwd_layout_field_extractor.dart';
@@ -76,16 +77,75 @@ class HybridParserService {
   }
 
   /// Gap 5: Lightweight ML Kit-only parse used when the full hybrid pipeline
-  /// exceeds the 20-second timeout. Tesseract is never invoked here.
+  /// exceeds the timeout. Tesseract is never invoked here.
   /// Confidence is capped at 0.60 to signal reduced extraction quality to
   /// downstream consumers (API call, result screen, cross-validation).
-  Future<ParsedIDData> parseMlKitOnly(File imageFile, String idType) async {
+  ///
+  /// The card is still normalized (fast, native) and, for the new-format
+  /// Senior ID, fields are read by their labels so the fallback keeps date of
+  /// birth and ID number instead of returning them blank.
+  Future<ParsedIDData> parseMlKitOnly(
+    File imageFile,
+    String idType, {
+    String idFormat = 'old',
+  }) async {
     debugPrint('⏱️ Gap 5 timeout fallback: ML Kit only (Tesseract skipped)');
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    _OcrInputs? inputs;
     try {
-      final input = InputImage.fromFile(imageFile);
+      inputs = await _prepareInputs(imageFile);
+      final input = InputImage.fromFile(inputs?.mlImage ?? imageFile);
       final result = await recognizer.processImage(input);
+
+      if (inputs != null &&
+          idType.toLowerCase() == 'senior' &&
+          idFormat == 'new') {
+        final layout = await LayoutBasedFieldExtractor.extractFieldsNewFormat(
+          imagePath: inputs.tessImage.path,
+          imageWidth: inputs.width,
+          imageHeight: inputs.height,
+          recognizedText: result,
+          useTesseract: false,
+        );
+        final fieldConfidences =
+            layout['fieldConfidences'] as Map<String, double>;
+        final dob = layout['dateOfBirth'] as String;
+        return ParsedIDData(
+          success: result.text.isNotEmpty,
+          idType: IDType.seniorCitizen,
+          fullName: layout['fullName'] as String,
+          dateOfBirth: dob.isNotEmpty ? dob : null,
+          age: _extractAge(dob),
+          sex: layout['sex'] as String,
+          dateIssued: layout['dateIssued'] as String,
+          controlNumber: layout['controlNumber'] as String,
+          confidence: (layout['confidence'] as double).clamp(0.0, 0.60),
+          rawText: result.text,
+          nameConfidence: fieldConfidences['fullName'] ?? 0.0,
+          ageConfidence: fieldConfidences['dateOfBirth'] ?? 0.0,
+          sexConfidence: fieldConfidences['sex'] ?? 0.0,
+          dateIssuedConfidence: fieldConfidences['dateIssued'] ?? 0.0,
+          controlNumberConfidence: fieldConfidences['controlNumber'] ?? 0.0,
+          extractionMethod: 'ml-kit-only (ocr-timeout)',
+          templateMatched: false,
+          errorMessage:
+              result.text.isEmpty ? 'No text detected after timeout' : null,
+        );
+      }
+
       final parsed = await _fuzzyParser.parseIDText(result.text);
+
+      // The big control number is easy to find by shape even when the
+      // keyword parser misses it.
+      var controlNumber = parsed.controlNumber;
+      if (inputs != null && (controlNumber == null || controlNumber.isEmpty)) {
+        final found = MlKitAnchorExtractor.controlNumberOldFormat(
+          result,
+          inputs.width,
+          inputs.height,
+        );
+        if (found.isNotEmpty) controlNumber = found;
+      }
 
       // Cap at 0.60 — signals this is a degraded, timeout-based result so the
       // API threshold check correctly routes low-quality scans to manual_review.
@@ -100,7 +160,7 @@ class HybridParserService {
         dateOfBirth: parsed.dateOfBirth,
         sex: parsed.sex,
         dateIssued: parsed.dateIssued,
-        controlNumber: parsed.controlNumber,
+        controlNumber: controlNumber,
         confidence: cappedConfidence,
         rawText: result.text,
         nameConfidence: parsed.nameConfidence,
@@ -121,6 +181,7 @@ class HybridParserService {
         errorMessage: 'OCR timed out and ML Kit fallback failed: $e',
       );
     } finally {
+      inputs?.dispose();
       recognizer.close();
     }
   }
@@ -135,10 +196,11 @@ class HybridParserService {
     debugPrint('🔀 HYBRID PARSER - Layout + Fuzzy Fallback');
     debugPrint('🔀 ============================================');
 
+    _OcrInputs? inputs;
     try {
       // NEW: redesigned (2025+) Senior Citizen ID — different field layout,
       // handled by its own dedicated zone extractor rather than the
-      // old-format anchor/fuzzy pipeline below (which stays fully untouched).
+      // old-format anchor/fuzzy pipeline below.
       if (idType.toLowerCase() == 'senior' && idFormat == 'new') {
         return await _parseSeniorNewFormat(imageFile);
       }
@@ -151,61 +213,31 @@ class HybridParserService {
         );
       }
 
-      // Step 0: OpenCV preprocessing (fast native, ~200-400ms)
-      debugPrint('🔬 Step 0/6: OpenCV preprocessing...');
-      File ocrImage = imageFile; // fallback to original
-
-      try {
-        // Quality gate — reject clearly unusable images early
-        final quality = await OpenCVImageProcessor.assessQuality(imageFile);
-        debugPrint(
-            '   Blur: ${quality.blurScore.toStringAsFixed(1)}, Brightness: ${quality.brightnessScore.toStringAsFixed(1)}');
-        if (!quality.acceptable) {
-          debugPrint('⚠️  Quality gate: ${quality.rejectionReason}');
-          // Don't hard-fail — let OCR attempt anyway, but log the warning
-        }
-
-        final processed = await OpenCVImageProcessor.preprocess(
-          imageFile,
-          idType: idType,
-        );
-        if (processed.success && processed.processedPath != null) {
-          ocrImage = File(processed.processedPath!);
-          debugPrint('✅ OpenCV preprocessing done');
-        } else {
-          debugPrint(
-              '⚠️  OpenCV preprocessing failed: ${processed.errorMessage}, using original');
-        }
-      } catch (e) {
-        debugPrint('⚠️  OpenCV preprocessing exception: $e, using original');
+      // Step 0: Normalize the card (native OpenCV, ~0.3-0.8s). Finds the card
+      // in the photo, flattens it to a fixed-size upright rectangle and
+      // produces a colour copy (ML Kit) and an enhanced grayscale copy
+      // (Tesseract) of identical size, so every zone lines up.
+      debugPrint('🔬 Step 0/6: Normalizing card image...');
+      inputs = await _prepareInputs(imageFile);
+      if (inputs == null) {
+        debugPrint('⚠️  Could not prepare image, falling back to fuzzy-only');
+        return await _fallbackToFuzzyOnly(imageFile, idType, rawOcrText);
       }
 
-      // Step 1: Get positional OCR data (ML Kit with bounding boxes)
-      // IMPORTANT: Use the ORIGINAL image for ML Kit layout extraction.
-      // OpenCV preprocessing (grayscale, CLAHE, etc.) can merge/shift text
-      // regions and break bounding-box-based layout detection.
+      // Step 1: Get positional OCR data (ML Kit with bounding boxes) from
+      // the colour card image — same coordinate space as the Tesseract zones.
       debugPrint('📍 Step 1/6: Extracting text with positions...');
 
       final recognizedText =
-          await _ocrService.extractTextWithPositions(imageFile);
+          await _ocrService.extractTextWithPositions(inputs.mlImage);
       if (recognizedText == null) {
         debugPrint(
             '⚠️  Position extraction failed, falling back to fuzzy-only');
         return await _fallbackToFuzzyOnly(imageFile, idType, rawOcrText);
       }
 
-      // Step 2: Get image dimensions (from original image)
-      debugPrint('📐 Step 2/6: Getting image dimensions...');
-
-      final dimensions = await _ocrService.getImageDimensions(imageFile);
-      if (dimensions == null) {
-        debugPrint(
-            '⚠️  Dimension extraction failed, falling back to fuzzy-only');
-        return await _fallbackToFuzzyOnly(imageFile, idType, rawOcrText);
-      }
-
-      final imageWidth = dimensions['width']!;
-      final imageHeight = dimensions['height']!;
+      final imageWidth = inputs.width;
+      final imageHeight = inputs.height;
 
       debugPrint('✅ Image: ${imageWidth}x$imageHeight px');
 
@@ -217,8 +249,7 @@ class HybridParserService {
         recognizedText: recognizedText,
         imageWidth: imageWidth,
         imageHeight: imageHeight,
-        imagePath: ocrImage
-            .path, // Pass preprocessed image for zone-optimized Tesseract OCR
+        imagePath: inputs.tessImage.path, // for zone-optimized Tesseract OCR
       );
 
       final templateMatched = layoutResult['templateMatched'] as bool;
@@ -326,32 +357,67 @@ class HybridParserService {
       // Last resort: try fuzzy-only
       debugPrint('🔄 Attempting fuzzy-only as last resort...');
       return await _fallbackToFuzzyOnly(imageFile, idType, rawOcrText);
+    } finally {
+      inputs?.dispose();
     }
   }
 
-  /// Dedicated path for the redesigned (2025+) Senior Citizen ID. Skips the
-  /// OpenCV preprocessing / ML-Kit-position / fuzzy-fallback machinery the
-  /// old format needs, since this layout's zones already return clean,
-  /// single-value text directly.
+  /// Normalizes the card photo and returns the images/size every OCR engine
+  /// should use. Falls back to the original image when normalization fails.
+  Future<_OcrInputs?> _prepareInputs(File imageFile) async {
+    try {
+      final card = await OpenCVImageProcessor.normalizeCard(imageFile);
+      if (card.success && card.colorPath != null && card.enhancedPath != null) {
+        debugPrint('✅ Card normalized: ${card.width}x${card.height} '
+            '(card edges ${card.cardDetected ? "found" : "not found — frame used as-is"})');
+        return _OcrInputs(
+          mlImage: File(card.colorPath!),
+          tessImage: File(card.enhancedPath!),
+          width: card.width,
+          height: card.height,
+          tempFiles: [card.colorPath!, card.enhancedPath!],
+        );
+      }
+      debugPrint('⚠️  Card normalization failed: ${card.errorMessage}');
+    } catch (e) {
+      debugPrint('⚠️  Card normalization exception: $e');
+    }
+
+    final dimensions = await _ocrService.getImageDimensions(imageFile);
+    if (dimensions == null) return null;
+    return _OcrInputs(
+      mlImage: imageFile,
+      tessImage: imageFile,
+      width: dimensions['width']!,
+      height: dimensions['height']!,
+    );
+  }
+
+  /// Dedicated path for the redesigned (2025+) Senior Citizen ID. Reads
+  /// fields from ML Kit using their printed labels, and only falls back to
+  /// (slower) Tesseract zones for what ML Kit could not validate.
   Future<ParsedIDData> _parseSeniorNewFormat(File imageFile) async {
     debugPrint('🆕 Using NEW-FORMAT Senior ID extraction path');
+    _OcrInputs? inputs;
     try {
-      final dimensions = await _ocrService.getImageDimensions(imageFile);
-      if (dimensions == null) {
+      inputs = await _prepareInputs(imageFile);
+      if (inputs == null) {
         return ParsedIDData(
           success: false,
           errorMessage:
               'Could not read image dimensions for new-format extraction.',
         );
       }
-      final imageWidth = dimensions['width']!;
-      final imageHeight = dimensions['height']!;
+
+      final recognizedText =
+          await _ocrService.extractTextWithPositions(inputs.mlImage);
 
       final layoutResult =
           await LayoutBasedFieldExtractor.extractFieldsNewFormat(
-        imagePath: imageFile.path,
-        imageWidth: imageWidth,
-        imageHeight: imageHeight,
+        imagePath: inputs.tessImage.path,
+        imageWidth: inputs.width,
+        imageHeight: inputs.height,
+        recognizedText: recognizedText,
       );
 
       final fieldConfidences =
@@ -367,7 +433,7 @@ class HybridParserService {
         controlNumber: layoutResult['controlNumber'] as String,
         age: _extractAge(layoutResult['dateOfBirth'] as String),
         confidence: layoutResult['confidence'] as double,
-        rawText: '',
+        rawText: recognizedText?.text ?? '',
         nameConfidence: fieldConfidences['fullName'] ?? 0.0,
         sexConfidence: fieldConfidences['sex'] ?? 0.0,
         dateIssuedConfidence: fieldConfidences['dateIssued'] ?? 0.0,
@@ -381,6 +447,8 @@ class HybridParserService {
         success: false,
         errorMessage: 'New-format extraction failed: $e',
       );
+    } finally {
+      inputs?.dispose();
     }
   }
 
@@ -672,5 +740,32 @@ class HybridParserService {
 
   void dispose() {
     _ocrService.dispose();
+  }
+}
+
+/// Images and size shared by every OCR engine for one scan.
+class _OcrInputs {
+  final File mlImage;
+  final File tessImage;
+  final int width;
+  final int height;
+  final List<String> tempFiles;
+
+  const _OcrInputs({
+    required this.mlImage,
+    required this.tessImage,
+    required this.width,
+    required this.height,
+    this.tempFiles = const [],
+  });
+
+  void dispose() {
+    for (final path in tempFiles) {
+      try {
+        File(path).deleteSync();
+      } catch (e) {
+        // Best-effort cleanup of temp files
+      }
+    }
   }
 }

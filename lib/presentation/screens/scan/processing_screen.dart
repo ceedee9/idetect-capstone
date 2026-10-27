@@ -163,7 +163,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
               '✅ Auto-detected $_resolvedIdType ${_resolvedIdFormat.toUpperCase()} format');
         }
       } else {
-        await Future.delayed(const Duration(milliseconds: 800));
+        await Future.delayed(const Duration(milliseconds: 250));
       }
 
       // Step 2: OCR + Hybrid parsing
@@ -176,9 +176,12 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           '🔄 Starting HYBRID OCR + Parsing (type: $_resolvedIdType)...');
 
       try {
-        // Gap 5: 20-second hard timeout on the full hybrid OCR pipeline.
-        // If Tesseract stalls (common on low-RAM devices), the timeout fires
-        // and we fall back to a fast ML Kit-only pass so the UI never freezes.
+        // Gap 5: hard timeout on the full hybrid OCR pipeline. If Tesseract
+        // stalls (common on low-RAM devices), the timeout fires and we fall
+        // back to a fast ML Kit-only pass so the UI never freezes. 35s leaves
+        // headroom for slow phones: the pipeline normally finishes far sooner
+        // now, and a premature timeout throws away a good result for a
+        // reduced-confidence one.
         _parsedData = await _hybridParser
             .parseIDWithHybridApproach(
           imageFile: imageFile,
@@ -186,11 +189,15 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           idFormat: _resolvedIdFormat,
         )
             .timeout(
-          const Duration(seconds: 20),
+          const Duration(seconds: 35),
           onTimeout: () async {
-            debugPrint('⏱️ OCR exceeded 20 s — falling back to ML Kit only');
+            debugPrint('⏱️ OCR exceeded 35 s — falling back to ML Kit only');
             _isTimeoutFallback = true;
-            return _hybridParser.parseMlKitOnly(imageFile, _resolvedIdType);
+            return _hybridParser.parseMlKitOnly(
+              imageFile,
+              _resolvedIdType,
+              idFormat: _resolvedIdFormat,
+            );
           },
         );
       } catch (e) {
