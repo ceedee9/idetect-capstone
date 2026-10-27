@@ -321,36 +321,40 @@ export default function CallbackRequestsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-accent-100 rounded-xl">
-          <PhoneCall className="w-6 h-6 text-accent-600" />
+    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="shrink-0 p-2.5 bg-accent-100 rounded-xl">
+            <PhoneCall className="w-6 h-6 text-accent-600" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="font-heading font-bold text-2xl leading-tight text-slate-900">
+              Callback Requests
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {canEdit
+                ? "Beneficiaries asking BPLO to contact an establishment they transacted with."
+                : "Callback requests for your beneficiary type. View only."}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Callback Requests</h1>
-          <p className="text-sm text-slate-500">
-            {canEdit
-              ? "Beneficiaries asking BPLO to contact an establishment they transacted with."
-              : "Callback requests for your beneficiary type. View only."}
-          </p>
-        </div>
-      </div>
 
-      <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.value || "all"}
-            type="button"
-            onClick={() => changeFilter(tab.value)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-              statusFilter === tab.value
-                ? "bg-white text-slate-800 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit shrink-0 self-start sm:self-center">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.value || "all"}
+              type="button"
+              onClick={() => changeFilter(tab.value)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                statusFilter === tab.value
+                  ? "bg-white text-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
