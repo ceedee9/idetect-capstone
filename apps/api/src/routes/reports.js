@@ -13,14 +13,14 @@ const { maskIdNumber } = require("../utils/privacy");
 
 const router = express.Router();
 
+// CSV exports of verifications, fraud flags, and disputes. BPLO is not given
+// access: these records fall outside its jurisdiction.
 router.use(authenticate);
 router.use(requireRole([
-  "bplo_super_admin",
   "osca_super_admin",
   "pdao_super_admin",
   "osca_admin",
   "pdao_admin",
-  "bplo_admin",
 ]));
 
 const getTypeForRole = (role) =>
@@ -28,8 +28,6 @@ const getTypeForRole = (role) =>
     ? "senior_citizen"
     : "pwd";
 
-const isBploRole = (role) =>
-  role === "bplo_admin" || role === "bplo_super_admin";
 const isOscaRole = (role) =>
   role === "osca_admin" || role === "osca_super_admin";
 
@@ -73,10 +71,9 @@ router.get("/verifications/export", requireStepUp, async (req, res, next) => {
     // Role filtering
     if (isOscaRole(role)) {
       query += ` AND vl.beneficiary_type_detected = 'senior_citizen'`;
-    } else if (!isBploRole(role)) {
+    } else {
       query += ` AND vl.beneficiary_type_detected = 'pwd'`;
     }
-    // bplo_admin sees all types
 
     if (start_date) {
       query += ` AND vl.verified_at >= $${idx}::date`;
@@ -155,7 +152,7 @@ router.get("/fraud-flags/export", requireStepUp, async (req, res, next) => {
 
     if (isOscaRole(role)) {
       query += ` AND ff.beneficiary_type = 'senior_citizen'`;
-    } else if (!isBploRole(role)) {
+    } else {
       query += ` AND ff.beneficiary_type = 'pwd'`;
     }
 
@@ -235,14 +232,10 @@ router.get("/disputes/export", requireStepUp, async (req, res, next) => {
     const params = [];
     let idx = 1;
 
-    if (isBploRole(role)) {
-      query += ` AND d.dispute_type = 'business_refusal'`;
-    } else {
-      const bType = getTypeForRole(role);
-      query += ` AND d.dispute_type != 'business_refusal' AND b.beneficiary_type = $${idx}`;
-      params.push(bType);
-      idx++;
-    }
+    const bType = getTypeForRole(role);
+    query += ` AND d.dispute_type != 'business_refusal' AND b.beneficiary_type = $${idx}`;
+    params.push(bType);
+    idx++;
 
     if (start_date) {
       query += ` AND d.created_at >= $${idx}::date`;

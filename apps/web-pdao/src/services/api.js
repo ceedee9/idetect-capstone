@@ -186,16 +186,6 @@ export const auditLogsAPI = {
     api.get("/audit-logs/export", { params, responseType: "blob" }),
 };
 
-// ─── Reports / CSV export ─────────────────────────────────────────────────────
-export const reportsAPI = {
-  exportVerifications: (params = {}) =>
-    api.get("/reports/verifications/export", { params, responseType: "blob" }),
-  exportFraudFlags: (params = {}) =>
-    api.get("/reports/fraud-flags/export", { params, responseType: "blob" }),
-  exportDisputes: (params = {}) =>
-    api.get("/reports/disputes/export", { params, responseType: "blob" }),
-};
-
 // ─── Staff management ─────────────────────────────────────────────────────────
 export const staffAPI = {
   list: () => api.get("/staff"),

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -13,7 +13,6 @@ import {
   ShieldAlert,
   FileWarning,
   Activity,
-  Download,
   TrendingUp,
   CheckCircle2,
 } from "lucide-react";
@@ -23,7 +22,6 @@ import { useAuth } from "../context/AuthContext";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import { fmtRelative } from "../utils/date";
-import { reportsAPI } from "../services/api";
 import StatusDonutChart from "../components/charts/StatusDonutChart";
 import RegistrationTrendChart from "../components/charts/RegistrationTrendChart";
 
@@ -42,86 +40,6 @@ const TYPE_COUNT_CLASSES = [
   "text-pdao-800",
   "text-pdao-500",
 ];
-
-function downloadBlob(blob, name) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function ExportDropdown() {
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  async function doExport(fn, name) {
-    setBusy(true);
-    setOpen(false);
-    try {
-      const r = await fn();
-      downloadBlob(new Blob([r.data]), name);
-    } catch {
-      /* silent */
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        disabled={busy}
-        className="btn-secondary"
-      >
-        <Download className={`w-4 h-4 ${busy ? "animate-pulse" : ""}`} />
-        Export
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-100 z-20 py-1">
-            <button
-              className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-              onClick={() =>
-                doExport(
-                  () => reportsAPI.exportVerifications(),
-                  `verifications-${new Date().toISOString().slice(0, 10)}.csv`,
-                )
-              }
-            >
-              Verifications CSV
-            </button>
-            <button
-              className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-              onClick={() =>
-                doExport(
-                  () => reportsAPI.exportFraudFlags(),
-                  `fraud-flags-${new Date().toISOString().slice(0, 10)}.csv`,
-                )
-              }
-            >
-              Fraud Flags CSV
-            </button>
-            <button
-              className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-              onClick={() =>
-                doExport(
-                  () => reportsAPI.exportDisputes(),
-                  `disputes-${new Date().toISOString().slice(0, 10)}.csv`,
-                )
-              }
-            >
-              Disputes CSV
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -178,7 +96,6 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <ExportDropdown />
           <Link to="/beneficiaries/add" className="btn-primary">
             <Plus className="w-4 h-4" />
             Add PWD Record

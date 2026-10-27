@@ -787,7 +787,6 @@ function EstablishmentDashboard({ user }) {
               : `${stats.total} registered establishment${stats.total === 1 ? "" : "s"}. ${stats.pending > 0 ? `${stats.pending} awaiting approval.` : "No approvals are waiting for review."}`}
           </p>
         </div>
-        <ExportDropdown />
       </div>
 
       {/* Permit Expiry Alert Banner */}
