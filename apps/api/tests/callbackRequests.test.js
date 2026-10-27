@@ -11,9 +11,13 @@ jest.mock("../src/middleware/auth", () => ({
 jest.mock("../src/services/fcmService", () => ({
   sendPushNotification: jest.fn().mockResolvedValue({ invalidToken: false }),
 }));
+jest.mock("../src/services/staffAlerts", () => ({
+  createStaffAlert: jest.fn().mockResolvedValue(null),
+}));
 
 const pool = require("../src/config/database");
 const { sendPushNotification } = require("../src/services/fcmService");
+const { createStaffAlert } = require("../src/services/staffAlerts");
 const beneficiaryRouter = require("../src/routes/beneficiaryPortal");
 const staffRouter = require("../src/routes/callbackRequests");
 
@@ -129,6 +133,16 @@ describe("beneficiary callback requests", () => {
     const auditCall = pool.query.mock.calls[3];
     expect(auditCall[0]).toMatch(/callback_requested/);
     expect(auditCall[1][2]).not.toContain("Can you check");
+
+    expect(createStaffAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        targetRole: "bplo_admin",
+        alertType: "callback_requested",
+        targetRoute: "/callback-requests",
+        dedupeKey: `callback_request:${REQUEST_ID}`,
+      }),
+    );
+    expect(createStaffAlert.mock.calls[0][0].body).not.toContain("Can you check");
   });
 
   test("returns 409 when the beneficiary already has an open request for that establishment", async () => {

@@ -199,6 +199,14 @@ export function humanizeAuditLog(log) {
     case "dispute_resolved":
       return `Resolved a ${fmtFieldName(m.dispute_type || "dispute")} as "${m.decision || "—"}"`;
 
+    // ── Callback requests ─────────────────────────────────────
+    case "callback_requested":
+      return `Beneficiary requested a callback from ${who}`;
+    case "callback_request_handled":
+      return `Marked a callback request as handled`;
+    case "callback_request_updated":
+      return `Updated a callback request (status: ${fmtFieldName(m.from_status || "—")} → ${fmtFieldName(m.to_status || "—")})`;
+
     // ── System ──────────────────────────────────────────────
     case "data_export":
       return `Exported ${m.row_count ?? "an unknown number of"} record(s) as ${String(m.format || "CSV").toUpperCase()}`;

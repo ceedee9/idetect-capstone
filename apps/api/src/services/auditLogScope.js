@@ -2,6 +2,7 @@ const ESTABLISHMENT_AUDIT_ACTIONS = [
   "verification_performed",
   "verification_action_taken",
   "flag_created",
+  "callback_requested",
 ];
 
 const AGENCY_ROLES = {

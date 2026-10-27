@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { PhoneCall, Clock, CheckCircle2, X } from "lucide-react";
 import { callbackRequestsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -80,7 +81,9 @@ function CallbackRequestModal({ request, canEdit, onClose, onSaved }) {
     }
   }
 
-  return (
+  // Portaled to <body>: the page wrapper's entrance animation leaves a transform
+  // behind, which would trap a fixed overlay inside the page instead of the viewport.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
       onClick={onClose}
@@ -257,7 +260,8 @@ function CallbackRequestModal({ request, canEdit, onClose, onSaved }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

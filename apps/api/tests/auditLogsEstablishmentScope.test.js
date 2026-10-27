@@ -54,7 +54,12 @@ describe("audit log establishment scope", () => {
     expect(params).toEqual([
       "pdao_admin",
       "pwd",
-      ["verification_performed", "verification_action_taken", "flag_created"],
+      [
+        "verification_performed",
+        "verification_action_taken",
+        "flag_created",
+        "callback_requested",
+      ],
       30,
       0,
     ]);
@@ -66,7 +71,12 @@ describe("audit log establishment scope", () => {
     expect(pool.query.mock.calls[0][1]).toEqual([
       "osca_admin",
       "senior_citizen",
-      ["verification_performed", "verification_action_taken", "flag_created"],
+      [
+        "verification_performed",
+        "verification_action_taken",
+        "flag_created",
+        "callback_requested",
+      ],
       30,
       0,
     ]);

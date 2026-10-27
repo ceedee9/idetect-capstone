@@ -12,6 +12,7 @@ const pool = require("../config/database");
 const { authenticateBeneficiary } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
 const { maskBeneficiary } = require("../utils/privacy");
+const { createStaffAlert } = require("../services/staffAlerts");
 
 const router = express.Router();
 
@@ -347,6 +348,18 @@ router.post(
             verification_log_id: verification_log_id || null,
           }),
         ],
+      );
+
+      createStaffAlert({
+        targetRole: "bplo_admin",
+        alertType: "callback_requested",
+        severity: "medium",
+        title: "New Callback Request",
+        body: `A beneficiary asked BPLO to contact an establishment they transacted with. Reference ${request.id.slice(0, 8).toUpperCase()}.`,
+        targetRoute: "/callback-requests",
+        dedupeKey: `callback_request:${request.id}`,
+      }).catch((err) =>
+        console.error("⚠️  Staff alert insert failed:", err.message),
       );
 
       res.status(201).json({

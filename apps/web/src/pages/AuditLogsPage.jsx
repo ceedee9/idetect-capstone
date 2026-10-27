@@ -95,6 +95,15 @@ const ACTION_GROUPS = [
     ],
   },
   {
+    value: "callback",
+    label: "Callback Requests",
+    actions: [
+      "callback_requested",
+      "callback_request_handled",
+      "callback_request_updated",
+    ],
+  },
+  {
     value: "system",
     label: "System",
     actions: [
@@ -170,6 +179,10 @@ const ACTION_STYLES = {
   dispute_acknowledged: "bg-cyan-200 text-cyan-900",
   dispute_resolved: "bg-emerald-200 text-emerald-900",
   dispute_rejected: "bg-rose-600 text-white",
+  // Callback requests
+  callback_requested: "bg-sky-100 text-sky-800",
+  callback_request_handled: "bg-green-200 text-green-900",
+  callback_request_updated: "bg-slate-200 text-slate-800",
   // System
   data_export: "bg-teal-200 text-teal-900",
   report_generated: "bg-fuchsia-200 text-fuchsia-900",
