@@ -20,11 +20,13 @@ import 'api_service.dart';
 
 class StatusSyncService {
   static const Duration _pollInterval = Duration(seconds: 8);
+  static const Duration _rateLimitBackoff = Duration(minutes: 1);
 
   static Timer? _pollTimer;
   static StreamSubscription<ConnectivityResult>? _connectivitySub;
   static int _lastSyncMs = 0; // Unix ms of the last successful sync
   static bool _isSyncing = false;
+  static DateTime? _backoffUntil; // Set when the server answers 429
 
   /// Call once from main() after LocalDatabase.init() and ApiService.loadToken().
   static Future<void> init() async {
@@ -58,6 +60,7 @@ class StatusSyncService {
     _connectivitySub?.cancel();
     _connectivitySub = null;
     _lastSyncMs = 0;
+    _backoffUntil = null;
   }
 
   // ── Internal ──────────────────────────────────────────────────────────────
@@ -66,6 +69,8 @@ class StatusSyncService {
     if (_isSyncing) return;
     final token = ApiService.token;
     if (token == null) return; // Not logged in yet
+    final backoffUntil = _backoffUntil;
+    if (backoffUntil != null && DateTime.now().isBefore(backoffUntil)) return;
 
     _isSyncing = true;
     try {
@@ -82,6 +87,11 @@ class StatusSyncService {
         if (response.statusCode == 401) {
           // Token expired — stop polling until re-login
           stop();
+          return;
+        }
+        if (response.statusCode == 429) {
+          // Rate limited: pause polling instead of retrying every interval
+          _backoffUntil = DateTime.now().add(_rateLimitBackoff);
           return;
         }
         if (response.statusCode != 200) return;

@@ -66,9 +66,15 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   // Alert checks are lightweight and automatic; counting them would exhaust
-  // the budget for the staff member's own actions.
+  // the budget for the staff member's own actions. Scans and status polling
+  // are high-frequency by design (the Client Portal polls every 30s and each
+  // cashier scan is a request), so they are limited per establishment in
+  // verification.js instead of sharing one budget per IP.
   skip: (req) =>
-    req.path.startsWith("/auth/") || req.path.startsWith("/staff/alerts"),
+    req.path.startsWith("/auth/") ||
+    req.path.startsWith("/staff/alerts") ||
+    req.path.startsWith("/verification/scan") ||
+    req.path.startsWith("/verification/status-updates"),
   message: { error: "Too many requests. Please try again later." },
 });
 app.use("/api/", limiter);

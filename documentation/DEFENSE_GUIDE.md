@@ -330,7 +330,9 @@ Fraud flags older than **180 days** with status `pending` (never reviewed) are a
 ### Rate Limiting
 
 - Scan endpoint: **60 scans per minute** per establishment (prevents automated bulk scanning).
+- Status sync endpoint: **120 requests per minute** per establishment. The Client Portal polls every 8 seconds and pauses for 1 minute if it receives HTTP 429.
 - Fraud flag endpoint: **30 flags per hour** per establishment (prevents false-flag spam).
+- All other API routes share a **100 requests per 15 minutes per IP** limit. Scan and status-sync routes are exempt from this IP-wide limit because they have their own per-establishment limits, so offices sharing one IP are not locked out during normal scanning.
 
 ### Cross-Database Conflict Detection
 

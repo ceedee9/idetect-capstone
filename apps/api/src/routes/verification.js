@@ -97,6 +97,19 @@ const scanLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Status polling runs every 8s per Client Portal device (about 7.5/min). The
+// key is per establishment, so this allows roughly 16 devices polling at once.
+const statusLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 120,
+  keyGenerator: (req) => req.establishment?.id || req.ip,
+  message: {
+    error: "Too many status requests. Please wait before syncing again.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const normalizeIdNumber = (value) =>
   String(value || "")
     .toUpperCase()
@@ -653,6 +666,7 @@ const idCacheKey = (value) =>
 router.get(
   "/status-updates",
   authenticateEstablishment,
+  statusLimiter,
   async (req, res, next) => {
     try {
       const since = new Date(parseInt(req.query.since, 10) || 0);
