@@ -56,7 +56,7 @@ export default function CreateEstablishmentPage() {
   function validate() {
     if (!form.business_name.trim()) return "Business name is required.";
     if (!form.business_permit_no.trim())
-      return "Business permit number is required.";
+      return "Business account number is required.";
     if (!form.owner_name.trim()) return "Owner name is required.";
     if (!form.address.trim()) return "Address is required.";
     if (!form.contact_number.trim()) return "Contact number is required.";
@@ -190,17 +190,17 @@ export default function CreateEstablishmentPage() {
                 Business Information
               </h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                Enter the establishment's Valenzuela City business permit
+                Enter the establishment's Valenzuela City business account
                 details
               </p>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
-              <FormField icon={Hash} label="Business Permit Number" required>
+              <FormField icon={Hash} label="Business Account Number" required>
                 <input
                   type="text"
                   className="input"
-                  placeholder="e.g. BP-2026-00123"
+                  placeholder="e.g. 00-000000"
                   value={form.business_permit_no}
                   onChange={set("business_permit_no")}
                   disabled={loading}
