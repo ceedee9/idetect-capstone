@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
+import '../../widgets/bplo_contact_card.dart';
 import '../home/home_screen.dart';
 
 /// Shared by the splash and the login header so the logo glides between them.
@@ -32,6 +33,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+
+  bool _isBploRelatedError(String message) {
+    final m = message.toLowerCase();
+    return m.contains('suspend') || m.contains('revoke') || m.contains('bplo');
+  }
   bool _showPassword = false;
 
   // Flattened, registry-style tokens for this screen. These deviate
@@ -289,6 +295,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ],
                                 ),
                               ),
+                              if (_isBploRelatedError(_errorMessage!)) ...[
+                                const SizedBox(height: 12),
+                                const BploContactCard(
+                                  title: 'Concerns about your account?',
+                                  message:
+                                      'Contact the BPLO for help with your account status.',
+                                ),
+                              ],
                               const SizedBox(height: 20),
                             ],
 

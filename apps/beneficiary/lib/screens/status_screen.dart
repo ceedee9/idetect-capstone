@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../core/constants/app_design_system.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../widgets/bplo_contact_card.dart';
 import 'fraud_report_screen.dart';
 
 class StatusScreen extends StatefulWidget {
@@ -287,6 +288,11 @@ class _StatusScreenState extends State<StatusScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: AppDesignSystem.spaceSM),
+                  const BploContactCard(
+                    title: 'Concerns about this suspension?',
+                    message: 'Contact the BPLO for help with your suspension.',
+                  ),
                 ],
               ],
             ],
@@ -340,6 +346,10 @@ class _StatusScreenState extends State<StatusScreen> {
                 : AppDesignSystem.textSecondary,
           ),
         ]),
+        const SizedBox(height: AppDesignSystem.spaceMD),
+
+        // ── BPLO Contact ──
+        const BploContactCard(),
         const SizedBox(height: AppDesignSystem.spaceMD),
 
         // ── Report Fraud Button ──

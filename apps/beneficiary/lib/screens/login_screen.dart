@@ -7,6 +7,7 @@ import '../core/constants/app_design_system.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
+import '../widgets/bplo_contact_card.dart';
 import 'home_screen.dart';
 
 /// Keys for remembering the beneficiary so they don't re-type next time.
@@ -692,6 +693,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   title: null,
                                   message: _errorMessage!,
                                 ),
+                                if (_errorMessage!.toLowerCase().contains(
+                                  'suspend',
+                                )) ...[
+                                  const SizedBox(height: 12),
+                                  const BploContactCard(
+                                    title: 'Concerns about this suspension?',
+                                    message:
+                                        'Contact the BPLO for help with your suspension.',
+                                  ),
+                                ],
                               ],
 
                               // Dev-mode skip login

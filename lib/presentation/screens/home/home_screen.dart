@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../widgets/account_profile_drawer.dart';
 import '../../widgets/account_change_banner.dart';
+import '../../widgets/bplo_contact_card.dart';
 import 'info_detail_screen.dart';
 import '../scan/camera_screen.dart';
 import '../history/history_screen.dart';
@@ -431,6 +432,10 @@ class _HomePage extends StatelessWidget {
             _buildContentSection(),
             _buildCampaignImageSection(),
             _buildInfoCards(context),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppDesignSystem.spaceMD),
+              child: BploContactCard(),
+            ),
             SizedBox(height: AppDesignSystem.spaceMD),
           ],
         ),
