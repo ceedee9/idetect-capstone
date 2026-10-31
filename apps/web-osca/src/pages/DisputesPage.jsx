@@ -80,6 +80,7 @@ const DISPUTE_TYPE_LABELS = {
   unauthorized_use: "Unauthorized Use",
   business_refusal: "Business Refusal",
   incorrect_db_info: "Incorrect DB Info",
+  other: "Other",
 };
 
 // ── Status badge ──────────────────────────────────────────────────────────────

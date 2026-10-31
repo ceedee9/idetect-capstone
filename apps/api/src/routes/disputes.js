@@ -21,7 +21,7 @@ const {
   requireRole,
 } = require("../middleware/auth");
 const { createError } = require("../middleware/errorHandler");
-const { maskBeneficiary } = require("../utils/privacy");
+const { maskBeneficiary, maskIdNumber } = require("../utils/privacy");
 const { sendPushNotification } = require("../services/fcmService");
 const { sendSms } = require("../services/smsService");
 const {
@@ -298,7 +298,13 @@ router.get("/mine", authenticateBeneficiary, async (req, res, next) => {
 
 // ── GET /api/disputes ──────────────────────────────────────────
 // OSCA sees senior_citizen disputes. PDAO sees pwd disputes.
-// BPLO sees business_refusal disputes only.
+// BPLO sees business_refusal disputes only, with the beneficiary's name
+// withheld and the ID masked. OSCA/PDAO hold the full identity.
+const maskDisputeForBplo = (row) => ({
+  ...row,
+  beneficiary_name: null,
+  beneficiary_id_number: maskIdNumber(row.beneficiary_id_number),
+});
 router.get(
   "/",
   authenticate,
@@ -369,7 +375,10 @@ router.get(
       );
 
       res.json({
-        data: result.rows,
+        data:
+          req.user.portalRole === "bplo_admin"
+            ? result.rows.map(maskDisputeForBplo)
+            : result.rows,
         pagination: {
           page,
           limit,

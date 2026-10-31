@@ -190,7 +190,7 @@ export default function BusinessRefusalsPage() {
                 </div>
                 <p className="text-sm font-medium text-slate-800 truncate">
                   <User className="w-3.5 h-3.5 inline mr-1" />
-                  {d.beneficiary_name || "Unknown"}
+                  {d.beneficiary_name || d.beneficiary_id_number || "Unknown"}
                 </p>
                 <p className="text-xs text-slate-500 mt-1 truncate">
                   {d.establishment_name && (
@@ -225,11 +225,17 @@ export default function BusinessRefusalsPage() {
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Beneficiary</p>
                   <p className="font-medium">
-                    {selected.beneficiary_name || "—"}
+                    {selected.beneficiary_name || selected.beneficiary_id_number || "—"}
                   </p>
-                  <p className="text-xs text-slate-500">
-                    {selected.beneficiary_id_number}
-                  </p>
+                  {selected.beneficiary_name ? (
+                    <p className="text-xs text-slate-500">
+                      {selected.beneficiary_id_number}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      Name withheld. Full identity is held by OSCA/PDAO.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Establishment</p>

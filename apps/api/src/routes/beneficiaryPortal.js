@@ -173,13 +173,13 @@ router.post(
       const accountId = req.beneficiary.id || req.beneficiary.accountId;
       const { verification_log_id, report_type, description } = req.body;
 
-      // Insert as a dispute with type mapping
+      // Insert as a dispute with type mapping. Fake/cloned ID and other
+      // reports go to "other", not "incorrect_db_info", which is reserved
+      // for records errors.
       const disputeType =
-        report_type === "unauthorized_use"
+        report_type === "unauthorized_use" || report_type === "stolen_id"
           ? "unauthorized_use"
-          : report_type === "stolen_id"
-            ? "unauthorized_use"
-            : "incorrect_db_info";
+          : "other";
 
       const result = await pool.query(
         `INSERT INTO disputes

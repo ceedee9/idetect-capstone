@@ -78,6 +78,7 @@ const DISPUTE_TYPE_LABELS = {
   unauthorized_use: "Unauthorized Use",
   business_refusal: "Business Refusal",
   incorrect_db_info: "Incorrect DB Info",
+  other: "Other",
 };
 
 const REQUEST_CHANNEL_LABELS = {
@@ -316,7 +317,7 @@ export default function DisputesPage() {
                 )}
                 <p className="text-sm font-medium text-slate-800 truncate">
                   <User className="w-3.5 h-3.5 inline mr-1" />
-                  {d.beneficiary_name || "Unknown"}
+                  {d.beneficiary_name || d.beneficiary_id_number || "Unknown"}
                 </p>
                 <p className="text-xs text-slate-500 mt-1 truncate">
                   {d.establishment_name && (
@@ -353,11 +354,17 @@ export default function DisputesPage() {
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Beneficiary</p>
                   <p className="font-medium">
-                    {selected.beneficiary_name || "—"}
+                    {selected.beneficiary_name || selected.beneficiary_id_number || "—"}
                   </p>
-                  <p className="text-xs text-slate-500 font-mono">
-                    {selected.beneficiary_id_number}
-                  </p>
+                  {selected.beneficiary_name ? (
+                    <p className="text-xs text-slate-500 font-mono">
+                      {selected.beneficiary_id_number}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      Name withheld. Full identity is held by OSCA/PDAO.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Establishment</p>
@@ -547,7 +554,7 @@ export default function DisputesPage() {
           }
           description={
             modal.action === "acknowledge"
-              ? `Acknowledge dispute from ${modal.dispute.beneficiary_name}? This confirms receipt within the 24h SLA.`
+              ? `Acknowledge dispute from ${modal.dispute.beneficiary_name || `beneficiary ${modal.dispute.beneficiary_id_number}`}? This confirms receipt within the 24h SLA.`
               : `${modal.action === "resolve" ? "Resolve" : "Reject"} this dispute? Please provide your response below.`
           }
           confirmLabel={

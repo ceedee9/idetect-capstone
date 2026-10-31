@@ -322,7 +322,7 @@ export default function DisputesPage() {
                 </div>
                 <p className="text-sm font-medium text-slate-800 truncate">
                   <User className="w-3.5 h-3.5 inline mr-1" />
-                  {d.beneficiary_name || "Unknown"}
+                  {d.beneficiary_id_number || "Unknown"}
                 </p>
                 <p className="text-xs text-slate-500 mt-1 truncate">
                   {d.establishment_name && (
@@ -359,10 +359,10 @@ export default function DisputesPage() {
                 <div>
                   <p className="text-slate-400 text-xs mb-1">Beneficiary</p>
                   <p className="font-medium">
-                    {selected.beneficiary_name || "—"}
+                    {selected.beneficiary_id_number || "—"}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {selected.beneficiary_id_number}
+                    Masked ID. Full identity is held by OSCA/PDAO.
                   </p>
                 </div>
                 <div>
@@ -545,7 +545,7 @@ export default function DisputesPage() {
           }
           description={
             modal.action === "acknowledge"
-              ? `Acknowledge dispute from ${modal.dispute.beneficiary_name}? This confirms receipt within the 24h SLA.`
+              ? `Acknowledge dispute from beneficiary ${modal.dispute.beneficiary_id_number}? This confirms receipt within the 24h SLA.`
               : `${modal.action === "resolve" ? "Resolve" : "Reject"} this dispute? Please provide your response below.`
           }
           confirmLabel={
