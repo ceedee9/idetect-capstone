@@ -104,8 +104,8 @@ The table below lists what is confirmed from the deployed codebase/configuration
 
 | Component                     | Confirmed detail                                                                                                                     |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Client Portal (establishment) | Flutter mobile application; Android 8.0+ and iOS 12.0+                                                                               |
-| Beneficiary Mobile App        | Flutter mobile application; Android 8.0+ and iOS 12.0+                                                                               |
+| Client Portal (establishment) | Flutter mobile application; iOS 13.0+ and the Android version stated in the approved package                                                                               |
+| Beneficiary Mobile App        | Flutter mobile application; iOS 13.0+ and the Android version stated in the approved package                                                                               |
 | Backend / API                 | Node.js + Express.js (`apps/api`)                                                                                                    |
 | Web Portal (staff)            | Served together with the API as a combined Northflank service                                                                        |
 | OCR engine                    | Tesseract OCR (plus on-device ML Kit text/face detection in the mobile app)                                                          |
@@ -170,7 +170,7 @@ The manuscript defines functional hardware needs but does not provide numerical 
 
 | Hardware          | Minimum / required                              | Recommended / guidance                                                               |
 | ----------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Mobile device     | Android 8.0+ or iOS 12.0+ with a working camera | Device that can capture a sharp, well-lit supported ID                               |
+| Mobile device     | iOS 13.0+ or the Android version stated in the approved package, with a working camera | Device that can capture a sharp, well-lit supported ID                               |
 | Camera            | Built-in mobile camera                          | Rear camera with stable focus and adequate lighting                                  |
 | Computer          | Required for the BPLO/OSCA/PDAO web portal      | Modern desktop/laptop with a supported browser (exact versions **[TO BE PROVIDED]**) |
 | Internet          | Stable connection for live verification         | Reliable Wi-Fi/mobile data at point of service                                       |
@@ -480,7 +480,7 @@ Transaction notification → beneficiary review → dispute/unauthorized-use rep
 | Validation is slow                  | Network/service latency                                      | Wait for the result; if offline, follow offline guidance and use cached results only when labeled. |
 | No live result offline              | Credential not in local cache                                | Reconnect before relying on a live database result.                                                |
 | Flag is pending                     | Queued while offline, or a temporary sync failure            | Keep the device connected; automatic retry/synchronization is expected.                            |
-| Account locked                      | Three consecutive failed login attempts                      | Wait for the cooldown period or contact the proper administrator.                                  |
+| Account locked                      | Three consecutive failed login attempts                      | Wait 30 minutes before trying again, or ask your administrator to unlock the account.                                  |
 | OTP fails/expires                   | Incorrect/expired OTP, or a Semaphore delivery issue         | Request a new OTP within the allowed resend limit.                                                 |
 | Old beneficiary status shown        | Offline/last synchronized state                              | Check the timestamp and reconnect.                                                                 |
 | BPLO cannot create an establishment | Permit invalid/expired/ineligible                            | Verify the permit in the BPLO registry.                                                            |
@@ -534,7 +534,7 @@ iDetect uses role separation, encrypted transmission, authentication controls, m
 - JWT sessions use **separate signing secrets** for Staff, Establishment, and Beneficiary tokens, so a token cannot be reused across actor types.
 - Validation, fraud flags, disputes, database changes, and administrative actions are logged in tamper-evident audit records.
 - Audit records cannot be modified/deleted through normal user functions.
-- Client and Beneficiary sessions auto-expire after inactivity.
+- Client Portal, staff website, and Beneficiary sessions sign out after 15 minutes of inactivity (the Client Portal and staff website show a warning 2 minutes before). The Beneficiary app also locks after 5 minutes of inactivity and asks for the PIN or biometric to unlock.
 - Unauthorized API requests are rejected and logged.
 - Client Portal receives only the validation status rather than comprehensive beneficiary personal data.
 - All third-party credentials (database, JWT secrets, Semaphore, Firebase, Resend) are stored in **Northflank Secrets**, not in the repository or client apps.
@@ -595,7 +595,7 @@ This revision fills in the following items that were previously marked `[TO BE P
 6. TLS/SSL and hosting → Northflank, US-Central, HTTPS/TLS, GitHub CI/CD.
 7. Web portal URLs → One unified URL, https://idetect.it.com, with role-based routing.
 8. API base URL → https://idetect.it.com (same host as the portal).
-9. Mobile OS requirements → Android 8.0+, iOS 12.0+.
+9. Mobile OS requirements → iOS 13.0+; Android version as stated in the approved package.
 10. Image/document storage → Supabase Storage (`id-captures`, `dispute-docs`), replacing the earlier Cloudinary reference.
 11. Authentication configuration → RBAC, bcrypt, JWT with separate secrets per actor type, plus beneficiary ID+birthdate+OTP/PIN.
 12. Hosting/CI-CD → GitHub → Northflank → Production, auto-deploy on `main`.
