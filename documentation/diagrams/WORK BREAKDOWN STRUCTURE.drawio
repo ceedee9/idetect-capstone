@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="GitHub Copilot" version="24.0.0">
+  <diagram id="wbs" name="Work Breakdown Structure">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1400" pageHeight="1620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Work Breakdown Structure" style="text;html=1;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" value="LEVEL 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1d4ed8;strokeColor=#1e3a8a;fontColor=#ffffff;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="180" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2" value="LEVEL 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="70" width="180" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3" value="LEVEL 3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="70" width="180" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="lg4" value="LEVEL 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="70" width="180" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="root" value="&lt;b&gt;IDetect&lt;/b&gt;&lt;br&gt;OCR-Based Discount ID Verification System" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1d4ed8;strokeColor=#1e3a8a;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="40" y="805" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="bplo" value="&lt;b&gt;BPLO Portal&lt;/b&gt;&lt;br&gt;Business Permit &amp;amp; Licensing (Website)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="340" y="254" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="client" value="&lt;b&gt;Client Portal&lt;/b&gt;&lt;br&gt;Business Establishments (Website + Scanner)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="340" y="581" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pdao" value="&lt;b&gt;PDAO Portal&lt;/b&gt;&lt;br&gt;Persons with Disability Affairs (Website)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="340" y="838" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="osca" value="&lt;b&gt;OSCA Portal&lt;/b&gt;&lt;br&gt;Office of Senior Citizen Affairs (Website)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="340" y="1062" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ben" value="&lt;b&gt;Beneficiary App&lt;/b&gt;&lt;br&gt;Senior Citizens &amp;amp; PWDs (Mobile)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="340" y="1286" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="estab" value="Establishment Provisioning" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="203" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ops" value="Operations Dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="315" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="idcap" value="ID Image Capture and Preparation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="451" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ocr" value="OCR Data Extraction" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="563" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="rt" value="Real-time Verification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="647" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="fraudrep" value="Fraud Flag Reporting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="703" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="pwd" value="PWD Record Management" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="787" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="finv_pdao" value="Fraud Flag Investigation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="899" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="screc" value="Senior Citizen Record Management" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1011" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="finv_osca" value="Fraud Flag Investigation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1123" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="idstatus" value="ID Status Monitoring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1235" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="txn" value="Transaction Notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1347" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_1" value="Account Creation &amp; Password Reset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="180" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_2" value="Permit Expiry Monitoring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="236" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_3" value="Establishment Metrics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="292" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_4" value="Business Refusal Reports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="348" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_5" value="Camera Guidance &amp; Quality Check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="428" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_6" value="Image Preprocessing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="484" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_7" value="Confidence Scoring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="540" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_8" value="Field-Level Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="596" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_9" value="Dual DB Query &amp; Status Return" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="652" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_10" value="Flag Submission &amp; Reference No." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="708" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_11" value="Add / Update PWD Records" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="764" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_12" value="Dispute Resolution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="820" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_13" value="Flag Review &amp; Fraud Marking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="876" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_14" value="Fraud Analytics &amp; Reporting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="932" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_15" value="Add / Update Senior Citizen Records" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="988" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_16" value="Dispute Resolution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="1044" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_17" value="Flag Review &amp; Fraud Marking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="1100" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_18" value="Fraud Analytics &amp; Reporting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="1156" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_19" value="ID Status View" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="1212" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_20" value="Dispute Submission" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="1268" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_21" value="Notification History" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="1324" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l4_22" value="Fraud Alert Notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="1380" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="cap" value="This figure presents the Work Breakdown Structure of IDetect, an OCR-Based Discount ID Verification System, organized across four decomposition levels. At Level 1, IDetect serves as the single root of the system. At Level 2, it branches into five stakeholder-specific subsystems: the BPLO Portal, PDAO Portal, Client Portal (business establishment website and ID scanner), OSCA Portal, and Beneficiary App. At Level 3, each subsystem decomposes into its core functional modules, such as Establishment Provisioning, PWD Record Management, OCR Data Extraction, Real-time Verification, and Fraud Flag Investigation. At Level 4, these modules are further broken down into specific features including Camera Guidance &amp; Quality Check, Image Preprocessing, Confidence Scoring, Dual DB Query &amp; Status Return, Dispute Resolution, and Fraud Analytics &amp; Reporting, among others. This hierarchical structure reflects the modular and role-based design of IDetect, ensuring clear separation of responsibilities across government offices, business establishments, and beneficiaries within a unified verification and fraud management workflow." style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1460" width="1300" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="e_r_bplo" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="root" target="bplo"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_r_client" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="root" target="client"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_r_pdao" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="root" target="pdao"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_r_osca" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="root" target="osca"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_r_ben" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="root" target="ben"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_b_estab" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="bplo" target="estab"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_b_ops" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="bplo" target="ops"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_c_idcap" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="client" target="idcap"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_c_ocr" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="client" target="ocr"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_c_rt" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="client" target="rt"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_c_fraudrep" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="client" target="fraudrep"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_p_pwd" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="pdao" target="pwd"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_p_finv" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="pdao" target="finv_pdao"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_o_screc" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="osca" target="screc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_o_finv" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="osca" target="finv_osca"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_be_idstatus" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="ben" target="idstatus"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_be_txn" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="ben" target="txn"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_1" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="estab" target="l4_1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_2" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="estab" target="l4_2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_3" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="ops" target="l4_3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_4" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="ops" target="l4_4"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_5" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="idcap" target="l4_5"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_6" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="idcap" target="l4_6"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_7" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="ocr" target="l4_7"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_8" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="ocr" target="l4_8"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_9" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="rt" target="l4_9"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_10" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="fraudrep" target="l4_10"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_11" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="pwd" target="l4_11"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_12" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="pwd" target="l4_12"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_13" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="finv_pdao" target="l4_13"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_14" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="finv_pdao" target="l4_14"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_15" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="screc" target="l4_15"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_16" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="screc" target="l4_16"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_17" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="finv_osca" target="l4_17"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_18" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="finv_osca" target="l4_18"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_19" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="idstatus" target="l4_19"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_20" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="idstatus" target="l4_20"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_21" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="txn" target="l4_21"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_l4_22" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;endArrow=none;strokeColor=#666666;strokeWidth=1.2;html=1;" edge="1" parent="1" source="txn" target="l4_22"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
