@@ -2,9 +2,10 @@
 
 **Pamantasan ng Lungsod ng Valenzuela — Capstone 2026**
 
-> This guide covers the actual production deployment of iDetect: a combined
-> Node.js/Express API + staff web portal service on **Northflank**, backed by
-> **PostgreSQL/Storage on Supabase**, reachable at **https://idetect.it.com**.
+> This guide covers the production deployment of iDetect as it is today: the
+> staff web portal on **Vercel** (`https://idetect.it.com`), the Node.js/Express
+> API on **Northflank**, and PostgreSQL and file storage on **Supabase**.
+> The API and portal are deployed separately.
 
 ---
 
@@ -12,30 +13,31 @@
 
 | Part                       | What it is                                                                                          | Host                                                     |
 | -------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| **API + Staff Web Portal** | Node.js / Express (`apps/api`) + React/Vite build (`apps/web`) deployed as **one combined service** | Northflank (US-Central)                                  |
+| **Staff Web Portal**       | React/Vite single-page app (`apps/web`), role-routed to BPLO/OSCA/PDAO                              | Vercel                                                   |
+| **REST API**               | Node.js / Express (`apps/api`), serves `/api/*`                                                     | Northflank (`https://site--idetect--lr4dgpy2rvkq.code.run/api`) |
 | **Database**               | PostgreSQL                                                                                          | Supabase (connection pooler)                             |
 | **File/image storage**     | ID captures, dispute documents                                                                      | Supabase Storage (`id-captures`, `dispute-docs` buckets) |
-| **Domain**                 | `idetect.it.com`                                                                                    | DNS pointed at Northflank                                |
+| **Domain**                 | `idetect.it.com` (staff portal)                                                                     | DNS pointed at Vercel                                    |
 
 ```
-User → https://idetect.it.com          → Northflank combined service
-                                            ├─ serves the staff web portal (role-routed: BPLO/OSCA/PDAO)
-                                            └─ serves /api/* (Node.js + Express)
-                                                   ↓
-                                                Supabase (PostgreSQL + Storage)
+Staff browser → https://idetect.it.com          → Vercel (static React/Vite build, SPA rewrites)
+                                                     │  VITE_API_URL (set at build time)
+Staff portal, mobile apps → https://<api-host>/api/* → Northflank (Node.js + Express)
+                                                     ↓
+                                                 Supabase (PostgreSQL + Storage)
 ```
 
-There is **one URL** for staff use: https://idetect.it.com. After sign-in, the account is routed to the BPLO, OSCA, or PDAO dashboard based on its role — there are no separate per-office URLs to distribute.
+Staff use one URL: https://idetect.it.com. After sign-in, the account is routed to the BPLO, OSCA, or PDAO dashboard based on its role; there are no separate per-office URLs to distribute.
 
-The two Flutter mobile apps (Client Portal for establishments, Beneficiary app) call the same API base URL, `https://idetect.it.com/api`.
+The two Flutter mobile apps (Client Portal for establishments, Beneficiary app) call the API directly. Their base URL is set at build time (see §8), not in the repository.
 
 ---
 
 ## 2. Source & CI/CD
 
 - **Repository:** GitHub — `ceedee9/idetect-capstone`
-- **Pipeline:** GitHub → Northflank. Every push to `main` triggers an automatic build and deploy of the combined service.
-- **Rollback:** Use Northflank's deployment history to redeploy a previous build if a release introduces a regression.
+- **Pipeline:** GitHub → Vercel (portal) and GitHub → Northflank (API). Whether a push to `main` auto-deploys is set in each platform's Git settings. Confirm this in both dashboards before relying on it (it is not defined in the repository).
+- **Rollback:** Use each platform's deployment history to redeploy a previous build if a release introduces a regression.
 
 ---
 
@@ -45,7 +47,7 @@ The two Flutter mobile apps (Client Portal for establishments, Beneficiary app) 
 
 Everything must be in the `ceedee9/idetect-capstone` GitHub repository.
 
-> ⚠️ Make sure `.env` is in `.gitignore`. **Never commit secrets to GitHub.** All runtime secrets live in **Northflank Secrets**, not in the repository.
+> ⚠️ Make sure `.env` is in `.gitignore`. **Never commit secrets to GitHub.** All runtime secrets live in the host's secret store (**Northflank Secrets** for the API), not in the repository.
 
 ### 3.2 Generate Strong Production Secrets
 
@@ -75,7 +77,7 @@ Store these in a password manager, then paste them into **Northflank → Service
 }
 ```
 
-Northflank runs `npm start` to launch the combined service.
+The API host runs `npm start` (`node src/server.js`). The server listens on `PORT` (default 3000) on `0.0.0.0`.
 
 ---
 
@@ -96,15 +98,15 @@ Northflank runs `npm start` to launch the combined service.
 
 ---
 
-## 5. Deploy the Combined Service on Northflank
+## 5. Deploy the API on Northflank
 
-### 5.1 Create the Service
+### 5.1 Create the API Service
 
 1. Sign in to Northflank and connect the `ceedee9/idetect-capstone` GitHub repository.
-2. Create a new service pointed at `apps/api` (the service is responsible for serving both the API and the built staff web portal).
+2. Create a new service pointed at `apps/api`. This service serves the API only. The staff portal is deployed separately on Vercel (§5.4).
 3. Set the region to **US-Central**.
-4. Set the public port to **3000**.
-5. Enable **auto-deploy on push to `main`**.
+4. Expose port **3000** (the `PORT` default in `apps/api/src/server.js`).
+5. Set auto-deploy on push to `main` if you want it. Confirm the setting in Northflank.
 
 ### 5.2 Set Environment Variables (Northflank Secrets)
 
@@ -120,29 +122,43 @@ Northflank runs `npm start` to launch the combined service.
 | `JWT_SECRET_STAFF`                     | _(64-char random string)_                                      |
 | `JWT_SECRET_ESTABLISHMENT`             | _(64-char random string)_                                      |
 | `JWT_SECRET_BENEFICIARY`               | _(64-char random string)_                                      |
+| `JWT_EXPIRES_IN`                       | `8h`                                                           |
+| `ALLOWED_ORIGINS`                      | `https://idetect.it.com` (CORS allow-list; required in production) |
 | `SMS_PROVIDER`                         | `semaphore`                                                    |
-| `SEMAPHORE_API_KEY`                    | Your Semaphore API key                                         |
+| `SMS_API_KEY`                          | Your Semaphore API key                                         |
+| `SMS_SENDER_NAME`                      | `iDetect`                                                      |
 | `RESEND_API_KEY`                       | Your Resend API key (verified `idetect.it.com` sending domain) |
 | `FIREBASE_SERVICE_ACCOUNT_JSON`        | Full Firebase service-account JSON (as a string)               |
 | `OCR_CONFIDENCE_THRESHOLD`             | `75`                                                           |
 
-### 5.3 Deploy and Verify
+### 5.3 Verify the API
 
-1. Trigger the first deploy (or push to `main`).
+1. Trigger the first deploy (or push to `main` if auto-deploy is enabled).
 2. Once live, check the health endpoint:
    ```
-   GET https://idetect.it.com/api/health
+   GET https://site--idetect--lr4dgpy2rvkq.code.run/api/health
    ```
    _Expected: a healthy/ready response confirming the database connection._
-3. Load `https://idetect.it.com` in a browser — the staff login page should appear.
+
+### 5.4 Deploy the Staff Portal on Vercel
+
+The portal is `apps/web`, configured by `apps/web/vercel.json`. That file sends all non-`/api/` routes to `index.html`, so the React routes load on refresh.
+
+1. In Vercel, import the `ceedee9/idetect-capstone` repository and set the **Root Directory** to `apps/web`.
+2. Build settings: build command `npm run build` (`vite build`), output directory `dist` (the Vite default).
+3. Set the environment variable **`VITE_API_URL`** to the production API base URL, including `/api`, for example `https://site--idetect--lr4dgpy2rvkq.code.run/api`. `VITE_API_URL` is read at build time, so redeploy after changing it. The app throws a "Missing VITE_API_URL" error at startup if it is not set in production (`apps/web/src/services/api.js`).
+4. Add the custom domain `idetect.it.com` to the Vercel project (§6).
+5. Confirm the API's `ALLOWED_ORIGINS` includes `https://idetect.it.com`, or staff logins will be blocked by CORS.
+6. Load `https://idetect.it.com` in a browser. The staff login page should appear.
 
 ---
 
 ## 6. Connect the Domain
 
-1. Point the `idetect.it.com` domain's DNS at the Northflank service (Northflank provides the target records once the service is created).
-2. Northflank provisions the TLS/SSL certificate automatically for the domain — no manual certificate management needed.
-3. Verify propagation at a DNS checker, then confirm `https://idetect.it.com` loads over HTTPS with a valid certificate.
+1. Point the `idetect.it.com` DNS records at the Vercel project for the portal. Vercel shows the exact records to add when you add the domain.
+2. Let the platform issue the TLS certificate for the domain, then confirm `https://idetect.it.com` loads over HTTPS with a valid certificate.
+3. Verify propagation with a DNS checker before the defense.
+4. The API keeps its Northflank hostname unless you add a custom domain for it on Northflank. If you add one, update `VITE_API_URL` and the mobile build define (§8).
 
 ---
 
@@ -154,17 +170,19 @@ Northflank runs `npm start` to launch the combined service.
 | Push notifications | Firebase Cloud Messaging (FCM) / APNs | Service-account JSON stored in Northflank Secrets                                |
 | Email              | Resend                                | Uses the verified `idetect.it.com` sending domain; API key in Northflank Secrets |
 
-If a notification provider's credentials are missing, the corresponding service degrades gracefully (e.g., logs the message instead of sending it) rather than crashing the API — confirm this behavior is acceptable for your environment before going live.
+If a notification provider's credentials are missing, behaviour differs by channel. Email without `RESEND_API_KEY` logs the message to the console instead of sending it (`apps/api/src/services/emailService.js`). Confirm the SMS and FCM behaviour when their keys are missing before relying on it. Do not assume they degrade the same way.
 
 ---
 
 ## 8. Mobile App Configuration
 
-Both Flutter apps (Client Portal in the repo root `lib/`, Beneficiary app in `apps/beneficiary/`) must point at the production API:
+Both Flutter apps (Client Portal in the repo root `lib/`, Beneficiary app in `apps/beneficiary/`) read the API base URL at build time. There is no default. The app throws "Missing IDETECT_API_BASE_URL" at startup if it is not passed:
 
 ```
-https://idetect.it.com/api
+flutter build apk --dart-define=IDETECT_API_BASE_URL=https://site--idetect--lr4dgpy2rvkq.code.run/api
 ```
+
+Use the same value for `flutter run`. Use the production API URL from §5.3.
 
 There are currently **no published app store / APK distribution links** — see the [User Manual §4.5](USER_MANUAL.md#45-mobile-installation) for the outstanding items around official mobile distribution.
 
@@ -173,7 +191,8 @@ There are currently **no published app store / APK distribution links** — see 
 ## 9. Post-Deployment Verification Checklist
 
 - [ ] `https://idetect.it.com` loads the staff login page
-- [ ] `GET https://idetect.it.com/api/health` returns healthy
+- [ ] `GET <api-host>/api/health` returns healthy
+- [ ] Staff login from `https://idetect.it.com` succeeds (no CORS error; `ALLOWED_ORIGINS` includes the portal origin)
 - [ ] BPLO login routes to the BPLO dashboard
 - [ ] OSCA login routes to the Senior Citizen-only dashboard
 - [ ] PDAO login routes to the PWD-only dashboard
@@ -183,35 +202,38 @@ There are currently **no published app store / APK distribution links** — see 
 - [ ] Push notifications deliver (Firebase FCM)
 - [ ] Transactional email delivers (Resend, `idetect.it.com` domain)
 - [ ] Session timeout works (idle → redirect to login)
-- [ ] HTTPS padlock shows in the browser (Northflank-managed TLS)
+- [ ] HTTPS padlock shows in the browser (Vercel-managed TLS for the portal)
 
 ---
 
 ## 10. Ongoing Maintenance
 
-| Task                    | How                                                                   |
-| ----------------------- | --------------------------------------------------------------------- |
-| Deploy a code update    | `git push` to `main` — Northflank auto-builds and deploys             |
-| View API logs           | Northflank → Service → Logs                                           |
-| View/query the database | Supabase → Project → Table Editor / SQL Editor                        |
-| Rotate a secret         | Update the value in Northflank Secrets, redeploy the service          |
-| Rollback a bad deploy   | Northflank → Service → Deployment history → redeploy a previous build |
-| Add a new staff account | Use the Staff page inside the portal (no server access needed)        |
+| Task                    | How                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| Deploy a code update    | Push to `main` if auto-deploy is enabled for each platform; otherwise trigger a deploy in the dashboard |
+| Deploy the portal       | Vercel → Project → Deployments (redeploy after changing `VITE_API_URL`)                               |
+| View API logs           | Northflank → Service → Logs                                                                           |
+| View/query the database | Supabase → Project → Table Editor / SQL Editor                                                        |
+| Rotate a secret         | Update the value in Northflank Secrets, redeploy the API service                                      |
+| Rollback a bad deploy   | Northflank or Vercel → Deployment history → redeploy a previous build                                 |
+| Add a new staff account | Use the Staff page inside the portal (no server access needed)                                        |
 
 ---
 
 ## Quick Reference
 
-| Item             | Value                                               |
-| ---------------- | --------------------------------------------------- |
-| Production URL   | https://idetect.it.com                              |
-| API health check | https://idetect.it.com/api/health                   |
-| Hosting          | Northflank, US-Central, combined service, port 3000 |
-| Database         | PostgreSQL via Supabase (connection pooler)         |
-| Storage          | Supabase Storage — `id-captures`, `dispute-docs`    |
-| Repository       | GitHub `ceedee9/idetect-capstone`                   |
+| Item             | Value                                                           |
+| ---------------- | --------------------------------------------------------------- |
+| Staff portal URL | https://idetect.it.com (Vercel)                                 |
+| API base URL     | https://site--idetect--lr4dgpy2rvkq.code.run/api (Northflank)   |
+| API health check | https://site--idetect--lr4dgpy2rvkq.code.run/api/health         |
+| Hosting          | Vercel (portal), Northflank (API, port 3000), US-Central        |
+| Database         | PostgreSQL via Supabase (connection pooler)                     |
+| Storage          | Supabase Storage — `id-captures`, `dispute-docs`                |
+| Repository       | GitHub `ceedee9/idetect-capstone`                               |
 
 ---
 
-_Guide updated for the Northflank/Supabase production deployment — iDetect Capstone 2026 — PLV CEIT_
+_Guide updated for the Vercel (portal) + Northflank (API) + Supabase deployment — iDetect Capstone 2026 — PLV CEIT_
+_De los Reyes · Enoria · Mercado · Santiago_
 _De los Reyes · Enoria · Mercado · Santiago_
