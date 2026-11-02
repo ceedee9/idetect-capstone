@@ -6,7 +6,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
@@ -347,7 +347,7 @@ class _CameraScreenState extends State<CameraScreen> {
                             ? 'PWD ID'
                             : 'Auto-detect ID Type')
                     .toUpperCase(),
-                style: GoogleFonts.ibmPlexMono(
+                                    style: AppTypography.mono(
                   color: Colors.white,
                   fontSize: 12,
                   letterSpacing: 1.4,
@@ -397,7 +397,7 @@ class _CameraScreenState extends State<CameraScreen> {
                   children: [
                     Text(
                       'POSITION ID CARD WITHIN THE FRAME',
-                      style: GoogleFonts.ibmPlexMono(
+                                            style: AppTypography.mono(
                         color: Colors.white,
                         fontSize: 11,
                         letterSpacing: 1.0,
@@ -451,7 +451,7 @@ class _CameraScreenState extends State<CameraScreen> {
               // Capture label
               Text(
                 _isCapturing ? 'PROCESSING...' : 'TAP TO CAPTURE',
-                style: GoogleFonts.ibmPlexMono(
+                                style: AppTypography.mono(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,

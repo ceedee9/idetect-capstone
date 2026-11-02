@@ -9,13 +9,12 @@
 // Change Password currently routes to a placeholder — swap
 // ChangePasswordPlaceholderScreen for the real screen once it exists.
 //
-// Fonts assume google_fonts is already added (per the login screen
-// redesign) — Source Serif 4 for the name, IBM Plex Mono for email/
+// Fonts use AppTypography: Inter for the name, IBM Plex Mono for email/
 // section labels/version line, matching the rest of the app.
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../core/constants/app_typography.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../services/api_service.dart';
@@ -178,7 +177,7 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
                   const SizedBox(height: 14),
                   Text(
                     establishmentName,
-                    style: GoogleFonts.sourceSerif4(
+                    style: AppTypography.heading(
                       color: Colors.white,
                       fontSize: 19,
                       fontWeight: FontWeight.w700,
@@ -187,7 +186,7 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
                   const SizedBox(height: 3),
                   Text(
                     email,
-                    style: GoogleFonts.ibmPlexMono(
+                                        style: AppTypography.mono(
                       color: Colors.white70,
                       fontSize: 12,
                     ),
@@ -249,7 +248,7 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
               child: Text(
                 'ACCOUNT',
-                style: GoogleFonts.ibmPlexMono(
+                                style: AppTypography.mono(
                   color: Colors.black38,
                   fontSize: 10,
                   letterSpacing: 1.4,
@@ -298,7 +297,7 @@ class _AccountProfileDrawerState extends State<AccountProfileDrawer> {
               child: Center(
                 child: Text(
                   'iDetect · Establishment Portal',
-                  style: GoogleFonts.ibmPlexMono(
+                                    style: AppTypography.mono(
                     color: Colors.black38,
                     fontSize: 10,
                   ),

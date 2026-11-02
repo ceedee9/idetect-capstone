@@ -1,18 +1,6 @@
-// NOTE: this screen now depends on google_fonts, which the project does
-// not currently have installed. Before this compiles, run:
-//   flutter pub add google_fonts
-//
-// Font choices deliberately mirror the web admin portals' type system so
-// the establishment app reads as the same product family:
-//   - display/headline: Source Serif 4 (web's serif token)
-//   - small-caps labels / mono accents: IBM Plex Mono (web's mono token)
-// If/when AppDesignSystem gets a font-token section of its own, these
-// GoogleFonts calls should move there so every screen shares one source
-// of truth instead of each screen importing google_fonts individually.
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
 import '../../widgets/bplo_contact_card.dart';
@@ -109,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _fieldLabel(String text) {
     return Text(
       text,
-      style: GoogleFonts.ibmPlexMono(
+            style: AppTypography.mono(
         color: AppDesignSystem.textTertiary,
         fontSize: 10,
         letterSpacing: 1.2,
@@ -210,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 14),
                       Text(
                         'ESTABLISHMENT PORTAL',
-                        style: GoogleFonts.ibmPlexMono(
+                                                style: AppTypography.mono(
                           color: Colors.white,
                           fontSize: 11,
                           letterSpacing: 2.5,
@@ -242,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             Text(
                               'Sign In',
-                              style: GoogleFonts.sourceSerif4(
+                              style: AppTypography.heading(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,
                                 color: AppDesignSystem.textPrimary,
@@ -395,7 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       )
                                     : Text(
                                         'Sign In',
-                                        style: GoogleFonts.ibmPlexMono(
+                                                                                style: AppTypography.mono(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
                                           letterSpacing: 1.0,

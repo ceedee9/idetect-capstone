@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
@@ -97,7 +97,7 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
       appBar: AppBar(
         title: Text(
           'Verify ID',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontWeight: FontWeight.w700, fontSize: 19),
         ),
         centerTitle: true,
@@ -186,7 +186,7 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
               children: [
                 Text(
                   _isVerifying ? 'CHECKING DATABASE' : 'READY TO VERIFY',
-                  style: GoogleFonts.ibmPlexMono(
+                  style: AppTypography.mono(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
@@ -229,7 +229,7 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
               SizedBox(width: AppDesignSystem.spaceXS),
               Text(
                 'Extracted Details',
-                style: GoogleFonts.sourceSerif4(
+                style: AppTypography.heading(
                   fontWeight: FontWeight.w700,
                   fontSize: 19,
                   color: AppDesignSystem.primaryBlue,
@@ -307,7 +307,7 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
           child: Text(
             value,
             style: monospace
-                ? GoogleFonts.ibmPlexMono(
+                ? AppTypography.mono(
                     fontSize: AppDesignSystem.bodyMedium.fontSize,
                     fontWeight: FontWeight.w600,
                     color: AppDesignSystem.textPrimary,

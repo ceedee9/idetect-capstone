@@ -71,7 +71,7 @@ class IDetectBeneficiaryApp extends StatelessWidget {
         useMaterial3: true,
         primaryColor: AppDesignSystem.primaryBlue,
         scaffoldBackgroundColor: AppDesignSystem.backgroundWarm,
-        fontFamily: 'Roboto',
+        fontFamily: 'PlusJakartaSans',
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppDesignSystem.primaryBlue,
           primary: AppDesignSystem.primaryBlue,

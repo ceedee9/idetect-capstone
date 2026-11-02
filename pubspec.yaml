@@ -55,7 +55,6 @@ dependencies:
   http: ^1.2.0
 
   shared_preferences: ^2.2.3
-  google_fonts: ^8.2.1
   crypto: ^3.0.7
   flutter_secure_storage: ^11.2.0
   share_plus: ^13.3.1
@@ -85,12 +84,40 @@ flutter:
     - assets/icons/
     - assets/tessdata_config.json
     - assets/tessdata/
-    # - assets/fonts/
+    - assets/fonts/
 
-  # Fonts (uncomment if you add custom fonts)
-  # fonts:
-  #   - family: Roboto
-  #     fonts:
-  #       - asset: assets/fonts/Roboto-Regular.ttf
-  #       - asset: assets/fonts/Roboto-Bold.ttf
-  #         weight: 700
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fonts/IBMPlexMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexMono-Bold.ttf
+          weight: 700

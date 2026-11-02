@@ -8,7 +8,7 @@
 // if that method doesn't exist yet.
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../services/api_service.dart';
 import '../../../services/password_policy.dart';
 import '../../widgets/app_notice.dart';
@@ -113,7 +113,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget _fieldLabel(String text) {
     return Text(
       text,
-      style: GoogleFonts.ibmPlexMono(
+            style: AppTypography.mono(
         color: const Color(0xFF94A3B8),
         fontSize: 10,
         letterSpacing: 1.2,
@@ -213,7 +213,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         elevation: 0,
         title: Text(
           'Change Password',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontSize: 19, fontWeight: FontWeight.w700),
         ),
       ),
@@ -286,7 +286,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         )
                       : Text(
                           'Update Password',
-                          style: GoogleFonts.ibmPlexMono(
+                                                    style: AppTypography.mono(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1.0,

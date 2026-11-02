@@ -6,7 +6,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 import '../../../core/constants/app_design_system.dart';
@@ -402,7 +402,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             const SizedBox(width: 8),
             Text(
               'No Face Detected',
-              style: GoogleFonts.sourceSerif4(
+              style: AppTypography.heading(
                 fontWeight: FontWeight.w700,
                 fontSize: 19,
                 color: AppDesignSystem.textPrimary,
@@ -448,7 +448,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
         shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
         title: Text(
           'Select ID Type',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
             fontWeight: FontWeight.w700,
             fontSize: 19,
             color: AppDesignSystem.textPrimary,
@@ -557,7 +557,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       appBar: AppBar(
         title: Text(
           'Processing ID',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontWeight: FontWeight.w700, fontSize: 19),
         ),
         centerTitle: true,
@@ -712,7 +712,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                 const SizedBox(height: 6),
                 Text(
                   stepLabels[step]!,
-                  style: GoogleFonts.ibmPlexMono(
+                  style: AppTypography.mono(
                     fontSize: 8,
                     letterSpacing: 0.6,
                     fontWeight: FontWeight.w600,
@@ -872,7 +872,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                   color: AppDesignSystem.primaryBlue),
               SizedBox(width: AppDesignSystem.spaceXS),
               Text('Extracted Data',
-                  style: GoogleFonts.sourceSerif4(
+                                style: AppTypography.heading(
                     fontWeight: FontWeight.w700,
                     fontSize: 19,
                     color: AppDesignSystem.primaryBlue,
@@ -961,7 +961,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           controller: _controllers[controllerKey],
           keyboardType: keyboardType,
           style: monospace
-              ? GoogleFonts.ibmPlexMono(
+              ? AppTypography.mono(
                   fontSize: AppDesignSystem.bodyMedium.fontSize,
                   color: AppDesignSystem.bodyMedium.color,
                 )

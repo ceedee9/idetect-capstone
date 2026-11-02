@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_design_system.dart';
@@ -40,7 +40,7 @@ class InfoDetailScreen extends StatelessWidget {
         elevation: 0,
         title: Text(
           'Resource',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontWeight: FontWeight.w700, fontSize: 19),
         ),
       ),
@@ -67,7 +67,7 @@ class InfoDetailScreen extends StatelessWidget {
                 children: [
                   Text(
                     'RESOURCE DETAIL',
-                    style: GoogleFonts.ibmPlexMono(
+                    style: AppTypography.mono(
                       fontSize: 11,
                       letterSpacing: 1.8,
                       fontWeight: FontWeight.w600,
@@ -77,7 +77,7 @@ class InfoDetailScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     title,
-                    style: GoogleFonts.sourceSerif4(
+                    style: AppTypography.heading(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: AppDesignSystem.textPrimary,

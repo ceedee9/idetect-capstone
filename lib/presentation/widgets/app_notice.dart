@@ -7,7 +7,7 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../core/constants/app_typography.dart';
 
 enum AppNoticeType { success, error, info, warning }
 
@@ -91,7 +91,7 @@ class AppNotice extends StatelessWidget {
               children: [
                 Text(
                   (label ?? s.label).toUpperCase(),
-                  style: GoogleFonts.ibmPlexMono(
+                  style: AppTypography.mono(
                     fontSize: 9,
                     letterSpacing: 1.4,
                     fontWeight: FontWeight.w600,

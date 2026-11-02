@@ -185,11 +185,11 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Source Serif 4"', "Georgia", "serif"],
-        sans: ['"Inter"', "ui-sans-serif", "sans-serif"],
+        display: ['"Inter"', "ui-sans-serif", "sans-serif"],
+        sans: ['"Plus Jakarta Sans"', "ui-sans-serif", "sans-serif"],
         mono: ['"IBM Plex Mono"', "ui-monospace", "monospace"],
-        heading: ['"Source Serif 4"', "Georgia", "serif"],
-        body: ['"Inter"', "ui-sans-serif", "sans-serif"],
+        heading: ['"Inter"', "ui-sans-serif", "sans-serif"],
+        body: ['"Plus Jakarta Sans"', "ui-sans-serif", "sans-serif"],
       },
       fontSize: {
         xs: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.01em" }],

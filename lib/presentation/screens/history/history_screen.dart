@@ -9,7 +9,7 @@ import 'dart:typed_data';
 
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import 'package:media_store_plus/media_store_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -261,7 +261,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 children: [
                   Text(
                     'Export scan history',
-                    style: GoogleFonts.sourceSerif4(
+                    style: AppTypography.heading(
                         fontWeight: FontWeight.w700, fontSize: 18),
                   ),
                   const SizedBox(height: 16),
@@ -584,7 +584,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         foregroundColor: Colors.white,
         title: Text(
           'Verification History',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontWeight: FontWeight.w700, fontSize: 19),
         ),
         elevation: 0,
@@ -683,7 +683,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           Text(
             'COMPLIANCE SUMMARY',
-            style: GoogleFonts.ibmPlexMono(
+            style: AppTypography.mono(
               fontSize: 11,
               letterSpacing: 1.8,
               fontWeight: FontWeight.w600,
@@ -748,7 +748,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               const SizedBox(width: 6),
               Text(
                 'Filter by date range & result',
-                style: GoogleFonts.ibmPlexMono(
+                style: AppTypography.mono(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.4,
@@ -848,7 +848,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   onPressed: _applyFilters,
                   icon: const Icon(Icons.search_rounded, size: 14),
                   label: Text('Apply',
-                      style: GoogleFonts.ibmPlexMono(
+                                        style: AppTypography.mono(
                           fontSize: 11, letterSpacing: 0.4)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primary,
@@ -888,7 +888,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           Text(
             'Page $_currentPage of $_totalPages',
-            style: GoogleFonts.ibmPlexMono(
+            style: AppTypography.mono(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.4,
@@ -939,12 +939,12 @@ class _SummaryCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '$count',
-              style: GoogleFonts.sourceSerif4(
+              style: AppTypography.heading(
                   fontSize: 18, fontWeight: FontWeight.w700, color: color),
             ),
             Text(
               label.toUpperCase(),
-              style: GoogleFonts.ibmPlexMono(
+              style: AppTypography.mono(
                   fontSize: 9,
                   letterSpacing: 0.6,
                   color: color.withOpacity(0.85),
@@ -1116,7 +1116,7 @@ class _RecordTile extends StatelessWidget {
                         ),
                         child: Text(
                           result,
-                          style: GoogleFonts.ibmPlexMono(
+                                                    style: AppTypography.mono(
                               fontSize: 9.5,
                               letterSpacing: 0.4,
                               fontWeight: FontWeight.w700,
@@ -1128,7 +1128,7 @@ class _RecordTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     idNumber,
-                    style: GoogleFonts.ibmPlexMono(
+                                        style: AppTypography.mono(
                         fontSize: 11, color: AppDesignSystem.textSecondary),
                   ),
                   const SizedBox(height: 4),

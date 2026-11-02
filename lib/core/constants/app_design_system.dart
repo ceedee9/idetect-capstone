@@ -107,10 +107,12 @@ class AppDesignSystem {
   //   â€¢ Status text is oversized deliberately â€” it IS the critical info
   // ===========================================================================
 
-  static const String fontFamily = 'Roboto';
+  // Headings: Inter. Body: Plus Jakarta Sans. Both are bundled in assets/fonts.
+  static const String fontFamily = 'PlusJakartaSans';
+  static const String headingFontFamily = 'Inter';
 
   static const TextStyle displayLarge = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 40,
     fontWeight: FontWeight.w900,
     color: textPrimary,
@@ -118,7 +120,7 @@ class AppDesignSystem {
   );
 
   static const TextStyle heading1 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 32,
     fontWeight: FontWeight.w800,
     color: textPrimary,
@@ -127,7 +129,7 @@ class AppDesignSystem {
 
   /// Screen titles â€” on dark backgrounds, wide tracking for impact
   static const TextStyle heading2 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 26,
     fontWeight: FontWeight.w800,
     color: textOnDark,
@@ -135,7 +137,7 @@ class AppDesignSystem {
   );
 
   static const TextStyle heading3 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 22,
     fontWeight: FontWeight.w700,
     color: textOnDark,
@@ -143,7 +145,7 @@ class AppDesignSystem {
   );
 
   static const TextStyle heading4 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 18,
     fontWeight: FontWeight.w700,
     color: textPrimary,

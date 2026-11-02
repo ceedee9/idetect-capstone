@@ -103,13 +103,13 @@ class AppDesignSystem {
   //   â€¢ Line height: 1.6 minimum (WCAG Success Criterion 1.4.12)
   //   â€¢ No italic body text (harder for dyslexic / low-vision users)
   //
-  // Font: System default (respects user's system font size settings)
-
-  static const String fontFamily = 'Roboto';
+  // Headings: Inter. Body: Plus Jakarta Sans. Both are bundled in assets/fonts.
+  static const String fontFamily = 'PlusJakartaSans';
+  static const String headingFontFamily = 'Inter';
 
   // HEADINGS
   static const TextStyle displayLarge = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 42,
     fontWeight: FontWeight.w800,
     color: textPrimary,
@@ -118,7 +118,7 @@ class AppDesignSystem {
   );
 
   static const TextStyle heading1 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 34,
     fontWeight: FontWeight.bold,
     color: textPrimary,
@@ -127,7 +127,7 @@ class AppDesignSystem {
   );
 
   static const TextStyle heading2 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 28,
     fontWeight: FontWeight.bold,
     color: textOnDark,
@@ -135,7 +135,7 @@ class AppDesignSystem {
   );
 
   static const TextStyle heading3 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 24,
     fontWeight: FontWeight.bold,
     color: textPrimary,
@@ -143,7 +143,7 @@ class AppDesignSystem {
   );
 
   static const TextStyle heading4 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headingFontFamily,
     fontSize: 20,
     fontWeight: FontWeight.w700,
     color: textPrimary,

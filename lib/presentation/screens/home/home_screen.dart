@@ -5,7 +5,7 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../widgets/account_profile_drawer.dart';
 import '../../widgets/account_change_banner.dart';
@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
         title: Text(
           'Select ID Type',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontWeight: FontWeight.w700,
               fontSize: 19,
               color: AppDesignSystem.textPrimary),
@@ -145,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
         title: Text(
           'Which ID format?',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontWeight: FontWeight.w700,
               fontSize: 19,
               color: AppDesignSystem.textPrimary),
@@ -227,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: AppDesignSystem.cardRadius),
         title: Text(
           'Which ID format?',
-          style: GoogleFonts.sourceSerif4(
+          style: AppTypography.heading(
               fontWeight: FontWeight.w700,
               fontSize: 19,
               color: AppDesignSystem.textPrimary),
@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.ibmPlexMono(
+              style: AppTypography.mono(
                 fontSize: 10,
                 letterSpacing: 1.0,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -594,7 +594,7 @@ class _HomePage extends StatelessWidget {
         children: [
           Text(
             'OUR MANDATE',
-            style: GoogleFonts.ibmPlexMono(
+                        style: AppTypography.mono(
               fontSize: 11,
               letterSpacing: 1.8,
               fontWeight: FontWeight.w600,
@@ -604,7 +604,7 @@ class _HomePage extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Know Your Benefits and Protect Your Community',
-            style: GoogleFonts.sourceSerif4(
+                        style: AppTypography.heading(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppDesignSystem.textPrimary,
@@ -667,7 +667,7 @@ class _HomePage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.sourceSerif4(
+                        style: AppTypography.heading(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppDesignSystem.textPrimary,
@@ -676,7 +676,7 @@ class _HomePage extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             subtitle.toUpperCase(),
-            style: GoogleFonts.ibmPlexMono(
+                        style: AppTypography.mono(
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.6,
@@ -703,7 +703,7 @@ class _HomePage extends StatelessWidget {
         children: [
           Text(
             'RESOURCES',
-            style: GoogleFonts.ibmPlexMono(
+                        style: AppTypography.mono(
               fontSize: 11,
               letterSpacing: 1.8,
               fontWeight: FontWeight.w600,
@@ -890,7 +890,7 @@ class _HomePage extends StatelessWidget {
                     ),
                     child: Text(
                       'Read More →',
-                      style: GoogleFonts.ibmPlexMono(
+                      style: AppTypography.mono(
                         fontSize: 10,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,

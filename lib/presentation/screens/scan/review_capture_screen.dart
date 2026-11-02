@@ -8,7 +8,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 import 'processing_screen.dart';
 import '../../widgets/app_notice.dart';
 import '../../widgets/guilloche_painter.dart';
@@ -106,7 +106,7 @@ class ReviewCaptureScreen extends StatelessWidget {
                         children: [
                           Text(
                             _idTypeLabel.toUpperCase(),
-                            style: GoogleFonts.ibmPlexMono(
+                                                        style: AppTypography.mono(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -116,7 +116,7 @@ class ReviewCaptureScreen extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             'REVIEW CAPTURE',
-                            style: GoogleFonts.ibmPlexMono(
+                                                        style: AppTypography.mono(
                               color: Colors.white54,
                               fontSize: 9,
                               letterSpacing: 1.8,
@@ -215,7 +215,7 @@ class ReviewCaptureScreen extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Text(
                                     'RETAKE',
-                                    style: GoogleFonts.ibmPlexMono(
+                                                                        style: AppTypography.mono(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 1.0,
@@ -251,7 +251,7 @@ class ReviewCaptureScreen extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Text(
                                     'USE THIS PHOTO',
-                                    style: GoogleFonts.ibmPlexMono(
+                                                                        style: AppTypography.mono(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.6,

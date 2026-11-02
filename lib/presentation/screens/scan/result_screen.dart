@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_typography.dart';
 
 import '../../../core/constants/app_design_system.dart';
 import '../../../data/datasources/local/local_database.dart';
@@ -389,7 +389,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text('Verification Result',
-                      style: GoogleFonts.sourceSerif4(
+                                        style: AppTypography.heading(
                           fontWeight: FontWeight.w700, fontSize: 18)),
                   const Text(
                     'OFFLINE MODE',
@@ -403,7 +403,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ],
               )
             : Text('Verification Result',
-                style: GoogleFonts.sourceSerif4(
+                            style: AppTypography.heading(
                     fontWeight: FontWeight.w700, fontSize: 19)),
         centerTitle: true,
         backgroundColor:
@@ -971,7 +971,7 @@ class _ResultScreenState extends State<ResultScreen> {
               SizedBox(width: AppDesignSystem.spaceXS),
               Text(
                 'Result Summary',
-                style: GoogleFonts.sourceSerif4(
+                                style: AppTypography.heading(
                   fontWeight: FontWeight.w700,
                   fontSize: 19,
                   color: AppDesignSystem.primaryBlue,
@@ -1024,7 +1024,7 @@ class _ResultScreenState extends State<ResultScreen> {
               value,
               style: key.toLowerCase().contains('number') ||
                       key.toLowerCase().contains('no.')
-                  ? GoogleFonts.ibmPlexMono(
+                  ? AppTypography.mono(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppDesignSystem.textPrimary,
