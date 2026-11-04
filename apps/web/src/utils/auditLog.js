@@ -139,7 +139,7 @@ export function humanizeAuditLog(log) {
     case "beneficiary_created":
       return `Created a beneficiary record (ID ${m.id_number || "—"})`;
     case "beneficiary_updated":
-      return `Updated beneficiary details${m.new?.full_name ? ` for ${m.new.full_name}` : ""}`;
+      return `Updated beneficiary details${m.new?.full_name ? ` for ${m.new.full_name}` : ""}${m.reason ? ` — reason: ${m.reason}` : ""}`;
     case "beneficiary_status_changed":
       return `Changed beneficiary status from "${m.old_status}" to "${m.new_status}"${
         m.suspension_end_date

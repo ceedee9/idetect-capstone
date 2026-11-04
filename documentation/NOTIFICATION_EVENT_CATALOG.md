@@ -48,7 +48,7 @@ Rules for every notification (from A-06 acceptance):
 | E2 | Establishment revoked | `routes/establishments.js` ~813 | Establishment contact | SMS | Built (verified: SMS already sent on revoke) |
 | E3 | Establishment user created, invited, or reset | `routes/establishmentUsers.js` | Establishment user | In-app | **BUILT: dashboard banner** (`GET /establishment-users/my-recent-changes`, reads audit log) |
 | E4 | Establishment user activated, deactivated, or role changed | `routes/establishmentUsers.js` | Establishment user | In-app | **BUILT: dashboard banner** (same endpoint) |
-| E5 | Record edit made by staff (A-07) | Not built | Beneficiary and establishment | Push, SMS | **GAP: A-07 not built** |
+| E5 | Record edit made by staff (A-07) | `routes/beneficiaries.js` `notifyBeneficiaryRecordEdit` | Beneficiary (ID owner) | Push, SMS | **BUILT:** reason required and audited; notice names changed detail types and the reason, never values. Establishment recipients: not applicable, since only beneficiary records are edited this way |
 
 ## 4. Gaps and bugs found
 
@@ -68,4 +68,4 @@ Decided:
 - **B12 (beneficiary acknowledgement):** in-app, timestamp shown to staff.
 
 Open:
-- **E5 (record-edit notice, A-07):** pending decision.
+- **E5 (record-edit notice, A-07):** push and SMS to the ID owner; reason required.

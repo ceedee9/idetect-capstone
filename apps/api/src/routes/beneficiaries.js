@@ -16,6 +16,12 @@ const { requireStepUp } = require("../middleware/stepUp");
 const { maskBeneficiary } = require("../utils/privacy");
 const { sendSms } = require("../services/smsService");
 const { sendPushNotification } = require("../services/fcmService");
+const {
+  REASON_MAX_LENGTH,
+  changedFields,
+  ownerVisibleLabels,
+  buildEditNotice,
+} = require("../utils/recordEdit");
 
 const router = express.Router();
 const DEFAULT_MAX_IMPORT_ROWS = 20000;
@@ -630,11 +636,58 @@ router.post(
   },
 );
 
+// Tells the ID owner their record was edited (push + SMS). Names the kinds of
+// details changed and the reason, never the values. The SMS goes to the number
+// on file before the edit so a changed number cannot hide the notice.
+async function notifyBeneficiaryRecordEdit(beneficiaryId, notice, mobile) {
+  const accounts = await pool.query(
+    `SELECT id, device_token FROM beneficiary_accounts WHERE beneficiary_id = $1`,
+    [beneficiaryId],
+  );
+
+  for (const acct of accounts.rows) {
+    await pool.query(
+      `INSERT INTO notifications
+         (beneficiary_account_id, notification_type, title, body, channel)
+       VALUES ($1, 'general', $2, $3, 'push')`,
+      [acct.id, notice.title, notice.body],
+    );
+    if (acct.device_token) {
+      sendPushNotification(acct.device_token, notice.title, notice.body, {
+        type: "beneficiary_record_updated",
+      }).catch(() => {});
+    }
+    if (mobile) {
+      await pool.query(
+        `INSERT INTO notifications
+           (beneficiary_account_id, notification_type, title, body, channel)
+         VALUES ($1, 'general', $2, $3, 'sms')`,
+        [acct.id, notice.title, notice.body],
+      );
+    }
+  }
+
+  if (mobile) sendSms(mobile, notice.smsBody).catch(() => {});
+
+  return { accounts: accounts.rows.length, sms: Boolean(mobile) };
+}
+
 // ── PUT /api/beneficiaries/:id ────────────────────────────────
 // REQ-2.7.4: Update record fields (corrections from dispute resolutions)
+// A-07: a reason is required, saved in the audit log, and the ID owner is notified.
 router.put(
   "/:id([0-9a-fA-F-]{36})",
   [
+    body("reason")
+      .exists({ values: "falsy" })
+      .withMessage("A reason for the edit is required.")
+      .bail()
+      .isString()
+      .trim()
+      .notEmpty()
+      .withMessage("A reason for the edit is required.")
+      .isLength({ max: REASON_MAX_LENGTH })
+      .withMessage(`The reason must be at most ${REASON_MAX_LENGTH} characters.`),
     body("full_name").optional().trim().notEmpty(),
     body("birthdate").optional().isDate(),
     body("issuing_office").optional().trim().notEmpty(),
@@ -671,6 +724,7 @@ router.put(
         contact_number,
         email,
         notes,
+        reason,
       } = req.body;
 
       // Optional fields use an explicit "provided" flag so an empty value clears the field
@@ -714,6 +768,39 @@ router.put(
         ],
       );
 
+      const after = updated.rows[0];
+      const changed = changedFields(old, after);
+      if (!changed.length) {
+        return res.json({ ...maskBeneficiary(after), unchanged: true });
+      }
+
+      // The edit is already saved, so a notice failure must not fail the request.
+      // The outcome is written to the audit log instead.
+      const labels = ownerVisibleLabels(changed);
+      let ownerNotice = { notified: false, accounts: 0, sms: false };
+      if (labels.length) {
+        try {
+          const notice = buildEditNotice({
+            beneficiaryType: type,
+            labels,
+            reason,
+          });
+          const sent = await notifyBeneficiaryRecordEdit(
+            req.params.id,
+            notice,
+            old.registered_mobile || after.registered_mobile,
+          );
+          ownerNotice = {
+            notified: sent.accounts > 0 || sent.sms,
+            accounts: sent.accounts,
+            sms: sent.sms,
+          };
+        } catch (err) {
+          console.error("Record edit notice failed:", err.message);
+          ownerNotice.error = true;
+        }
+      }
+
       await pool.query(
         `INSERT INTO audit_logs (user_id, action, target_table, target_id, metadata)
          VALUES ($1, 'beneficiary_updated', 'beneficiaries', $2, $3)`,
@@ -721,6 +808,9 @@ router.put(
           req.user.id,
           req.params.id,
           JSON.stringify({
+            reason,
+            changed_fields: changed,
+            owner_notice: ownerNotice,
             old: {
               full_name: old.full_name,
               birthdate: old.birthdate,
@@ -745,7 +835,7 @@ router.put(
         ],
       );
 
-      res.json(maskBeneficiary(updated.rows[0]));
+      res.json({ ...maskBeneficiary(after), owner_notified: ownerNotice.notified });
     } catch (err) {
       next(err);
     }

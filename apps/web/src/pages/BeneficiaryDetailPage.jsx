@@ -204,6 +204,7 @@ export default function BeneficiaryDetailPage() {
       address: b.address || "",
       notes: b.notes || "",
       disability_type: (b.disability_type || "").toLowerCase(),
+      reason: "",
     });
   }
 
@@ -219,13 +220,20 @@ export default function BeneficiaryDetailPage() {
       email: editForm.email.trim() || null,
       address: editForm.address.trim() || null,
       notes: editForm.notes.trim() || null,
+      reason: editForm.reason.trim(),
     };
     // registered_mobile is the OTP number; keep it in step with the displayed contact number.
     if (contact) payload.registered_mobile = contact;
     if (!isOsca) payload.disability_type = editForm.disability_type || null;
     try {
-      await beneficiariesAPI.update(id, payload);
-      setSuccessMsg("Record updated successfully.");
+      const { data } = await beneficiariesAPI.update(id, payload);
+      setSuccessMsg(
+        data?.unchanged
+          ? "No changes were made to the record."
+          : data?.owner_notified
+            ? "Record updated. The ID owner has been notified."
+            : "Record updated. The reason was saved in the audit log.",
+      );
       setEditForm(null);
       await refetch();
     } catch (err) {
@@ -1052,6 +1060,29 @@ export default function BeneficiaryDetailPage() {
                       setEditForm((f) => ({ ...f, notes: e.target.value }))
                     }
                   />
+                </div>
+                <div>
+                  <label className="label">Reason for the edit</label>
+                  <textarea
+                    className="input min-h-[72px]"
+                    value={editForm.reason}
+                    maxLength={500}
+                    required
+                    placeholder="e.g. Corrected misspelled name after presenting a birth certificate"
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, reason: e.target.value }))
+                    }
+                  />
+                  <p className="text-xs text-slate-500 mt-1 flex justify-between gap-3">
+                    <span>
+                      Saved in the audit log. The ID owner is notified of what
+                      kind of details changed and this reason, so do not
+                      include ID numbers or other personal details.
+                    </span>
+                    <span className="shrink-0">
+                      {editForm.reason.length}/500
+                    </span>
+                  </p>
                 </div>
                 {editError && (
                   <p className="text-sm text-danger-600 flex items-center gap-1.5">
