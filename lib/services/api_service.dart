@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/datasources/local/local_database.dart';
+import 'outside_lgu_detector.dart';
 
 class ApiService {
   // Set with --dart-define=IDETECT_API_BASE_URL=https://your-host/api.
@@ -678,6 +679,7 @@ class ApiService {
     String? extractedDob,
     String idFormat = 'old',
     bool? sealDetected,
+    String? ocrRawText,
   }) async {
     // ── Fast local block (REQ-2.9.1) ────────────────────────────────────────
     // If the last status sync already flagged this ID as revoked/suspended,
@@ -712,6 +714,7 @@ class ApiService {
         extractedDob: extractedDob,
         idFormat: idFormat,
         sealDetected: sealDetected,
+        ocrRawText: ocrRawText,
       ));
 
       return instant;
@@ -727,6 +730,7 @@ class ApiService {
       extractedDob: extractedDob,
       idFormat: idFormat,
       sealDetected: sealDetected,
+      ocrRawText: ocrRawText,
     );
   }
 
@@ -744,6 +748,7 @@ class ApiService {
     String? extractedDob,
     String idFormat = 'old',
     bool? sealDetected,
+    String? ocrRawText,
   }) async {
     String? imageBase64;
     try {
@@ -771,6 +776,8 @@ class ApiService {
                 'extracted_dob': extractedDob,
               'id_format': idFormat,
               if (sealDetected != null) 'seal_detected': sealDetected,
+              if (ocrRawText != null && ocrRawText.isNotEmpty)
+                'ocr_raw_text': ocrRawText,
             }),
           )
           .timeout(const Duration(seconds: 20));
@@ -783,6 +790,7 @@ class ApiService {
           message: data['message'],
           verificationId: data['verification_id'],
           beneficiaryName: data['beneficiary']?['full_name'],
+          namesOtherCity: textNamesOtherCity(ocrRawText),
         );
       }
 
@@ -798,11 +806,11 @@ class ApiService {
         errorMessage: message,
       );
     } on TimeoutException catch (_) {
-      return _unreachableResult();
+      return _unreachableResult(ocrRawText);
     } on SocketException catch (_) {
-      return _unreachableResult();
+      return _unreachableResult(ocrRawText);
     } on http.ClientException catch (_) {
-      return _unreachableResult();
+      return _unreachableResult(ocrRawText);
     } catch (e) {
       return VerificationResult(
         status: VerificationStatus.error,
@@ -815,12 +823,13 @@ class ApiService {
   /// connection refused) — distinct from a reachable server returning an
   /// error. isOffline:true is what result_screen.dart checks to decide
   /// whether to call OfflineScanSyncService.queueOfflineScan.
-  static VerificationResult _unreachableResult() {
+  static VerificationResult _unreachableResult(String? ocrRawText) {
     return VerificationResult(
       status: VerificationStatus.manualReview,
       message:
           'No internet connection. This scan has been saved and will be verified automatically once you\'re back online.',
       isOffline: true,
+      namesOtherCity: textNamesOtherCity(ocrRawText),
     );
   }
 
@@ -1324,6 +1333,7 @@ class VerificationResult {
   final String? errorMessage;
   final bool isOffline;
   final DateTime? offlineSyncedAt;
+  final bool namesOtherCity;
 
   VerificationResult({
     required this.status,
@@ -1333,6 +1343,7 @@ class VerificationResult {
     this.errorMessage,
     this.isOffline = false,
     this.offlineSyncedAt,
+    this.namesOtherCity = false,
   });
 
   String get displayStatus {

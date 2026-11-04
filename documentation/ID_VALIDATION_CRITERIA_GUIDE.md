@@ -64,6 +64,19 @@ The system then looks for that ID in the records **of the same beneficiary type*
   - **DOB:** must match the record **exactly**.
   - If either check fails, the result is **SUSPICIOUS**, with a message that says which field did not match.
 
+### Step 4A - Issuing city check
+
+- Only the first 8 non-empty lines of the card text are read, because the issuing city is printed in the header. Text lower on the card is ignored.
+- The check is a positive match. The card counts as "other city" only when a government keyword (`CITY OF`, `CITY GOVERNMENT OF`, `MUNICIPALITY OF`, `LUNGSOD NG`, `BAYAN NG`) is followed by a name from the full list of Philippine cities and municipalities (1,416 names, from PSGC). A keyword is required so that a cardholder surname that is also a place name (for example "LOPEZ") is not flagged on its own.
+- If the header contains "Valenzuela" (with tolerance for common OCR misreads), the card is treated as Valenzuela, even when another city name is also present.
+- If another city is named, the result is **MANUAL REVIEW**, with a message that starts "Card names another city". This applies even when the registry lookup returned VALID, because the registry does not check the issuing city. A foreign ID number can match a Valenzuela record. The result screen shows a warning banner.
+- If the registry returned INVALID because the ID was not found, the result also becomes MANUAL REVIEW. Other results keep their status and get the same prefix.
+- If no city can be read from the header, the card is not flagged. The scan follows the normal registry lookup, and the server logs the case so the rate can be measured.
+- Offline scans: the phone runs the same check on the header text. The cashier sees the warning immediately. The header text is kept only in the encrypted offline queue, and it is sent with the replayed scan so the server records the same check.
+- Manually entered data skips this check, because there is no card text.
+- The check is OCR-dependent. Small misreads are tolerated: one misread letter in a name of 6 to 11 letters, or two in a name of 12 or more. Names under 6 letters must match exactly. A blurred or more heavily misread city name is missed and the scan proceeds normally. This is a known limitation.
+
+
 ### Step 5 - OCR quality check
 
 - If OCR confidence is **below 75%** and the data was **not** manually entered, a VALID result becomes **MANUAL REVIEW**.
@@ -95,6 +108,7 @@ These results apply once the date-of-birth check is working. The check was fixed
 | ID found, active, name and DOB match, OCR 90% | VALID |
 | ID found, active, name and DOB match, OCR 60% | MANUAL REVIEW |
 | ID found, active, OCR read no name or DOB | MANUAL REVIEW |
+| ID found, active, card text names another city | MANUAL REVIEW |
 | ID found, active, OCR name is very different | SUSPICIOUS |
 | ID found, active, DOB differs by one day | SUSPICIOUS |
 | ID found, suspended | SUSPICIOUS |

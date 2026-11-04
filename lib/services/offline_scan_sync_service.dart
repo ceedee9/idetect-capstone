@@ -67,6 +67,7 @@ class OfflineScanSyncService {
     required double? ocrConfidence,
     required String? imagePath,
     required int scannedAt,
+    String? ocrHeaderText,
   }) async {
     final box = await _openQueueBox();
     await box.add({
@@ -76,6 +77,7 @@ class OfflineScanSyncService {
       'extracted_name': extractedName,
       'extracted_dob': extractedDob,
       'ocr_confidence': ocrConfidence,
+      'ocr_header_text': ocrHeaderText,
       'image_path': imagePath,
       'scanned_at': scannedAt,
       'queued_at': DateTime.now().millisecondsSinceEpoch,
@@ -158,6 +160,7 @@ class OfflineScanSyncService {
           final extractedName = data['extracted_name'] as String?;
           final extractedDob = data['extracted_dob'] as String?;
           final ocrConfidence = (data['ocr_confidence'] as num?)?.toDouble();
+          final ocrHeaderText = data['ocr_header_text'] as String?;
           final imagePath = data['image_path'] as String?;
           final clientScanId = data['client_scan_id'] as String?;
           final scannedAtMs = data['scanned_at'] as int?;
@@ -203,6 +206,8 @@ class OfflineScanSyncService {
                     'extracted_name': extractedName,
                   if (extractedDob != null && extractedDob.isNotEmpty)
                     'extracted_dob': extractedDob,
+                  if (ocrHeaderText != null && ocrHeaderText.isNotEmpty)
+                    'ocr_raw_text': ocrHeaderText,
                 }),
               )
               .timeout(const Duration(seconds: 30));

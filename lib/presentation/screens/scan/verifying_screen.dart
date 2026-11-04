@@ -5,6 +5,7 @@ import '../../../core/constants/app_typography.dart';
 
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
+import '../../../services/outside_lgu_detector.dart';
 import '../../../services/parser_service.dart';
 import 'result_screen.dart';
 
@@ -58,6 +59,7 @@ class _VerifyingScreenState extends State<VerifyingScreen> {
         idNumber: idNumber,
         beneficiaryType: beneficiaryType,
         ocrConfidence: widget.parsedData.confidence,
+        ocrRawText: headerLines(widget.parsedData.rawText),
         imagePath: widget.imagePath,
         manuallyEntered: false,
         extractedName: widget.parsedData.fullName,

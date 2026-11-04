@@ -421,7 +421,7 @@ transaction reference numbers, pre-populated establishment details, denial reaso
 selection, optional supporting documentation (ID photos, barangay certifications),
 automatic routing to investigation queues, status tracking with OSCA/PDAO staff
 responses, and resolution notification delivery via SMS and push notifications.
-● Mobile-first responsive architecture supporting Android 8.0+ and iOS 12.0+ with
+● Mobile-first responsive architecture supporting Android 8.0+ with
 offline capability caching recently verified credentials, transaction history viewing when
 16
 --- PAGE 18 ---
@@ -503,8 +503,8 @@ INFORMATION TECHNOLOGY DEPARTMENT
 ● Modifiability: System can be updated to accommodate new requirements or regulations.
 ● Testability: Comprehensive testing can be performed on all system functions.
 8. Portability
-● Adaptability: System functions across different mobile devices and operating systems
-(Android, iOS).
+● Adaptability: System functions across different mobile devices running the Android
+operating system.
 ● Installability: Easy deployment to business establishments and government offices.
 ● Replaceability: System can integrate with or replace existing manual verification
 processes.
@@ -560,7 +560,7 @@ Office with identical capabilities for PWD credential management: database admin
 real-time flagged ID notifications, investigation workflows, fraudulent credential marking, and
 analytics generation. Data compartmentalization ensures PDAO accesses only PWD data without
 visibility into Senior Citizen records.
-Beneficiary Mobile Application (Mobile Application for iOS and Android) enables Senior
+Beneficiary Mobile Application (Mobile Application for Android) enables Senior
 Citizens and PWDs to exercise Data Privacy Act rights and participate actively in verification
 processes rather than serving as passive subjects of system decisions. The application addresses
 the power imbalance inherent in one-way verification architectures by providing four core
@@ -870,7 +870,7 @@ PAMANTASAN NG LUNGSOD NG VALENZUELA
 College of Engineering and Information Technology
 INFORMATION TECHNOLOGY DEPARTMENT
 Technical Scope: The system implements Tesseract OCR engine with preprocessing
-algorithms, RESTful API architecture for real-time database integration, Android and iOS
+algorithms, RESTful API architecture for real-time database integration, Android
 mobile application support, and responsive web portals. Security features include secure
 authentication, encrypted data transmission, and role-based access controls.
 Data Scope: Verification processes access OSCA and PDAO databases containing
@@ -879,8 +879,12 @@ returns binary verification status without exposing comprehensive personal data,
 privacy-preserving design. Flagged ID reports include extracted credential data, establishment
 identification, timestamps, and verification outcomes.
 Geographic and Credential Limitations: The system verifies only Valenzuela
-City-issued credentials. IDs from other municipalities are not supported due to independent LGU
-database systems, though architectural design enables future federation.
+City-issued credentials, in both the original and redesigned card formats. IDs from other
+municipalities cannot be verified against the Valenzuela registry because each LGU maintains its
+own database. When the card header names a Philippine city or municipality other than Valenzuela,
+the system returns MANUAL REVIEW with a warning, and the staff member inspects the physical card. This
+detection depends on OCR. It tolerates small OCR misreads of longer city names, but may miss cards whose city name is badly blurred or unreadable. Multi-city expansion is future work, and the current
+registry is not built for it.
 Business Type Limitations: The system is designed specifically for food service
 establishments. Other business types (retail stores, pharmacies, transportation, healthcare
 facilities) are excluded to enable focused optimization for food service workflows.
@@ -917,7 +921,7 @@ loaded information; SMS notifications function independently without data access
 PAMANTASAN NG LUNGSOD NG VALENZUELA
 College of Engineering and Information Technology
 INFORMATION TECHNOLOGY DEPARTMENT
-application supports Android 8.0+ and iOS 12.0+, while OSCA/PDAO offices provide assisted
+application supports Android 8.0+, while OSCA/PDAO offices provide assisted
 dispute submission ensuring universal access for beneficiaries without compatible devices or
 digital literacy. The application is optional rather than mandatory—businesses provide discounts
 regardless of beneficiary registration, ensuring no new technological barriers for vulnerable
@@ -2976,8 +2980,8 @@ REQ-19: The system shall allow an establishment staff to switch to manual data e
 a fallback mechanism when OCR confidence scoring falls below the acceptable
 processing threshold, enabling continuation of the verification workflow without
 automated extraction.
-REQ-20: The Client Portal mobile application shall support Android 8.0 and later and
-iOS 12.0 and later to ensure compatibility with devices used across food service
+REQ-20: The Client Portal mobile application shall support Android 8.0 and later
+to ensure compatibility with devices used across food service
 establishment environments in Valenzuela City.
 4. Extracting and Validating OCR Data Fields
 4.1 Description and Priority

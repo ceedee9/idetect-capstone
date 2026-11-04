@@ -9,6 +9,7 @@ import '../../../services/api_service.dart';
 import '../../../services/offline_scan_sync_service.dart';
 import '../../../services/parser_service.dart';
 import '../../../services/fraud_flag_sync_service.dart';
+import '../../../services/outside_lgu_detector.dart';
 import '../../widgets/ledger_lines_painter.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -191,6 +192,7 @@ class _ResultScreenState extends State<ResultScreen> {
           ocrConfidence: widget.parsedData.confidence,
           imagePath: widget.imagePath,
           scannedAt: nowMs,
+          ocrHeaderText: headerLines(widget.parsedData.rawText),
         );
       }
 
@@ -362,19 +364,41 @@ class _ResultScreenState extends State<ResultScreen> {
       widget.verificationResult?.message?.contains('Low extraction quality') ==
       true;
 
+  bool get _isOutsideLguCard => widget.verificationResult?.namesOtherCity == true;
+
   /// True when the server returned MANUAL_REVIEW but the ID was found in the
-  /// database (beneficiary name present). In this case we know the ID is valid
-  /// — OCR just failed to confirm the cardholder — so we display it as VALID
-  /// with a physical-verification banner, not the ambiguous "MANUAL REVIEW" label.
+  /// database (beneficiary name present). The headline stays MANUAL REVIEW so
+  /// this screen matches the history list and summary; a "RECORD FOUND" label
+  /// above it shows the registry match.
   bool get _isManualReviewWithRecord =>
       _status == VerificationStatus.manualReview &&
-      widget.verificationResult?.beneficiaryName != null;
+      widget.verificationResult?.beneficiaryName != null &&
+      !_isOutsideLguCard;
 
   String? get _cleanMessage {
     final msg = widget.verificationResult?.message;
     if (msg == null) return null;
     // Strip the low-extraction-quality prefix — it's shown in the dedicated banner
     return msg.replaceFirst(RegExp(r'^\(Low extraction quality[^)]*\)\s*'), '');
+  }
+
+  /// One plain-language reason shown under the MANUAL REVIEW headline.
+  /// Checked in priority order; the server message is only a fallback.
+  String get _manualReviewSubtitle {
+    final msg = widget.verificationResult?.message ?? '';
+    if (_isOutsideLguCard) {
+      return 'The card names another city, so it cannot be checked against Valenzuela records. Check the physical card.';
+    }
+    if (_isLowConfidence) {
+      return 'The scan was too unclear to read the card reliably. Check the physical card before approving.';
+    }
+    if (msg.contains('Holographic seal')) {
+      return 'The security seal was not detected on this new-format card. Check the physical card.';
+    }
+    if (_isManualReviewWithRecord) {
+      return 'Some details could not be read from the card. Check the physical card before approving.';
+    }
+    return _cleanMessage ?? 'Could not confirm this ID from the scan. Check it manually.';
   }
 
   @override
@@ -435,9 +459,14 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 10)
                   ],
                   _buildStatusCard(cfg),
-                  if (_isLowConfidence) ...[
+                  if (_isLowConfidence &&
+                      _status != VerificationStatus.manualReview) ...[
                     const SizedBox(height: 10),
                     _buildLowConfidenceWarning()
+                  ],
+                  if (_isOutsideLguCard) ...[
+                    const SizedBox(height: 10),
+                    _buildOutsideLguWarning()
                   ],
                   const SizedBox(height: 14),
                   _buildImagePreview(),
@@ -604,6 +633,31 @@ class _ResultScreenState extends State<ResultScreen> {
                 fontSize: 11,
                 fontStyle: FontStyle.italic,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOutsideLguWarning() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F0FE),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppDesignSystem.statusManualReview),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.location_city_outlined,
+              color: AppDesignSystem.statusManualReview, size: 20),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Card names another city. It cannot be checked against Valenzuela records. Check the physical ID.',
+              style: TextStyle(
+                  fontSize: 13, color: AppDesignSystem.statusManualReview),
             ),
           ),
         ],
@@ -902,6 +956,26 @@ class _ResultScreenState extends State<ResultScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (cfg.eyebrow != null) ...[
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      cfg.eyebrow!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Text(
                   cfg.label,
                   style: const TextStyle(
@@ -921,7 +995,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     height: 1.4,
                     fontWeight: FontWeight.w400,
                   ),
-                  maxLines: 3,
+                  maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -1119,23 +1193,15 @@ class _ResultScreenState extends State<ResultScreen> {
           border: const Color(0xFF8B0000),
         );
       case VerificationStatus.manualReview:
-        // If the ID was found in the database, display as VALID — the record
-        // exists and is registered. The physical-check banner explains why
-        // manual verification is still needed.
-        if (_isManualReviewWithRecord) {
-          return _StatusConfig(
-            label: 'RECORD FOUND',
-            subtitle: 'Found in our records. Physical verification is still required.',
-            icon: Icons.person_search_rounded,
-            background: AppDesignSystem.statusManualReview,
-            border: const Color(0xFF0D3B8E),
-          );
-        }
-        // No database record found (e.g. ID number wasn't extracted at all).
+        // The headline always matches the stored verdict. When the ID is in
+        // the registry, the eyebrow label shows that match.
         return _StatusConfig(
           label: 'MANUAL REVIEW',
-          subtitle: _cleanMessage ?? 'Could not confirm this ID from the scan. Check it manually.',
-          icon: Icons.manage_search_rounded,
+          eyebrow: _isManualReviewWithRecord ? 'RECORD FOUND' : null,
+          subtitle: _manualReviewSubtitle,
+          icon: _isManualReviewWithRecord
+              ? Icons.person_search_rounded
+              : Icons.manage_search_rounded,
           background: AppDesignSystem.statusManualReview,
           border: const Color(0xFF0D3B8E),
         );
@@ -1145,6 +1211,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
 class _StatusConfig {
   final String label;
+  final String? eyebrow;
   final String subtitle;
   final IconData icon;
   final Color background;
@@ -1152,6 +1219,7 @@ class _StatusConfig {
 
   _StatusConfig({
     required this.label,
+    this.eyebrow,
     required this.subtitle,
     required this.icon,
     required this.background,

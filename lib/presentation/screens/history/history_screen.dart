@@ -29,6 +29,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   static const Color _validColor = AppDesignSystem.statusValid;
   static const Color _suspiciousColor = AppDesignSystem.statusSuspicious;
   static const Color _invalidColor = AppDesignSystem.statusInvalid;
+  static const Color _manualReviewColor = AppDesignSystem.statusManualReview;
 
   List<Map<String, dynamic>> _records = [];
   int _totalRecords = 0;
@@ -37,6 +38,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // Summary counts loaded together with the data
   int _validCount = 0;
+  int _manualReviewCount = 0;
   int _suspiciousCount = 0;
   int _invalidCount = 0;
 
@@ -124,21 +126,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
     if (!mounted || res.containsKey('error')) return;
     final rows = (res['data'] as List? ?? []).cast<Map<String, dynamic>>();
-    int v = 0, s = 0, inv = 0;
+    int v = 0, m = 0, s = 0, inv = 0;
     for (final r in rows) {
       final result = (r['result'] as String? ?? '').toLowerCase();
-      // 'manual_review' is displayed as VALID in _RecordTile ("ID found in
-      // DB — treat as valid"), so it must be folded into the valid tally
-      // here too, or this summary and the visible list disagree.
-      if (result == 'valid' || result == 'manual_review')
+      if (result == 'valid') {
         v++;
-      else if (result == 'suspicious')
+      } else if (result == 'manual_review') {
+        m++;
+      } else if (result == 'suspicious') {
         s++;
-      else if (result == 'invalid') inv++;
+      } else if (result == 'invalid') {
+        inv++;
+      }
     }
     if (mounted) {
       setState(() {
         _validCount = v;
+        _manualReviewCount = m;
         _suspiciousCount = s;
         _invalidCount = inv;
       });
@@ -541,8 +545,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Color _resultColor(String r) {
     switch (r.toLowerCase()) {
       case 'valid':
-      case 'manual_review': // ID found in DB — treat as valid
         return _validColor;
+      case 'manual_review':
+        return _manualReviewColor;
       case 'suspicious':
         return _suspiciousColor;
       case 'invalid':
@@ -555,8 +560,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   IconData _resultIcon(String r) {
     switch (r.toLowerCase()) {
       case 'valid':
-      case 'manual_review': // ID found in DB — treat as valid
         return Icons.check_circle_outline;
+      case 'manual_review':
+        return Icons.remove_red_eye_outlined;
       case 'suspicious':
         return Icons.warning_amber_outlined;
       case 'invalid':
@@ -675,7 +681,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildSummarySection() {
-    final total = _validCount + _suspiciousCount + _invalidCount;
+    final total =
+        _validCount + _manualReviewCount + _suspiciousCount + _invalidCount;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
@@ -705,6 +712,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 count: _validCount,
                 color: _validColor,
                 icon: Icons.check_circle_outline,
+              ),
+              const SizedBox(width: 8),
+              _SummaryCard(
+                label: 'Manual review',
+                count: _manualReviewCount,
+                color: _manualReviewColor,
+                icon: Icons.remove_red_eye_outlined,
               ),
               const SizedBox(width: 8),
               _SummaryCard(
@@ -942,13 +956,16 @@ class _SummaryCard extends StatelessWidget {
               style: AppTypography.heading(
                   fontSize: 18, fontWeight: FontWeight.w700, color: color),
             ),
-            Text(
-              label.toUpperCase(),
-              style: AppTypography.mono(
-                  fontSize: 9,
-                  letterSpacing: 0.6,
-                  color: color.withOpacity(0.85),
-                  fontWeight: FontWeight.w600),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label.toUpperCase(),
+                style: AppTypography.mono(
+                    fontSize: 9,
+                    letterSpacing: 0.6,
+                    color: color.withOpacity(0.85),
+                    fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
@@ -1051,8 +1068,9 @@ class _RecordTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rawResult = (record['result'] as String? ?? '').toLowerCase();
-    final isManualReview = rawResult == 'manual_review';
-    final result = isManualReview ? 'VALID' : rawResult.toUpperCase();
+    final result = rawResult == 'manual_review'
+        ? 'MANUAL REVIEW'
+        : rawResult.toUpperCase();
     final idNumber = record['id_number_scanned'] as String? ?? '—';
     final name = record['beneficiary_name'] as String? ?? '—';
     final type = typeLabel(record['beneficiary_type_detected'] as String?);
@@ -1143,11 +1161,6 @@ class _RecordTile extends StatelessWidget {
                       if (confStr != null) ...[
                         const SizedBox(width: 6),
                         _chip('Quality: $confStr', Icons.text_fields),
-                      ],
-                      if (isManualReview) ...[
-                        const SizedBox(width: 6),
-                        _chip('Manual Review', Icons.remove_red_eye_outlined,
-                            color: AppDesignSystem.statusManualReview),
                       ],
                     ],
                   ),

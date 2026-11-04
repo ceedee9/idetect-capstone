@@ -19,6 +19,7 @@ const { createError } = require("../middleware/errorHandler");
 const { sendPushNotification } = require("../services/fcmService");
 const { sendSms } = require("../services/smsService");
 const { maskIdNumber } = require("../utils/privacy");
+const { classifyIssuingCity } = require("../utils/issuingLgu");
 const ExcelJS = require("exceljs");
 const { buildReportPdf } = require("../services/auditReportPdf");
 const {
@@ -125,7 +126,7 @@ router.post(
     body("id_number").notEmpty().trim().toUpperCase(),
     body("beneficiary_type").isIn(["senior_citizen", "pwd"]),
     body("ocr_confidence_score").optional().isFloat({ min: 0, max: 100 }),
-    body("ocr_raw_text").optional().isString(),
+    body("ocr_raw_text").optional().isString().isLength({ max: 10000 }),
     body("image_data").optional().isString(), // base64-encoded captured ID image
     body("manually_entered").optional().isBoolean(),
     body("extracted_name").optional().isString().trim(),
@@ -354,6 +355,27 @@ router.post(
         }
       }
 
+      // A card whose header names another city cannot be checked against the
+      // Valenzuela registry. A registry "valid" or "not found" result is not
+      // trusted for it, so it goes to manual_review. Other results keep their
+      // status and get a note. Skipped for manually entered IDs (no card text).
+      // A card with no readable city is not flagged; it is only logged so the
+      // rate can be measured.
+      const issuingCity = manually_entered ? "unknown" : classifyIssuingCity(ocr_raw_text);
+      if (issuingCity === "other") {
+        const outsideMessage =
+          "Card text names another city. It cannot be checked against the Valenzuela registry. " +
+          "Please inspect the physical ID carefully before approving the discount.";
+        if (result === "valid" || (result === "invalid" && !beneficiary)) {
+          result = "manual_review";
+          message = outsideMessage;
+        } else {
+          message = `(Card names another city) ${message}`;
+        }
+      } else if (!manually_entered && issuingCity === "unknown" && ocr_raw_text) {
+        console.info("[verification] no issuing city read from card header");
+      }
+
       // If extraction quality score was low on an otherwise-valid result, downgrade to
       // manual_review so the cashier physically inspects the card.
       // On already-invalid/suspicious results, just annotate the message.
@@ -398,7 +420,8 @@ router.post(
           beneficiary_type,
           result,
           ocr_confidence_score,
-          ocr_raw_text,
+          // Raw OCR text is used only for the city check above and is not stored.
+          null,
           image_path,
           manually_entered,
           extracted_name,
