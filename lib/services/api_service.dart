@@ -934,8 +934,9 @@ class ApiService {
         message =
             data['message'] ?? data['error'] ?? 'Failed to submit fraud flag.';
       }
-      return {'error': message};
+      return {'error': message, 'status_code': response.statusCode};
     } catch (e) {
+      // No status_code: the server could not be reached or sent an unreadable answer.
       return {'error': 'Cannot reach server: $e'};
     }
   }

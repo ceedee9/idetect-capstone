@@ -506,13 +506,17 @@ LGU Admin resolves or rejects
 - The status sync poll (every 8 seconds, with a `since` cursor) keeps the Hive box `blocked_ids` current. It stores only **revoked and suspended** IDs, keyed by SHA-256 hash (`local_database.dart`).
 - A scanned ID on the blocklist is rejected instantly on the device. A cache miss or active status is **never** approved locally; it goes to the server (`api_service.dart`, `verifyId`).
 - When the network fails (`SocketException`, `TimeoutException`, or `ClientException`), the scan is saved to the replay queue (`pending_offline_scans_v2`) and the cashier sees **MANUAL_REVIEW** with `isOffline: true`. An offline result is **never VALID**.
-- `OfflineScanSyncService` replays queued scans when connectivity returns, sending `offline_queued: true`, `client_scan_id`, and `scanned_at`. The server accepts these fields (migration `056_add_offline_scan_replay_columns.sql`). After 5 failures, a staff alert is raised.
-- There is **no 6-hour cache TTL and no "[OFFLINE — synced X min ago]" banner.** Do not describe either.
+- `OfflineScanSyncService` replays queued scans when connectivity returns and also on a 30-second timer, sending `offline_queued: true`, `client_scan_id`, and `scanned_at`. The server accepts these fields (migration `056_add_offline_scan_replay_columns.sql`). Failed scans wait 30 seconds, then double up to 15 minutes, and are never dropped. After 5 failures, a staff alert is raised. A 401 (expired login) pauses replay until the next login; a 429 (rate limit) pauses the pass without counting a failure.
+- The scan's photo is copied to private app storage when the scan is queued, and deleted after the scan is sent. Each queued scan records the account that made it, and another account on the same phone skips it.
+- The offline result screen shows the banner "OFFLINE RESULT — SERVER UNREACHABLE" and how long ago the block list last synced. There is **no 6-hour cache TTL**. Do not describe one.
+- The block-list poll keeps going after an expired login and resumes once a new login replaces the token. The server pulls the sync cursor back by 5 seconds so a row committed during a poll is not missed, and a device's first sync asks only for revoked and suspended IDs (`blocked_only=true`).
 
 ### Offline Fraud Flag Queue
 
-- Fraud flags submitted while offline are stored in a local queue (`FraudFlagSyncService`, initialized in `main.dart`).
-- When connectivity is restored, the queue syncs the flags to the server.
+- A fraud flag that fails for a temporary reason (no connection, 5xx, 429, or expired login) is stored in a local queue (`FraudFlagSyncService`, initialized in `main.dart`) and retried on connectivity changes and a 30-second timer, with the same growing wait as scans. Temporary failures are never dropped, and staff are alerted after 5 failures.
+- A flag the server permanently rejects (for example a 400) is not queued, or is removed from the queue with a staff alert, because retrying can never succeed.
+- Flagging an **offline** result: the flag needs the server's verification record, which does not exist yet. The report is attached to the queued scan, and sent automatically after the scan syncs.
+- If a result has no server record and the phone is online (for example an instant block from the local list), the report cannot be sent. The app says so instead of claiming success.
 
 ---
 

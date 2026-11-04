@@ -100,6 +100,10 @@ class _ResultScreenState extends State<ResultScreen> {
       bool isQueued = false;
       bool isSupplementaryFlag = false;
       bool autoSuspendedFlag = false;
+      // Offline: the flag waits for the scan to be recorded, then is sent.
+      Map<String, String?>? pendingFlag;
+      // No server record exists for this scan, so the flag cannot be sent.
+      bool flagNotSendable = false;
 
       if (flagged) {
         // REQ-2.6.5: Prompt for beneficiary type when INVALID
@@ -158,6 +162,12 @@ class _ResultScreenState extends State<ResultScreen> {
             isSupplementaryFlag = flagResult['is_supplementary'] == true;
             autoSuspendedFlag = flagResult['auto_suspended'] == true;
           }
+        } else if (_isOffline && idNumber.isNotEmpty) {
+          // No server record yet: send the flag after the queued scan syncs.
+          pendingFlag = {'beneficiary_type': beneficiaryType, 'notes': flagNotes};
+          isQueued = true;
+        } else {
+          flagNotSendable = true;
         }
       }
 
@@ -173,7 +183,7 @@ class _ResultScreenState extends State<ResultScreen> {
         imagePath: widget.imagePath,
         idType: widget.idType,
         timestamp: nowMs,
-        verificationStatus: flagged
+        verificationStatus: (flagged && !flagNotSendable)
             ? 'flagged'
             : cashierAction != null
                 ? '${_status.name}_$cashierAction'
@@ -193,6 +203,7 @@ class _ResultScreenState extends State<ResultScreen> {
           imagePath: widget.imagePath,
           scannedAt: nowMs,
           ocrHeaderText: headerLines(widget.parsedData.rawText),
+          pendingFlag: pendingFlag,
         );
       }
 
@@ -206,6 +217,13 @@ class _ResultScreenState extends State<ResultScreen> {
       String flagMessage;
       if (!flagged) {
         flagMessage = 'ID saved successfully.';
+      } else if (flagNotSendable) {
+        flagMessage =
+            'ID saved, but the report was not sent because this scan was not '
+            'recorded on the server. Please flag it again once you are online.';
+      } else if (pendingFlag != null) {
+        flagMessage =
+            'Report saved on this device. It will be sent after the scan syncs.';
       } else if (flagReferenceNumber == null) {
         flagMessage = 'ID saved and flagged successfully.';
       } else if (isQueued) {

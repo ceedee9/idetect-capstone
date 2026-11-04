@@ -675,6 +675,8 @@ router.post(
 // Query params:
 //   since            — Unix ms timestamp (default 0 = all time)
 //   beneficiary_type — "senior_citizen" | "pwd"
+//   blocked_only     — "true" returns only revoked/suspended rows; sent by a
+//                      device on its first sync, when its cache is empty
 // Response: updates[] (id_number is a one-way hash, never plain or masked),
 // has_more, and next_since (the cursor for the next request).
 //
@@ -686,6 +688,9 @@ const idCacheKey = (value) =>
     .update(String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, ""))
     .digest("hex");
 
+// How far the cursor is pulled back after a full catch-up (see status-updates).
+const STATUS_CURSOR_OVERLAP_MS = 5000;
+
 router.get(
   "/status-updates",
   authenticateEstablishment,
@@ -694,6 +699,8 @@ router.get(
     try {
       const since = new Date(parseInt(req.query.since, 10) || 0);
       const { beneficiary_type } = req.query;
+      // First sync of an empty device cache: only blocked IDs matter.
+      const blockedOnly = req.query.blocked_only === "true";
 
       if (
         beneficiary_type &&
@@ -704,17 +711,22 @@ router.get(
           .json({ message: "Invalid beneficiary_type filter." });
       }
 
+      // Read before the query, then back the cursor off by STATUS_CURSOR_OVERLAP_MS
+      // so a row committed while this request ran is delivered on the next poll.
+      // Re-delivered rows are harmless: the device cache is an upsert.
+      const serverTime = Date.now();
+
       const result = await pool.query(
         `SELECT id_number, status, updated_at
         FROM beneficiaries
         WHERE updated_at > $1
           AND ($2::text IS NULL OR beneficiary_type = $2::beneficiary_type)
+          AND ($3::boolean = false OR status::text IN ('revoked', 'suspended'))
         ORDER BY updated_at ASC
         LIMIT 1000`,
-        [since, beneficiary_type || null],
+        [since, beneficiary_type || null, blockedOnly],
       );
 
-      const serverTime = Date.now();
       const rows = result.rows;
       const hasMore = rows.length === 1000;
       res.json({
@@ -726,7 +738,7 @@ router.get(
         has_more: hasMore,
         next_since: hasMore
           ? new Date(rows[rows.length - 1].updated_at).getTime()
-          : serverTime,
+          : Math.max(serverTime - STATUS_CURSOR_OVERLAP_MS, since.getTime()),
         server_time: serverTime,
       });
     } catch (err) {

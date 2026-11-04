@@ -27,6 +27,9 @@ class StatusSyncService {
   static int _lastSyncMs = 0; // Unix ms of the last successful sync
   static bool _isSyncing = false;
   static DateTime? _backoffUntil; // Set when the server answers 429
+  // Token the server refused (401). Polling pauses until a new login replaces
+  // it, so an expired session no longer stops block-list updates for good.
+  static String? _rejectedToken;
 
   /// Call once from main() after LocalDatabase.init() and ApiService.loadToken().
   static Future<void> init() async {
@@ -61,6 +64,7 @@ class StatusSyncService {
     _connectivitySub = null;
     _lastSyncMs = 0;
     _backoffUntil = null;
+    _rejectedToken = null;
   }
 
   // ── Internal ──────────────────────────────────────────────────────────────
@@ -68,16 +72,20 @@ class StatusSyncService {
   static Future<void> _sync() async {
     if (_isSyncing) return;
     final token = ApiService.token;
-    if (token == null) return; // Not logged in yet
+    if (token == null || token == _rejectedToken) return;
     final backoffUntil = _backoffUntil;
     if (backoffUntil != null && DateTime.now().isBefore(backoffUntil)) return;
 
     _isSyncing = true;
     try {
+      // With an empty cache there is nothing to clear, so the first sync asks
+      // only for revoked/suspended IDs instead of the whole registry.
+      final initialSync = _lastSyncMs == 0;
       var hasMore = true;
       while (hasMore) {
         final uri = Uri.parse(
-          '${ApiService.baseUrl}/verification/status-updates?since=$_lastSyncMs',
+          '${ApiService.baseUrl}/verification/status-updates?since=$_lastSyncMs'
+          '${initialSync ? '&blocked_only=true' : ''}',
         );
 
         final response = await http.get(uri, headers: {
@@ -85,8 +93,8 @@ class StatusSyncService {
         }).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 401) {
-          // Token expired — stop polling until re-login
-          stop();
+          // Login expired. Pause until a new login replaces this token.
+          _rejectedToken = token;
           return;
         }
         if (response.statusCode == 429) {
