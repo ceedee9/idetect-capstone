@@ -101,7 +101,22 @@ const authenticateEstablishment = async (req, res, next) => {
       account.password_reset_required || false;
     next();
   } catch (err) {
-    return res.status(403).json({ error: "Invalid or expired token" });
+    // 401 + code tells the mobile app its session ended, so it can sign the
+    // user out. Other failures (e.g. database errors) are not session errors.
+    if (
+      err.name === "TokenExpiredError" ||
+      err.name === "JsonWebTokenError" ||
+      err.name === "NotBeforeError"
+    ) {
+      return res.status(401).json({
+        error: "Invalid or expired token",
+        code:
+          err.name === "TokenExpiredError"
+            ? "SESSION_EXPIRED"
+            : "SESSION_INVALID",
+      });
+    }
+    return next(err);
   }
 };
 

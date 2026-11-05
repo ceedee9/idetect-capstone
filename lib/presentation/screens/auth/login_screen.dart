@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  late final bool _sessionExpired = ApiService.consumeSessionExpiredNotice();
 
   bool _isBploRelatedError(String message) {
     final m = message.toLowerCase();
@@ -244,6 +245,47 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
 
                             const SizedBox(height: 24),
+
+                            // Shown when the user was signed out because the
+                            // session ran out.
+                            if (_sessionExpired && _errorMessage == null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFFBEB),
+                                  borderRadius:
+                                      BorderRadius.circular(_fieldRadius),
+                                  border: Border.all(
+                                    color: const Color(0xFFFCD34D),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.timer_off_outlined,
+                                      color: Color(0xFFB45309),
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'Your session has expired. Please sign in again to continue.',
+                                        style: TextStyle(
+                                          color: Color(0xFF92400E),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
 
                             // Error message
                             if (_errorMessage != null) ...[

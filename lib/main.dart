@@ -4,6 +4,7 @@ import 'presentation/screens/splash/splash_screen.dart';
 import 'services/api_service.dart';
 import 'services/fraud_flag_sync_service.dart';
 import 'services/offline_scan_sync_service.dart';
+import 'services/session_expiry_service.dart';
 import 'services/status_sync_service.dart';
 
 void main() async {
@@ -12,8 +13,14 @@ void main() async {
   // Initialize local database
   await LocalDatabase.init();
 
-  // Restore saved auth token so the user stays logged in after restarts
+  // Restore saved auth token so the user stays logged in after restarts.
+  // If it has expired, the splash screen sends the user to login once the
+  // server is reachable; offline they can still scan.
   await ApiService.loadToken();
+
+  // Sign out when the server rejects the token, or when the app resumes or
+  // comes back online holding an expired one.
+  SessionExpiryService.init();
 
   // REQ-2.6.4: Initialize offline fraud flag sync service
   await FraudFlagSyncService.init();
@@ -35,6 +42,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'iDetect',
       scaffoldMessengerKey: OfflineScanSyncService.messengerKey,
       debugShowCheckedModeBanner: false,

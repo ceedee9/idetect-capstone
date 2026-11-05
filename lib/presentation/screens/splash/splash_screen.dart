@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_design_system.dart';
 import '../../../services/api_service.dart';
+import '../../../services/session_expiry_service.dart';
 import '../auth/login_screen.dart';
 import '../home/home_screen.dart';
 
@@ -68,9 +69,13 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  void _goNext() {
+  Future<void> _goNext() async {
     if (_navigated || !mounted) return;
     _navigated = true;
+    // An expired login is dropped here only if the server is reachable;
+    // offline, the user goes in and can keep scanning.
+    await SessionExpiryService.clearExpiredSessionIfOnline();
+    if (!mounted) return;
     final next =
         ApiService.isLoggedIn ? const HomeScreen() : const LoginScreen();
     Navigator.of(context).pushReplacement(

@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/datasources/local/local_database.dart';
 import 'outside_lgu_detector.dart';
+import 'session_http.dart' as http;
 
 class ApiService {
   // Set with --dart-define=IDETECT_API_BASE_URL=https://your-host/api.
@@ -39,12 +39,79 @@ class ApiService {
       if (userJson != null) {
         _currentUser = Map<String, dynamic>.from(jsonDecode(userJson));
       }
-      if (_token != null) {
+      final stored = _token;
+      if (stored != null && isTokenExpired(stored)) {
+        // Kept on purpose: offline, the user can still scan and queue. The
+        // splash screen and SessionExpiryService sign out once the server
+        // is reachable.
+        debugPrint('🔑 Stored token has expired.');
+      } else if (stored != null) {
         debugPrint('🔑 Beneficiary token restored.');
       }
     } catch (e) {
       debugPrint('⚠️ Could not load token: $e');
     }
+  }
+
+  // ── Session expiry ─────────────────────────────────────────────────────────
+
+  static bool _sessionExpiredNotice = false;
+
+  /// Remember that the user was signed out because the session ran out, so
+  /// the login screen can explain why.
+  static void markSessionExpired() => _sessionExpiredNotice = true;
+
+  /// True once after a session expiry; the login screen shows its notice.
+  static bool consumeSessionExpiredNotice() {
+    final value = _sessionExpiredNotice;
+    _sessionExpiredNotice = false;
+    return value;
+  }
+
+  /// A token is stored but its expiry time has passed.
+  static bool get hasExpiredToken {
+    final token = _token;
+    return token != null && isTokenExpired(token);
+  }
+
+  /// True when the API answers at all (even with an error status). Used to
+  /// avoid forcing a sign-in the phone could not complete offline.
+  static Future<bool> isServerReachable() async {
+    try {
+      await http
+          .get(Uri.parse('$baseUrl/health'))
+          .timeout(const Duration(seconds: 4));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Reads `exp` from the JWT payload. Returns null if the token can't be read.
+  static DateTime? tokenExpiry(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final payload = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
+      final exp = payload is Map ? payload['exp'] : null;
+      if (exp is num) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          exp.toInt() * 1000,
+          isUtc: true,
+        );
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Local check only. A token we can't read is treated as still valid and
+  /// left for the server to judge.
+  static bool isTokenExpired(String token, {DateTime? now}) {
+    final expiry = tokenExpiry(token);
+    if (expiry == null) return false;
+    return !(now ?? DateTime.now().toUtc()).isBefore(expiry);
   }
 
   static void setToken(String token, {Map<String, dynamic>? user}) {
@@ -520,7 +587,7 @@ class ApiService {
       final request = http.Request(method, uri)
         ..headers.addAll(_authHeaders())
         ..body = jsonEncode(body);
-      final response = await http.Client()
+      final response = await http.sessionClient
           .send(request)
           .timeout(const Duration(seconds: 10));
       final responseBody = await response.stream.bytesToString();
@@ -1237,7 +1304,7 @@ class ApiService {
         await http.MultipartFile.fromPath('document', filePath),
       );
 
-      final streamed = await request.send().timeout(
+      final streamed = await http.sessionClient.send(request).timeout(
             const Duration(seconds: 30),
           );
       final body = await streamed.stream.bytesToString();

@@ -8,7 +8,7 @@ ID is valid while offline. Each offline scan is saved and sent to the server
 when the connection comes back. Fraud reports (flags) are saved and sent the
 same way. Staff are told the result and must verify high-value transactions online.
 
-## The four parts
+## The five parts
 
 ### 1. The block list (kept on the phone)
 
@@ -52,6 +52,19 @@ same way. Staff are told the result and must verify high-value transactions onli
 - If a result has no server record and the phone is online (for example, an instant block from the phone's own list), the report cannot be sent. The app now says so instead of claiming success, and the history entry is not marked "flagged".
 - Like scans, each queued flag remembers its account.
 
+### 5. Login expiry (when the session runs out)
+
+- A login lasts 8 hours (`JWT_EXPIRES_IN`). It does not renew while the app is used.
+- **Online:** when the login has expired, the app signs the user out and shows the login screen with the notice "Your session has expired. Please sign in again to continue." This happens in four cases:
+  - The app opens (the splash screen checks).
+  - The app comes back from the background.
+  - The phone regains a connection.
+  - The server rejects a request because the login ended. The server now answers **401** with the code `SESSION_EXPIRED` or `SESSION_INVALID` (it used to answer 403, which the app did not recognise).
+- **Offline:** an expired login does **not** sign the user out, because signing in needs a connection. The user can still open the app and scan, and scans are queued as usual. The app signs the user out as soon as the server can be reached.
+- The queue is kept when the user is signed out. Queued scans and flags belong to the account that made them and are sent after that account signs in again. Sending pauses until then.
+- The app decides "expired" from the date inside the login token on the phone, and "reachable" by asking the server's `/api/health` page (any answer counts, even an error). If the phone's clock is wrong, the server's answer still decides.
+- A scan in progress when the server ends the login is not saved. The user signs in and scans again.
+
 ## What staff see
 
 | Situation | What staff see |
@@ -61,6 +74,8 @@ same way. Staff are told the result and must verify high-value transactions onli
 | Flag while offline | "Report saved on this device. It will be sent after the scan syncs." |
 | Flag that cannot be sent | "ID saved, but the report was not sent because this scan was not recorded on the server." |
 | Back online | The queued result appears as a message. |
+| Login expired, online | The login screen with "Your session has expired." |
+| Login expired, offline | The app keeps working. The login screen appears once the connection returns. |
 | Beneficiary portal | Requires a connection. It does not work offline. |
 
 ## Rules that apply
@@ -104,3 +119,4 @@ same way. Staff are told the result and must verify high-value transactions onli
 - No new migration is needed for the flag, photo, or block-list changes.
 - `GET /api/verification/status-updates` accepts `blocked_only=true` (first sync only) and returns `next_since` pulled back by 5 seconds after a full catch-up. Older app versions keep working.
 - Retry rules live in `lib/services/retry_policy.dart` and are covered by `test/services/retry_policy_test.dart`. The endpoint is covered by `apps/api/tests/statusUpdates.test.js`.
+- Login expiry: the app side is in `lib/services/session_expiry_service.dart` and `lib/services/session_http.dart` (tests: `test/services/session_expiry_test.dart`). The server side is `authenticateEstablishment` in `apps/api/src/middleware/auth.js` (tests: `apps/api/tests/establishmentAuthExpiry.test.js`). Deploy the API first, then the app. Older app versions keep working against the new API but do not sign out automatically.
