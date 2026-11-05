@@ -659,8 +659,8 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Action group tabs */}
-        <div className="flex items-center gap-x-1 gap-y-0 mt-3 border-b border-slate-200 flex-wrap">
-          <Filter className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+        <div className="flex items-center gap-x-0.5 mt-3 border-b border-slate-200 overflow-x-auto">
+          <Filter className="w-4 h-4 text-slate-400 mr-1 flex-shrink-0" />
           {ACTION_GROUPS.map((grp) => (
             <button
               key={grp.value}
@@ -668,7 +668,7 @@ export default function AuditLogsPage() {
                 setActionGroup(grp.value);
                 setPage(1);
               }}
-              className={`inline-flex items-center gap-2 whitespace-nowrap px-3 py-2 -mb-px border-b-2 text-xs font-semibold transition-colors
+              className={`inline-flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap px-2 py-2 -mb-px border-b-2 text-xs font-semibold transition-colors
                 ${
                   actionGroup === grp.value
                     ? "border-gov-600 text-gov-700"
@@ -677,7 +677,7 @@ export default function AuditLogsPage() {
             >
               {grp.label}
               <span
-                className={`inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 font-mono text-[10px] leading-none tabular-nums rounded-full ${
+                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 font-mono text-[10px] leading-none tabular-nums rounded-full ${
                   actionGroup === grp.value
                     ? "bg-gov-100 text-gov-700"
                     : "bg-slate-100 text-slate-500"
