@@ -90,7 +90,7 @@ INSERT INTO beneficiaries (
     '1950-03-15',
     'senior_citizen',
     'OSCA Valenzuela',
-    '2020-01-01', '2025-12-31',
+    '2020-01-01', '2030-12-31',
     'active',
     '09171111111'
   ),
@@ -102,7 +102,7 @@ INSERT INTO beneficiaries (
     '1985-07-22',
     'pwd',
     'PDAO Valenzuela',
-    '2022-06-01', '2025-05-31',
+    '2022-06-01', '2030-05-31',
     'active',
     '09182222222'
   ),

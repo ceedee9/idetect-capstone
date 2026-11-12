@@ -286,20 +286,17 @@ class HybridParserService {
         if (parsedData.success) {
           fuzzyResult = {
             'fullName': parsedData.fullName ?? '',
-            // ── PRIORITY 4 FIX ──────────────────────────────────────────────
-            // Previously called _formatDate(parsedData.age) which fabricated a
-            // birth date like "01/01/1954" from an estimated age integer.
-            // We now return an empty string — a missing DOB is better than a
-            // wrong one that would mislead the operator.
-            'dateOfBirth': '',
-            // ────────────────────────────────────────────────────────────────
+            // Use the parser's actual DOB when layout extraction misses it.
+            // Never derive a date from age because that would fabricate a
+            // misleading birth date.
+            'dateOfBirth': parsedData.dateOfBirth ?? '',
             'sex': parsedData.sex ?? '',
             'dateIssued': parsedData.dateIssued ?? '',
             'controlNumber': parsedData.controlNumber ?? '',
             'confidence': parsedData.confidence,
             'fieldConfidences': {
               'fullName': parsedData.nameConfidence,
-              'dateOfBirth': 0.0, // no real DOB → zero confidence
+              'dateOfBirth': parsedData.ageConfidence,
               'sex': parsedData.sexConfidence,
               'dateIssued': parsedData.dateIssuedConfidence,
               'controlNumber': parsedData.controlNumberConfidence,
@@ -706,22 +703,36 @@ class HybridParserService {
       final parts = dateOfBirth.split(RegExp(r'[/-]'));
       if (parts.length != 3) return null;
 
-      final month = int.parse(parts[0]);
-      final day = int.parse(parts[1]);
+      int month;
+      int day;
       int year;
 
-      if (parts[2].length == 4) {
-        year = int.parse(parts[2]);
+      if (parts[0].length == 4) {
+        year = int.parse(parts[0]);
+        month = int.parse(parts[1]);
+        day = int.parse(parts[2]);
       } else {
-        // 2-digit year
-        final twoDigit = int.parse(parts[2]);
-        year =
-            twoDigit >= 0 && twoDigit <= 30 ? 2000 + twoDigit : 1900 + twoDigit;
+        month = int.parse(parts[0]);
+        day = int.parse(parts[1]);
+        year = int.parse(parts[2]);
+        if (day > 12 && month <= 12) {
+          final originalMonth = month;
+          month = day;
+          day = originalMonth;
+        }
+        if (year < 100) {
+          year = year <= 30 ? 2000 + year : 1900 + year;
+        }
       }
 
       // Calculate exact age considering month and day
       final now = DateTime.now();
       final birthDate = DateTime(year, month, day);
+      if (birthDate.year != year ||
+          birthDate.month != month ||
+          birthDate.day != day) {
+        return null;
+      }
 
       int age = now.year - birthDate.year;
 

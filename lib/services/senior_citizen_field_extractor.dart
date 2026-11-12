@@ -123,6 +123,7 @@ class SeniorCitizenFieldExtractor {
   static String _normalizeText(String text) {
     return text
         .toUpperCase()
+        .replaceAll(RegExp(r'(?<=\d)[.](?=\d)'), '/')
         .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces to single
         .trim();
   }
@@ -399,7 +400,8 @@ class SeniorCitizenFieldExtractor {
 
   /// Extract date by keyword proximity
   static String? _extractDateByKeyword(String text, List<String> keywords) {
-    final datePattern = RegExp(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b');
+    final datePattern = RegExp(
+        r'\b(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{2,4}[/-]\d{1,2}[/-]\d{1,2})\b');
 
     for (final keyword in keywords) {
       final keywordIdx = text.indexOf(keyword);
@@ -422,7 +424,8 @@ class SeniorCitizenFieldExtractor {
 
   /// Extract all dates from text
   static List<String> _extractAllDates(String text) {
-    final datePattern = RegExp(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b');
+    final datePattern = RegExp(
+        r'\b(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{2,4}[/-]\d{1,2}[/-]\d{1,2})\b');
     return datePattern.allMatches(text).map((m) => m.group(0)!).toList();
   }
 
@@ -475,16 +478,31 @@ class SeniorCitizenFieldExtractor {
       final parts = date.split(RegExp(r'[/-]'));
       if (parts.length != 3) return null;
 
-      int month = int.parse(parts[0]);
-      int day = int.parse(parts[1]);
-      int year = int.parse(parts[2]);
+      int year;
+      int month;
+      int day;
+      if (parts[0].length == 4) {
+        year = int.parse(parts[0]);
+        month = int.parse(parts[1]);
+        day = int.parse(parts[2]);
+      } else {
+        month = int.parse(parts[0]);
+        day = int.parse(parts[1]);
+        year = int.parse(parts[2]);
+      }
 
       // Handle 2-digit year
       if (year < 100) {
-        year += year > 50 ? 1900 : 2000;
+        // Dates 00-30 are current/future issue years; older two-digit
+        // values represent the senior's birth year in the 1900s.
+        year += year > 30 ? 1900 : 2000;
       }
 
-      return DateTime(year, month, day);
+      final parsed = DateTime(year, month, day);
+      if (parsed.year != year || parsed.month != month || parsed.day != day) {
+        return null;
+      }
+      return parsed;
     } catch (e) {
       return null;
     }

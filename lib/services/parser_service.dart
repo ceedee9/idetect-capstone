@@ -266,6 +266,11 @@ class ParserService {
         idNumber: idNumber,
         fullName: fullName.isNotEmpty ? fullName : null,
         age: ageInt,
+        dateOfBirth:
+            (extractedFields['dateOfBirth']?['value'] as String?)?.isNotEmpty ==
+                    true
+                ? extractedFields['dateOfBirth']['value'] as String
+                : null,
         sex: sex.isNotEmpty ? sex : null,
         dateIssued: dateIssued.isNotEmpty ? dateIssued : null,
         controlNumber: controlNumber.isNotEmpty ? controlNumber : null,

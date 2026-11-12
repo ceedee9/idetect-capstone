@@ -311,7 +311,16 @@ class LayoutBasedFieldExtractor {
           );
 
     // Step 3: Parse other fields (NOT name yet)
-    final parsedDOB = _parseDateOfBirth(dateOfBirth['text']);
+    var parsedDOB = _parseDateOfBirth(dateOfBirth['text']);
+    if ((parsedDOB['value'] as String).isEmpty) {
+      final labeledDob = _extractDateNearKeyword(
+        fullText,
+        ['DATE OF BIRTH', 'BIRTH DATE', 'DOB', 'KAPANGANAKAN'],
+      );
+      if (labeledDob != null) {
+        parsedDOB = _parseDateOfBirth(labeledDob);
+      }
+    }
     final parsedSex = _parseSex(sex['text']);
     final parsedDateIssued = _parseDateIssued(dateIssued['text']);
 
@@ -1005,11 +1014,13 @@ class LayoutBasedFieldExtractor {
         .replaceAll(RegExp(r'\bDOB\s*:?\s*'), '')
         .replaceAll(RegExp(r'\bDATE\s+OF\s+BIRTH\s*:?\s*'), '')
         .replaceAll(RegExp(r'\bPETSA\s+NG\s+KAPANGANAKAN\s*:?\s*'), '')
+        .replaceAll(RegExp(r'(?<=\d)[OQ](?=\d)'), '0')
+        .replaceAll(RegExp(r'(?<=\d)[IL](?=\d)'), '1')
         .trim();
 
     // Extract date pattern
     final datePattern = RegExp(
-      r'(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{2,4})',
+      r'(\d{1,4})[/\-\.](\d{1,2})[/\-\.](\d{1,4})',
     );
 
     final match = datePattern.firstMatch(cleaned);
@@ -1017,9 +1028,28 @@ class LayoutBasedFieldExtractor {
       return {'value': '', 'confidence': 0.0};
     }
 
-    String month = match.group(1)!.padLeft(2, '0');
-    String day = match.group(2)!.padLeft(2, '0');
+    var first = match.group(1)!;
+    var second = match.group(2)!;
     String year = match.group(3)!;
+
+    // Accept both the card's usual MM/DD/YYYY form and OCR output that
+    // preserves a DD/MM/YYYY or YYYY/MM/DD ordering.
+    String month;
+    String day;
+    if (first.length == 4) {
+      year = first;
+      month = second;
+      day = match.group(3)!;
+    } else if (int.tryParse(first)! > 12 && int.tryParse(second)! <= 12) {
+      month = second;
+      day = first;
+    } else {
+      month = first;
+      day = second;
+    }
+
+    month = month.padLeft(2, '0');
+    day = day.padLeft(2, '0');
 
     // Handle 2-digit year
     if (year.length == 2) {
@@ -1040,6 +1070,12 @@ class LayoutBasedFieldExtractor {
       return {'value': '', 'confidence': 0.0};
     }
     if (dayInt < 1 || dayInt > 31) {
+      return {'value': '', 'confidence': 0.0};
+    }
+    final parsedDate = DateTime(yearInt, monthInt, dayInt);
+    if (parsedDate.year != yearInt ||
+        parsedDate.month != monthInt ||
+        parsedDate.day != dayInt) {
       return {'value': '', 'confidence': 0.0};
     }
 
@@ -1065,6 +1101,25 @@ class LayoutBasedFieldExtractor {
       'value': formatted,
       'confidence': confidence,
     };
+  }
+
+  static String? _extractDateNearKeyword(
+    String text,
+    List<String> keywords,
+  ) {
+    final datePattern = RegExp(
+      r'\b\d{1,4}[/\-\.]\d{1,2}[/\-\.]\d{1,4}\b',
+    );
+
+    for (final keyword in keywords) {
+      final keywordIndex = text.toUpperCase().indexOf(keyword);
+      if (keywordIndex == -1) continue;
+
+      final end = (keywordIndex + 100).clamp(0, text.length);
+      final match = datePattern.firstMatch(text.substring(keywordIndex, end));
+      if (match != null) return match.group(0);
+    }
+    return null;
   }
 
   /// Parse and validate sex with robust OCR error handling

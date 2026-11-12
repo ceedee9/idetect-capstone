@@ -66,4 +66,23 @@ ID NO 13-0001-000-0000001
       expect(parsed.fullName, 'MA A Santos');
     });
   });
+
+  test('preserves senior DOB and calculates age from it', () async {
+    final parser = ParserService();
+
+    const rawText = '''
+OSCA SENIOR CITIZEN
+NAME: MARIA SANTOS
+DATE OF BIRTH: 12.31.1940
+SEX: F
+DATE ISSUED: 01/01/2025
+CONTROL NO: 2025-0001
+''';
+
+    final parsed = await parser.parseIDText(rawText);
+
+    expect(parsed.success, isTrue);
+    expect(parsed.dateOfBirth, '12/31/40');
+    expect(parsed.age, 85);
+  });
 }
