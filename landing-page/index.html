@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#09162f">
   <title>iDETECT - Download Apps</title>
-  <link rel="icon" href="assets/idetect-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
   <style>
     :root {
       --navy: #09162f;
@@ -23,7 +27,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Inter", Arial, Helvetica, sans-serif;
       color: var(--white);
       background:
         radial-gradient(circle at 78% 18%, rgba(32, 88, 180, 0.28), transparent 24rem),
@@ -68,8 +72,11 @@
       letter-spacing: .2px;
     }
 
-    .brand img { width: 44px; height: 44px; object-fit: contain; }
-    .brand-red { color: #ff4545; }
+    .brand img {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+    }
 
     .nav-links { display: flex; align-items: center; gap: 28px; }
     .nav-links a {
@@ -77,6 +84,11 @@
       text-decoration: none;
       font-size: 14px;
       font-weight: 700;
+    }
+    .nav, .eyebrow, h1, h2, h3,
+    .primary-button, .secondary-button, .download-button,
+    .app-logo-row .wordmark, .visual-card-head {
+      font-family: "Plus Jakarta Sans", "Inter", Arial, Helvetica, sans-serif;
     }
     .nav-links a:hover { color: white; }
 
@@ -125,6 +137,7 @@
     h1 {
       max-width: 620px;
       margin: 18px 0 16px;
+      font-family: "Plus Jakarta Sans", "Inter", Arial, Helvetica, sans-serif;
       font-size: clamp(46px, 7vw, 78px);
       line-height: .98;
       letter-spacing: -3.5px;
@@ -169,56 +182,13 @@
       border-radius: 50%;
       background: radial-gradient(circle, rgba(31,99,220,.38), rgba(31,99,220,.05) 58%, transparent 60%);
     }
-    .visual-card {
-      width: min(390px, 90%);
-      min-height: 290px;
-      padding: 28px;
-      position: relative;
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      background: linear-gradient(145deg, rgba(30,58,104,.95), rgba(13,30,61,.95));
-      box-shadow: 0 28px 70px rgba(0,0,0,.32);
-    }
-    .visual-card-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 34px;
-    }
-    .visual-card-head img {
-      width: 64px;
-      height: 64px;
+    .visual-logo {
+      width: min(460px, 92%);
+      max-height: 340px;
       object-fit: contain;
-      padding: 8px;
-      border-radius: 18px;
-      background: white;
-    }
-    .visual-card-head strong { display: block; font-size: 20px; }
-    .visual-card-head span { color: #9fb1cf; font-size: 12px; letter-spacing: 1.2px; }
-
-    .scan-frame {
-      height: 145px;
-      border-radius: 16px;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(4,13,31,.42);
-    }
-    .scan-icon {
-      width: 86px;
-      height: 86px;
-      border: 5px solid white;
-      border-radius: 18px;
       position: relative;
-      box-shadow: inset 0 0 0 8px rgba(24,79,189,.45);
+      filter: drop-shadow(0 24px 38px rgba(0, 0, 0, .34));
     }
-    .scan-icon::before, .scan-icon::after {
-      content: "";
-      position: absolute;
-      background: var(--red);
-    }
-    .scan-icon::before { width: 46px; height: 5px; left: 15px; top: 39px; }
-    .scan-icon::after { width: 5px; height: 46px; left: 39px; top: 15px; }
 
     .apps-section { padding: 28px 0 90px; }
     .section-heading {
@@ -322,6 +292,60 @@
     .qr-box strong { font-size: 13px; }
     .qr-box span { color: var(--muted); font-size: 11px; }
 
+    .about-section {
+      padding: 28px 0 90px;
+      scroll-margin-top: 20px;
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .about-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--card);
+      padding: 30px;
+    }
+    .about-card h3 {
+      margin: 0 0 12px;
+      font-size: 23px;
+    }
+    .about-card p,
+    .about-card li {
+      color: #c6d1e4;
+      font-size: 15px;
+      line-height: 1.72;
+    }
+    .about-card p { margin: 0 0 18px; }
+    .about-card p:last-child { margin-bottom: 0; }
+    .about-card ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .about-card li + li { margin-top: 8px; }
+    .about-stack {
+      display: grid;
+      gap: 20px;
+    }
+    .notice-card {
+      border-left: 3px solid var(--red);
+    }
+    .team-card {
+      border-left: 3px solid var(--blue);
+    }
+    .project-title {
+      font-size: 14px;
+      font-style: italic;
+      font-weight: 700;
+    }
+    .team-names {
+      margin: 14px 0 0 !important;
+      color: var(--white) !important;
+      font-weight: 700;
+    }
+
     footer {
       border-top: 1px solid var(--line);
       color: #98a8c3;
@@ -338,18 +362,17 @@
       .hero-actions { justify-content: center; }
       .visual { min-height: 350px; }
       .app-grid { grid-template-columns: 1fr; }
+      .about-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 620px) {
       .nav, main { width: min(100% - 24px, 1120px); }
       .nav { height: 64px; margin-top: 12px; }
-      .brand img { width: 38px; height: 38px; }
-      .brand span { display: none; }
+      .brand img { width: 52px; height: 52px; }
       .nav-links { gap: 8px; }
       .hero { min-height: auto; padding-top: 44px; gap: 26px; }
       h1 { font-size: 48px; letter-spacing: -2.4px; }
       .hero-copy p { font-size: 16px; }
       .visual { min-height: 320px; }
-      .visual-card { width: 100%; }
       .app-card { grid-template-columns: 1fr; }
       .qr-box { min-height: 190px; }
       .section-heading { display: block; }
@@ -359,9 +382,8 @@
 </head>
 <body>
   <nav class="nav" aria-label="Main navigation">
-    <a class="brand" href="#top" aria-label="iDETECT home">
-      <img src="assets/idetect-logo.png" alt="iDETECT">
-      <span>iD<span class="brand-red">ETECT</span></span>
+    <a class="brand" href="#top" aria-label="iDETECT Business Establishment home">
+      <img src="assets/business-logo.png" alt="iDETECT Business Establishment">
     </a>
     <div class="nav-links">
       <a href="#apps">Apps</a>
@@ -371,13 +393,14 @@
   </nav>
 
   <main id="top">
-    <section class="hero" id="about">
+    <section class="hero" id="top">
       <div class="hero-copy">
         <div class="eyebrow">Official iDETECT Apps</div>
-        <h1>Choose your iDETECT app.</h1>
+        <h1>Fair discounts start with a trusted check.</h1>
         <p>
-          Download the iDETECT application for business establishments or the
-          beneficiary application for PDAO and OSCA services.
+          Scan a Senior Citizen or PWD ID and check it against the registry in one app.
+          Beneficiaries can follow their ID's status, get notified when it's used,
+          and dispute mistakes.
         </p>
         <div class="hero-actions">
           <a class="primary-button" href="#apps">View Applications</a>
@@ -385,26 +408,15 @@
         </div>
       </div>
 
-      <div class="visual" aria-label="iDETECT application preview">
-        <div class="visual-card">
-          <div class="visual-card-head">
-            <img src="assets/idetect-logo.png" alt="">
-            <div>
-              <span>IDETECT</span>
-              <strong>Identity Verification</strong>
-            </div>
-          </div>
-          <div class="scan-frame">
-            <div class="scan-icon" aria-hidden="true"></div>
-          </div>
-        </div>
+      <div class="visual" aria-label="iDETECT logo">
+        <img class="visual-logo" src="assets/idetect-logo.png" alt="iDETECT">
       </div>
     </section>
 
     <section class="apps-section" id="apps">
       <div class="section-heading">
         <div>
-          <div class="eyebrow">Android Download</div>
+          <div class="eyebrow">Choose your iDETECT app</div>
           <h2>Get the right app</h2>
         </div>
       </div>
@@ -413,13 +425,12 @@
         <article class="app-card top-card">
           <div class="app-info">
             <div class="app-logo-row">
-              <img src="assets/business-logo.png" alt="Business Establishment">
-              <div class="wordmark">iD<span>ETECT</span></div>
+              <img src="assets/business-establishment-app-logo.png" alt="Business Establishment App">
+              <div class="wordmark">Business App</div>
             </div>
             <h3>Business Establishment App</h3>
             <p>
-              Main OCR application for identity verification and
-              business-establishment operations.
+              For Business Establishments: Scan and check Senior Citizen and PWD IDs at the counter.
             </p>
             <a class="download-button" href="downloads/idetect.apk" download>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -438,13 +449,12 @@
         <article class="app-card bottom-card">
           <div class="app-info">
             <div class="app-logo-row">
-              <img src="assets/pdao-logo.png" alt="PDAO">
-              <div class="wordmark">Beneficiary</div>
+              <img src="assets/beneficiary-app-logo.png" alt="Beneficiary App">
+              <div class="wordmark">Beneficiary App</div>
             </div>
             <h3>Beneficiary App</h3>
             <p>
-              Application for PDAO and OSCA beneficiaries to access
-              services and manage their information.
+              For Senior Citizens and PWDs: Track your ID status, get scan notifications, and file a dispute.
             </p>
             <a class="download-button" href="downloads/idetect-beneficiary.apk" download>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -461,10 +471,103 @@
         </article>
       </div>
     </section>
+
+    <section class="about-section" id="about">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">About iDETECT</div>
+          <h2>Trusted validation, with recourse</h2>
+        </div>
+      </div>
+
+      <div class="about-grid">
+        <div class="about-stack">
+          <article class="about-card">
+            <p>
+              iDETECT is an OCR-based discount ID validation system for food service
+              establishments in Valenzuela City. It helps staff check Senior Citizen
+              and PWD IDs against a registry. It helps OSCA, PDAO and BPLO review
+              suspicious cases. And it gives beneficiaries a way to see how their ID
+              is used and to contest mistakes.
+            </p>
+
+            <h3>The problem we address</h3>
+            <p>
+              Fake Senior Citizen and PWD IDs are a reported national concern. Many
+              portals check only the ID number that staff type in. Nothing reports
+              back to the offices that issue the IDs, and legitimate beneficiaries
+              have no way to see or dispute what happened to them.
+            </p>
+
+            <h3>What iDETECT does</h3>
+            <ul>
+              <li><strong>Scan instead of typing.</strong> The app reads the printed fields from the ID using the phone camera.</li>
+              <li><strong>Checks the card, not just the number.</strong> It compares the ID number, name, birthdate and validity with the registry, and returns VALID, SUSPICIOUS, SUSPENDED, INVALID or MANUAL REVIEW.</li>
+              <li><strong>Reports in two taps.</strong> Staff can flag a suspicious ID to OSCA (Senior Citizens) or PDAO (PWDs) without confronting the customer.</li>
+              <li><strong>Gives beneficiaries recourse.</strong> Senior Citizens and PWDs can get a notification when their ID is scanned, check their ID status, file a dispute, and report unauthorized use.</li>
+            </ul>
+          </article>
+
+          <article class="about-card notice-card">
+            <h3>Please note</h3>
+            <p>
+              iDETECT is a student capstone prototype. It was tested with test records
+              from consenting volunteers, not official OSCA or PDAO data, and it is
+              not an official application of the City Government of Valenzuela or any
+              of its offices. Results support staff judgment. They do not authorize
+              denying a discount or confiscating an ID. Establishments should keep
+              honoring discounts when an ID cannot be verified.
+            </p>
+          </article>
+        </div>
+
+        <div class="about-stack">
+          <article class="about-card">
+            <h3>Five portals, one system</h3>
+            <ul>
+              <li><strong>Business app (Android):</strong> for establishment staff.</li>
+              <li><strong>Beneficiary app (Android):</strong> for Senior Citizens and PWDs. It is optional and does not affect anyone's right to the discount.</li>
+              <li><strong>Web portals:</strong> for BPLO, OSCA and PDAO staff, each limited to its own role.</li>
+            </ul>
+          </article>
+
+          <article class="about-card">
+            <h3>Built with privacy in mind</h3>
+            <p>
+              Establishments receive only a verdict, never a person's personal data.
+              OSCA sees only Senior Citizen records, PDAO only PWD records, and BPLO
+              only establishment functions. System actions are recorded in an audit
+              trail. The design follows the principles of the Data Privacy Act of 2012
+              (RA 10173).
+            </p>
+          </article>
+
+          <article class="about-card team-card">
+            <h3>About the project</h3>
+            <p class="project-title">
+              Design and Development of iDetect: An OCR-Driven Discount ID Validity
+              Checker System for Food Service Establishments in Valenzuela City.
+            </p>
+            <p>
+              An undergraduate capstone project, Bachelor of Science in Information
+              Technology, College of Engineering and Information Technology,
+              Pamantasan ng Lungsod ng Valenzuela, 2026.
+            </p>
+            <h3>The team</h3>
+            <p class="team-names">
+              Carlo M. De los Reyes · Jorich Maricar C. Enoria ·
+              Vesti Sahm Angielo Mercado · Ishmael Luis C. Santiago
+            </p>
+            <h3>Requirements</h3>
+            <p>Android 7.0 or later. The Beneficiary app needs an internet connection.</p>
+          </article>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
-    iDETECT - Identity Detection and OCR Verification System
+    iDetect · Pamantasan ng Lungsod ng Valenzuela · CEIT Capstone 2026
   </footer>
 
   <script>
